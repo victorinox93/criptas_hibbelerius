@@ -1,0 +1,31 @@
+html, body { margin: 0; padding: 0; background: #07060a; height: 100%; overflow: hidden; }
+#game { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+canvas { image-rendering: pixelated; }
+
+.form { width: 380px; font-family: VT323, monospace; color: #d8d0c0; }
+.form .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.form .tab { flex: 1; text-align: center; padding: 6px 0; font-size: 22px; cursor: pointer;
+  background: #17131c; border: 2px solid #2a2433; color: #8a8296; }
+.form .tab.on { border-color: #e8c15a; color: #e8c15a; background: #221c2a; }
+.form label { display: block; font-size: 19px; color: #8a8296; margin: 8px 0 2px; }
+.form input { width: 100%; box-sizing: border-box; font-family: VT323, monospace; font-size: 24px;
+  background: #0d0b10; color: #d8d0c0; border: 2px solid #4a3f55; padding: 6px 10px; outline: none; }
+.form input:focus { border-color: #e8c15a; box-shadow: 0 0 0 2px #00000080, 0 0 12px #e8c15a40; }
+.form .go { margin-top: 14px; width: 100%; font-family: VT323, monospace; font-size: 26px; padding: 8px;
+  background: #3a1820; color: #f0e2c8; border: 2px solid #c43a3a; cursor: pointer; }
+.form .go:hover { background: #5a2028; }
+.form .go:disabled { opacity: .5; cursor: wait; }
+.form .msg { min-height: 24px; margin-top: 10px; font-size: 20px; color: #e05050; text-align: center; }
+.form .msg.ok { color: #9bc96a; }
+.form .note { font-size: 18px; color: #8a8296; margin-top: 8px; text-align: center; }
+.form .hide { display: none; }
+
+.answer { font-family: VT323, monospace; display: flex; gap: 8px; align-items: center; }
+.answer input { width: 200px; font-family: VT323, monospace; font-size: 28px; background: #0d0b10; color: #d8d0c0;
+  border: 2px solid #8e5bb0; padding: 4px 10px; outline: none; }
+.answer input:focus { border-color: #e8c15a; }
+.answer span { font-size: 26px; color: #b88ad8; }
+
+.alias input { width: 300px; font-family: VT323, monospace; font-size: 26px; background: #0d0b10; color: #e8c15a;
+  border: 2px solid #4a3f55; padding: 4px 10px; outline: none; text-align: center; }
+.alias input:focus { border-color: #e8c15a; }

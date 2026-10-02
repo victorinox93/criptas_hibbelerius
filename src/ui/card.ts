@@ -1,0 +1,58 @@
+import Phaser from 'phaser';
+import { CSS, UI } from '../art/palette';
+import { CalcCtx, CARDS, CardInst } from '../data/cards';
+import { frame, txt } from './widgets';
+
+export const CW = 150;
+export const CH = 210;
+
+const TYPE_COLOR: Record<string, number> = {
+  Ataque: 0xa8323e,
+  Defensa: 0x3f6aa8,
+  Habilidad: 0x4f8a3a,
+  Poder: 0x8e5bb0,
+};
+
+export interface CardView extends Phaser.GameObjects.Container {
+  inst: CardInst;
+  refresh(ctx: CalcCtx, playable?: boolean): void;
+}
+
+export const NO_CTX: CalcCtx = { masaBonus: 0, acelBonus: 0, friccion: 0 };
+
+export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, ctx: CalcCtx = NO_CTX): CardView {
+  const def = CARDS[inst.id];
+  const c = s.add.container(x, y) as CardView;
+  c.inst = inst;
+  const g = s.add.graphics();
+  const col = TYPE_COLOR[def.type];
+  frame(g, -CW / 2, -CH / 2, CW, CH, 0x1a151f, col);
+  // caja de arte
+  g.fillStyle(0x0d0b10, 1).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 62);
+  g.lineStyle(2, col, 0.6).strokeRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 62);
+  const art = s.add.image(0, -CH / 2 + 65, def.icon).setScale(5);
+  const name = txt(s, 6, -CH / 2 + 18, def.name + (inst.up ? '+' : ''), 21, inst.up ? CSS.green : CSS.bone).setOrigin(0.5);
+  if (name.width > CW - 44) name.setScale((CW - 44) / name.width, 1);
+  const type = txt(s, 0, -CH / 2 + 106, `${def.type} · ${def.concept}`, 16, CSS.dim).setOrigin(0.5);
+  const body = txt(s, 0, -CH / 2 + 122, '', 18, CSS.bone, { align: 'center', lineSpacing: -4 }).setOrigin(0.5, 0);
+  // gema de costo
+  const gem = s.add.graphics();
+  gem.fillStyle(0x000000, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 16);
+  gem.fillStyle(0x1d4d5a, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 13);
+  gem.lineStyle(2, UI.energy, 1).strokeCircle(-CW / 2 + 12, -CH / 2 + 12, 13);
+  const cost = txt(s, -CW / 2 + 12, -CH / 2 + 10, '', 24, '#e8fbff').setOrigin(0.5);
+  const unit = txt(s, -CW / 2 + 12, -CH / 2 + 30, 'J', 14, CSS.energy).setOrigin(0.5);
+  c.add([g, art, name, type, body, gem, cost, unit]);
+  c.setSize(CW, CH);
+
+  c.refresh = (cx: CalcCtx, playable = true) => {
+    const st = def.stats(inst.up);
+    body.setText(def.text(st, cx));
+    const k = Math.min(1, 84 / body.height, (CW - 14) / body.width);
+    body.setScale(k);
+    cost.setText(String(st.cost));
+    c.setAlpha(playable ? 1 : 0.55);
+  };
+  c.refresh(ctx);
+  return c;
+}
