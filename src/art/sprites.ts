@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PAL } from './palette';
+import { ARMORS, CAPES, PAL, VISORS } from './palette';
 
 // Cada sprite es una matriz de caracteres; cada carácter es un color de la paleta.
 // '.' = transparente. Las filas cortas se rellenan con transparente.
@@ -362,6 +362,105 @@ export const SPRITES: Record<string, string[]> = {
     '.........',
     '.........',
   ],
+  i_event: [
+    '..kkkkk..',
+    '.kpPPPpk.',
+    'kpPkkkPpk',
+    'kpkPPkPpk',
+    '.kPPPkPk.',
+    '..kPkPk..',
+    '...kPk...',
+    '...kkk...',
+    '...kPk...',
+  ],
+  i_coin: [
+    '..kkkkk..',
+    '.kyyyyyk.',
+    'kyywwyyyk',
+    'kywyyyyyk',
+    'kyyyoyyyk',
+    'kyyyyyyok',
+    'kyyyyyook',
+    '.koooook.',
+    '..kkkkk..',
+  ],
+  i_bag: [
+    '...kkk...',
+    '..knnnk..',
+    '...kyk...',
+    '..knnnk..',
+    '.knnnnnk.',
+    'knnyyynnk',
+    'knnynnnnk',
+    'knnnnnnnk',
+    '.kkkkkkk.',
+  ],
+  i_tired: [
+    '.........',
+    '.BBBB....',
+    '...B.....',
+    '..B......',
+    '.BBBB.BBB',
+    '.......B.',
+    '......B..',
+    '.....BBB.',
+    '.........',
+  ],
+  i_feather: [
+    '.......lk',
+    '......llk',
+    '.....lwlk',
+    '....lwlk.',
+    '...lwlk..',
+    '..lwlk...',
+    '.lllk....',
+    'kk.......',
+    'k........',
+  ],
+  i_fog: [
+    '.........',
+    '.lllll...',
+    'lllllll..',
+    '....lllll',
+    '.........',
+    '..lllllll',
+    'llllll...',
+    '...lllll.',
+    '.........',
+  ],
+  i_lantern: [
+    '...kkk...',
+    '...k.k...',
+    '..kkkkk..',
+    '.kgyyygk.',
+    '.kyywyyk.',
+    '.kyyyyyk.',
+    '.kgyyygk.',
+    '..kkkkk..',
+    '.........',
+  ],
+  i_note: [
+    '...wwwwww',
+    '...wwwwww',
+    '...w....w',
+    '...w....w',
+    '...w....w',
+    '.www..www',
+    'wwww.wwww',
+    'wwww.wwww',
+    '.ww...ww.',
+  ],
+  i_full: [
+    'wwww.wwww',
+    'w.......w',
+    'w.......w',
+    'w.......w',
+    '.........',
+    'w.......w',
+    'w.......w',
+    'w.......w',
+    'wwww.wwww',
+  ],
   i_skull: [
     '.kkkkkkk.',
     'kwwwwwwwk',
@@ -408,9 +507,47 @@ export function makeTexture(
   canvas.refresh();
 }
 
-export function makeKnight(scene: Phaser.Scene, key: string, helm: string, cape: { c: string; C: string }) {
-  makeTexture(scene, key, knightMatrix(helm), { c: cape.c, C: cape.C });
+export function makeKnight(
+  scene: Phaser.Scene, key: string, helm: string, cape: { c: string; C: string },
+  armor: { l: string; g: string } = { l: PAL.l, g: PAL.g }, visor = PAL.E,
+) {
+  makeTexture(scene, key, knightMatrix(helm), { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor });
 }
+
+/** Dibuja el héroe del perfil actual en la textura 'hero' */
+export function makeHeroFromAvatar(scene: Phaser.Scene, av: { helm: string; cape: number; armor?: number; visor?: number }) {
+  makeKnight(scene, 'hero', av.helm, CAPES[av.cape] ?? CAPES[0], ARMORS[av.armor ?? 0], VISORS[av.visor ?? 0].c);
+}
+
+const NPC = mirrorHalf([
+  '.....kkk',
+  '....kccc',
+  '...kcccc',
+  '...kccCk',
+  '..kccCkk',
+  '..kcCkkE',
+  '..kcCkkk',
+  '..kccCkk',
+  '.kcccCCk',
+  '.kccccCC',
+  'kcccccsC',
+  'kccccCss',
+  'kcccccCC',
+  'kccccccC',
+  'kcccccCc',
+  'kccccccC',
+  'kcccccCC',
+  'kkkkkkkk',
+]);
+
+export const NPCS: Record<string, Record<string, string>> = {
+  npc_ermitano: { c: '#5b4632', C: '#33261a', E: '#ffd27a', s: '#c8a07a' },
+  npc_cartografa: { c: '#2f5a5a', C: '#183333', E: '#d8d0c0', s: '#c8a07a' },
+  npc_herrero: { c: '#3a2f2a', C: '#1e1714', E: '#ff9a4a', s: '#a87a5a' },
+  npc_estatua: { c: '#7a7684', C: '#4a4656', E: '#e8f4ff', s: '#7a7684', k: '#1a1820' },
+  npc_coleccionista: { c: '#4a2a5e', C: '#28153a', E: '#b8f0d0', s: '#c8a07a' },
+  npc_mercader: { c: '#5e3a1a', C: '#33200e', E: '#e8c15a', s: '#d8b08a' },
+};
 
 export function generateAllTextures(scene: Phaser.Scene) {
   for (const [k, rows] of Object.entries(SPRITES)) {
@@ -420,6 +557,7 @@ export function generateAllTextures(scene: Phaser.Scene) {
   makeTexture(scene, 'inertKnight', knightMatrix('cuernos'), {
     l: '#4b4458', g: '#2f2a38', c: '#5e1420', C: '#3a0c14', E: '#ff5a3a', y: '#8b1e2b',
   }, true);
+  for (const [k, ov] of Object.entries(NPCS)) makeTexture(scene, k, NPC, ov);
   // pixel blanco para partículas
   if (!scene.textures.exists('px')) {
     const c = scene.textures.createCanvas('px', 2, 2)!;

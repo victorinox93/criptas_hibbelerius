@@ -167,7 +167,13 @@ const GENERATORS: (() => Problem)[] = [
   },
 ];
 
-export function randomProblem(): Problem {
+/** Problema al azar; si se dan conceptos, sólo de esos temas */
+export function randomProblem(concepts?: string[]): Problem {
+  if (!concepts?.length) return pick(GENERATORS)();
+  for (let i = 0; i < 80; i++) {
+    const p = pick(GENERATORS)();
+    if (concepts.includes(p.concept)) return p;
+  }
   return pick(GENERATORS)();
 }
 

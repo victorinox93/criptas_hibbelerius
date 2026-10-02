@@ -11,6 +11,7 @@ export class BootScene extends Phaser.Scene {
         new Promise((r) => setTimeout(r, 2500)),
       ]);
     } catch { /* fuentes de respaldo */ }
+    this.scene.launch('Overlay');
     this.scene.start('Login');
   }
 }

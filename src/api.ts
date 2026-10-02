@@ -1,4 +1,4 @@
-import { API_URL } from './config';
+import { API_URL } from './backend';
 
 export const isOnline = () => API_URL.trim().length > 0;
 

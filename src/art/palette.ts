@@ -22,12 +22,25 @@ export const PAL: Record<string, string> = {
 
 // Colores de capa disponibles en el creador de avatar
 export const CAPES: { name: string; c: string; C: string }[] = [
-  { name: 'Sangre', c: '#9b2335', C: '#5e1420' },
+  { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
   { name: 'Ceniza', c: '#6e6a78', C: '#403c48' },
   { name: 'Abismo', c: '#2f4f8a', C: '#1b2d52' },
   { name: 'Musgo', c: '#4d6b35', C: '#2c3f1e' },
   { name: 'Ocaso', c: '#b0652a', C: '#6a3a16' },
   { name: 'Ánima', c: '#6d3f8f', C: '#3f2354' },
+];
+
+export const ARMORS: { name: string; l: string; g: string }[] = [
+  { name: 'Acero', l: '#9a93a8', g: '#5a5468' },
+  { name: 'Bronce', l: '#a8834e', g: '#6b4e2b' },
+  { name: 'Obsidiana', l: '#55506a', g: '#2e2a3a' },
+  { name: 'Plata pálida', l: '#c4c0cc', g: '#7d7889' },
+];
+export const VISORS: { name: string; c: string }[] = [
+  { name: 'Ámbar', c: '#ffd27a' },
+  { name: 'Cian', c: '#7fe8ff' },
+  { name: 'Verde fatuo', c: '#9bf07a' },
+  { name: 'Violeta', c: '#d29bff' },
 ];
 
 // UI

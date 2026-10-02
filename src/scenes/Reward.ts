@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W } from '../config';
+import { audio } from '../audio';
+import { T } from '../textos';
 import { CARDS, REWARD_POOL } from '../data/cards';
 import { RELIC_POOL, RELICS } from '../data/relics';
 import { addCard, Game, saveLocal } from '../state';
@@ -26,14 +28,20 @@ export function randomRelics(n: number) {
 export class RewardScene extends Phaser.Scene {
   constructor() { super('Reward'); }
 
-  create(data: { kind: string }) {
+  create(data: { kind: string; ergios?: number }) {
     this.cameras.main.fadeIn(300);
-    dungeonBackground(this, 77, 0x1c1822);
+    audio.play('mapa');
+    dungeonBackground(this, 77, 0x18141e);
     const tip = new Tooltip(this);
     const hud = topBar(this, tip);
-    title(this, W / 2, 80, 'Botín', 48);
+    title(this, W / 2, 72, T.botin.titulo, 48);
+    if (data.ergios) {
+      icon(this, W / 2 - 70, 112, 'i_coin', 3);
+      txt(this, W / 2 - 52, 112, `+${data.ergios} ${T.moneda}`, 24, CSS.gold).setOrigin(0, 0.5);
+      audio.sfx('coin');
+    }
 
-    let y0 = 150;
+    let y0 = 160;
     if (data.kind === 'elite') {
       const [rid] = randomRelics(1);
       if (rid) {
@@ -41,15 +49,15 @@ export class RewardScene extends Phaser.Scene {
         hud.refresh();
         const rel = RELICS[rid];
         const g = this.add.graphics();
-        frame(g, W / 2 - 230, 112, 460, 70, UI.panel, UI.gold);
-        icon(this, W / 2 - 196, 147, rel.icon, 4);
-        txt(this, W / 2 - 166, 120, `Reliquia: ${rel.name}`, 24, CSS.gold);
-        txt(this, W / 2 - 166, 148, rel.text, 20, CSS.bone);
-        y0 = 200;
+        frame(g, W / 2 - 230, 132, 460, 70, UI.panel, UI.gold);
+        icon(this, W / 2 - 196, 167, rel.icon, 4);
+        txt(this, W / 2 - 166, 140, `${T.botin.reliquia}: ${rel.name}`, 24, CSS.gold);
+        txt(this, W / 2 - 166, 168, rel.text, 20, CSS.bone);
+        y0 = 222;
       }
     }
 
-    txt(this, W / 2, y0, 'Elige una carta para tu mazo', 26, CSS.bone).setOrigin(0.5);
+    txt(this, W / 2, y0, T.botin.elige, 26, CSS.bone).setOrigin(0.5);
     const pool = Phaser.Utils.Array.Shuffle(REWARD_POOL.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);
     picks.forEach((id, i) => {
@@ -65,11 +73,12 @@ export class RewardScene extends Phaser.Scene {
         tip.hide();
       });
       v.on('pointerdown', () => {
+        audio.sfx('card');
         addCard(id, up);
         this.done();
       });
     });
-    button(this, W / 2, 506, 200, 40, 'Omitir', () => this.done(), { size: 22 });
+    button(this, W / 2, 506, 200, 40, T.botin.omitir, () => this.done(), { size: 22 });
   }
 
   done() {

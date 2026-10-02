@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { api, isOnline } from '../api';
-import { CAPES, CSS, UI } from '../art/palette';
-import { makeKnight } from '../art/sprites';
-import { GAME_TITLE, W } from '../config';
+import { CSS, UI } from '../art/palette';
+import { audio } from '../audio';
+import { makeHeroFromAvatar } from '../art/sprites';
+import { T } from '../textos';
+import { W } from '../config';
 import { clearSession, Game, logEvent, newRun, saveLocal, syncRun } from '../state';
 import { button, dungeonBackground, embers, fadeTo, panel, title, torch, txt } from '../ui/widgets';
 
@@ -11,14 +13,15 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(300);
-    dungeonBackground(this, 5, 0x1e1a26);
+    audio.play('menu');
+    dungeonBackground(this, 5, 0x1a1622);
     embers(this);
     const p = Game.profile!;
     const av = p.avatar!;
-    makeKnight(this, 'hero', av.helm, CAPES[av.cape]);
+    makeHeroFromAvatar(this, av);
 
-    title(this, W / 2, 50, GAME_TITLE, 50);
-    txt(this, W / 2, 90, 'El Umbral de las Criptas', 24, CSS.dim).setOrigin(0.5);
+    title(this, W / 2, 50, T.titulo, 50);
+    txt(this, W / 2, 90, T.menu.lugar, 24, CSS.dim).setOrigin(0.5);
 
     // héroe junto a la fogata
     torch(this, 300, 330);
@@ -29,17 +32,17 @@ export class MenuScene extends Phaser.Scene {
     panel(this, 60, 420, 360, 98);
     txt(this, 80, 432, av.alias, 30, CSS.gold);
     txt(this, 80, 464, `Caballero de la Masa · ${p.matricula}`, 20, CSS.bone);
-    txt(this, 80, 488, p.offline || !isOnline() ? '● Sin conexión (no se reporta)' : `● Conectado · Grupo ${p.grupo}`, 18,
+    txt(this, 80, 488, p.offline || !isOnline() ? `● ${T.menu.desconectado}` : `● ${T.menu.conectado} ${p.grupo}`, 18,
       p.offline || !isOnline() ? CSS.dim : CSS.green);
 
     const x = 680;
     let y = 170;
     const run = Game.run && !Game.run.done ? Game.run : null;
     if (run) {
-      button(this, x, y, 320, 50, `Continuar expedición (piso ${run.floor + 1})`, () => fadeTo(this, 'Map'), { color: UI.gold, size: 24 });
+      button(this, x, y, 320, 50, `${T.menu.continuar} (${T.hud.piso.toLowerCase()} ${run.floor + 1})`, () => fadeTo(this, 'Map'), { color: UI.gold, size: 24 });
       y += 66;
     }
-    const startBtn = button(this, x, y, 320, 50, run ? 'Nueva expedición' : 'Comenzar expedición', async () => {
+    const startBtn = button(this, x, y, 320, 50, run ? T.menu.nueva : T.menu.comenzar, async () => {
       if (run) {
         syncRun('abandonada', 'nueva expedición');
       }
@@ -58,11 +61,11 @@ export class MenuScene extends Phaser.Scene {
       fadeTo(this, 'Help', { next: 'Map', first: true });
     }, { color: run ? UI.border : UI.blood, size: 26 });
     y += 66;
-    button(this, x, y, 320, 50, 'Cómo se juega', () => fadeTo(this, 'Help', { next: 'Menu' }), { size: 24 });
+    button(this, x, y, 320, 50, T.menu.ayuda, () => fadeTo(this, 'Help', { next: 'Menu' }), { size: 24 });
     y += 66;
-    button(this, x, y, 320, 50, 'Editar héroe', () => fadeTo(this, 'Avatar'), { size: 24 });
+    button(this, x, y, 320, 50, T.menu.editar, () => fadeTo(this, 'Avatar'), { size: 24 });
     y += 66;
-    button(this, x, y, 320, 50, 'Cerrar sesión', () => {
+    button(this, x, y, 320, 50, T.menu.salir, () => {
       clearSession();
       Game.profile = null;
       Game.run = null;

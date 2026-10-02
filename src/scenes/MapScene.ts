@@ -1,17 +1,24 @@
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
+import { audio } from '../audio';
+import { T } from '../textos';
 import { W, H } from '../config';
-import { FLOORS, Game, MapNode, NodeType, saveLocal } from '../state';
+import { Game, MapNode, NodeType, saveLocal } from '../state';
 import { topBar } from '../ui/hud';
 import { embers, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
-const NODE_INFO: Record<NodeType, { icon: string; name: string; desc: string; color: number }> = {
-  combate: { icon: 'i_combat', name: 'Combate', desc: 'Criaturas de la cripta. Gana una carta.', color: 0x8a8296 },
-  elite: { icon: 'i_elite', name: 'Élite', desc: 'Enemigo con Inercia. Peligroso, pero deja una reliquia.', color: 0xc43a3a },
-  fogata: { icon: 'i_fire', name: 'Fogata', desc: 'Descansa para curarte o estudia una runa para mejorar una carta.', color: 0xc87533 },
-  runa: { icon: 'i_rune', name: 'Altar rúnico', desc: 'Un problema de dinámica. Resuélvelo y obtén una reliquia.', color: 0x8e5bb0 },
-  jefe: { icon: 'i_boss', name: 'Coloso Inerte', desc: 'El guardián del Acto I.', color: 0xe8c15a },
+const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
+  combate: { icon: 'i_combat', color: 0x8a8296 },
+  elite: { icon: 'i_elite', color: 0xa84a4a },
+  fogata: { icon: 'i_fire', color: 0xc87533 },
+  runa: { icon: 'i_rune', color: 0x8e5bb0 },
+  evento: { icon: 'i_event', color: 0x6a8fc4 },
+  mercader: { icon: 'i_bag', color: 0xe8c15a },
+  jefe: { icon: 'i_boss', color: 0xe8c15a },
 };
+const NODE_INFO = Object.fromEntries(
+  Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),
+) as Record<NodeType, { icon: string; color: number; name: string; desc: string }>;
 
 export const nodeXY = (n: MapNode) => ({
   x: n.type === 'jefe' ? 878 : 80 + n.floor * 96,
@@ -23,20 +30,21 @@ export class MapScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(300);
+    audio.play('mapa');
     const run = Game.run!;
     const tip = new Tooltip(this);
 
     // fondo: pergamino oscuro
     const bg = this.add.graphics().setDepth(-10);
-    bg.fillStyle(0x0d0b10, 1).fillRect(0, 0, W, H);
+    bg.fillStyle(0x060508, 1).fillRect(0, 0, W, H);
     for (let i = 0; i < 260; i++) {
-      bg.fillStyle(0x1a1520, Math.random() * 0.8).fillRect(Math.random() * W, 44 + Math.random() * (H - 44), 3 + Math.random() * 10, 2 + Math.random() * 4);
+      bg.fillStyle(0x15111a, Math.random() * 0.7).fillRect(Math.random() * W, 44 + Math.random() * (H - 44), 3 + Math.random() * 10, 2 + Math.random() * 4);
     }
     embers(this);
     vignette(this);
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
-    title(this, 300, 70, 'Acto I · Las Criptas de la Inercia', 30).setOrigin(0, 0.5).setX(20);
+    title(this, 20, 70, T.mapa.titulo, 30).setOrigin(0, 0.5);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
     const current = run.pos >= 0 ? byId.get(run.pos)! : null;
@@ -70,9 +78,9 @@ export class MapScene extends Phaser.Scene {
       const g = this.add.graphics();
       const isAvail = available.has(n.id);
       const isPast = n.floor < (current ? current.floor : 0) || (current && n.id === current.id);
-      frame(g, x - size / 2, y - size / 2, size, size, isAvail ? 0x261e2c : 0x141017, isAvail ? info.color : 0x2c2534);
+      frame(g, x - size / 2, y - size / 2, size, size, isAvail ? 0x261e2c : 0x141017, isAvail ? info.color : 0x3a3244);
       const im = this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.4);
-      if (!isAvail && !(current && n.id === current.id)) im.setAlpha(isPast ? 0.25 : 0.55);
+      if (!isAvail && !(current && n.id === current.id)) im.setAlpha(isPast ? 0.3 : 0.75);
       if (visited.has(n.id)) {
         const mark = this.add.graphics();
         mark.lineStyle(3, UI.gold, 0.9).strokeCircle(x, y, size / 2 + 4);
@@ -83,7 +91,7 @@ export class MapScene extends Phaser.Scene {
         this.tweens.add({ targets: im, scale: im.scale * 1.12, duration: 700, yoyo: true, repeat: -1 });
       }
       const z = this.add.zone(x, y, size, size).setInteractive({ useHandCursor: isAvail });
-      z.on('pointerover', () => tip.show(x + 30, y - 20, info.name, info.desc + (isAvail ? '\n▶ Clic para avanzar' : '')));
+      z.on('pointerover', () => tip.show(x + 30, y - 20, info.name, info.desc + (isAvail ? '\n' + T.mapa.clicAvanzar : '')));
       z.on('pointerout', () => tip.hide());
       z.on('pointerdown', () => {
         if (!isAvail) return;
@@ -100,13 +108,12 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = ['combate', 'elite', 'runa', 'fogata', 'jefe'];
+    const types: NodeType[] = ['combate', 'elite', 'evento', 'runa', 'mercader', 'fogata', 'jefe'];
     types.forEach((t, i) => {
-      const x = 40 + i * 175;
+      const x = 30 + i * 134;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
       txt(this, x + 18, H - 34, NODE_INFO[t].name, 20, CSS.dim);
     });
-    txt(this, W - 16, 70, `Pisos: ${Math.min(run.floor, FLOORS + 1)}/${FLOORS + 1}`, 22, CSS.dim).setOrigin(1, 0.5);
   }
 
   enter(n: MapNode) {
@@ -121,6 +128,10 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Campfire', { floor: n.floor });
       case 'runa':
         return fadeTo(this, 'Rune', { floor: n.floor, source: 'altar' });
+      case 'evento':
+        return fadeTo(this, 'Event', { floor: n.floor });
+      case 'mercader':
+        return fadeTo(this, 'Shop', { floor: n.floor });
     }
   }
 }
