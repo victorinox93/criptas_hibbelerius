@@ -2,7 +2,7 @@
 
 Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los alumnos crean a su héroe, bajan por las criptas y pelean con mecánicas que *son* física: cada golpe calcula **F = m·a**, la energía se paga en **Joules**, los enemigos con **inercia** sólo se detienen con una fuerza neta suficiente, y los altares rúnicos plantean problemas tipo Hibbeler con parámetros aleatorios.
 
-> Versión 0.5 · Actos I y II (Leyes de Newton y energía). Clases: Caballero de la Masa y Arcanista Cinético.
+> Versión 0.6 · Actos I y II (Leyes de Newton y energía). Clases: Caballero de la Masa y Arcanista Cinético. Novedades: Einstein y Curie con dones radiactivos, dilemas de riesgo, familiares, condiciones de piso al azar y un encuentro especial con el profe.
 >
 > **¿Quieres agregar enemigos, preguntas, figuras históricas o música?** Lee la [Guía para ampliar el juego](docs/GUIA-AMPLIAR.md).
 
@@ -13,12 +13,14 @@ Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los a
 | Cuentas | Matrícula, contraseña creada por el alumno y clave de grupo que da el profesor |
 | Avatar | Nombre, yelmo (3), armadura (4), brillo del visor (4) y capa (6). Las clases Arcanista, Explorador y Guardián aparecen bloqueadas para los actos siguientes |
 | Mapa | 9 pisos generados al azar: combates, élites, encuentros, ecos del pasado, altares rúnicos, mercader, fogatas y el jefe |
-| Ecos del Pasado | Estilo Hades: Newton, Galileo, Émilie du Châtelet y Joule ofrecen dones para toda la expedición; si respondes bien su pregunta, los dones son épicos |
-| Encuentros | 5 personajes que hacen una pregunta de física: si aciertas, bendición; si fallas, maldición pasajera (dura 1–2 combates) |
-| Mercader | Cartas, reliquia, olvidar una carta y curación, pagando con Ergios. Se puede regatear resolviendo un problema (−30 %) |
+| Ecos del Pasado | Estilo Hades: Newton, Galileo, Émilie du Châtelet, Joule, **Einstein** y **Marie Curie** ofrecen dones para toda la expedición; si respondes bien su pregunta, los dones son épicos. Los dones de Einstein y Curie son más fuertes pero cobran **radiación** (daño que ignora el Bloque) |
+| Encuentros | Cada nodo «?» se sortea: 5 personajes con pregunta (bendición o maldición pasajera), 7 **dilemas** de riesgo con probabilidades visibles (pozo, notario, núcleo inestable, demonio de Laplace, balanza, criatura, puente) o, rara vez (14 %), **el Profe Victorino**, que regala una vida extra |
+| Familiares | Gato de Schrödinger, Lechuza de Minerva, Salamandra Ígnea, Tortuga de Zenón y Cuervo: pelean contigo 3–5 combates. Se consiguen en dilemas, en la tienda o tras una élite |
+| Azar | 35 % de los combates traen una **condición de piso** (viento, niebla, lodo, anomalía gravitatoria…); a veces un combate normal suelta una reliquia |
+| Mercader | Cartas, reliquia, a veces un familiar, olvidar una carta y curación, pagando con Ergios. Se puede regatear resolviendo un problema (−30 %) |
 | Música | Dark synth generada en vivo (sin archivos): 7 pistas (menú, mapa, dos de combate, jefe, calma y santuario) y efectos de sonido |
 | Acto II | Al vencer al Coloso la expedición continúa en **Las Galerías de la Fricción**: arte en primera persona inspirado en Wizardry, mapa tipo cuadrícula, 6 enemigos nuevos y la Bruja de la Fricción como jefa. Las preguntas de los altares se enfocan en trabajo y energía |
-| Arcanista Cinético | Segunda clase (se desbloquea al vencer al Coloso): acumula rapidez *v* y ataca con K = ½·m·v². La fricción lo frena |
+| Arcanista Cinético | Segunda clase (se desbloquea al vencer al Coloso): acumula rapidez *v* (máx. 8 m/s) y ataca con K = ½·m·v². Tiene 48 de vida; la fricción lo frena |
 | Cartas | 38 cartas: neutrales (ganar Joules, robar y descartar, daño igual a tu Bloque), daño elemental físico (Calor, Resonancia, Fatiga del material) y cartas basura que meten los enemigos (Lodo Pegajoso, Ruido Blanco, Error de Signo) |
 | Pantalla | Se dibuja al doble de resolución; botón de pantalla completa y control de volumen arriba a la derecha |
 | Combate | 12 cartas, 7 enemigos (incluye la Gárgola de Piedra y el Péndulo Errante, que convierte U en K), Pergamino de cálculos que muestra la física de cada acción |
@@ -121,6 +123,13 @@ Para agregar contenido (enemigos, cartas, preguntas, figuras, encuentros, músic
 
 ## Hoja de ruta
 
-- **Acto II · El Pantano de la Fricción:** trabajo y energía (cap. 14). Arcanista Cinético (½mv²) y Explorador de Alturas (mgh).
+- ~~**Acto II · Las Galerías de la Fricción:** trabajo y energía (cap. 14). Arcanista Cinético (½mv²).~~ Listo en la v0.5.
 - **Acto III · La Torre del Tomo:** impulso y cantidad de movimiento (cap. 15). Jefe final: Hibbelerius, el Archimago del Tomo.
+  - Mecánicas: cartas de **impulso** I = F·Δt (la fuerza se reparte en varios turnos), **cantidad de movimiento** p = m·v que se conserva entre aliados y enemigos, **choques** con coeficiente de restitución *e* (0 = plástico, 1 = elástico) y enemigos que **se dividen** (conservación de p en explosiones).
+  - Altares: impulso y cantidad de movimiento, conservación de p, choques (con *e*), impulso angular y chorros/masa variable.
+  - Clase nueva: Explorador de Alturas (mgh) o el Guardián del Equilibrio.
 - Más enemigos, encuentros y opciones de personalización (armas, emblemas, retratos).
+
+## Actualizar el backend en la v0.6
+
+Sólo cambió el formato de la hoja **Panel** (la columna «Runas intentadas» ya no sale en %). Pega el nuevo `apps-script/Code.gs` y crea una **nueva versión** de la implementación (pasos de la sección *Actualizar el backend*). Si no lo actualizas, el juego funciona igual.

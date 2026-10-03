@@ -13,5 +13,7 @@ export const RELICS: Record<string, RelicDef> = {
   botas: { id: 'botas', name: 'Botas de Agarre', icon: 'i_boots', text: 'Eres inmune a la Fricción.', lore: 'Con buen agarre, el lodo no roba tu aceleración.' },
   cristal: { id: 'cristal', name: 'Cristal Inercial', icon: 'i_crystal', text: 'Conservas la mitad de tu Bloque entre turnos.', lore: 'Lo que está quieto tiende a seguir quieto.' },
   ascua: { id: 'ascua', name: 'Corazón de Ascua', icon: 'i_heart', text: '+10 Vida máxima (y te cura 10).', lore: 'Energía almacenada para después.' },
+  // especial: sólo la da el Profe Victorino (no sale en botines ni en la tienda)
+  vidaExtra: { id: 'vidaExtra', name: 'Vida Extra del Profe', icon: 'i_book', text: 'Si tu vida llega a 0, te levantas con la mitad de tu vida máxima. Se gasta al usarla.', lore: '«No le digan a los otros grupos.» — V. S. A.' },
 };
-export const RELIC_POOL = Object.keys(RELICS);
+export const RELIC_POOL = Object.keys(RELICS).filter((id) => id !== 'vidaExtra');

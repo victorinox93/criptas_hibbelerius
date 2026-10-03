@@ -226,6 +226,8 @@ function actualizarPanel() {
 
   var panel = ss.getSheetByName('Panel') || ss.insertSheet('Panel');
   panel.clear();
+  panel.clearFormats(); // borra formatos viejos (antes una columna salía en %)
+  panel.clearConditionalFormatRules();
   var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 18)', 'Acto máx.', 'Expedición completa', 'Puntaje máx.',
     'Runas correctas', 'Runas intentadas', '% aciertos', 'Último acceso'];
   var data = Object.keys(por).map(function (k) {
@@ -236,6 +238,8 @@ function actualizarPanel() {
   panel.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
   if (data.length) {
     panel.getRange(2, 1, data.length, head.length).setValues(data);
+    panel.getRange(2, 4, data.length, 7).setNumberFormat('0'); // partidas, pisos, acto, puntaje y runas: enteros
+    panel.getRange(2, 7, data.length, 1).setNumberFormat('@');
     panel.getRange(2, 11, data.length, 1).setNumberFormat('0%');
     panel.getRange(2, 12, data.length, 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }

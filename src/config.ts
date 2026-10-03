@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.5.0 · Actos I y II';
+export const VERSION = '0.6.0 · Ecos radiactivos y familiares';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.

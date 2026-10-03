@@ -92,7 +92,42 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['Empiezas cada combate con 5 de Bloque.', 'Empiezas cada combate con 10 de Bloque.'],
     lore: 'El trabajo realizado sobre un sistema se queda en él como energía.',
   },
+  // ── Albert Einstein (dones poderosos con RADIACIÓN: daño que ignora tu Bloque) ──
+  e_mc2: {
+    id: 'e_mc2', figure: 'einstein', name: 'E = mc²', icon: 'i_rad',
+    text: ['+1 J al inicio de cada turno.\nRadiación: pierdes 2 de vida cada turno.', '+1 J al inicio de cada turno.\nRadiación: pierdes 1 de vida cada turno.'],
+    lore: 'Una masa diminuta equivale a una energía enorme. Esa energía también te quema.',
+  },
+  e_marco: {
+    id: 'e_marco', figure: 'einstein', name: 'Marco de Referencia', icon: 'i_crystal',
+    text: ['El primer golpe que recibes en cada combate no te afecta.\nRadiación: pierdes 4 de vida al iniciar cada combate.', 'Los 2 primeros golpes de cada combate no te afectan.\nRadiación: pierdes 3 de vida al iniciar cada combate.'],
+    lore: 'El movimiento depende de quién lo observa. En tu marco de referencia, ese golpe nunca llegó.',
+  },
+  e_foton: {
+    id: 'e_foton', figure: 'einstein', name: 'Efecto Fotoeléctrico', icon: 'i_bolt',
+    text: ['Cada Habilidad que juegas lanza un fotón: 4 de daño a un enemigo al azar.\nRadiación: 1 de daño por fotón.', 'Cada fotón hace 7 de daño.\nRadiación: 1 de daño por fotón.'],
+    lore: 'La luz llega en paquetes de energía E = h·f que pueden arrancar electrones. (Premio Nobel de 1921.)',
+  },
+  // ── Marie Curie ──
+  m_radio: {
+    id: 'm_radio', figure: 'curie', name: 'Radio', icon: 'i_fire',
+    text: ['Al iniciar cada combate, todos los enemigos reciben 4 de Calor.\nRadiación: tú recibes 2 de Calor.', 'Los enemigos reciben 7 de Calor.\nRadiación: tú recibes 1 de Calor.'],
+    lore: 'El radio emite energía sin parar: un gramo calienta su entorno por siglos.',
+  },
+  m_polonio: {
+    id: 'm_polonio', figure: 'curie', name: 'Polonio', icon: 'i_skull',
+    text: ['Tus ataques infligen +3 de daño.\nRadiación: cada carta de ataque te hace 1 de daño.', 'Tus ataques infligen +5 de daño.\nRadiación: cada carta de ataque te hace 1 de daño.'],
+    lore: 'Curie lo nombró por Polonia, su país. Es tan radiactivo que brilla en la oscuridad.',
+  },
+  m_vidamedia: {
+    id: 'm_vidamedia', figure: 'curie', name: 'Vida Media', icon: 'i_heart',
+    text: ['Al ganar un combate, +2 de Vida máxima.\nRadiación: pierdes 3 de vida al iniciar cada combate.', 'Al ganar un combate, +3 de Vida máxima.\nRadiación: pierdes 2 de vida al iniciar cada combate.'],
+    lore: 'En cada vida media decae la mitad de los núcleos. Lo que hoy te desgasta, mañana te hace más resistente.',
+  },
 };
+
+/** Dones con efecto secundario de radiación (se marcan en verde en el santuario) */
+export const RADIOACTIVE = ['e_mc2', 'e_marco', 'e_foton', 'm_radio', 'm_polonio', 'm_vidamedia'];
 
 export const FIGURES: FigureDef[] = [
   {
@@ -122,5 +157,19 @@ export const FIGURES: FigureDef[] = [
     farewell: '«Cada joule cuenta. No los desperdicies.»',
     concepts: ['Trabajo', 'Energia potencial', 'Friccion'],
     boons: ['j_equivalente', 'j_calor', 'j_trabajo'],
+  },
+  {
+    id: 'einstein', name: 'Albert Einstein', years: '1879–1955', epithet: 'El Relojero de la Relatividad', sprite: 'fig_einstein',
+    intro: '«Masa y energía son lo mismo, viajero; sólo cambia el tipo de cambio: c².\nMis dones son poderosos, pero todo poder tiene un costo. ¿Te atreves?»',
+    farewell: '«La imaginación es más importante que el conocimiento… pero no te olvides de las unidades.»',
+    concepts: ['Energia cinetica', 'Conservacion', 'Trabajo-energia'],
+    boons: ['e_mc2', 'e_marco', 'e_foton'],
+  },
+  {
+    id: 'curie', name: 'Marie Curie', years: '1867–1934', epithet: 'La Dama del Radio', sprite: 'fig_curie',
+    intro: '«Descubrí dos elementos y gané dos premios Nobel. Mis cuadernos todavía brillan.\nLo que te ofrezco es energía pura… y la energía pura deja huella.»',
+    farewell: '«En la vida no hay que temer nada, sólo comprenderlo. Ahora, sigue.»',
+    concepts: ['Energia potencial', 'Trabajo', 'Conservacion'],
+    boons: ['m_radio', 'm_polonio', 'm_vidamedia'],
   },
 ];

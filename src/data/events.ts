@@ -7,6 +7,7 @@ export interface Outcome {
   combats?: number;
   ergios?: number;
   heal?: number;
+  relic?: string; // id de reliquia (src/data/relics.ts)
 }
 
 export interface EventDef {
@@ -20,6 +21,7 @@ export interface EventDef {
   bless: Outcome;
   curse: Outcome;
   concepts?: string[]; // temas de la pregunta (ver "concept" en src/data/runes.ts)
+  special?: boolean; // no sale en el sorteo normal (p. ej. el profe)
 }
 
 export const EVENTS: EventDef[] = [
@@ -58,4 +60,16 @@ export const EVENTS: EventDef[] = [
     lose: '«Ese eco no vale nada. Me quedo con algo a cambio.»',
     bless: { ergios: 45 }, curse: { ergios: -20 }, concepts: ['3a ley', '2a ley'],
   },
+  // ── Encuentro especial: aparece rara vez (ver PROFE_CHANCE) y una sola vez por expedición ──
+  {
+    id: 'victorino', name: 'El Profe Victorino', npc: 'npc_victorino', prop: 'i_book', special: true,
+    intro: 'Un señor con lentes revisa exámenes a la luz de una vela.\n«¡Ah, alguien llegó hasta acá! Yo también me perdí buscando el salón… Contéstame una y te doy una vida extra. Si fallas… bueno, también te la doy, pero con tarea.»',
+    win: '«¡Eso! Ese diagrama de cuerpo libre me hizo llorar. Toma tu vida extra y unos Ergios para el camino.»',
+    lose: '«Mmm… no. Pero como soy buena onda, toma tu vida extra. Y repasa ese tema para el examen, ¿eh?»',
+    bless: { relic: 'vidaExtra', ergios: 30 }, curse: { relic: 'vidaExtra' },
+    concepts: ['Friccion', '3a ley', 'Trabajo-energia', 'Plano inclinado'],
+  },
 ];
+
+/** Probabilidad de encontrar al profe en un nodo de encuentro (si aún no lo viste en esta expedición) */
+export const PROFE_CHANCE = 0.14;

@@ -6,6 +6,8 @@ import { CARDS } from '../data/cards';
 import { EFFECTS } from '../data/effects';
 import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
+import { DILEMMAS } from '../data/dilemmas';
+import { FAMILIARS } from '../data/familiars';
 import { BOONS, FIGURES } from '../data/figures';
 import { RELICS } from '../data/relics';
 import { CodexKind, Game } from '../state';
@@ -94,6 +96,26 @@ export class CodexScene extends Phaser.Scene {
             body(c, 290, T.mercader.saludo);
           },
         });
+        for (const d of DILEMMAS) {
+          list.push({
+            kind: 'npcs', id: `dil_${d.id}`, tex: d.sprite, name: d.name,
+            detail: (c) => {
+              head(c, d.sprite, d.name, 'Dilema (situación de riesgo)', 5);
+              body(c, 290, d.intro, CSS.bone, 18);
+              d.choices.forEach((ch, i) => body(c, 400 + i * 30, `◆ ${ch.label}: ${ch.risk}`, CSS.gold, 16));
+            },
+          });
+        }
+        for (const f of Object.values(FAMILIARS)) {
+          list.push({
+            kind: 'npcs', id: `fam_${f.id}`, tex: f.sprite, name: f.name,
+            detail: (c) => {
+              head(c, f.sprite, f.name, `Familiar · te acompaña ${f.combats} combates`, 6);
+              body(c, 290, f.text, CSS.gold);
+              body(c, 370, f.lore);
+            },
+          });
+        }
         return list;
       }
       case 2:

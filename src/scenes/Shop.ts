@@ -4,7 +4,8 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { CARDS, rewardPool, cardName } from '../data/cards';
 import { RELICS } from '../data/relics';
-import { addCard, addErgios, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock } from '../state';
+import { FAMILIAR_POOL, FAMILIARS } from '../data/familiars';
+import { addCard, addErgios, addFamiliar, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock } from '../state';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
 import { deckOverlay, topBar } from '../ui/hud';
@@ -23,6 +24,7 @@ function makeStock(node: number): ShopState {
       return { id, up, price: base + (up ? 25 : 0) + Phaser.Math.Between(-5, 5), sold: false };
     }),
     relic: rel ? { id: rel, price: Phaser.Math.Between(115, 140), sold: false } : null,
+    familiar: Math.random() < 0.6 ? { id: Phaser.Utils.Array.GetRandom(FAMILIAR_POOL), price: Phaser.Math.Between(55, 70), sold: false } : null,
     heal: { price: 30, sold: false },
     remove: { price: 55, sold: false },
     discount: false,
@@ -69,7 +71,7 @@ export class ShopScene extends Phaser.Scene {
 
     title(this, 600, 70, T.mercader.titulo, 38);
     txt(this, 600, 104, T.mercader.saludo, 20, CSS.dim).setOrigin(0.5);
-    this.msg = txt(this, 860, 400, '', 21, CSS.blood, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5).setDepth(50);
+    this.msg = txt(this, 600, 128, '', 21, CSS.blood, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5).setDepth(50);
     this.layer = this.add.container(0, 0);
     this.draw();
 
@@ -166,6 +168,23 @@ export class ShopScene extends Phaser.Scene {
       z.on('pointerdown', () => this.buy(s.relic!, `reliquia ${rel.id}`, () => grantRelic(rel.id)));
       L(z);
       this.tag(860, 334, s.relic);
+    }
+
+    // familiar en una jaula
+    if (s.familiar) {
+      const f = FAMILIARS[s.familiar.id];
+      const g = this.add.graphics();
+      frame(g, 780, 372, 160, 132, UI.panel, s.familiar.sold ? UI.border : 0x8e5bb0);
+      L(g);
+      L(txt(this, 860, 386, 'Familiar', 20, '#c8a8e8').setOrigin(0.5));
+      L(this.add.image(860, 444, f.sprite).setScale(3.4).setAlpha(s.familiar.sold ? 0.3 : 1));
+      L(txt(this, 860, 474, f.name, 16, CSS.bone, { align: 'center', wordWrap: { width: 150 } }).setOrigin(0.5, 0));
+      const z = this.add.zone(780, 372, 160, 132).setOrigin(0).setInteractive({ useHandCursor: !s.familiar.sold });
+      z.on('pointerover', (p: Phaser.Input.Pointer) => this.tip.show(p.worldX - 330, p.worldY - 150, f.name, `${f.text}\nTe acompaña ${f.combats} combates.\n${f.lore}`));
+      z.on('pointerout', () => this.tip.hide());
+      z.on('pointerdown', () => this.buy(s.familiar!, `familiar ${f.id}`, () => addFamiliar(f.id)));
+      L(z);
+      this.tag(860, 520, s.familiar);
     }
 
     // servicios

@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { EVENTS } from '../data/events';
+import { EVENTS, EventDef, PROFE_CHANCE } from '../data/events';
+import { DILEMMA_CHANCE, DILEMMAS } from '../data/dilemmas';
 import { Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { T } from '../textos';
 import { topBar } from '../ui/hud';
@@ -12,11 +13,30 @@ import { describeOutcome } from './Rune';
 export class EventScene extends Phaser.Scene {
   constructor() { super('Event'); }
 
-  create(data: { floor: number }) {
+  create(data: { floor: number; eventId?: string }) {
+    const run = Game.run!;
+    const seen = (run.seen ??= []);
+    // ── ¿qué hay en la penumbra? (azar) ──
+    let ev: EventDef | undefined = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
+    if (!ev) {
+      if (!seen.includes('victorino') && Math.random() < PROFE_CHANCE) {
+        ev = EVENTS.find((e) => e.id === 'victorino')!;
+      } else {
+        const dil = DILEMMAS.filter((d) => !seen.includes(d.id));
+        if (dil.length && Math.random() < DILEMMA_CHANCE) {
+          const d = Phaser.Utils.Array.GetRandom(dil);
+          seen.push(d.id);
+          saveLocal();
+          this.scene.start('Dilemma', { floor: data.floor, id: d.id });
+          return;
+        }
+        const pool = EVENTS.filter((e) => !e.special && !seen.includes(e.id));
+        ev = Phaser.Utils.Array.GetRandom(pool.length ? pool : EVENTS.filter((e) => !e.special));
+      }
+      seen.push(ev.id);
+    }
     this.cameras.main.fadeIn(400);
     audio.play('calma');
-    const run = Game.run!;
-    const ev = EVENTS[(Math.max(0, run.pos) * 3 + run.runId.length) % EVENTS.length];
     unlock('npcs', ev.id);
     saveLocal();
 

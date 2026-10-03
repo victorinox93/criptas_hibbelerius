@@ -205,6 +205,10 @@ Ganchos ya disponibles:
 | Al jugar un ataque | `// Galileo · Plano Inclinado` | `g_plano` |
 | Al recibir un golpe | `hurtPlayer()` | `n_reaccion` |
 | Al ganar | `checkEnd()` | `c_conserva` (curación) |
+| Al iniciar el combate (después de La Manzana) | `combatStartFx()` | `m_radio` (Calor a todos) |
+| Al jugar una Habilidad | `// Einstein · Efecto Fotoeléctrico` | `e_foton` |
+
+**Dones con costo (radiación).** Para que un don cobre vida, usa `await this.radiate(n, 'nombre')`: quita *n* de vida ignorando el Bloque, lo anota en el Pergamino y, si el héroe muere, revisa la Vida Extra del Profe. Escribe el costo en el texto del don después de `\nRadiación:` y el santuario lo pintará en verde. Ejemplos: los seis dones de Einstein y Curie.
 
 Si un don es difícil de programar, pídeselo a Claude describiendo el efecto.
 
@@ -227,6 +231,58 @@ Si un don es difícil de programar, pídeselo a Claude describiendo el efecto.
 ```
 
 Los efectos disponibles están en `src/data/effects.ts`. Para el personaje puedes reutilizar uno de `NPCS` en `sprites.ts` cambiando sus colores.
+
+`bless` y `curse` también aceptan `relic: 'id'` (así funciona la Vida Extra del Profe). Un encuentro con `special: true` no sale en el sorteo normal; el del profe se sortea aparte con `PROFE_CHANCE`.
+
+### ¿Qué sale en un nodo «?»?
+
+`src/scenes/Event.ts` sortea: primero el profe (14 %, una vez por expedición), luego un **dilema** (`DILEMMA_CHANCE` = 45 %) y si no, un personaje con pregunta. Nunca se repite lo que ya viste en la misma expedición.
+
+---
+
+## 4b. Agregar un dilema (situación de riesgo)
+
+**Archivo:** `src/data/dilemmas.ts`. Un dilema no hace pregunta: ofrece opciones con costo o con azar, y el botón muestra la probabilidad.
+
+```ts
+  {
+    id: 'espejo', name: 'El Espejo de la Tercera Ley', sprite: 'npc_estatua',
+    intro: 'Tu reflejo te imita… con un instante de retraso.',
+    choices: [
+      {
+        label: 'Golpear el espejo', risk: '50 %: +60 Ergios · 50 %: −10 de vida',
+        outcomes: [
+          { p: 0.5, r: { text: 'Se rompe y caen monedas.', ergios: 60 } },
+          { p: 0.5, r: { text: 'Te devuelve el golpe (3ª ley).', hp: -10 } },
+        ],
+      },
+      { label: 'Irte', risk: 'No pasa nada.', outcomes: [{ p: 1, r: { text: 'Tu reflejo se despide.' } }] },
+    ],
+  },
+```
+
+Lo que puede dar un resultado: `hp`, `maxHp`, `ergios`, `score`, `effect` + `combats`, `effects: [['reactor', 3], ['radiacion', 3]]`, `relic` (`'random'` o un id), `card` (`'rara'`, `'random'` o un id) con `cardUp`, `junk: { id: 'lodoCarta', n: 2 }`, `familiar` (`'random'` o un id) con `famCombats`, y `removeRandom`. Con `need: { ergios: 30 }` la opción se desactiva si no alcanza. La vida nunca baja de 1 en un dilema.
+
+---
+
+## 4c. Agregar un familiar
+
+**Archivos:** `src/data/familiars.ts` (nombre, texto y cuántos combates dura) y su dibujo en `FAMS` dentro de `src/art/sprites.ts`. Lo que hace en combate se programa en `src/scenes/Combat.ts`:
+
+| Momento | Dónde | Ejemplo |
+|---|---|---|
+| Inicio de tu turno | `startTurn()`, busca `familiares que actúan al inicio` | Tortuga (+4 Bloque), Gato (azar) |
+| Robar cartas | `startTurn()`, `fam?.id === 'lechuza'` | Lechuza |
+| Final de tu turno | `endTurn()`, busca `familiares que actúan al final` | Salamandra, Cuervo |
+| Al ganar | `checkEnd()` | Cuervo (+6 Ergios) |
+
+Se consiguen en el dilema «Algo te Sigue», en la tienda (60 % de las veces) y tras una élite (30 %).
+
+---
+
+## 4d. Condiciones de piso (azar en combate)
+
+**Archivo:** `src/data/conditions.ts`. Un 35 % (`CONDITION_CHANCE`) de los combates normales y de élite trae una condición. Su efecto se programa en `applyCondition()` de `Combat.ts`.
 
 ---
 

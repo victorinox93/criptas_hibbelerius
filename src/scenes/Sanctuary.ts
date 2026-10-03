@@ -123,12 +123,16 @@ export class SanctuaryScene extends Phaser.Scene {
       c.add(txt(this, x, y + 98, b.name, 22, owned ? CSS.dim : CSS.bone, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
       c.add(txt(this, x, y + 148, owned ? T.santuario.yaLoTienes : epic ? T.santuario.epico : T.santuario.comun, 18,
         owned ? CSS.dim : epic ? CSS.gold : '#b8c0d0').setOrigin(0.5, 0));
-      c.add(txt(this, x, y + 172, b.text[epic ? 1 : 0], 18, CSS.bone, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
-      c.add(txt(this, x, y + 250, b.lore, 15, '#7a8a9a', { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
+      // el texto puede traer una segunda parte con el costo de radiación
+      const [good, rad] = b.text[epic ? 1 : 0].split('\nRadiación:');
+      const gt = txt(this, x, y + 172, good, 18, CSS.bone, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0);
+      c.add(gt);
+      if (rad) c.add(txt(this, x, gt.y + gt.height + 6, `Radiación:${rad}`, 17, '#9bf07a', { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
+      else c.add(txt(this, x, y + 250, b.lore, 15, '#7a8a9a', { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
       if (!owned) {
         const z = this.add.zone(x - 95, y, 190, 290).setOrigin(0).setInteractive({ useHandCursor: true });
-        z.on('pointerover', () => { draw(true); audio.sfx('hover'); });
-        z.on('pointerout', () => draw(false));
+        z.on('pointerover', (p: Phaser.Input.Pointer) => { draw(true); audio.sfx('hover'); this.tip.show(p.worldX + 20, 452, b.name, b.lore); });
+        z.on('pointerout', () => { draw(false); this.tip.hide(); });
         z.on('pointerdown', () => {
           run.boons.push({ id, epic });
           unlock('boons', id);

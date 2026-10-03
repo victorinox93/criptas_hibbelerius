@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { EFFECTS } from '../data/effects';
+import { FAMILIARS } from '../data/familiars';
 import { BOONS } from '../data/figures';
 import { RELICS } from '../data/relics';
 import { Game } from '../state';
@@ -54,16 +55,30 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
       ergT.setText(`${r.ergios}`);
       deckBtn.label.setText(`${T.hud.mazo} (${r.deck.length})`);
       relicRow.removeAll(true);
+      const step = Math.min(32, 150 / Math.max(1, r.relics.length - 1));
       r.relics.forEach((id, i) => {
         const rel = RELICS[id];
-        const im = icon(s, i * 32, 0, rel.icon, 2.8);
+        if (!rel) return;
+        const im = icon(s, i * step, 0, rel.icon, step < 28 ? 2.3 : 2.8);
         tip.attach(im, rel.name, `${rel.text}\n${rel.lore}`, 20);
         relicRow.add(im);
       });
       effRow.removeAll(true);
-      r.effects.forEach((e, i) => {
+      let off = 0;
+      const fam = r.familiar ? FAMILIARS[r.familiar.id] : null;
+      if (fam && r.familiar) {
+        const bg = s.add.graphics();
+        frame(bg, -22, -14, 46, 28, 0x1a1424, 0x8e5bb0, 0.9);
+        const im = icon(s, -8, 0, 'i_paw', 2.2);
+        const n = txt(s, 4, -10, `×${r.familiar.left}`, 18, '#c8a8e8');
+        tip.attach(im, `Familiar: ${fam.name}`, `${fam.text}\nSe queda ${r.familiar.left} combate(s) más.\n${fam.lore}`, 20);
+        effRow.add([bg, im, n]);
+        off = 1;
+      }
+      r.effects.forEach((e, i0) => {
         const def = EFFECTS[e.id];
         if (!def) return;
+        const i = i0 + off;
         const x = -i * 52;
         const bg = s.add.graphics();
         frame(bg, x - 22, -14, 46, 28, def.good ? 0x14200f : 0x24100f, def.good ? UI.green : 0x9a4040, 0.9);

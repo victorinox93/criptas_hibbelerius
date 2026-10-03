@@ -58,9 +58,12 @@ function fText(s: CardStats, c: CalcCtx) {
   return `F = ${r1(m)} kg × ${r1(a)} m/s²\n= ${F} N`;
 }
 
-/** Energía cinética del Arcanista: K = ½·m·v² */
+/** Rapidez máxima del Arcanista (m/s) */
+export const VMAX = 8;
+
+/** Energía cinética del Arcanista: K = ½·m·v². La masa extra (reliquias) cuenta a la mitad. */
 export function kinetic(s: CardStats, c: CalcCtx) {
-  const m = (s.m ?? 0) + c.masaBonus;
+  const m = (s.m ?? 0) + c.masaBonus * 0.5;
   const v = Math.max(0, c.vel ?? 0);
   return { m, v, K: Math.round(0.5 * m * v * v) };
 }
@@ -226,7 +229,7 @@ export const CARDS: Record<string, CardDef> = {
   // ════════════ ARCANISTA CINÉTICO ════════════
   proyectil: {
     id: 'proyectil', name: 'Proyectil Arcano', type: 'Ataque', icon: 'i_momentum', concept: 'Energía cinética', rarity: 'inicial', target: 'enemy', cls: 'arcanista',
-    stats: (up) => ({ cost: 1, m: up ? 3 : 2 }),
+    stats: (up) => ({ cost: 1, m: up ? 1.5 : 1 }),
     text: (s, c) => `${kText(s, c)}\nInflige K. Pierdes 1 m/s.`,
     lore: 'K = ½·m·v²: la energía cinética crece con el CUADRADO de la rapidez.',
   },
@@ -239,27 +242,27 @@ export const CARDS: Record<string, CardDef> = {
   acelerar: {
     id: 'acelerar', name: 'Acelerar', type: 'Habilidad', icon: 'i_wind', concept: 'Cinemática', rarity: 'inicial', target: 'self', cls: 'arcanista',
     stats: (up) => ({ cost: 1, extra: up ? 3 : 2 }),
-    text: (s) => `+${s.extra} m/s de rapidez.\nRoba 1 carta.`,
+    text: (s) => `+${s.extra} m/s de rapidez\n(máx. ${VMAX}). Roba 1 carta.`,
     lore: 'Más rapidez, mucha más energía: duplicar v cuadruplica K.',
   },
   frenado: {
     id: 'frenado', name: 'Frenado Arcano', type: 'Defensa', icon: 'i_shield', concept: 'Trabajo-energía', rarity: 'inicial', target: 'self', cls: 'arcanista',
-    stats: (up) => ({ cost: up ? 0 : 1, m: 2 }),
+    stats: (up) => ({ cost: up ? 0 : 1, m: 1 }),
     text: (s, c) => {
-      const v = c.vel ?? 0, v2 = Math.max(0, v - 2), m = s.m ?? 2;
+      const v = c.vel ?? 0, v2 = Math.max(0, v - 2), m = s.m ?? 1;
       return `Pierdes 2 m/s. Bloque =\nΔK = ½·${m}·(${v}² − ${v2}²)\n= ${Math.round(0.5 * m * (v * v - v2 * v2))}`;
     },
     lore: 'Teorema trabajo-energía: frenar quita energía cinética; aquí la conviertes en escudo.',
   },
   choque: {
     id: 'choque', name: 'Choque Elástico', type: 'Ataque', icon: 'i_reflect', concept: 'Energía cinética', rarity: 'común', target: 'enemy', cls: 'arcanista',
-    stats: (up) => ({ cost: 1, m: up ? 3 : 2 }),
+    stats: (up) => ({ cost: 1, m: up ? 1.5 : 1 }),
     text: (s, c) => `${kText(s, c)}\nInflige K. No pierdes rapidez.`,
     lore: 'En un choque perfectamente elástico se conserva la energía cinética.',
   },
   rafaga: {
     id: 'rafaga', name: 'Ráfaga Cinética', type: 'Ataque', icon: 'i_wind', concept: 'Energía cinética', rarity: 'común', target: 'all', cls: 'arcanista',
-    stats: (up) => ({ cost: 2, m: up ? 2 : 1.5 }),
+    stats: (up) => ({ cost: 2, m: up ? 1.2 : 0.8 }),
     text: (s, c) => `${kText(s, c)}\nK a TODOS. Pierdes 2 m/s.`,
     lore: 'La misma energía repartida en un frente amplio.',
   },
@@ -277,14 +280,14 @@ export const CARDS: Record<string, CardDef> = {
   },
   visVivaA: {
     id: 'visVivaA', name: 'Vis Viva', type: 'Habilidad', icon: 'i_bolt', concept: 'Energía cinética', rarity: 'rara', target: 'self', cls: 'arcanista', exhaust: true,
-    stats: (up) => ({ cost: up ? 0 : 1 }),
-    text: () => `Duplica tu rapidez\n(máx. 12 m/s).\nSe agota.`,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `Duplica tu rapidez\n(máx. ${VMAX} m/s).\nSe agota.`,
     lore: 'Émilie du Châtelet defendió que la "fuerza viva" va con v²: duplicar v cuadruplica la energía.',
   },
   barrera: {
     id: 'barrera', name: 'Barrera Inercial', type: 'Defensa', icon: 'i_crystal', concept: 'Inercia', rarity: 'común', target: 'self', cls: 'arcanista',
-    stats: (up) => ({ cost: 1, extra: up ? 3 : 2 }),
-    text: (s, c) => `Bloque = ${s.extra}·v\n= ${(s.extra ?? 2) * Math.round(c.vel ?? 0)}`,
+    stats: (up) => ({ cost: 1, extra: up ? 2 : 1.5 }),
+    text: (s, c) => `Bloque = ${s.extra}·v\n= ${Math.round((s.extra ?? 1.5) * (c.vel ?? 0))}`,
     lore: 'Lo que se mueve rápido es difícil de desviar.',
   },
   sobrecarga: {

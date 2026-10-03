@@ -678,6 +678,39 @@ export const SPRITES: Record<string, string[]> = {
     '.kl...lk.',
     'kkkkkkkkk',
   ],
+  i_rad: [
+    '..yy.yy..',
+    '.yyy.yyy.',
+    'yyyy.yyyy',
+    'yyy...yyy',
+    '....y....',
+    '.........',
+    '...yyy...',
+    '..yyyyy..',
+    '...yyy...',
+  ],
+  i_book: [
+    '.yyyyyyy.',
+    '.ywwwwwky',
+    '.ywkkwwky',
+    '.ywwwwwky',
+    '.ywkkkwky',
+    '.ywwwwwky',
+    '.ywkkwwky',
+    '.yyyyyyyy',
+    '..kkkkkkk',
+  ],
+  i_paw: [
+    '.w.....w.',
+    '.ww...ww.',
+    '.........',
+    'w..w.w..w',
+    'w..w.w..w',
+    '.........',
+    '..wwwww..',
+    '.wwwwwww.',
+    '..ww.ww..',
+  ],
   i_skull: [
     '.kkkkkkk.',
     'kwwwwwwwk',
@@ -787,12 +820,76 @@ const FIG: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     ]),
     ov: { w: '#dcd8e4', s: '#ecd0b8', q: '#c0a090', c: '#3a5a8a', R: '#b05a6a', y: '#e8c15a' },
   },
+  fig_einstein: {
+    rows: mirrorHalf([
+      'w.w..w.w', '.wwwwwww', 'wwwwwwww', 'wwwwssss', '.wwsssss', 'wwwskkss', '.wwsssss', '..wssssq',
+      '...ssmmm', '...sssss', '....ssss', '..ccccWW', '.cccccWk', 'ccccccWk', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { w: '#e8e8ec', s: '#e0c0a0', q: '#b8907a', m: '#c8c8cc', c: '#4a4a56', W: '#e8e4dc', k: '#1a1a20' },
+  },
+  fig_curie: {
+    rows: mirrorHalf([
+      '......hh', '.....hhh', '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hskkss', '..hsssss',
+      '..hssssq', '...sssss', '....ssqq', '.....sss', '...ccccc', '..cccccc', '.ccccccc', 'cccccccg', 'cccccccc',
+    ]),
+    ov: { h: '#3a2e28', s: '#e8ccb4', q: '#c0a090', c: '#16161c', g: '#9bf07a' },
+  },
   fig_joule: {
     rows: mirrorHalf([
       '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hskkss', '..bsssss', '..bssssq', '..bbssss',
       '..bbssqq', '...bbsss', '....bsss', '...ccckk', '..ccccWk', '.cccccWW', 'ccccccWc', 'cccccccc', 'cccccccc',
     ]),
     ov: { h: '#4a3a2e', b: '#5a463a', s: '#e0bea0', q: '#b08e78', c: '#2a2a36', W: '#e8e4dc' },
+  },
+};
+
+// El profe (encuentro especial): lentes, saco y corbata
+const PROFE = mirrorHalf([
+  '........', '....hhhh', '...hhhhh', '...hhhhh', '..hhssss', '..hsssss', '..hgGGgg', '..hsssss',
+  '...sssss', '...ssqqq', '....ssss', '..WWWWWt', '.ccccWWt', 'cccccWWT', 'cccccWWT', 'ccccccWT', 'ccccccWW', 'cccccccc',
+]);
+
+// Familiares (miran al frente)
+const FAMS: Record<string, { rows: string[]; ov: Record<string, string> }> = {
+  fam_gato: {
+    rows: mirrorHalf(['.k....', '.kk...', '.kkkkk', 'kkEkkk', 'kkkkkk', '.kkkkp', '..kkkk', '.kkkkk', 'kkkkkk', 'kkkkkk', '.kk.kk']),
+    ov: { k: '#2a2630', E: '#c8f070', p: '#c87a8a' },
+  },
+  fam_lechuza: {
+    rows: mirrorHalf(['.b....', '.bb...', '.bbbbb', 'bwwbbb', 'wEkwbb', 'bwwbbb', 'bbbbby', 'bbBbbb', 'bBbBbb', 'bbBbbb', '.bbbbb', '..y.y.']),
+    ov: { b: '#5a4a3a', B: '#8a7a5a', w: '#d8d0c0', E: '#e8c15a', k: '#0d0b10', y: '#c89a3a' },
+  },
+  fam_salamandra: {
+    rows: mirrorHalf(['....r', '...rr', '...Er', '...rr', '.r.rr', 'rr.rr', '..rrr', '..rrr', '.r.rr', 'rr.rr', '....r', '....r', '....f', '....f']),
+    ov: { r: '#c8542a', E: '#ffe080', f: '#ffb040' },
+  },
+  fam_tortuga: {
+    rows: mirrorHalf(['....ss', '....sk', '.s.ggg', 'ssgGgg', '..gggG', '..gGgg', '..gggG', 'ssgGgg', '.s.ggg', '.....s']),
+    ov: { s: '#7a9a5a', k: '#0d0b10', g: '#5a4a2a', G: '#8a7a4a' },
+  },
+  fam_cuervo: {
+    rows: mirrorHalf(['...kk', '..kkk', '.kkEk', '.kkkk', '..kkY', '..kkY', '.kkkk', 'kkkkk', 'kKkkk', 'kKkkk', '.kkkk', '..y.y']),
+    ov: { k: '#1a1822', K: '#3a3650', E: '#e04a4a', Y: '#8a8a90', y: '#6a6a70' },
+  },
+};
+
+// Escenarios de los dilemas
+const DIL: Record<string, { rows: string[]; ov: Record<string, string> }> = {
+  d_pozo: {
+    rows: mirrorHalf(['..nnnn', '.nnnnn', 'nnnnnn', '..n...', '..n...', '..n..l', '..n..l', 'gggggg', 'gdgdgd', 'gggggg', 'gdgdgd', 'gggggg']),
+    ov: {},
+  },
+  d_reactor: {
+    rows: mirrorHalf(['...kkk', '..kggg', '.kgLLL', '.kgLyy', '.kgLyy', '.kgLLL', '..kggg', '...kkk', '..kkkk', '.kgggg', 'kggggg', 'kkkkkk']),
+    ov: { L: '#7fff9a', y: '#e8ffe8' },
+  },
+  d_balanza: {
+    rows: mirrorHalf(['.....y', 'yyyyyy', 'y....y', 'y....y', 'y....y', 'yyy..y', '.y...y', '.....y', '.....y', '....yy', '..yyyy']),
+    ov: { y: '#c8a050' },
+  },
+  d_puente: {
+    rows: mirrorHalf(['k.....', 'k.....', 'kl....', 'k.l...', 'k..lll', 'knnnnn', 'k.....', 'k.....']),
+    ov: { l: '#a89a7a' },
   },
 };
 
@@ -803,6 +900,8 @@ export const NPCS: Record<string, Record<string, string>> = {
   npc_estatua: { c: '#7a7684', C: '#4a4656', E: '#e8f4ff', s: '#7a7684', k: '#1a1820' },
   npc_coleccionista: { c: '#4a2a5e', C: '#28153a', E: '#b8f0d0', s: '#c8a07a' },
   npc_mercader: { c: '#5e3a1a', C: '#33200e', E: '#e8c15a', s: '#d8b08a' },
+  npc_notario: { c: '#2e2e30', C: '#161618', E: '#c8f070', s: '#b8a890' },
+  npc_laplace: { c: '#3a1a2a', C: '#1e0c16', E: '#ff5a3a', s: '#8a6a7a' },
 };
 
 export function generateAllTextures(scene: Phaser.Scene) {
@@ -815,6 +914,10 @@ export function generateAllTextures(scene: Phaser.Scene) {
   }, true);
   for (const [k, ov] of Object.entries(NPCS)) makeTexture(scene, k, NPC, ov);
   for (const [k, f] of Object.entries(FIG)) makeTexture(scene, k, f.rows, f.ov);
+  for (const [k, f] of Object.entries({ ...FAMS, ...DIL })) makeTexture(scene, k, f.rows, f.ov);
+  makeTexture(scene, 'npc_victorino', PROFE, {
+    h: '#2a2420', s: '#d8b08a', q: '#a8806a', g: '#1a1a1a', G: '#9ad8f0', W: '#e8e4dc', t: '#8a2030', T: '#8a2030', c: '#2a3a5a',
+  });
   // Acto II: variantes oscuras de sprites existentes
   makeTexture(scene, 'brea', SPRITES.slime, { L: '#2e2c26', G: '#141310', w: '#5a5440', F: '#e0a040' });
   makeTexture(scene, 'minero', NPC, { c: '#2c3836', C: '#161e1c', E: '#9bf0c0', s: '#4a5a58' });

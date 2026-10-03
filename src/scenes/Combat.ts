@@ -2,9 +2,12 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CARDS, CardInst, force, kinetic } from '../data/cards';
+import { CalcCtx, CARDS, CardInst, force, kinetic, VMAX } from '../data/cards';
 import { AddCards, encounters, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
+import { FAMILIARS } from '../data/familiars';
+import { RELICS } from '../data/relics';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
@@ -75,6 +78,11 @@ export class CombatScene extends Phaser.Scene {
   private pCalor = 0; // Calor sobre el jugador
   private discardMode = 0; // cartas por descartar (Diagrama de Cuerpo Libre)
   private acto = 1;
+  // v0.6: azar, radiación, familiares
+  private cond: ConditionDef | null = null; // condición del piso
+  private marco = 0; // golpes que anula Marco de Referencia (Einstein)
+  private polonio = 0; // daño extra de la carta de ataque en curso (Curie)
+  private famImg: Phaser.GameObjects.Image | null = null;
 
   constructor() { super('Combat'); }
 
@@ -104,6 +112,10 @@ export class CombatScene extends Phaser.Scene {
     this.velPerTurn = 0;
     this.pCalor = 0;
     this.discardMode = 0;
+    this.cond = null;
+    this.marco = 0;
+    this.polonio = 0;
+    this.famImg = null;
   }
 
   private has(relic: string) {
@@ -205,14 +217,20 @@ export class CombatScene extends Phaser.Scene {
     this.baseAcel += boonLevel('n_principia');
     this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
+    this.marco = boonLevel('e_marco');
+    // ── condición del piso (azar) ──
+    if (this.kind !== 'boss' && Math.random() < CONDITION_CHANCE) this.applyCondition(Phaser.Utils.Array.GetRandom(CONDITIONS));
     if (this.isArc) {
       // el Arcanista convierte sus bonos de aceleración en rapidez inicial
-      this.vel = 3 + this.baseAcel;
+      // (la mitad de los bonos, para que no se dispare K = ½mv²)
+      this.vel = Math.min(VMAX, 3 + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
       this.baseAcel = 0;
     }
+    this.showFamiliar();
     this.refreshPlayer();
     this.banner(this.kind === 'boss' ? T.combate.bannerJefe : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
+      if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
     });
   }
@@ -632,7 +650,7 @@ export class CombatScene extends Phaser.Scene {
     let planoV = 0;
     if (def.type === 'Ataque' && !this.firstAttack && boonLevel('g_plano')) {
       if (this.isArc) {
-        planoV = boonLevel('g_plano');
+        planoV = Math.max(0, Math.min(boonLevel('g_plano'), VMAX - this.vel));
         this.vel += planoV;
         this.calc(`Plano Inclinado (Galileo): +${planoV} m/s para este primer ataque`);
       } else {
@@ -642,6 +660,9 @@ export class CombatScene extends Phaser.Scene {
       }
     }
     if (def.type === 'Ataque') this.firstAttack = true;
+    // Curie · Polonio: los ataques pegan más
+    const pol = boonLevel('m_polonio');
+    this.polonio = def.type === 'Ataque' && pol ? (pol === 2 ? 5 : 3) : 0;
     const c = this.ctx();
     switch (def.id) {
       case 'golpe':
@@ -834,13 +855,13 @@ export class CombatScene extends Phaser.Scene {
       case 'acelerar': {
         const vv = boonLevel('c_visviva');
         const before = this.vel;
-        this.vel = Math.min(12, this.vel + st.extra! + vv);
+        this.vel = Math.min(VMAX, this.vel + st.extra! + vv);
         this.calc(`Acelerar: v ${before} → ${this.vel} m/s (K crece ×${before ? r1((this.vel * this.vel) / (before * before)) : '∞'})`);
         this.drawCards(1);
         break;
       }
       case 'frenado': {
-        const v = this.vel, v2 = Math.max(0, v - 2), m = st.m ?? 2;
+        const v = this.vel, v2 = Math.max(0, v - 2), m = st.m ?? 1;
         const b = Math.round(0.5 * m * (v * v - v2 * v2));
         this.vel = v2;
         this.gainBlock(b);
@@ -860,11 +881,11 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Onda de Calor: +${st.extra} de Calor a todos`);
         break;
       case 'visVivaA':
-        this.vel = Math.min(12, this.vel * 2);
+        this.vel = Math.min(VMAX, this.vel * 2);
         this.calc(`Vis Viva: duplicas v → ${this.vel} m/s, ¡K se cuadruplica!`);
         break;
       case 'barrera': {
-        const b = st.extra! * Math.round(this.vel);
+        const b = Math.round(st.extra! * this.vel);
         this.gainBlock(b);
         this.calc(`Barrera Inercial: ${st.extra}·v = ${st.extra}·${this.vel} = ${b} de Bloque`);
         break;
@@ -877,9 +898,21 @@ export class CombatScene extends Phaser.Scene {
     }
     this.acel -= plano;
     if (planoV) this.vel = Math.max(0, this.vel - planoV);
+    this.polonio = 0;
+    // Einstein · Efecto Fotoeléctrico: cada Habilidad lanza un fotón
+    const fot = boonLevel('e_foton');
+    if (fot && def.type === 'Habilidad' && this.alive().length) {
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      const dmg = fot === 2 ? 7 : 4;
+      this.calc(`Efecto Fotoeléctrico (Einstein): un fotón arranca ${dmg} de vida`);
+      this.beam(t, 0xfff2a0);
+      await this.hitEnemy(t, dmg, true, 'res');
+      if (!(await this.radiate(1, 'fotón'))) return;
+    }
+    if (Game.run!.hp <= 0 && (await this.dies('tu propia Embestida'))) return;
+    if (pol && def.type === 'Ataque' && !(await this.radiate(1, 'polonio'))) return;
     this.refreshPlayer();
     this.layoutHand();
-    if (Game.run!.hp <= 0) return this.defeat('tu propia Embestida');
     this.busy = false;
     void this.dealK;
     await this.checkEnd();
@@ -913,6 +946,7 @@ export class CombatScene extends Phaser.Scene {
   private async hitEnemy(ev: EnemyView, F: number, ignoreBlock = false, kind: number | 'golpe' | 'calor' | 'res' = 'golpe'): Promise<boolean> {
     if (ev.dead) return false;
     const st = ev.st;
+    if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
     let dmg = F;
     if (st.detenido) dmg = Math.round(dmg * 1.5);
     if (st.fatiga > 0 && kind !== 'calor') dmg = Math.round(dmg * 1.5);
@@ -998,6 +1032,13 @@ export class CombatScene extends Phaser.Scene {
 
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
+    if (from && this.marco > 0 && dmg > 0) {
+      this.marco--;
+      this.calc('Marco de Referencia (Einstein): en tu marco, ese golpe nunca llegó');
+      this.floatText(this.heroX, 200, 'Anulado', '#9ad8f0');
+      audio.sfx('block');
+      return;
+    }
     const absorbed = Math.min(this.block, dmg);
     this.block -= absorbed;
     const real = dmg - absorbed;
@@ -1046,10 +1087,23 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Calor: pierdes ${this.pCalor} de vida (energía térmica que no se disipa)`);
       this.floatText(this.heroX, 200, `-${this.pCalor} 🔥`, '#e0a070');
       this.pCalor--;
-      if (run.hp <= 0) return this.defeat('el Calor');
+      if (run.hp <= 0 && (await this.dies('el Calor'))) return;
     }
+    // Einstein · E = mc²
+    const mc2 = boonLevel('e_mc2');
+    if (mc2) {
+      this.energy += 1;
+      this.calc('E = mc² (Einstein): +1 J');
+      if (!(await this.radiate(mc2 === 2 ? 1 : 2, 'E = mc²'))) return;
+    }
+    if (this.hasFx('reactor')) {
+      this.energy += 1;
+      this.calc('Núcleo Activo: +1 J');
+    }
+    const fam = Game.run!.familiar;
+    if (fam?.id === 'lechuza') draw += 1;
     if (this.isArc) {
-      if (this.velPerTurn) this.vel = Math.min(12, this.vel + this.velPerTurn);
+      if (this.velPerTurn) this.vel = Math.min(VMAX, this.vel + this.velPerTurn);
       if (this.friccion) {
         this.vel = Math.max(0, this.vel - this.friccion);
         this.calc(`Fricción: la rapidez baja ${this.friccion} m/s (v = ${this.vel})`);
@@ -1070,13 +1124,35 @@ export class CombatScene extends Phaser.Scene {
       if (this.hasFx('vigor')) this.energy += 1;
       if (this.hasFx('fatiga')) this.energy -= 1;
       if (this.hasFx('niebla')) draw -= 1;
+      if (this.cond?.id === 'cristal') this.energy += 1;
+      if (this.cond?.id === 'niebla') draw -= 1;
     }
     this.acel = this.baseAcel;
     this.reflect = false;
     this.drawCards(draw);
-    this.endBtn.setEnabled(true);
     this.refreshPlayer();
     this.hint(`${T.combate.turno} ${this.turn}`);
+    // familiares que actúan al inicio de tu turno
+    if (fam?.id === 'tortuga') {
+      this.famHop();
+      this.gainBlock(4);
+      this.calc('Tortuga de Zenón: +4 de Bloque');
+    } else if (fam?.id === 'gato' && this.alive().length) {
+      this.busy = true;
+      this.famHop();
+      if (Math.random() < 0.5) {
+        this.gainBlock(5);
+        this.calc('Gato de Schrödinger: la caja se abre… ¡escudo! +5 de Bloque');
+      } else {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        this.calc('Gato de Schrödinger: la caja se abre… ¡zarpazo! 5 de daño');
+        await this.hitEnemy(t, 5, false, 'res');
+      }
+      this.busy = false;
+      if (await this.checkEnd()) return;
+    }
+    this.endBtn.setEnabled(true);
+    this.refreshPlayer();
   }
 
   private async endTurn() {
@@ -1094,6 +1170,25 @@ export class CombatScene extends Phaser.Scene {
     this.acel = this.baseAcel;
     this.refreshPlayer();
     await this.wait(300);
+    // familiares que actúan al final de tu turno
+    const fam = Game.run!.familiar;
+    if (fam && this.alive().length) {
+      if (fam.id === 'salamandra') {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        this.famHop();
+        t.st.calor += 3;
+        this.beam(t, 0xc87533);
+        this.calc(`Salamandra Ígnea: +3 de Calor a ${t.st.def.name}`);
+        this.refreshEnemy(t);
+        await this.wait(250);
+      } else if (fam.id === 'cuervo') {
+        const t = this.alive().reduce((a, b) => (b.st.hp < a.st.hp ? b : a));
+        this.famHop();
+        this.calc(`Cuervo: picotea a ${t.st.def.name} (4)`);
+        await this.hitEnemy(t, 4, false, 'res');
+      }
+      if (await this.checkEnd()) return;
+    }
 
     for (const ev of this.alive()) {
       const st = ev.st;
@@ -1146,7 +1241,7 @@ export class CombatScene extends Phaser.Scene {
         if (st.fatiga > 0) st.fatiga--;
         await this.wait(250);
       }
-      if (Game.run!.hp <= 0) return this.defeat(ev.st.def.name);
+      if (Game.run!.hp <= 0 && (await this.dies(ev.st.def.name))) return;
       if (ev.dead) continue;
       st.turn++;
       if (st.stunned > 0) st.intent = { kind: 'stunned' };
@@ -1176,10 +1271,23 @@ export class CombatScene extends Phaser.Scene {
     // los efectos pasajeros se consumen al terminar el combate
     const cons = boonLevel('c_conserva');
     if (cons) run.hp = Math.min(run.maxHp, run.hp + 5 * cons);
+    const vm = boonLevel('m_vidamedia');
+    if (vm) {
+      run.maxHp += vm === 2 ? 3 : 2;
+      run.hp += vm === 2 ? 3 : 2;
+    }
+    let extra = 0;
+    if (this.cond?.id === 'ecos') extra += 15;
+    if (run.familiar) {
+      if (run.familiar.id === 'cuervo') extra += 6;
+      run.familiar.left--;
+      if (run.familiar.left <= 0) run.familiar = null;
+    }
     run.effects.forEach((e) => e.left--);
     run.effects = run.effects.filter((e) => e.left > 0);
     const erg = this.kind === 'elite' ? Phaser.Math.Between(35, 45) : this.kind === 'easy' ? Phaser.Math.Between(10, 14) : Phaser.Math.Between(13, 19);
-    if (this.kind !== 'boss') addErgios(erg);
+    if (this.kind !== 'boss') addErgios(erg + extra);
+    else if (extra) addErgios(extra);
     audio.sfx('victory');
     logEvent('combate', '', true, { tipo: this.kind, piso: this.floor, turnos: this.turn, vida: run.hp });
     saveLocal();
@@ -1204,12 +1312,40 @@ export class CombatScene extends Phaser.Scene {
     }
     syncRun('en curso');
     await this.banner(T.combate.victoria);
-    fadeTo(this, 'Reward', { kind: this.kind, ergios: erg });
+    fadeTo(this, 'Reward', { kind: this.kind, ergios: erg + extra });
+    return true;
+  }
+
+  /**
+   * Tu vida llegó a 0. Si tienes la Vida Extra del Profe, te levantas y
+   * devuelve false (el combate sigue). Si no, termina la expedición (true).
+   */
+  private async dies(by: string): Promise<boolean> {
+    const run = Game.run!;
+    if (this.bannerT.getData('dead')) return true;
+    const i = run.relics.indexOf('vidaExtra');
+    if (i >= 0) {
+      run.relics.splice(i, 1);
+      run.hp = Math.ceil(run.maxHp / 2);
+      saveLocal();
+      this.hud.refresh();
+      logEvent('vidaExtra', '', true, { piso: this.floor, enemigo: by });
+      audio.sfx('heal');
+      this.burst(this.heroX, 260, 0xe8c15a, 40);
+      this.calc(`${RELICS.vidaExtra.name}: ¡te levantas con ${run.hp} de vida!`);
+      await this.banner('¡Vida extra!');
+      this.floatText(this.heroX, 180, '«Ándale, sigue.»', CSS.gold);
+      this.refreshPlayer();
+      return false;
+    }
+    await this.defeat(by);
     return true;
   }
 
   private async defeat(by: string) {
     const run = Game.run!;
+    this.bannerT.setData('dead', true);
+    this.busy = true;
     run.hp = 0;
     run.done = true;
     saveLocal();
@@ -1219,6 +1355,92 @@ export class CombatScene extends Phaser.Scene {
     this.tweens.add({ targets: this.hero, alpha: 0.2, y: 290, duration: 900 });
     await this.banner(T.combate.derrota, '#b8a8c8');
     fadeTo(this, 'End', { victory: false, by });
+  }
+
+  // ───────────────────────── v0.6: AZAR, RADIACIÓN Y FAMILIARES ─────────────────────────
+  /** Condición del piso: cambia un poco las reglas de este combate */
+  private applyCondition(c: ConditionDef) {
+    this.cond = c;
+    if (c.id === 'viento' && !this.isArc) this.baseAcel += 1;
+    if (c.id === 'lodo' && !this.has('botas')) this.friccion += 2;
+    if (c.id === 'gravedad') this.grav = { ...this.grav, g: Math.round(this.grav.g * 200) / 100 };
+    if (c.id === 'refuerzo') this.enemies.forEach((e) => { e.st.block += 8; this.refreshEnemy(e); });
+    if (c.id === 'grieta') {
+      this.pCalor += 3;
+      this.enemies.forEach((e) => { e.st.calor += 3; this.refreshEnemy(e); });
+    }
+    const col = c.good === true ? CSS.green : c.good === false ? '#e08a8a' : CSS.gold;
+    const ic = icon(this, 34, 96, c.icon, 2.6);
+    const t = txt(this, 52, 84, c.name, 20, col);
+    this.tip.attach(ic, `Condición: ${c.name}`, c.text);
+    this.tip.attach(t, `Condición: ${c.name}`, c.text);
+    this.calc(`Condición del piso · ${c.name}: ${c.text}`);
+    logEvent('condicion', '', '', { id: c.id, piso: this.floor });
+  }
+
+  /** Efectos al iniciar el combate (después de La Manzana). Devuelve false si moriste. */
+  private async combatStartFx(): Promise<boolean> {
+    const radio = boonLevel('m_radio');
+    if (radio) {
+      const n = radio === 2 ? 7 : 4;
+      for (const e of this.alive()) {
+        e.st.calor += n;
+        this.burst(e.baseX, 260, 0x9bf07a, 14);
+        this.refreshEnemy(e);
+      }
+      this.pCalor += radio === 2 ? 1 : 2;
+      this.calc(`Radio (Curie): +${n} de Calor a los enemigos; tú recibes ${radio === 2 ? 1 : 2}`);
+      this.refreshPlayer();
+      await this.wait(300);
+    }
+    const marco = boonLevel('e_marco');
+    if (marco && !(await this.radiate(marco === 2 ? 3 : 4, 'Marco de Referencia'))) return false;
+    const vm = boonLevel('m_vidamedia');
+    if (vm && !(await this.radiate(vm === 2 ? 2 : 3, 'Vida Media'))) return false;
+    if (this.hasFx('radiacion') && !(await this.radiate(4, 'Radiación'))) return false;
+    return true;
+  }
+
+  /**
+   * Radiación: daño que ignora tu Bloque. Devuelve false si te mató
+   * (y no tenías vida extra).
+   */
+  private async radiate(n: number, src: string): Promise<boolean> {
+    const run = Game.run!;
+    run.hp -= n;
+    this.hero.setTintFill(0x9bf07a);
+    this.time.delayedCall(120, () => this.hero.clearTint());
+    this.floatText(this.heroX + 30, 190, `-${n} rad`, '#9bf07a');
+    this.calc(`Radiación (${src}): pierdes ${n} de vida (ignora el Bloque)`);
+    this.refreshPlayer();
+    await this.wait(220);
+    if (run.hp <= 0) return !(await this.dies('la radiación'));
+    return true;
+  }
+
+  private showFamiliar() {
+    const fam = Game.run!.familiar;
+    if (!fam) return;
+    const def = FAMILIARS[fam.id];
+    if (!def) return;
+    const img = this.add.image(this.heroX - 100, 318, def.sprite).setOrigin(0.5, 1).setScale(3.5);
+    this.add.ellipse(this.heroX - 100, 320, 50, 8, 0x000000, 0.45).setDepth(-1);
+    this.tweens.add({ targets: img, y: 314, duration: 700 + Math.random() * 200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    img.setInteractive();
+    this.tip.attach(img, `${def.name} (quedan ${fam.left} combate${fam.left > 1 ? 's' : ''})`, `${def.text}\n${def.lore}`);
+    this.famImg = img;
+  }
+
+  private famHop() {
+    if (!this.famImg) return;
+    this.tweens.add({ targets: this.famImg, x: this.famImg.x + 24, duration: 120, yoyo: true, ease: 'Quad.out' });
+  }
+
+  /** Un rayo del héroe (o su familiar) hacia un enemigo */
+  private beam(to: EnemyView, color: number) {
+    const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+    g.lineStyle(4, color, 0.9).lineBetween(this.heroX + 30, 250, to.baseX, 260);
+    this.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
   }
 
   private banner(s: string, color = CSS.gold) {

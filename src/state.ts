@@ -3,6 +3,7 @@ import { CardInst, starterDeck } from './data/cards';
 import { CLASSES } from './data/classes';
 import { enqueue, isOnline } from './api';
 import { gravityOf } from './data/gravity';
+import { FAMILIAR_POOL, FAMILIARS } from './data/familiars';
 
 export interface Avatar {
   alias: string;
@@ -57,6 +58,8 @@ export interface Run {
   shop?: ShopState;
   boons: { id: string; epic: boolean }[]; // dones de figuras históricas
   met: string[]; // figuras ya encontradas en esta expedición
+  seen?: string[]; // encuentros y dilemas ya vistos en esta expedición
+  familiar?: { id: string; left: number } | null; // criatura que te acompaña
   nextUid: number;
   done: boolean;
 }
@@ -69,6 +72,7 @@ export interface ShopState {
   node: number;
   cards: (ShopItem & { id: string; up: boolean })[];
   relic: (ShopItem & { id: string }) | null;
+  familiar?: (ShopItem & { id: string }) | null;
   heal: ShopItem;
   remove: ShopItem;
   discount: boolean;
@@ -259,6 +263,8 @@ export function newRun(runId: string, gravity = 1, clase = 'caballero'): Run {
     effects: [],
     boons: [],
     met: [],
+    seen: [],
+    familiar: null,
     nextUid: uid,
     done: false,
   };
@@ -335,5 +341,17 @@ export function migrateRun(r: Run | null): Run | null {
   r.clase ??= 'caballero';
   r.acto ??= 1;
   r.met ??= [];
+  r.seen ??= [];
+  r.familiar ??= null;
   return r;
+}
+
+/** Te acompaña una criatura (reemplaza a la anterior). id 'random' = al azar */
+export function addFamiliar(id: string, combats?: number): string {
+  const r = Game.run!;
+  const pool = FAMILIAR_POOL.filter((f) => f !== r.familiar?.id);
+  const fid = id === 'random' ? pool[Math.floor(Math.random() * pool.length)] : id;
+  r.familiar = { id: fid, left: combats ?? FAMILIARS[fid].combats };
+  unlock('npcs', `fam_${fid}`);
+  return fid;
 }

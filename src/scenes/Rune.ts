@@ -42,10 +42,15 @@ export function applyOutcome(o: Outcome): string {
     r.hp = Math.min(r.maxHp, r.hp + o.heal);
     parts.push(`+${o.heal} de vida`);
   }
+  if (o.relic && RELICS[o.relic]) {
+    grantRelic(o.relic);
+    parts.push(`Reliquia: ${RELICS[o.relic].name}`);
+  }
   return parts.join('\n');
 }
 
 export function describeOutcome(o: Outcome): string {
+  if (o.relic && RELICS[o.relic]) return `${RELICS[o.relic].name}${o.ergios ? ` y +${o.ergios} ${T.moneda}` : ''}`;
   if (o.effect) {
     const e = EFFECTS[o.effect];
     return `${e.name}: ${e.text} (${o.combats ?? 1} combate${(o.combats ?? 1) > 1 ? 's' : ''})`;
