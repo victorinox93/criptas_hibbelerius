@@ -11,14 +11,19 @@
  *     Copia la URL que termina en /exec y pégala en src/config.ts
  *  5) En la hoja "Grupos" da de alta tus claves de grupo.
  *  6) Menú "Criptas" → Actualizar panel, para ver el avance.
+ *
+ *  AL ACTUALIZAR ESTE ARCHIVO: pega el código nuevo, ejecuta setup otra vez
+ *  (agrega columnas nuevas sin borrar datos) y luego
+ *  Implementar → Administrar implementaciones → ✏️ editar → Versión: Nueva versión → Implementar.
+ *  Así la URL /exec sigue siendo la misma.
  * ════════════════════════════════════════════════════════════════
  */
 
 var HEAD = {
   Grupos: ['clave', 'nombre', 'activo', 'creado'],
-  Alumnos: ['matricula', 'grupo', 'alias', 'avatar', 'salt', 'hash', 'token', 'creado', 'ultimoAcceso'],
+  Alumnos: ['matricula', 'grupo', 'alias', 'avatar', 'salt', 'hash', 'token', 'creado', 'ultimoAcceso', 'grimorio'],
   Partidas: ['runId', 'matricula', 'grupo', 'alias', 'clase', 'inicio', 'actualizado', 'acto', 'pisoMax', 'vida',
-    'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo'],
+    'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo', 'gravedad'],
   Eventos: ['fecha', 'matricula', 'grupo', 'runId', 'tipo', 'concepto', 'correcto', 'detalle'],
 };
 
@@ -85,8 +90,8 @@ var ACTIONS = {
     if (findRow_(sh, 1, mat)) throw new Error('Esa matrícula ya tiene cuenta. Usa "Entrar".');
     var salt = Utilities.getUuid();
     var token = Utilities.getUuid();
-    sh.appendRow([mat, grupo, '', '', salt, sha_(salt + r.passHash), token, new Date(), new Date()]);
-    return { ok: true, token: token, matricula: mat, grupo: grupo, alias: '', avatar: '' };
+    sh.appendRow([mat, grupo, '', '', salt, sha_(salt + r.passHash), token, new Date(), new Date(), '']);
+    return { ok: true, token: token, matricula: mat, grupo: grupo, alias: '', avatar: '', grimorio: '' };
   },
 
   login: function (r) {
@@ -99,7 +104,7 @@ var ACTIONS = {
     var token = Utilities.getUuid();
     sh.getRange(row, 7).setValue(token);
     sh.getRange(row, 9).setValue(new Date());
-    return { ok: true, token: token, matricula: mat, grupo: v[1], alias: v[2], avatar: v[3] };
+    return { ok: true, token: token, matricula: mat, grupo: v[1], alias: v[2], avatar: v[3], grimorio: v[9] || '' };
   },
 
   saveProfile: function (r) {
@@ -113,7 +118,7 @@ var ACTIONS = {
     var u = auth_(r.token);
     var runId = 'R-' + Utilities.getUuid().slice(0, 8);
     sheet_('Partidas').appendRow([runId, u.mat, u.grupo, u.alias, clean_(r.clase, 20), new Date(), new Date(),
-      1, 0, '', 0, 'en curso', '', 0, 0, 0, 0, 10]);
+      1, 0, '', 0, 'en curso', '', 0, 0, 0, 0, 10, num_(r.gravedad) || 1]);
     return { ok: true, runId: runId };
   },
 
@@ -136,8 +141,47 @@ var ACTIONS = {
     cur[15] = num_(r.runasOk);
     cur[16] = num_(r.runasTotal);
     cur[17] = num_(r.mazo);
+    if (r.gravedad) cur[18] = num_(r.gravedad);
     sh.getRange(row, 1, 1, cur.length).setValues([cur]);
     return { ok: true };
+  },
+
+  saveCodex: function (r) {
+    var u = auth_(r.token);
+    u.sh.getRange(u.row, 10).setValue(clean_(r.grimorio, 6000));
+    return { ok: true };
+  },
+
+  // Ranking: mejor partida de cada alumno (sólo alias, avatar y números; nunca matrícula)
+  leaderboard: function (r) {
+    var u = auth_(r.token);
+    var soloGrupo = r.alcance !== 'todos';
+    var alumnos = rows_('Alumnos');
+    var info = {};
+    alumnos.forEach(function (a) { info[a[0]] = { grupo: a[1], alias: a[2], avatar: a[3] }; });
+    var best = {};
+    rows_('Partidas').forEach(function (p) {
+      var who = info[p[1]];
+      if (!who || !who.alias) return;
+      if (soloGrupo && who.grupo !== u.grupo) return;
+      var b = best[p[1]] || (best[p[1]] = { alias: who.alias, avatar: who.avatar, grupo: who.grupo, puntaje: 0, piso: 0, victorias: 0, gravedad: 0, partidas: 0, yo: p[1] === u.mat });
+      b.partidas++;
+      b.puntaje = Math.max(b.puntaje, num_(p[10]));
+      b.piso = Math.max(b.piso, num_(p[8]));
+      if (p[11] === 'victoria') {
+        b.victorias++;
+        b.gravedad = Math.max(b.gravedad, num_(p[18]) || 1);
+      }
+    });
+    var list = Object.keys(best).map(function (k) { return best[k]; })
+      .sort(function (a, b) { return b.puntaje - a.puntaje || b.piso - a.piso; });
+    var mine = -1;
+    list.forEach(function (x, i) { if (x.yo) mine = i; });
+    var top = list.slice(0, 25);
+    if (mine >= 25) top.push(list[mine]);
+    return { ok: true, grupo: u.grupo, total: list.length, lista: top.map(function (x) {
+      return { alias: x.alias, avatar: x.avatar, grupo: x.grupo, puntaje: x.puntaje, piso: x.piso, victorias: x.victorias, gravedad: x.gravedad, partidas: x.partidas, yo: x.yo, lugar: list.indexOf(x) + 1 };
+    }) };
   },
 
   logEvent: function (r) {
