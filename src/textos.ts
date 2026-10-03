@@ -66,7 +66,7 @@ export const T = {
       ['i_combat', 'F = m · a', 'Tus ataques calculan su fuerza: masa del arma (kg) × aceleración (m/s²). El daño es F en newtons.'],
       ['i_shield', 'Bloque', 'Absorbe daño. Se pierde al iniciar tu turno… salvo que la inercia diga lo contrario.'],
       ['i_momentum', 'Inercia (1ª ley)', 'Algunos enemigos avanzan sin detenerse y su golpe crece. Detenlos con UN golpe de F ≥ su umbral.'],
-      ['i_event', 'Encuentros y mercader', 'Personajes del camino te harán preguntas: acierta y recibe una bendición; falla y cargarás una maldición pasajera.'],
+      ['i_shrine', 'Encuentros, ecos y mercader', 'Personajes y figuras históricas te harán preguntas: acierta y recibe bendiciones o dones épicos. El mercader acepta Ergios.'],
       ['i_rune', 'Runas', 'Altares y fogatas te retan con problemas de dinámica. Resuélvelos para ganar poder.'],
     ] as [string, string, string][],
   },
@@ -82,6 +82,7 @@ export const T = {
       runa: ['Altar rúnico', 'Un problema de dinámica. Resuélvelo y obtén una reliquia.'],
       evento: ['Encuentro', 'Alguien te espera en la penumbra. Quizá te ayude… si respondes bien.'],
       mercader: ['Mercader', 'Compra cartas y reliquias con tus Ergios.'],
+      santuario: ['Eco del Pasado', 'Una figura histórica de la física te espera. Te ofrecerá un don para toda la expedición.'],
       jefe: ['Coloso Inerte', 'El guardián del Acto I.'],
     } as Record<string, [string, string]>,
   },
@@ -136,6 +137,20 @@ export const T = {
     maldicion: 'Maldición pasajera',
     siAciertas: 'Si aciertas',
     siFallas: 'Si fallas',
+  },
+
+  santuario: {
+    responder: 'Responder su pregunta\n(dones ÉPICOS)',
+    sinResponder: 'Aceptar sin responder\n(dones comunes)',
+    elige: 'Elige un don',
+    comun: 'Común',
+    epico: 'Épico',
+    yaLoTienes: 'Ya lo tienes',
+    siAciertas: 'Si aciertas, sus dones serán ÉPICOS.',
+    elegirDon: 'Elegir un don',
+    sinDones: 'Ya tienes todos sus dones. Te deja 30 Ergios en su lugar.',
+    continuar: 'Continuar',
+    don: 'Don',
   },
 
   mercader: {

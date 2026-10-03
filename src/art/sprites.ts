@@ -142,6 +142,51 @@ export const SPRITES: Record<string, string[]> = {
     'kpppppppPppp',
     'kkkkkkkkkkkk',
   ]),
+  gargola: mirrorHalf([
+    'k.......',
+    'gk......',
+    'ggk...kk',
+    'gggk.kgg',
+    'kgggkggl',
+    '.kggkgFl',
+    '.kgggggg',
+    '..kgkggk',
+    '...kgggg',
+    '...kglgg',
+    '..kggggg',
+    '..kgglgg',
+    '..kggggk',
+    '...kgg.k',
+    '..kggk..',
+    '..kkkk..',
+  ]),
+  pendulo: mirrorHalf([
+    '....kkkk',
+    '......kl',
+    '.......l',
+    '......kl',
+    '.......l',
+    '......kl',
+    '.......l',
+    '......kl',
+    '.......l',
+    '......kl',
+    '.......l',
+    '......kl',
+    '.......l',
+    '......kl',
+    '.......l',
+    '......kl',
+    '....kkkk',
+    '...kgggg',
+    '..kgglll',
+    '..kglyyy',
+    '..kgllyE',
+    '..kglyyy',
+    '..kgglll',
+    '...kgggg',
+    '....kkkk',
+  ]),
   // ── Íconos 9x9 ──
   i_combat: [
     'k.......k',
@@ -461,6 +506,39 @@ export const SPRITES: Record<string, string[]> = {
     'w.......w',
     'wwww.wwww',
   ],
+  i_apple: [
+    '....n....',
+    '...nG....',
+    '.RRRnRR..',
+    'RRwRRRRR.',
+    'RwRRRRRRR',
+    'RRRRRRRRR',
+    'RRRRRRRRk',
+    '.RRRRRRk.',
+    '..RRkRk..',
+  ],
+  i_pend: [
+    'kkkkkkkkk',
+    '....l....',
+    '....l....',
+    '.....l...',
+    '.....l...',
+    '......l..',
+    '.....yyy.',
+    '.....yyy.',
+    '.........',
+  ],
+  i_shrine: [
+    '....y....',
+    '...yBy...',
+    '..yBwBy..',
+    '...yBy...',
+    '.k..y..k.',
+    '.kl...lk.',
+    '.kl...lk.',
+    '.kl...lk.',
+    'kkkkkkkkk',
+  ],
   i_skull: [
     '.kkkkkkk.',
     'kwwwwwwwk',
@@ -540,6 +618,38 @@ const NPC = mirrorHalf([
   'kkkkkkkk',
 ]);
 
+// Retratos de figuras históricas (busto)
+const FIG: Record<string, { rows: string[]; ov: Record<string, string> }> = {
+  fig_newton: {
+    rows: mirrorHalf([
+      '...wwwww', '..wwwwww', '.wwwssss', '.wwsssss', '.wwskkss', '.wwsssss', '.wwssssq', '.wwsssss',
+      'wwwssqqq', 'www.ssss', 'ww...sss', 'w..ccccW', '..cccccW', '.ccccccW', 'cccccccW', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { w: '#e4e0d8', s: '#e0c0a0', q: '#b8907a', c: '#4a3428', W: '#f0ece4' },
+  },
+  fig_galileo: {
+    rows: mirrorHalf([
+      '........', '....hhhh', '...hssss', '..hsssss', '..hskkss', '..hsssss', '..hssssq', '..hbssss',
+      '...bbbqq', '...bbbbb', '....bbbb', '..ccccbb', '.cccccWW', 'ccccccWW', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#5a4a3a', b: '#8a7a6a', s: '#d8b090', q: '#a8806a', c: '#1e1a22', W: '#e8e4dc' },
+  },
+  fig_chatelet: {
+    rows: mirrorHalf([
+      '....wwww', '...wwwww', '...wwwww', '..wwwwww', '..wwssss', '..wsssss', '..wskkss', '..wsssss',
+      '..wssssq', '...sssss', '...yssRR', '....ssss', '.....sss', '..ccssss', '.cccssss', 'ccccccss', 'cccccccy',
+    ]),
+    ov: { w: '#dcd8e4', s: '#ecd0b8', q: '#c0a090', c: '#3a5a8a', R: '#b05a6a', y: '#e8c15a' },
+  },
+  fig_joule: {
+    rows: mirrorHalf([
+      '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hskkss', '..bsssss', '..bssssq', '..bbssss',
+      '..bbssqq', '...bbsss', '....bsss', '...ccckk', '..ccccWk', '.cccccWW', 'ccccccWc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#4a3a2e', b: '#5a463a', s: '#e0bea0', q: '#b08e78', c: '#2a2a36', W: '#e8e4dc' },
+  },
+};
+
 export const NPCS: Record<string, Record<string, string>> = {
   npc_ermitano: { c: '#5b4632', C: '#33261a', E: '#ffd27a', s: '#c8a07a' },
   npc_cartografa: { c: '#2f5a5a', C: '#183333', E: '#d8d0c0', s: '#c8a07a' },
@@ -558,6 +668,7 @@ export function generateAllTextures(scene: Phaser.Scene) {
     l: '#4b4458', g: '#2f2a38', c: '#5e1420', C: '#3a0c14', E: '#ff5a3a', y: '#8b1e2b',
   }, true);
   for (const [k, ov] of Object.entries(NPCS)) makeTexture(scene, k, NPC, ov);
+  for (const [k, f] of Object.entries(FIG)) makeTexture(scene, k, f.rows, f.ov);
   // pixel blanco para partículas
   if (!scene.textures.exists('px')) {
     const c = scene.textures.createCanvas('px', 2, 2)!;

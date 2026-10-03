@@ -19,7 +19,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'jefe';
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'jefe';
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -51,6 +51,8 @@ export interface Run {
   ergios: number;
   effects: Effect[];
   shop?: ShopState;
+  boons: { id: string; epic: boolean }[]; // dones de figuras históricas
+  met: string[]; // figuras ya encontradas en esta expedición
   nextUid: number;
   done: boolean;
 }
@@ -144,8 +146,8 @@ export function generateMap(): MapNode[] {
     const r = Math.random();
     if (n.floor === 0) n.type = 'combate';
     else if (n.floor === FLOORS - 1) n.type = 'fogata';
-    else if (n.floor <= 2) n.type = r < 0.5 ? 'combate' : r < 0.72 ? 'evento' : r < 0.88 ? 'runa' : 'fogata';
-    else n.type = r < 0.38 ? 'combate' : r < 0.55 ? 'elite' : r < 0.72 ? 'evento' : r < 0.82 ? 'runa' : r < 0.9 ? 'mercader' : 'fogata';
+    else if (n.floor <= 2) n.type = r < 0.45 ? 'combate' : r < 0.63 ? 'evento' : r < 0.75 ? 'santuario' : r < 0.88 ? 'runa' : 'fogata';
+    else n.type = r < 0.36 ? 'combate' : r < 0.52 ? 'elite' : r < 0.66 ? 'evento' : r < 0.75 ? 'runa' : r < 0.83 ? 'mercader' : r < 0.92 ? 'santuario' : 'fogata';
   }
   // garantías: una élite, una runa, dos encuentros y un mercader alcanzables
   const by = (f: (n: MapNode) => boolean) => Phaser.Utils.Array.Shuffle(list.filter(f));
@@ -158,6 +160,7 @@ export function generateMap(): MapNode[] {
   ensure('runa', 1, [1, 5]);
   ensure('evento', 2, [1, 6]);
   ensure('mercader', 1, [3, 5]);
+  ensure('santuario', 2, [1, 6]);
   return [...list, boss];
 }
 
@@ -178,6 +181,8 @@ export function newRun(runId: string): Run {
     stats: { combates: 0, elites: 0, runasOk: 0, runasTotal: 0, ergiosTotal: 0 },
     ergios: 25,
     effects: [],
+    boons: [],
+    met: [],
     nextUid: uid,
     done: false,
   };
@@ -227,6 +232,12 @@ export function addErgios(n: number) {
   if (n > 0) r.stats.ergiosTotal = (r.stats.ergiosTotal ?? 0) + n;
 }
 
+/** Nivel de un don: 0 = no lo tienes, 1 = común, 2 = épico */
+export function boonLevel(id: string): number {
+  const b = Game.run?.boons.find((x) => x.id === id);
+  return b ? (b.epic ? 2 : 1) : 0;
+}
+
 export function addEffect(id: string, combats: number) {
   const r = Game.run!;
   const e = r.effects.find((x) => x.id === id);
@@ -240,5 +251,7 @@ export function migrateRun(r: Run | null): Run | null {
   r.ergios ??= 25;
   r.effects ??= [];
   r.visited ??= [];
+  r.boons ??= [];
+  r.met ??= [];
   return r;
 }

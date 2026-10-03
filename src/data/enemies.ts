@@ -50,6 +50,23 @@ export const ENEMIES: Record<string, EnemyDef> = {
     desc: 'Muy poca masa: rápido, pero sus golpes son débiles.',
     next: (e) => ({ kind: 'attack', dmg: e.turn % 2 === 0 ? 2 : 3, hits: 2 }),
   },
+  gargola: {
+    id: 'gargola', name: 'Gárgola de Piedra', sprite: 'gargola', scale: 5, hp: [30, 34], mass: 6,
+    desc: 'Pesada y paciente: se cubre de piedra y luego cae con todo su peso.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 8, label: 'Petrificarse' };
+      if (p === 1) return { kind: 'attack', dmg: 10, label: 'Caída' };
+      return { kind: 'block', block: 5, dmg: 5 };
+    },
+  },
+  pendulo: {
+    id: 'pendulo', name: 'Péndulo Errante', sprite: 'pendulo', scale: 4, hp: [24, 28], mass: 3,
+    desc: 'Oscila sin parar: cuando sube gana energía potencial y cuando baja la convierte en un golpe fuerte (U → K).',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'block', block: 4, label: 'Sube (gana mgh)' }
+      : { kind: 'attack', dmg: 12, label: 'Baja (½mv²)' }),
+  },
   inertKnight: {
     id: 'inertKnight', name: 'Caballero Inerte', sprite: 'inertKnight', scale: 5, hp: [48, 52], mass: 8, umbral: 10,
     desc: 'Una armadura que avanza sin detenerse. Cada turno en movimiento su golpe crece.',
@@ -69,8 +86,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
 };
 
 export const ENCOUNTERS = {
-  easy: [['skeleton'], ['bat', 'bat'], ['slime']],
-  normal: [['skeleton', 'bat'], ['slime', 'bat'], ['skeleton', 'skeleton'], ['slime', 'skeleton']],
+  easy: [['skeleton'], ['bat', 'bat'], ['slime'], ['pendulo']],
+  normal: [['skeleton', 'bat'], ['slime', 'bat'], ['skeleton', 'skeleton'], ['slime', 'skeleton'], ['gargola'], ['pendulo', 'bat'], ['gargola', 'skeleton'], ['pendulo']],
   elite: [['inertKnight']],
   boss: [['colossus']],
 };

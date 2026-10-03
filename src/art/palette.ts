@@ -18,6 +18,9 @@ export const PAL: Record<string, string> = {
   E: '#ffd27a', // brillo de ojos
   F: '#ff5a3a', // ojos rojos
   s: '#e0b48a',
+  q: '#a8806a', // sombra de piel
+  h: '#4a3a2e', // cabello
+  W: '#f0ece4', // blanco (cuellos)
 };
 
 // Colores de capa disponibles en el creador de avatar

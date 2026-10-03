@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { EFFECTS } from '../data/effects';
+import { BOONS } from '../data/figures';
 import { RELICS } from '../data/relics';
 import { Game } from '../state';
 import { T } from '../textos';
@@ -38,6 +39,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
   const deckBtn = D(button(s, W - 205, 20, 120, 30, '', () => deckOverlay(s), { size: 20 }));
   const relicRow = s.add.container(530, 20).setDepth(401);
   const effRow = s.add.container(W - 36, 62).setDepth(401);
+  const boonRow = s.add.container(26, 62).setDepth(401);
   if (opts.onMenu) D(button(s, W - 34, 20, 56, 30, T.hud.menu, opts.onMenu, { size: 20 }));
 
   const hud: Hud = {
@@ -70,6 +72,17 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         tip.attach(im, `${def.good ? T.evento.bendicion : T.evento.maldicion}: ${def.name}`,
           `${def.text}\nQuedan ${e.left} combate(s).\n${def.lore}`, 20);
         effRow.add([bg, im, n]);
+      });
+      boonRow.removeAll(true);
+      r.boons.forEach((b, i) => {
+        const def = BOONS[b.id];
+        if (!def) return;
+        const x = i * 32;
+        const bg = s.add.graphics();
+        frame(bg, x - 14, -14, 28, 28, 0x0b0d16, b.epic ? UI.gold : 0x7a8aa0, 0.9);
+        const im = icon(s, x, 0, def.icon, 2.2);
+        tip.attach(im, `${T.santuario.don} ${b.epic ? T.santuario.epico : T.santuario.comun}: ${def.name}`, `${def.text[b.epic ? 1 : 0]}\n${def.lore}`, 20);
+        boonRow.add([bg, im]);
       });
     },
   };

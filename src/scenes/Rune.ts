@@ -7,18 +7,20 @@ import { EFFECTS } from '../data/effects';
 import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
 import { checkAnswer, Problem, randomProblem } from '../data/runes';
-import { addEffect, addErgios, Game, logEvent, saveLocal, syncRun } from '../state';
+import { addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
+import { FIGURES } from '../data/figures';
 import { T } from '../textos';
 import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, panel, TextField, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
 
-export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo';
+export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario';
 
 export interface RuneData {
   floor: number;
   source: RuneSource;
   eventId?: string;
+  figureId?: string;
 }
 
 /** Aplica el resultado de un encuentro y devuelve una descripción */
@@ -81,9 +83,14 @@ export class RuneScene extends Phaser.Scene {
     this.hud = topBar(this, this.tip);
 
     const ev = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
-    this.p = randomProblem(ev?.concepts);
+    const fig = data.figureId ? FIGURES.find((f) => f.id === data.figureId) : undefined;
+    this.p = randomProblem(ev?.concepts ?? fig?.concepts);
     const p = this.p;
-    if (ev) {
+    if (fig) {
+      const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);
+      this.tweens.add({ targets: por, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      title(this, W / 2, 86, fig.name, 34, '#9ad8f0');
+    } else if (ev) {
       const npc = this.add.image(62, 150, ev.npc).setScale(4);
       this.tweens.add({ targets: npc, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, ev.name, 34, CSS.bone);
@@ -96,6 +103,7 @@ export class RuneScene extends Phaser.Scene {
       fogata: T.runa.fogata,
       evento: ev ? `${T.evento.siAciertas}: ${describeOutcome(ev.bless)}` : '',
       regateo: '«Resuélvelo y te rebajo los precios.»',
+      santuario: T.santuario.siAciertas,
     };
     txt(this, W / 2, 156, sub[data.source], 20, CSS.dim).setOrigin(0.5);
 
@@ -148,6 +156,8 @@ export class RuneScene extends Phaser.Scene {
     if (ok) {
       run.stats.runasOk++;
       run.score += 25;
+      const tr = boonLevel('c_traductora');
+      if (tr && this.d.source !== 'regateo') addErgios(15 * tr);
     }
     if (this.d.source !== 'regateo') run.floor = this.d.floor + 1;
     saveLocal();
@@ -184,6 +194,15 @@ export class RuneScene extends Phaser.Scene {
       saveLocal();
       c.add(txt(this, 560, 400, ok ? '«Trato hecho: −30 % en todo.»' : '«Lo siento, viajero. Precio completo.»', 21, ok ? CSS.green : CSS.dim, { wordWrap: { width: 270 } }));
       c.add(button(this, W - 210, 496, 220, 40, T.runa.continuar, () => fadeTo(this, 'Shop', { floor: this.d.floor }), { size: 22 }));
+      return;
+    }
+
+    if (this.d.source === 'santuario') {
+      c.add(txt(this, 560, 400, ok ? '«Bien razonado. Mis dones serán dignos de ti.»' : '«No importa. Aún así te ayudaré, aunque con menos fuerza.»',
+        21, ok ? CSS.green : CSS.dim, { wordWrap: { width: 270 } }));
+      c.add(button(this, W - 210, 496, 220, 40, T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
+        floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok,
+      }), { size: 22, color: ok ? UI.gold : UI.border }));
       return;
     }
 

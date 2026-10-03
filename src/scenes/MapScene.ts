@@ -14,6 +14,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   runa: { icon: 'i_rune', color: 0x8e5bb0 },
   evento: { icon: 'i_event', color: 0x6a8fc4 },
   mercader: { icon: 'i_bag', color: 0xe8c15a },
+  santuario: { icon: 'i_shrine', color: 0x7fd8ff },
   jefe: { icon: 'i_boss', color: 0xe8c15a },
 };
 const NODE_INFO = Object.fromEntries(
@@ -44,7 +45,7 @@ export class MapScene extends Phaser.Scene {
     vignette(this);
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
-    title(this, 20, 70, T.mapa.titulo, 30).setOrigin(0, 0.5);
+    title(this, W / 2, 66, T.mapa.titulo, 28);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
     const current = run.pos >= 0 ? byId.get(run.pos)! : null;
@@ -108,11 +109,12 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = ['combate', 'elite', 'evento', 'runa', 'mercader', 'fogata', 'jefe'];
+    const types: NodeType[] = ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'fogata', 'jefe'];
     types.forEach((t, i) => {
-      const x = 30 + i * 134;
+      const x = 24 + i * 118;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
-      txt(this, x + 18, H - 34, NODE_INFO[t].name, 20, CSS.dim);
+      const lt = txt(this, x + 16, H - 33, NODE_INFO[t].name, 18, CSS.dim);
+      if (lt.width > 96) lt.setScale(96 / lt.width, 1);
     });
   }
 
@@ -132,6 +134,8 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Event', { floor: n.floor });
       case 'mercader':
         return fadeTo(this, 'Shop', { floor: n.floor });
+      case 'santuario':
+        return fadeTo(this, 'Sanctuary', { floor: n.floor });
     }
   }
 }

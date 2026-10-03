@@ -5,7 +5,7 @@
 // ════════════════════════════════════════════════════════════════
 import { MUSIC_FILES } from './config';
 
-export type TrackId = 'menu' | 'mapa' | 'combate' | 'jefe' | 'calma';
+export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario';
 export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
 
 const LEVELS = [0, 0.3, 0.6, 1];
@@ -57,6 +57,17 @@ const TRACKS: Record<TrackId, TrackDef> = {
     snare: '....1.......1...',
     hat: '..1...1...1...1.',
   },
+  // Sol menor, segunda pista de combate (más grave y sincopada)
+  combate2: {
+    bpm: 104,
+    chords: [[55, 58, 62], [51, 55, 58], [53, 57, 60], [50, 54, 57]],
+    pad: 0.08, padCut: 1000,
+    arp: '1..1..1.1..1..1.', arpOct: 12,
+    bass: 'x..x..x.x..x.ox.', bassOct: -24,
+    kick: '1..1..1.1...1...',
+    snare: '....1.......1..1',
+    hat: '.1.1.1.1.1.1.1.1',
+  },
   // Do menor, jefe
   jefe: {
     bpm: 126,
@@ -73,6 +84,14 @@ const TRACKS: Record<TrackId, TrackDef> = {
       65, null, null, null, 68, null, 67, null, 65, null, null, null, 63, null, 62, null,
       67, null, null, null, 71, null, 74, null, 72, null, null, null, null, null, null, null,
     ],
+  },
+  // figuras históricas: etérea, modo lidio (luminoso pero misterioso)
+  santuario: {
+    bpm: 58,
+    chords: [[53, 57, 60, 64], [55, 59, 62, 66], [53, 57, 60, 64], [52, 55, 59, 62]],
+    pad: 0.12, padCut: 1400,
+    bells: true,
+    arp: '1.......1.......', arpOct: 24,
   },
   // fogata, encuentros, mercader
   calma: {

@@ -165,6 +165,78 @@ const GENERATORS: (() => Problem)[] = [
       solution: ['a = ΣF / m', 'Con 2m: a\' = ΣF / (2m) = a/2'],
     };
   },
+  // ── Energía (cap. 14) ──
+  // Trabajo de una fuerza constante
+  () => {
+    const F = ri(20, 150), d = ri(2, 15), th = pick([0, 20, 30, 45, 60]);
+    const Wk = F * d * Math.cos(rad(th));
+    return {
+      concept: 'Trabajo', title: 'Runa del Trabajo',
+      prompt: `Arrastras un cofre ${d} m por el suelo jalando una cuerda con ${F} N, inclinada ${th}° sobre la horizontal.\n¿Cuánto trabajo realiza la fuerza de la cuerda?`,
+      unit: 'J', answer: Wk, tol: 0.02,
+      solution: ['W = F·d·cosθ', `W = (${F} N)(${d} m)·cos${th}°`, `W = ${f2(Wk)} J`],
+    };
+  },
+  // Energía cinética
+  () => {
+    const m = ri(2, 40), v = ri(2, 15);
+    const K = 0.5 * m * v * v;
+    return {
+      concept: 'Energia cinetica', title: 'Runa de la Vis Viva',
+      prompt: `Un carro de mina de ${m} kg rueda a ${v} m/s.\n¿Cuál es su energía cinética?`,
+      unit: 'J', answer: K, tol: 0.02,
+      solution: ['K = ½·m·v²', `K = ½(${m} kg)(${v} m/s)²`, `K = ${f2(K)} J`],
+    };
+  },
+  // Energía potencial
+  () => {
+    const m = ri(2, 50), h = ri(2, 30);
+    const U = m * G * h;
+    return {
+      concept: 'Energia potencial', title: 'Runa de la Altura',
+      prompt: `Subes una campana de ${m} kg hasta lo alto de una torre de ${h} m.\n¿Cuánto aumenta su energía potencial gravitatoria? (g = 9.81 m/s²)`,
+      unit: 'J', answer: U, tol: 0.02,
+      solution: ['ΔU = m·g·h', `ΔU = (${m} kg)(9.81 m/s²)(${h} m)`, `ΔU = ${f2(U)} J`],
+    };
+  },
+  // Conservación de energía: caída libre
+  () => {
+    const h = ri(2, 40);
+    const v = Math.sqrt(2 * G * h);
+    return {
+      concept: 'Conservacion', title: 'Runa de la Caída',
+      prompt: `Una gárgola se suelta desde el reposo a ${h} m de altura. Despreciando el aire,\n¿con qué rapidez llega al suelo? (g = 9.81 m/s²)`,
+      unit: 'm/s', answer: v, tol: 0.02,
+      solution: ['m·g·h = ½·m·v²  (se conserva la energía)', 'v = √(2·g·h)', `v = √(2·9.81·${h}) = ${f2(v)} m/s`],
+    };
+  },
+  // Teorema trabajo-energía
+  () => {
+    const m = ri(2, 20), F = ri(10, 80), d = ri(2, 10);
+    const v = Math.sqrt((2 * F * d) / m);
+    return {
+      concept: 'Trabajo-energia', title: 'Runa del Impulso Inicial',
+      prompt: `Un trineo de ${m} kg parte del reposo sobre hielo sin fricción. Lo empujas con ${F} N horizontales durante ${d} m.\n¿Qué rapidez alcanza?`,
+      unit: 'm/s', answer: v, tol: 0.02,
+      solution: ['W = ΔK  →  F·d = ½·m·v²', 'v = √(2·F·d / m)', `v = √(2·${F}·${d} / ${m}) = ${f2(v)} m/s`],
+    };
+  },
+  // Conceptual: K y rapidez
+  () => {
+    const s = shuffleChoices(
+      [
+        'Se cuadruplica, porque K depende de v².',
+        'Se duplica, porque K es proporcional a v.',
+        'No cambia: la masa es la misma.',
+        'Se reduce a la mitad.',
+      ], 0);
+    return {
+      concept: 'Energia cinetica', title: 'Runa del Doble Paso',
+      prompt: 'Un caballero duplica su rapidez al cargar. ¿Qué le pasa a su energía cinética?',
+      unit: '', ...s,
+      solution: ['K = ½·m·v²', 'Con 2v: K\' = ½·m·(2v)² = 4·K'],
+    };
+  },
 ];
 
 /** Problema al azar; si se dan conceptos, sólo de esos temas */

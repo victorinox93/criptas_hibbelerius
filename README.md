@@ -2,17 +2,24 @@
 
 Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los alumnos crean a su héroe, bajan por las criptas y pelean con mecánicas que *son* física: cada golpe calcula **F = m·a**, la energía se paga en **Joules**, los enemigos con **inercia** sólo se detienen con una fuerza neta suficiente, y los altares rúnicos plantean problemas tipo Hibbeler con parámetros aleatorios.
 
-> Versión 0.1 · Acto I (Leyes de Newton). Clase jugable: Caballero de la Masa.
+> Versión 0.3 · Acto I (Leyes de Newton y energía). Clase jugable: Caballero de la Masa.
+>
+> **¿Quieres agregar enemigos, preguntas, figuras históricas o música?** Lee la [Guía para ampliar el juego](docs/GUIA-AMPLIAR.md).
 
 ## Qué incluye
 
 | Parte | Detalle |
 |---|---|
 | Cuentas | Matrícula, contraseña creada por el alumno y clave de grupo que da el profesor |
-| Avatar | Nombre, yelmo (3) y capa (6). Las clases Arcanista, Explorador y Guardián aparecen bloqueadas para los actos siguientes |
-| Mapa | 9 pisos generados al azar: combates, élites, altares rúnicos, fogatas y el jefe |
-| Combate | 12 cartas, 5 enemigos, Pergamino de cálculos que muestra la física de cada acción |
-| Runas | 11 tipos de problema (2ª ley, peso, fricción, plano inclinado, polea, montacargas, 1ª y 3ª ley conceptuales) con solución paso a paso |
+| Avatar | Nombre, yelmo (3), armadura (4), brillo del visor (4) y capa (6). Las clases Arcanista, Explorador y Guardián aparecen bloqueadas para los actos siguientes |
+| Mapa | 9 pisos generados al azar: combates, élites, encuentros, ecos del pasado, altares rúnicos, mercader, fogatas y el jefe |
+| Ecos del Pasado | Estilo Hades: Newton, Galileo, Émilie du Châtelet y Joule ofrecen dones para toda la expedición; si respondes bien su pregunta, los dones son épicos |
+| Encuentros | 5 personajes que hacen una pregunta de física: si aciertas, bendición; si fallas, maldición pasajera (dura 1–2 combates) |
+| Mercader | Cartas, reliquia, olvidar una carta y curación, pagando con Ergios. Se puede regatear resolviendo un problema (−30 %) |
+| Música | Dark synth generada en vivo (sin archivos): 7 pistas (menú, mapa, dos de combate, jefe, calma y santuario) y efectos de sonido |
+| Pantalla | Se dibuja al doble de resolución; botón de pantalla completa y control de volumen arriba a la derecha |
+| Combate | 12 cartas, 7 enemigos (incluye la Gárgola de Piedra y el Péndulo Errante, que convierte U en K), Pergamino de cálculos que muestra la física de cada acción |
+| Runas | 17 tipos de problema: leyes de Newton, peso, fricción, plano inclinado, polea, montacargas, trabajo, energía cinética y potencial, conservación y teorema trabajo-energía, con solución paso a paso |
 | Registro | Cada alumno, partida, piso alcanzado y respuesta a runas se guarda en Google Sheets |
 
 ### Cómo se traduce la física al juego
@@ -36,7 +43,7 @@ npm install
 npm run dev      # abre http://localhost:5173
 ```
 
-Sin URL de backend, el juego entra en **modo sin conexión** (sólo pide matrícula y guarda en el navegador).
+Sin URL de backend (archivo `src/backend.ts`), el juego entra en **modo sin conexión** (sólo pide matrícula y guarda en el navegador).
 
 ## Publicar en GitHub Pages
 
@@ -51,7 +58,7 @@ Sin URL de backend, el juego entra en **modo sin conexión** (sólo pide matríc
 2. **Extensiones → Apps Script** y pega el contenido de `apps-script/Code.gs`.
 3. Ejecuta la función `setup` (acepta los permisos). Se crean las hojas Grupos, Alumnos, Partidas, Eventos, Panel y Conceptos.
 4. **Implementar → Nueva implementación → Aplicación web**. Ejecutar como: *Yo*. Acceso: *Cualquier usuario*.
-5. Copia la URL que termina en `/exec` y pégala en `src/config.ts` → `API_URL`. Haz commit y push.
+5. Copia la URL que termina en `/exec` y pégala en **`src/backend.ts`** → `API_URL`. Haz commit y push. Ese archivo casi nunca cambia: al actualizar el juego, conserva tu versión.
 6. En la hoja **Grupos**, da de alta una fila por grupo: `clave` (p. ej. `DIN-OTO26`), `nombre`, `activo = TRUE`. Para cerrar las inscripciones de un grupo, pon `FALSE`.
 7. Menú **Criptas → Actualizar panel** (o *Actualizar panel cada hora*).
 
@@ -65,23 +72,52 @@ Sin URL de backend, el juego entra en **modo sin conexión** (sólo pide matríc
 
 Para reiniciar la contraseña de un alumno: borra su fila en la hoja **Alumnos** y pídele que cree su cuenta de nuevo.
 
+## Cambiar textos
+
+Casi todo lo que se lee en pantalla está en **`src/textos.ts`**: menús, botones, mensajes, nombres de lugares, diálogos del mercader y del final. Cambia el texto entre comillas y guarda; no hace falta tocar nada más.
+
+| Qué quieres cambiar | Archivo |
+|---|---|
+| Menús, botones, mensajes, títulos | `src/textos.ts` |
+| Nombre, descripción o explicación física de una carta | `src/data/cards.ts` |
+| Enemigos | `src/data/enemies.ts` |
+| Reliquias | `src/data/relics.ts` |
+| Personajes de los encuentros y sus diálogos | `src/data/events.ts` |
+| Figuras históricas y sus dones | `src/data/figures.ts` |
+| Bendiciones y maldiciones | `src/data/effects.ts` |
+| Problemas de las runas | `src/data/runes.ts` |
+
+## Música
+
+La música se genera en vivo con el navegador (Web Audio): no hay archivos ni licencias de por medio. Las pistas están en `src/audio.ts` (tempo, acordes y patrones de cada una).
+
+Si prefieres usar pistas propias (por ejemplo, música libre de derechos), copia los MP3 a `public/musica/` y escribe el nombre en `MUSIC_FILES` dentro de `src/config.ts`:
+
+```ts
+export const MUSIC_FILES = { menu: 'menu.mp3', mapa: '', combate: 'combate.mp3', jefe: 'jefe.mp3', calma: '' };
+```
+
+Las pistas que dejes vacías seguirán usando el sintetizador. Revisa siempre la licencia de la música que uses.
+
 ## Estructura
 
 ```
 src/
-  config.ts          URL del backend y constantes
+  backend.ts         URL del backend (Apps Script)
+  textos.ts          todos los textos de pantalla
+  audio.ts           música dark synth y efectos de sonido
+  config.ts          constantes y música opcional en archivo
   data/              cartas, enemigos, reliquias, clases y generador de problemas
   art/               paleta y sprites pixel-art (definidos como matrices en código)
-  scenes/            Login, Avatar, Menú, Mapa, Combate, Botín, Runa, Fogata, Final
+  scenes/            Login, Avatar, Menú, Mapa, Combate, Botín, Runa, Encuentro, Santuario, Mercader, Fogata, Final
   ui/                cartas, barra superior, botones y tooltips
 apps-script/Code.gs  backend para Google Sheets
 ```
 
-Agregar una carta: define su entrada en `src/data/cards.ts`, su efecto en `playOn()` de `src/scenes/Combat.ts` y agrégala a `REWARD_POOL`.
-Agregar un problema: añade un generador en `src/data/runes.ts`.
+Para agregar contenido (enemigos, cartas, preguntas, figuras, encuentros, música) sigue la [Guía para ampliar el juego](docs/GUIA-AMPLIAR.md).
 
 ## Hoja de ruta
 
 - **Acto II · El Pantano de la Fricción:** trabajo y energía (cap. 14). Arcanista Cinético (½mv²) y Explorador de Alturas (mgh).
 - **Acto III · La Torre del Tomo:** impulso y cantidad de movimiento (cap. 15). Jefe final: Hibbelerius, el Archimago del Tomo.
-- Sonido, más enemigos y eventos narrativos.
+- Más enemigos, encuentros y opciones de personalización (armas, emblemas, retratos).

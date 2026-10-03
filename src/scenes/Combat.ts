@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { G, W, H } from '../config';
 import { CalcCtx, CARDS, CardInst, force } from '../data/cards';
 import { ENCOUNTERS, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addErgios, Game, logEvent, saveLocal, syncRun } from '../state';
+import { addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
@@ -47,6 +47,7 @@ export class CombatScene extends Phaser.Scene {
   private keepBlock = false;
   private busy = false;
   private turn = 0;
+  private firstAttack = false;
   private selected: CardView | null = null;
   private hero!: Phaser.GameObjects.Image;
   private heroX = 220;
@@ -104,7 +105,7 @@ export class CombatScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(300);
-    audio.play(this.kind === 'boss' ? 'jefe' : 'combate');
+    audio.play(this.kind === 'boss' ? 'jefe' : Math.random() < 0.5 ? 'combate' : 'combate2');
     const run = Game.run!;
     dungeonBackground(this, 100 + this.floor * 7, this.kind === 'boss' ? 0x241820 : this.kind === 'elite' ? 0x201822 : 0x1c1722);
     this.tip = new Tooltip(this);
@@ -169,9 +170,15 @@ export class CombatScene extends Phaser.Scene {
     if (this.hasFx('manto')) this.block += 8;
     if (this.hasFx('lodo') && !this.has('botas')) this.friccion += 2;
     if (this.hasFx('impulso')) this.baseAcel += 1;
+    // dones de figuras históricas
+    this.baseAcel += boonLevel('n_principia');
+    this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
     this.refreshPlayer();
-    this.banner(this.kind === 'boss' ? T.combate.bannerJefe : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(() => this.startTurn());
+    this.banner(this.kind === 'boss' ? T.combate.bannerJefe : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+      await this.newtonApple();
+      if (!(await this.checkEnd())) this.startTurn();
+    });
   }
 
   // ───────────────────────── ENEMIGOS ─────────────────────────
@@ -180,7 +187,11 @@ export class CombatScene extends Phaser.Scene {
     const sprite = this.add.image(0, 330, st.def.sprite).setOrigin(0.5, 1).setScale(st.def.scale);
     const shadow = this.add.ellipse(0, 330, sprite.displayWidth * 0.9, 16, 0x000000, 0.5);
     root.add([shadow, sprite]);
-    if (st.def.id === 'bat') {
+    if (st.def.id === 'pendulo') {
+      sprite.setOrigin(0.5, 0).setY(118);
+      sprite.setAngle(-14);
+      this.tweens.add({ targets: sprite, angle: 14, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    } else if (st.def.id === 'bat') {
       sprite.y = 260;
       this.tweens.add({ targets: sprite, y: 248, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     } else {
@@ -189,7 +200,7 @@ export class CombatScene extends Phaser.Scene {
     const hp = bar(this, x - 60, 344, 120, 14, 0x6a2a3a);
     const blockT = txt(this, x - 82, 351, '', 22, CSS.block).setOrigin(0.5);
     const top = 330 - sprite.displayHeight - (st.def.id === 'bat' ? 80 : 12);
-    const intentC = this.add.container(x, top);
+    const intentC = st.def.id === 'pendulo' ? this.add.container(x + 62, 170) : this.add.container(x, top);
     const statusC = this.add.container(x + 66, 351);
     txt(this, x, 370, st.def.name, 19, CSS.dim).setOrigin(0.5);
     const ev: EnemyView = { st, root, sprite, hp, blockT, intentC, statusC, baseX: x, dead: false };
@@ -214,6 +225,12 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private intentText(i: Intent) {
+    const r = this.intentText0(i);
+    if ('label' in i && i.label) r.d = `«${i.label}»\n${r.d}`;
+    return r;
+  }
+
+  private intentText0(i: Intent) {
     if (i.kind === 'stunned') return { ic: 'i_stun', t: 'Detenido', d: 'Está detenido: no actuará este turno y recibe ×1.5 de daño.' };
     if (i.kind === 'block')
       return { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloque${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
@@ -473,6 +490,14 @@ export class CombatScene extends Phaser.Scene {
     if (def.exhaust) this.exhaust.push(inst);
     else this.discard.push(inst);
 
+    // Galileo · Plano Inclinado: el primer ataque del turno acelera más
+    let plano = 0;
+    if (def.type === 'Ataque' && !this.firstAttack && boonLevel('g_plano')) {
+      plano = 2 * boonLevel('g_plano');
+      this.acel += plano;
+      this.calc(`Plano Inclinado (Galileo): +${plano} m/s² a este primer ataque`);
+    }
+    if (def.type === 'Ataque') this.firstAttack = true;
     const c = this.ctx();
     switch (def.id) {
       case 'golpe':
@@ -538,25 +563,43 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`ΣF = 0: fuerza entrante ${inc} N → +${b} de Bloque`);
         break;
       }
-      case 'carrera':
-        this.acel += st.extra!;
-        this.calc(`Carrera: +${st.extra} m/s² → cada ataque gana +${st.extra} × m N`);
+      case 'carrera': {
+        const vv = boonLevel('c_visviva');
+        this.acel += st.extra! + vv;
+        this.calc(`Carrera: +${st.extra! + vv} m/s²${vv ? ' (Vis Viva)' : ''} → cada ataque gana +${st.extra! + vv} × m N`);
         this.drawCards(1);
         break;
-      case 'segunda':
-        this.acel += st.extra!;
-        this.calc(`Segunda Ley: +${st.extra} m/s² este turno`);
+      }
+      case 'segunda': {
+        const vv = boonLevel('c_visviva');
+        this.acel += st.extra! + vv;
+        this.calc(`Segunda Ley: +${st.extra! + vv} m/s² este turno${vv ? ' (Vis Viva)' : ''}`);
         break;
+      }
       case 'forja':
         this.masa += st.extra!;
         this.calc(`Forja Pesada: +${st.extra} kg a tus armas (masa total extra: ${this.masa} kg)`);
         break;
     }
+    this.acel -= plano;
     this.refreshPlayer();
     this.layoutHand();
     if (Game.run!.hp <= 0) return this.defeat('tu propia Embestida');
     this.busy = false;
     await this.checkEnd();
+  }
+
+  /** Newton · La Manzana: cae sobre cada enemigo al iniciar el combate */
+  private async newtonApple() {
+    const lvl = boonLevel('n_manzana');
+    if (!lvl) return;
+    const W1 = Math.round(lvl * G);
+    this.calc(`La Manzana (Newton): W = ${lvl} kg × 9.81 m/s² ≈ ${W1} N a cada enemigo`);
+    for (const ev of this.alive()) {
+      const a = this.add.image(ev.baseX, 60, 'i_apple').setScale(3).setDepth(600);
+      await new Promise<void>((r) => this.tweens.add({ targets: a, y: 240, duration: 420, ease: 'Quad.in', onComplete: () => { a.destroy(); r(); } }));
+      await this.hitEnemy(ev, W1, true);
+    }
   }
 
   private gainBlock(n: number) {
@@ -670,6 +713,11 @@ export class CombatScene extends Phaser.Scene {
       const t = txt(this, this.heroX, 210, T.combate.bloqueado, 28, CSS.block).setOrigin(0.5).setDepth(700).setStroke('#000', 5);
       this.tweens.add({ targets: t, y: 170, alpha: 0, duration: 800, onComplete: () => t.destroy() });
     }
+    const nr = boonLevel('n_reaccion');
+    if (from && nr && real === 0 && absorbed > 0 && !from.dead) {
+      this.calc(`Acción y Reacción (Newton): el atacante recibe ${3 * nr} N`);
+      await this.hitEnemy(from, 3 * nr);
+    }
     if (from && this.reflect && !from.dead) {
       this.calc(`3ª ley: te golpeó con ${dmg} N → recibe ${dmg} N de reacción`);
       await this.hitEnemy(from, dmg);
@@ -689,7 +737,19 @@ export class CombatScene extends Phaser.Scene {
     }
     this.energy = this.maxEnergy;
     let draw = 5;
+    this.firstAttack = false;
+    const eq = boonLevel('j_equivalente');
+    if ((eq === 1 && this.turn === 1) || (eq === 2 && [1, 3, 5].includes(this.turn))) {
+      this.energy += 1;
+      this.calc('Equivalente Mecánico (Joule): +1 J');
+    }
+    const pen = boonLevel('g_pendulo');
+    if (pen && this.turn % (pen === 2 ? 2 : 3) === 0) {
+      this.energy += 1;
+      this.calc('Péndulo Isócrono (Galileo): +1 J');
+    }
     if (this.turn === 1) {
+      draw += boonLevel('g_caida');
       if (this.hasFx('vigor')) this.energy += 1;
       if (this.hasFx('fatiga')) this.energy -= 1;
       if (this.hasFx('niebla')) draw -= 1;
@@ -742,6 +802,11 @@ export class CombatScene extends Phaser.Scene {
             else {
               this.friccion += it.friccion;
               this.calc(`Lodo: +${it.friccion} Fricción → tus ataques pierden ${this.friccion} m/s²`);
+              const jc = boonLevel('j_calor');
+              if (jc) {
+                this.gainBlock(4 * jc);
+                this.calc(`Calor por Fricción (Joule): +${4 * jc} de Bloque`);
+              }
             }
           }
         }
@@ -776,6 +841,8 @@ export class CombatScene extends Phaser.Scene {
     run.score += pts;
     if (this.kind === 'elite') run.stats.elites++;
     // los efectos pasajeros se consumen al terminar el combate
+    const cons = boonLevel('c_conserva');
+    if (cons) run.hp = Math.min(run.maxHp, run.hp + 5 * cons);
     run.effects.forEach((e) => e.left--);
     run.effects = run.effects.filter((e) => e.left > 0);
     const erg = this.kind === 'elite' ? Phaser.Math.Between(35, 45) : this.kind === 'easy' ? Phaser.Math.Between(10, 14) : Phaser.Math.Between(13, 19);

@@ -19,6 +19,7 @@ import { HelpScene } from './scenes/Help';
 import { EventScene } from './scenes/Event';
 import { ShopScene } from './scenes/Shop';
 import { OverlayScene } from './scenes/Overlay';
+import { SanctuaryScene } from './scenes/Sanctuary';
 import { Game } from './state';
 
 const game = new Phaser.Game({
@@ -38,7 +39,7 @@ const game = new Phaser.Game({
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
   scene: [BootScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda
