@@ -32,12 +32,76 @@ const HELMS: Record<string, string[]> = {
   corona: ['............', '....k.k.k...', '....kykykk..'],
 };
 
+// ── Arcanista Cinético (mismo tamaño que el caballero: 21×22) ──
+const MAGE_HATS: Record<string, string[]> = {
+  penacho: [ // sombrero puntiagudo
+    '........k............',
+    '.......kCk...........',
+    '......kCcCk..........',
+    '.....kCccCCk.........',
+    '...kkkkkkkkkkk.......',
+  ],
+  cuernos: [ // capucha
+    '.....................',
+    '.......kkkk..........',
+    '......kCccCk.........',
+    '.....kCcccCCk........',
+    '.....kCkkkkCk........',
+  ],
+  corona: [ // diadema
+    '.....................',
+    '.....................',
+    '.......kkkkk.........',
+    '......kgyEygk........',
+    '.....kkkkkkkk........',
+  ],
+};
+const MAGE_BODY = [
+  '.....kssssssk',
+  '.....ksEssEsk',
+  '.....kssssssk',
+  '......kssssk',
+  '.....kkCccCkk',
+  '....kCcclllcCk',
+  '...kCcccyccccCk',
+  '...kCcccccccccCk',
+  '..kCcccllcccccCk',
+  '..kCcccccccccCCk',
+  '..kCccccccccccCk',
+  '..kCCcccccccccCk',
+  '.kCCcccccccccCCk',
+  '.kCCCcccccccCCCk',
+  '.kCCCCcccccCCCCk',
+  '.kkkkkkkkkkkkkkk',
+  '...kdk....kdk',
+];
+// bastón con orbe brillante, dibujado encima del cuerpo
+const MAGE_STAFF: [number, number, string][] = [
+  [0, 18, 'y'], [0, 19, 'y'], [1, 17, 'y'], [1, 18, 'B'], [1, 19, 'B'], [1, 20, 'y'],
+  [2, 17, 'y'], [2, 18, 'B'], [2, 19, 'B'], [2, 20, 'y'], [3, 18, 'y'], [3, 19, 'y'],
+  ...Array.from({ length: 13 }, (_, i) => [4 + i, 18, 'n'] as [number, number, string]),
+  [6, 17, 's'], [7, 16, 's'], [7, 17, 's'],
+];
+export function mageMatrix(hatId: string): string[] {
+  const hat = (MAGE_HATS[hatId] ?? MAGE_HATS.penacho).map((r) => r.slice(0, 21).padEnd(21, '.'));
+  const body = MAGE_BODY.map((r) => r.padEnd(21, '.').split(''));
+  for (const [y, x, ch] of MAGE_STAFF) if (body[y]) body[y][x] = ch;
+  const rows = [...hat, ...body.map((r) => r.join(''))];
+  while (rows.length < 22) rows.push('.'.repeat(21));
+  return rows.slice(0, 22);
+}
+
 export function knightMatrix(helm: string): string[] {
-  return [...(HELMS[helm] ?? HELMS.penacho), ...KNIGHT_BODY];
+  return [...(HELMS[helm] ?? HELMS.penacho), ...KNIGHT_BODY].map((r) => r.slice(0, 21).padEnd(21, '.'));
 }
 
 function mirrorHalf(rows: string[]): string[] {
   return rows.map((r) => r + r.split('').reverse().join(''));
+}
+/** Igual que mirrorHalf pero alinea las mitades por la derecha (el centro) */
+function mirrorPad(rows: string[]): string[] {
+  const w = Math.max(...rows.map((r) => r.length));
+  return mirrorHalf(rows.map((r) => r.padStart(w, '.')));
 }
 
 export const SPRITES: Record<string, string[]> = {
@@ -186,6 +250,81 @@ export const SPRITES: Record<string, string[]> = {
     '..kgglll',
     '...kgggg',
     '....kkkk',
+  ]),
+  // ── Acto II · Galerías de la Fricción ──
+  anima: mirrorPad([
+    '.......o',
+    '......oy',
+    '.....oyy',
+    '....oyyw',
+    '...oyyww',
+    '...oyFkw',
+    '..oyyyww',
+    '..oyyyyw',
+    '.ooyyyyy',
+    '.oRoyyyo',
+    '..R.ooo.',
+    '....R..o',
+  ]),
+  muelle: mirrorPad([
+    '...kkkkk',
+    '..kllllk',
+    '..klFkll',
+    '...kkkkk',
+    '..kgggg.',
+    '...kgggg',
+    '..kgggg.',
+    '...kgggg',
+    '..kgggg.',
+    '...kgggg',
+    '.kkkkkkk',
+    'kllllllll',
+  ]),
+  volante: mirrorPad([
+    'kkkkkk',
+    'kkkggggg',
+    'kkgggllll',
+    'kgglllgggg',
+    'kgllgggkkkk',
+    'kglgggkk',
+    'kglggk',
+    'kglggk...kkk',
+    'kglgk...kyyy',
+    'kglgk..kyFyy',
+    'kglgk...kyyy',
+    'kglggk...kkk',
+    'kglggk',
+    'kglgggkk',
+    'kgllgggkkkk',
+    'kgglllgggg',
+    'kkgggllll',
+    'kkkggggg',
+    'kkkkkk',
+  ]),
+  bruja: mirrorPad([
+    'k',
+    'kp',
+    'kpp',
+    'kppp',
+    'kpppP',
+    'kppppP',
+    'kpppppP',
+    'kkkkkkkkkkkk',
+    'kdssssss',
+    'kdskFkss',
+    'kdssssss',
+    'kdsqqqs',
+    'kGGdsssk',
+    'kGLGGGGGGG',
+    'kGLLGGpGGGG',
+    'kGLGGGpGGGG',
+    'kGLLGGGpGGGG',
+    'kGLGGGGpGGGG',
+    'kGLLGGGGpGGGG',
+    'kGLGGGGGpGGGG',
+    'kGLLGGGGGpGGGG',
+    'kGGGGGGGGpGGGG',
+    'kkkkkkkkkkkkkk',
   ]),
   // ── Íconos 9x9 ──
   i_combat: [
@@ -593,8 +732,15 @@ export function makeKnight(
 }
 
 /** Dibuja el héroe del perfil actual en la textura 'hero' */
-export function makeHeroFromAvatar(scene: Phaser.Scene, av: { helm: string; cape: number; armor?: number; visor?: number }) {
-  makeKnight(scene, 'hero', av.helm, CAPES[av.cape] ?? CAPES[0], ARMORS[av.armor ?? 0], VISORS[av.visor ?? 0].c);
+export function makeHeroFromAvatar(scene: Phaser.Scene, av: { helm: string; cape: number; armor?: number; visor?: number; clase?: string }, key = 'hero') {
+  const cape = CAPES[av.cape] ?? CAPES[0];
+  const armor = ARMORS[av.armor ?? 0] ?? ARMORS[0];
+  const visor = (VISORS[av.visor ?? 0] ?? VISORS[0]).c;
+  if (av.clase === 'arcanista') {
+    makeTexture(scene, key, mageMatrix(av.helm), { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor });
+  } else {
+    makeKnight(scene, key, av.helm, cape, armor, visor);
+  }
 }
 
 const NPC = mirrorHalf([
@@ -669,6 +815,13 @@ export function generateAllTextures(scene: Phaser.Scene) {
   }, true);
   for (const [k, ov] of Object.entries(NPCS)) makeTexture(scene, k, NPC, ov);
   for (const [k, f] of Object.entries(FIG)) makeTexture(scene, k, f.rows, f.ov);
+  // Acto II: variantes oscuras de sprites existentes
+  makeTexture(scene, 'brea', SPRITES.slime, { L: '#2e2c26', G: '#141310', w: '#5a5440', F: '#e0a040' });
+  makeTexture(scene, 'minero', NPC, { c: '#2c3836', C: '#161e1c', E: '#9bf0c0', s: '#4a5a58' });
+  makeTexture(scene, 'golem', SPRITES.colossus, { g: '#26323a', l: '#43566a', o: '#2e7a8a', y: '#8fd0e0', E: '#7fe8ff', d: '#141c22' });
+  makeTexture(scene, 'anima', SPRITES.anima, { y: '#c8743a', o: '#6a2a18', w: '#f0c070', R: '#8a3a20' });
+  makeTexture(scene, 'bruja', SPRITES.bruja, { G: '#1c2418', L: '#34442a', p: '#24162e', P: '#46285a', s: '#7a8a6a', q: '#5a6a4e', F: '#c8f070', d: '#10140e' });
+  makeTexture(scene, 'volante', SPRITES.volante, { g: '#3a3a44', l: '#6a6a7a', y: '#c87533', F: '#ffe080' });
   // pixel blanco para partículas
   if (!scene.textures.exists('px')) {
     const c = scene.textures.createCanvas('px', 2, 2)!;

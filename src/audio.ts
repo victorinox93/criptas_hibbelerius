@@ -5,7 +5,7 @@
 // ════════════════════════════════════════════════════════════════
 import { MUSIC_FILES } from './config';
 
-export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario';
+export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2';
 export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
 
 const LEVELS = [0, 0.3, 0.6, 1];
@@ -83,6 +83,41 @@ const TRACKS: Record<TrackId, TrackDef> = {
       68, null, null, null, 72, null, 70, null, 68, null, null, null, 67, null, 65, null,
       65, null, null, null, 68, null, 67, null, 65, null, null, null, 63, null, 62, null,
       67, null, null, null, 71, null, 74, null, 72, null, null, null, null, null, null, null,
+    ],
+  },
+  // ── Acto II: más grave, frigio y con zumbido ──
+  mapa2: {
+    bpm: 72,
+    chords: [[52, 55, 59], [53, 57, 60], [52, 55, 59], [50, 53, 57]],
+    pad: 0.13, padCut: 600,
+    bass: 'x...............', bassOct: -24,
+    arp: '1.......1..1....', arpOct: 0,
+    kick: '1...............',
+  },
+  combate3: {
+    bpm: 98,
+    chords: [[52, 55, 59], [53, 57, 60], [50, 53, 57], [53, 57, 60]],
+    pad: 0.09, padCut: 800,
+    arp: '1.1.11.11.1.11.1', arpOct: 0,
+    bass: 'x.x.x.xox.x.x.xo', bassOct: -24,
+    kick: '1..1..1.1..1..1.',
+    snare: '....1.......1...',
+    hat: '..1...1...1...11',
+  },
+  jefe2: {
+    bpm: 116,
+    chords: [[47, 50, 54], [48, 52, 55], [47, 50, 54], [45, 48, 52]],
+    pad: 0.1, padCut: 1000,
+    arp: '1111111111111111', arpOct: 12,
+    bass: 'xoxoxoxoxoxoxoxo', bassOct: -24,
+    kick: '1...1...1...1.11',
+    snare: '....1.......1...',
+    hat: '1.1.1.1.1.1.1.1.',
+    lead: [
+      71, null, null, null, 72, null, 71, null, 69, null, null, null, 67, null, null, null,
+      72, null, null, null, 74, null, 72, null, 71, null, null, null, 69, null, null, null,
+      71, null, null, null, 72, null, 74, null, 76, null, null, null, 74, null, 72, null,
+      71, null, null, null, 69, null, 67, null, 66, null, null, null, null, null, null, null,
     ],
   },
   // figuras históricas: etérea, modo lidio (luminoso pero misterioso)

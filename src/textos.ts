@@ -118,12 +118,14 @@ export const T = {
       ['i_shield', 'Bloque', 'Absorbe daño. Se pierde al iniciar tu turno… salvo que la inercia diga lo contrario.'],
       ['i_momentum', 'Inercia (1ª ley)', 'Algunos enemigos avanzan sin detenerse y su golpe crece. Detenlos con UN golpe de F ≥ su umbral.'],
       ['i_shrine', 'Encuentros, ecos y mercader', 'Personajes y figuras históricas te harán preguntas: acierta y recibe bendiciones o dones épicos. El mercader acepta Ergios.'],
-      ['i_rune', 'Runas', 'Altares y fogatas te retan con problemas de dinámica. Resuélvelos para ganar poder.'],
+      ['i_fire', 'Daño elemental y cartas basura', 'Calor quema cada turno, Resonancia estalla con 3 cargas y Fatiga hace que el enemigo reciba +50 %. Algunos enemigos te meten cartas inútiles al mazo.'],
     ] as [string, string, string][],
   },
 
   mapa: {
     titulo: 'Acto I · Las Criptas de la Inercia',
+    titulo2: 'Acto II · Las Galerías de la Fricción',
+    jefe2: ['La Bruja de la Fricción', 'La guardiana del Acto II.'] as [string, string],
     pisos: 'Pisos',
     clicAvanzar: '▶ Clic para avanzar',
     nodos: {
@@ -221,11 +223,11 @@ export const T = {
   },
 
   final: {
-    victoria: 'Acto I completado',
-    victoriaTexto: 'El Coloso Inerte se desmorona. Su inercia, por fin, cede.',
+    victoria: '¡Expedición completada!',
+    victoriaTexto: 'La Bruja de la Fricción se disipa en vapor. Las galerías quedan en silencio.',
     derrota: 'La expedición termina',
     derrotaTexto: 'Te hizo retroceder',
-    cita: '«Interesante… dominas la fuerza.\nVeremos si entiendes la ENERGÍA.»\n— Hibbelerius',
+    cita: '«Dominas la fuerza y la energía…\nPero aún no has visto el IMPULSO.»\n— Hibbelerius',
     consejo: 'Consejo del cronista',
     volver: 'Volver al Umbral',
     registrado: 'Tu progreso quedó registrado.',
@@ -237,6 +239,15 @@ export const T = {
       'La Embestida te devuelve ¼ de su fuerza: la 3ª ley no perdona. Ten Bloque listo.',
       'El lodo (fricción) resta aceleración. Peso Muerto usa g, que no cambia: ¡ignora la fricción!',
     ],
+  },
+
+  transicion: {
+    titulo: 'Acto I completado',
+    texto: 'El Coloso Inerte se desmorona. Su inercia, por fin, cede.\nBajo sus escombros se abre una escalera hacia las galerías inundadas.',
+    cita: '«Interesante… dominas la fuerza.\nVeremos si entiendes la ENERGÍA.»\n— Hibbelerius',
+    curacion: 'Descansas antes de bajar: recuperas',
+    descender: 'Descender a las Galerías',
+    desbloqueo: '¡Nueva clase desbloqueada: Arcanista Cinético!',
   },
 
   hud: { vida: 'Vida', vidaInfo: 'Si llega a 0, la expedición termina. Tu avance queda registrado.', piso: 'Piso', mazo: 'Mazo', menu: 'Menú' },

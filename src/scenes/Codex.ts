@@ -161,7 +161,8 @@ export class CodexScene extends Phaser.Scene {
     const known = list.filter((e) => this.has(e.kind, e.id)).length;
     this.countT.setText(`${T.grimorio.descubiertos}: ${known} / ${list.length}`);
 
-    const cols = 6, size = 62, gap = 8, x0 = 44, y0 = 140;
+    const many = list.length > 30;
+    const cols = many ? 8 : 6, size = many ? 48 : 62, gap = many ? 6 : 8, x0 = 44, y0 = 140;
     let selected: Phaser.GameObjects.Graphics | null = null;
     list.forEach((e, i) => {
       const x = x0 + (i % cols) * (size + gap), y = y0 + Math.floor(i / cols) * (size + gap);

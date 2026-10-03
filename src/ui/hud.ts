@@ -49,7 +49,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
     refresh() {
       const r = Game.run!;
       hud.setHp(r.hp, r.maxHp);
-      floorT.setText(`${Math.min(r.floor + 1, 9)}/9`);
+      floorT.setText(`${(r.acto ?? 1) === 2 ? 'II' : 'I'}·${Math.min(r.floor + 1, 9)}/9`);
       scoreT.setText(`✦${r.score}`);
       ergT.setText(`${r.ergios}`);
       deckBtn.label.setText(`${T.hud.mazo} (${r.deck.length})`);

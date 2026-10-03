@@ -5,14 +5,14 @@ import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { W } from '../config';
 import { CLASSES } from '../data/classes';
-import { Avatar, Game, saveLocal, rememberSession } from '../state';
+import { arcanistaUnlocked, Avatar, Game, saveLocal, rememberSession } from '../state';
 import { T } from '../textos';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, TextField, title, txt } from '../ui/widgets';
 
 const HELMS = [
-  { id: 'penacho', name: 'Penacho' },
-  { id: 'cuernos', name: 'Cuernos' },
-  { id: 'corona', name: 'Corona' },
+  { id: 'penacho', name: 'Penacho', mage: 'Sombrero' },
+  { id: 'cuernos', name: 'Cuernos', mage: 'Capucha' },
+  { id: 'corona', name: 'Corona', mage: 'Diadema' },
 ];
 
 export class AvatarScene extends Phaser.Scene {
@@ -41,21 +41,27 @@ export class AvatarScene extends Phaser.Scene {
     this.tweens.add({ targets: glow, alpha: 0.09, duration: 1400, yoyo: true, repeat: -1 });
     const hero = this.add.image(188, 210, 'hero').setScale(6);
     this.tweens.add({ targets: hero, y: 206, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const refreshers: (() => void)[] = [];
     const redraw = () => {
-      makeHeroFromAvatar(this, { helm: HELMS[helmIdx].id, cape: st.cape, armor: st.armor, visor: st.visor });
+      const look = { helm: HELMS[helmIdx].id, cape: st.cape, armor: st.armor, visor: st.visor };
+      makeHeroFromAvatar(this, { ...look, clase });
+      makeHeroFromAvatar(this, { ...look, clase: 'caballero' }, 'cls_caballero');
+      makeHeroFromAvatar(this, { ...look, clase: 'arcanista' }, 'cls_arcanista');
       hero.setTexture('hero');
+      refreshers.forEach((f) => f());
     };
 
     const selector = (y: number, label: string, get: () => string, step: (d: number) => void) => {
       txt(this, 46, y - 12, label, 21, CSS.dim);
       const v = txt(this, 262, y, '', 22, CSS.bone).setOrigin(0.5);
       const upd = () => v.setText(get());
+      refreshers.push(upd);
       button(this, 196, y, 32, 30, '‹', () => { step(-1); upd(); redraw(); }, { size: 22 });
       button(this, 328, y, 32, 30, '›', () => { step(1); upd(); redraw(); }, { size: 22 });
       upd();
     };
     const cyc = (n: number, d: number, len: number) => (n + d + len) % len;
-    selector(322, T.avatar.yelmo, () => HELMS[helmIdx].name, (d) => (helmIdx = cyc(helmIdx, d, HELMS.length)));
+    selector(322, T.avatar.yelmo, () => (clase === 'arcanista' ? HELMS[helmIdx].mage : HELMS[helmIdx].name), (d) => (helmIdx = cyc(helmIdx, d, HELMS.length)));
     selector(360, T.avatar.armadura, () => ARMORS[st.armor].name, (d) => (st.armor = cyc(st.armor, d, ARMORS.length)));
     selector(398, T.avatar.visor, () => VISORS[st.visor].name, (d) => (st.visor = cyc(st.visor, d, VISORS.length)));
 
@@ -82,26 +88,29 @@ export class AvatarScene extends Phaser.Scene {
     txt(this, 372, 78, T.avatar.clase, 26, CSS.gold);
     const cards: Phaser.GameObjects.Graphics[] = [];
     CLASSES.forEach((c, i) => {
+      const ok = c.id === 'caballero' || (c.id === 'arcanista' && arcanistaUnlocked());
+      const lockText = c.id === 'arcanista' ? 'Vence al Coloso Inerte' : T.avatar.proximamente;
       const x = 370 + (i % 2) * 284, y = 112 + Math.floor(i / 2) * 182;
       const g = this.add.graphics();
       const draw = () => {
         g.clear();
-        frame(g, x, y, 272, 170, c.available ? UI.panel : 0x0c0a0f, clase === c.id ? UI.gold : UI.border);
+        frame(g, x, y, 272, 170, ok ? UI.panel : 0x0c0a0f, clase === c.id ? UI.gold : UI.border);
       };
       draw();
       cards.push(g);
-      const img = this.add.image(x + 46, y + 74, c.available ? 'hero' : 'inertKnight').setScale(3.4);
-      if (!c.available) img.setTint(0x000000).setAlpha(0.7);
-      const nm = txt(this, x + 92, y + 14, c.name, 23, c.available ? CSS.bone : CSS.dim);
+      const img = this.add.image(x + 46, y + 74, c.id === 'arcanista' ? 'cls_arcanista' : c.id === 'caballero' ? 'cls_caballero' : 'inertKnight').setScale(3.4);
+      if (!ok) img.setTint(0x000000).setAlpha(0.7);
+      const nm = txt(this, x + 92, y + 14, c.name, 23, ok ? CSS.bone : CSS.dim);
       if (nm.width > 170) nm.setScale(170 / nm.width, 1);
-      txt(this, x + 92, y + 38, c.concept, 19, c.available ? CSS.gold : '#5a5468');
-      txt(this, x + 92, y + 60, c.desc, 18, c.available ? CSS.dim : '#4a4256', { wordWrap: { width: 170 } });
-      txt(this, x + 14, y + 140, c.available ? `♥ ${c.hp}   ⚡ ${c.energy} J` : `🔒 ${T.avatar.proximamente}`, 19, c.available ? CSS.bone : '#5a5468');
-      const zone = this.add.zone(x, y, 272, 170).setOrigin(0).setInteractive({ useHandCursor: c.available });
+      txt(this, x + 92, y + 38, c.concept, 19, ok ? CSS.gold : '#5a5468');
+      txt(this, x + 92, y + 60, c.desc, 18, ok ? CSS.dim : '#4a4256', { wordWrap: { width: 170 } });
+      txt(this, x + 14, y + 140, ok ? `♥ ${c.hp}   ⚡ ${c.energy} J` : `🔒 ${lockText}`, 19, ok ? CSS.bone : '#5a5468');
+      const zone = this.add.zone(x, y, 272, 170).setOrigin(0).setInteractive({ useHandCursor: ok });
       zone.on('pointerdown', () => {
-        if (!c.available) return;
+        if (!ok) return;
         clase = c.id;
         cards.forEach((gg) => gg.emit('redraw'));
+        redraw();
       });
       g.on('redraw', draw);
     });

@@ -2,14 +2,15 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CARDS, CardInst, force } from '../data/cards';
-import { ENCOUNTERS, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addErgios, boonLevel, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { CalcCtx, CARDS, CardInst, force, kinetic } from '../data/cards';
+import { AddCards, encounters, EnemyState, Intent, pick, spawn } from '../data/enemies';
+import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { audio } from '../audio';
+import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
 import { deckOverlay, Hud, topBar } from '../ui/hud';
-import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, Tooltip, txt } from '../ui/widgets';
+import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, Tooltip, txt, wizardryBackground } from '../ui/widgets';
 
 type Kind = 'easy' | 'normal' | 'elite' | 'boss';
 
@@ -66,6 +67,14 @@ export class CombatScene extends Phaser.Scene {
   private log: string[] = [];
   private zones: Phaser.GameObjects.GameObject[] = [];
   private baseAcel = 0;
+  // Acto II / nuevas mecánicas
+  private isArc = false; // jugando con el Arcanista
+  private vel = 0; // rapidez del Arcanista (m/s)
+  private jPerTurn = 0; // Batería de Resorte
+  private velPerTurn = 0; // Impulso Constante
+  private pCalor = 0; // Calor sobre el jugador
+  private discardMode = 0; // cartas por descartar (Diagrama de Cuerpo Libre)
+  private acto = 1;
 
   constructor() { super('Combat'); }
 
@@ -90,6 +99,11 @@ export class CombatScene extends Phaser.Scene {
     this.zones = [];
     this.log = [];
     this.baseAcel = 0;
+    this.vel = 0;
+    this.jPerTurn = 0;
+    this.velPerTurn = 0;
+    this.pCalor = 0;
+    this.discardMode = 0;
   }
 
   private has(relic: string) {
@@ -99,7 +113,7 @@ export class CombatScene extends Phaser.Scene {
     return Game.run!.effects.some((e) => e.id === id && e.left > 0);
   }
   private ctx(): CalcCtx {
-    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g };
+    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy };
   }
   private wait(ms: number) {
     return new Promise<void>((r) => this.time.delayedCall(ms, () => r()));
@@ -107,14 +121,28 @@ export class CombatScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(300);
-    audio.play(this.kind === 'boss' ? 'jefe' : Math.random() < 0.5 ? 'combate' : 'combate2');
     const run = Game.run!;
+    this.acto = run.acto ?? 1;
+    this.isArc = run.clase === 'arcanista';
     this.grav = gravityOf(run.gravity);
-    dungeonBackground(this, 100 + this.floor * 7, this.kind === 'boss' ? 0x241820 : this.kind === 'elite' ? 0x201822 : 0x1c1722);
+    if (this.acto === 2) {
+      audio.play(this.kind === 'boss' ? 'jefe2' : 'combate3');
+      wizardryBackground(this, 200 + this.floor * 7, this.kind === 'boss');
+    } else {
+      audio.play(this.kind === 'boss' ? 'jefe' : Math.random() < 0.5 ? 'combate' : 'combate2');
+      dungeonBackground(this, 100 + this.floor * 7, this.kind === 'boss' ? 0x241820 : this.kind === 'elite' ? 0x201822 : 0x1c1722);
+    }
     this.tip = new Tooltip(this);
     this.hud = topBar(this, this.tip);
 
     // ── Jugador ──
+    if (this.acto === 2) {
+      // la única luz de las galerías: tu linterna
+      const lamp = this.add.circle(this.heroX + 10, 260, 150, 0xd8a050, 0.07).setBlendMode(Phaser.BlendModes.ADD).setDepth(-4);
+      this.tweens.add({ targets: lamp, alpha: 0.04, scale: 0.95, duration: 220, yoyo: true, repeat: -1 });
+    }
+    const av = Game.profile?.avatar;
+    if (av) makeHeroFromAvatar(this, { ...av, clase: run.clase });
     this.hero = this.add.image(this.heroX, 272, 'hero').setScale(5);
     this.tweens.add({ targets: this.hero, scaleY: 5.12, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.add.ellipse(this.heroX, 330, 110, 16, 0x000000, 0.5).setDepth(-1);
@@ -123,7 +151,7 @@ export class CombatScene extends Phaser.Scene {
     this.pStatus = this.add.container(this.heroX - 70, 376);
 
     // ── Enemigos ──
-    const enc = pick(ENCOUNTERS[this.kind]);
+    const enc = pick(encounters(this.acto)[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
 
@@ -177,6 +205,11 @@ export class CombatScene extends Phaser.Scene {
     this.baseAcel += boonLevel('n_principia');
     this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
+    if (this.isArc) {
+      // el Arcanista convierte sus bonos de aceleración en rapidez inicial
+      this.vel = 3 + this.baseAcel;
+      this.baseAcel = 0;
+    }
     this.refreshPlayer();
     this.banner(this.kind === 'boss' ? T.combate.bannerJefe : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
@@ -191,6 +224,7 @@ export class CombatScene extends Phaser.Scene {
     if (m === 1) return i;
     if (i.kind === 'attack') return { ...i, dmg: Math.round(i.dmg * m) };
     if (i.kind === 'block' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
+    if (i.kind === 'buff' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
     return i;
   }
 
@@ -249,12 +283,18 @@ export class CombatScene extends Phaser.Scene {
 
   private intentText0(i: Intent) {
     if (i.kind === 'stunned') return { ic: 'i_stun', t: 'Detenido', d: 'Está detenido: no actuará este turno y recibe ×1.5 de daño.' };
+    let r: { ic: string; t: string; d: string };
     if (i.kind === 'block')
-      return { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloque${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
-    const t = i.hits && i.hits > 1 ? `${i.dmg}×${i.hits}` : `${i.dmg}`;
-    let d = `Atacará con una fuerza de ${i.dmg} N${i.hits && i.hits > 1 ? `, ${i.hits} veces` : ''}.`;
-    if (i.friccion) d += `\nTe cubrirá de lodo: +${i.friccion} Fricción (−${i.friccion} m/s² a tus ataques).`;
-    return { ic: 'i_combat', t, d };
+      r = { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloque${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
+    else if (i.kind === 'buff') r = { ic: 'i_rune', t: '', d: 'Prepara un efecto.' };
+    else {
+      const t = i.hits && i.hits > 1 ? `${i.dmg}×${i.hits}` : `${i.dmg}`;
+      r = { ic: 'i_combat', t, d: `Atacará con una fuerza de ${i.dmg} N${i.hits && i.hits > 1 ? `, ${i.hits} veces` : ''}.` };
+    }
+    if (i.friccion) r.d += `\nTe cubrirá de lodo: +${i.friccion} Fricción (${this.isArc ? `pierdes ${i.friccion} m/s de rapidez cada turno` : `−${i.friccion} m/s² a tus ataques`}).`;
+    if (i.calor) r.d += `\nTe transferirá ${i.calor} de Calor (pierdes vida cada turno).`;
+    if (i.add) r.d += `\nMeterá ${i.add.n} «${CARDS[i.add.id].name}» a tu ${i.add.to === 'draw' ? 'mazo de robo' : 'descarte'}.`;
+    return r;
   }
 
   private refreshEnemy(ev: EnemyView) {
@@ -267,7 +307,13 @@ export class CombatScene extends Phaser.Scene {
       const ic = icon(this, -14, 0, it.ic, 3.2);
       const tt = txt(this, 2, -12, it.t, 26, st.intent.kind === 'attack' ? '#e0a070' : CSS.bone);
       ev.intentC.add([ic, tt]);
-      if (st.intent.kind === 'attack' && st.intent.friccion) ev.intentC.add(icon(this, tt.x + tt.width + 16, 0, 'i_mud', 3));
+      let ex = tt.x + tt.width + 16;
+      const ii = st.intent;
+      if (ii.kind !== 'stunned') {
+        if (ii.friccion) { ev.intentC.add(icon(this, ex, 0, 'i_mud', 3)); ex += 30; }
+        if (ii.calor) { ev.intentC.add(icon(this, ex, 0, 'i_fire', 3)); ex += 30; }
+        if (ii.add) ev.intentC.add(icon(this, ex, 0, 'i_fog', 3));
+      }
       this.tip.attach(ic, 'Intención', it.d);
       this.tweens.add({ targets: ev.intentC, y: ev.intentC.y - 4, duration: 600, yoyo: true, repeat: 1 });
     }
@@ -285,6 +331,21 @@ export class CombatScene extends Phaser.Scene {
       const ic = icon(this, sx + 8, 0, 'i_stun', 2.4);
       this.tip.attach(ic, 'Detenido', 'Una fuerza neta suficiente lo detuvo. Pierde su turno y recibe ×1.5 de daño.');
       ev.statusC.add(ic);
+      sx += 30;
+    }
+    const st2: [number, string, string, string][] = [
+      [st.calor, 'i_fire', 'Calor', `Pierde ${st.calor} de vida al inicio de su turno; luego baja 1.`],
+      [st.resonancia, 'i_wind', 'Resonancia', 'Con 3 cargas entra en resonancia y recibe 12 de daño.'],
+      [st.fatiga, 'i_anvil', 'Fatiga del material', `Recibe +50 % de daño. Quedan ${st.fatiga} turno(s).`],
+      [st.carga, 'i_pend', 'Energía elástica', `Lleva ${st.carga} compresión(es): liberará ½kx² de golpe.`],
+    ];
+    for (const [n, ic0, h, b] of st2) {
+      if (!n) continue;
+      const ic = icon(this, sx + 8, 0, ic0, 2.4);
+      const t = txt(this, sx + 20, -11, `${n}`, 20, '#e0a070');
+      this.tip.attach(ic, h, b);
+      ev.statusC.add([ic, t]);
+      sx += 40;
     }
   }
 
@@ -309,13 +370,17 @@ export class CombatScene extends Phaser.Scene {
     if (this.friccion) items.push(['i_mud', `${this.friccion}`, 'Fricción', `El lodo resta ${this.friccion} m/s² a la aceleración de tus ataques. Baja 1 por turno.`]);
     if (this.reflect) items.push(['i_reflect', '', 'Acción-Reacción', 'Este turno, cada golpe que recibas regresa con la misma fuerza al atacante (3ª ley).']);
     if (this.keepBlock) items.push(['i_crystal', '', 'Inercia Defensiva', 'Tu Bloque no se perderá al iniciar tu siguiente turno (1ª ley).']);
+    if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
+    if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
+    if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
+    if (this.velPerTurn) items.push(['i_gaunt', `+${this.velPerTurn}`, 'Impulso Constante', `+${this.velPerTurn} m/s al inicio de cada turno.`]);
     items.forEach(([ic, t, h, b], i) => {
       const im = icon(this, i * 46 + 8, 0, ic, 2.4);
       const tt = txt(this, i * 46 + 20, -11, t, 20, CSS.bone);
       this.tip.attach(im, h, b);
       this.pStatus.add([im, tt]);
     });
-    this.hand.forEach((c) => c.refresh(this.ctx(), this.cost(c) <= this.energy));
+    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && this.cost(c) <= this.energy));
   }
 
   private cost(c: CardView) {
@@ -331,6 +396,11 @@ export class CombatScene extends Phaser.Scene {
       }
       if (this.hand.length >= 10) break;
       const inst = this.draw.pop()!;
+      if (inst.id === 'errorSigno') {
+        this.energy = Math.max(0, this.energy - 1);
+        this.calc('Error de Signo: tu análisis se arruina → −1 J');
+        this.hint('Error de Signo: −1 J');
+      }
       const v = cardView(this, 62, 510, inst, this.ctx()).setScale(0.2).setDepth(200);
       this.setupCard(v);
       this.hand.push(v);
@@ -386,6 +456,12 @@ export class CombatScene extends Phaser.Scene {
   private clickCard(v: CardView) {
     if (this.busy) return;
     this.tip.hide();
+    if (this.discardMode > 0) return this.discardFromHand(v);
+    if (CARDS[v.inst.id].unplayable) {
+      this.hint('Esta carta no se puede jugar.');
+      this.tweens.add({ targets: v, x: v.x + 6, duration: 40, yoyo: true, repeat: 3 });
+      return;
+    }
     if (this.selected === v) return this.cancelSelect();
     if (this.selected) this.cancelSelect();
     if (this.cost(v) > this.energy) {
@@ -397,6 +473,50 @@ export class CombatScene extends Phaser.Scene {
     if (def.id === 'tajo') return this.chooseAngle(v);
     if (def.target === 'enemy' && this.alive().length > 1) return this.enterTargeting(v);
     this.playOn(v, this.alive()[0]);
+  }
+
+  /** Descarta una carta elegida por el jugador (Diagrama de Cuerpo Libre) */
+  private discardFromHand(v: CardView) {
+    this.hand = this.hand.filter((c) => c !== v);
+    this.discard.push(v.inst);
+    this.tweens.add({ targets: v, x: W - 62, y: 510, scale: 0.1, alpha: 0, duration: 220, onComplete: () => v.destroy() });
+    this.discardMode--;
+    this.calc(`Descartas ${CARDS[v.inst.id].name}`);
+    if (this.discardMode <= 0 || !this.hand.length) {
+      this.discardMode = 0;
+      this.hintT.setAlpha(0);
+      this.endBtn.setEnabled(true);
+    }
+    this.layoutHand();
+    this.refreshPlayer();
+  }
+
+  /** Mete cartas de estado (basura) a tus pilas */
+  private addStatus(a: AddCards) {
+    const r = Game.run!;
+    unlock('cards', a.id);
+    for (let i = 0; i < a.n; i++) {
+      const inst = { uid: r.nextUid++, id: a.id, up: false };
+      if (a.to === 'draw') this.draw.splice(Math.floor(Math.random() * (this.draw.length + 1)), 0, inst);
+      else this.discard.push(inst);
+    }
+    this.calc(`Te meten ${a.n} «${CARDS[a.id].name}» al ${a.to === 'draw' ? 'mazo' : 'descarte'}`);
+  }
+
+  /** Resonancia: con 3 cargas el enemigo recibe 12 de daño */
+  private async addResonance(ev: EnemyView, n: number) {
+    ev.st.resonancia += n;
+    while (ev.st.resonancia >= 3 && !ev.dead) {
+      ev.st.resonancia -= 3;
+      this.calc('¡Resonancia! La amplitud se dispara: 12 de daño');
+      this.floatText(ev.baseX, 150, '¡RESONANCIA!', '#9ad8f0');
+      await this.hitEnemy(ev, 12, true, 'res');
+    }
+    if (!ev.dead) this.refreshEnemy(ev);
+  }
+
+  private dealK(m: number) {
+    return Math.round(0.5 * m * this.vel * this.vel);
   }
 
   /** Modo apuntar: la mano baja y cada enemigo tiene una zona grande para hacer clic */
@@ -509,10 +629,17 @@ export class CombatScene extends Phaser.Scene {
 
     // Galileo · Plano Inclinado: el primer ataque del turno acelera más
     let plano = 0;
+    let planoV = 0;
     if (def.type === 'Ataque' && !this.firstAttack && boonLevel('g_plano')) {
-      plano = 2 * boonLevel('g_plano');
-      this.acel += plano;
-      this.calc(`Plano Inclinado (Galileo): +${plano} m/s² a este primer ataque`);
+      if (this.isArc) {
+        planoV = boonLevel('g_plano');
+        this.vel += planoV;
+        this.calc(`Plano Inclinado (Galileo): +${planoV} m/s para este primer ataque`);
+      } else {
+        plano = 2 * boonLevel('g_plano');
+        this.acel += plano;
+        this.calc(`Plano Inclinado (Galileo): +${plano} m/s² a este primer ataque`);
+      }
     }
     if (def.type === 'Ataque') this.firstAttack = true;
     const c = this.ctx();
@@ -597,12 +724,164 @@ export class CombatScene extends Phaser.Scene {
         this.masa += st.extra!;
         this.calc(`Forja Pesada: +${st.extra} kg a tus armas (masa total extra: ${this.masa} kg)`);
         break;
+
+      // ── Caballero (nuevas) ──
+      case 'martillo': {
+        const f = force(st, c);
+        this.calc(`Martillo: F = ${r1(f.m)} kg × ${r1(f.a)} m/s² = ${f.F} N + 1 Fatiga`);
+        await this.heroLunge();
+        if (target) {
+          await this.hitEnemy(target, f.F);
+          if (!target.dead) { target.st.fatiga += 1; this.refreshEnemy(target); }
+        }
+        break;
+      }
+      case 'muroMasa': {
+        const b = st.block! + 3 * Math.max(0, this.masa);
+        this.gainBlock(b);
+        this.calc(`Muro de Masa: ${st.block} + 3×${Math.max(0, this.masa)} kg = ${b} de Bloque`);
+        break;
+      }
+
+      // ── Neutrales ──
+      case 'almacenada':
+        this.energy += st.extra!;
+        this.calc(`Energía Almacenada: U → trabajo útil, +${st.extra} J`);
+        break;
+      case 'bateria':
+        this.jPerTurn += 1;
+        this.calc('Batería de Resorte: +1 J al inicio de cada turno');
+        break;
+      case 'potencia':
+        this.energy += st.extra! + 1;
+        this.calc(`Potencia: P = W/t → +${st.extra! + 1} J y robas ${st.extra}`);
+        this.drawCards(st.extra!);
+        break;
+      case 'diagrama':
+        this.drawCards(2);
+        if (this.hand.length) {
+          this.discardMode = 1;
+          this.endBtn.setEnabled(false);
+          this.tweens.killTweensOf(this.hintT);
+          this.hintT.setText('Diagrama de Cuerpo Libre: elige 1 carta para descartar').setAlpha(1);
+        }
+        break;
+      case 'rebote': {
+        const dmg = this.block;
+        this.calc(`Rebote Elástico: tu Bloque (${dmg}) regresa como daño`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, dmg);
+        break;
+      }
+      case 'friccionArd':
+        if (target) {
+          target.st.calor += st.extra!;
+          this.burst(target.baseX, 260, 0xc87533, 16);
+          this.calc(`Fricción Ardiente: el trabajo de la fricción se vuelve calor (+${st.extra})`);
+          this.refreshEnemy(target);
+        }
+        break;
+      case 'frecuencia':
+        await this.heroLunge();
+        if (target) {
+          await this.hitEnemy(target, st.block ?? 3);
+          if (!target.dead) await this.addResonance(target, st.extra!);
+        }
+        break;
+      case 'fatigaMat':
+        if (target) {
+          target.st.fatiga += st.extra!;
+          this.calc(`Fatiga del Material: recibe +50 % de daño por ${target.st.fatiga} turno(s)`);
+          this.refreshEnemy(target);
+        }
+        break;
+      case 'conservacion': {
+        const b = st.extra! * this.energy;
+        this.gainBlock(b);
+        this.calc(`Conservación: ${this.energy} J sin usar × ${st.extra} = ${b} de Bloque`);
+        break;
+      }
+      case 'amortiguador':
+        this.gainBlock(st.block!);
+        this.calc(`Amortiguador: +${st.block} de Bloque`);
+        break;
+      case 'lodoCarta':
+        this.calc('Lodo Pegajoso: gastaste energía sin avanzar.');
+        break;
+
+      // ── Arcanista Cinético ──
+      case 'proyectil':
+      case 'choque': {
+        const k = kinetic(st, c);
+        this.calc(`${def.name}: K = ½·${r1(k.m)} kg·(${k.v} m/s)² = ${k.K} J`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, k.K);
+        if (def.id === 'proyectil') this.vel = Math.max(0, this.vel - 1);
+        break;
+      }
+      case 'rafaga': {
+        const k = kinetic(st, c);
+        this.calc(`Ráfaga: K = ½·${r1(k.m)}·${k.v}² = ${k.K} J a todos`);
+        await this.heroLunge();
+        for (const e of this.alive()) await this.hitEnemy(e, k.K);
+        this.vel = Math.max(0, this.vel - 2);
+        break;
+      }
+      case 'escudoE':
+        this.gainBlock(st.block!);
+        this.calc(`Escudo de Energía: +${st.block} de Bloque`);
+        break;
+      case 'acelerar': {
+        const vv = boonLevel('c_visviva');
+        const before = this.vel;
+        this.vel = Math.min(12, this.vel + st.extra! + vv);
+        this.calc(`Acelerar: v ${before} → ${this.vel} m/s (K crece ×${before ? r1((this.vel * this.vel) / (before * before)) : '∞'})`);
+        this.drawCards(1);
+        break;
+      }
+      case 'frenado': {
+        const v = this.vel, v2 = Math.max(0, v - 2), m = st.m ?? 2;
+        const b = Math.round(0.5 * m * (v * v - v2 * v2));
+        this.vel = v2;
+        this.gainBlock(b);
+        this.calc(`Frenado: ΔK = ½·${m}·(${v}² − ${v2}²) = ${b} → Bloque`);
+        break;
+      }
+      case 'impulsoCte':
+        this.velPerTurn += 1;
+        this.calc('Impulso Constante: +1 m/s cada turno (fuerza constante → aceleración constante)');
+        break;
+      case 'ondaCalor':
+        for (const e of this.alive()) {
+          e.st.calor += st.extra!;
+          this.burst(e.baseX, 260, 0xc87533, 10);
+          this.refreshEnemy(e);
+        }
+        this.calc(`Onda de Calor: +${st.extra} de Calor a todos`);
+        break;
+      case 'visVivaA':
+        this.vel = Math.min(12, this.vel * 2);
+        this.calc(`Vis Viva: duplicas v → ${this.vel} m/s, ¡K se cuadruplica!`);
+        break;
+      case 'barrera': {
+        const b = st.extra! * Math.round(this.vel);
+        this.gainBlock(b);
+        this.calc(`Barrera Inercial: ${st.extra}·v = ${st.extra}·${this.vel} = ${b} de Bloque`);
+        break;
+      }
+      case 'sobrecarga':
+        this.energy += st.extra!;
+        this.vel = Math.max(0, this.vel - 1);
+        this.calc(`Sobrecarga: +${st.extra} J a cambio de 1 m/s`);
+        break;
     }
     this.acel -= plano;
+    if (planoV) this.vel = Math.max(0, this.vel - planoV);
     this.refreshPlayer();
     this.layoutHand();
     if (Game.run!.hp <= 0) return this.defeat('tu propia Embestida');
     this.busy = false;
+    void this.dealK;
     await this.checkEnd();
   }
 
@@ -631,11 +910,12 @@ export class CombatScene extends Phaser.Scene {
   }
 
   /** Aplica una fuerza a un enemigo. Devuelve true si lo detuvo. */
-  private async hitEnemy(ev: EnemyView, F: number, ignoreBlock = false, _angle = 0): Promise<boolean> {
+  private async hitEnemy(ev: EnemyView, F: number, ignoreBlock = false, kind: number | 'golpe' | 'calor' | 'res' = 'golpe'): Promise<boolean> {
     if (ev.dead) return false;
     const st = ev.st;
     let dmg = F;
     if (st.detenido) dmg = Math.round(dmg * 1.5);
+    if (st.fatiga > 0 && kind !== 'calor') dmg = Math.round(dmg * 1.5);
     let absorbed = 0;
     if (!ignoreBlock) {
       absorbed = Math.min(st.block, dmg);
@@ -647,7 +927,7 @@ export class CombatScene extends Phaser.Scene {
     ev.sprite.setTintFill(0xffffff);
     this.time.delayedCall(80, () => ev.sprite.clearTint());
     this.tweens.add({ targets: ev.root, x: ev.baseX + 14, duration: 50, yoyo: true, repeat: 1 });
-    this.burst(ev.baseX, 280, 0xb8b0c8, 12);
+    this.burst(ev.baseX, 280, kind === 'calor' ? 0xc87533 : 0xb8b0c8, 12);
     audio.sfx('hit');
     if (F >= 12) this.cameras.main.shake(140, 0.005);
     const t = txt(this, ev.baseX + Phaser.Math.Between(-20, 20), 230, `${dmg}`, 40, '#f0d090').setOrigin(0.5).setDepth(700).setStroke('#000', 5);
@@ -656,7 +936,7 @@ export class CombatScene extends Phaser.Scene {
 
     let stopped = false;
     const umbral = st.def.umbral ? st.def.umbral + (st.phase2 ? 3 : 0) : 0;
-    if (umbral && !st.detenido && st.hp > 0) {
+    if (umbral && !st.detenido && st.hp > 0 && kind !== 'calor' && kind !== 'res') {
       if (F >= umbral) {
         stopped = true;
         st.detenido = true;
@@ -676,6 +956,11 @@ export class CombatScene extends Phaser.Scene {
       st.phase2 = true;
       this.floatText(ev.baseX, 110, '¡Gana masa! Umbral 18 N', '#e0a070');
       this.calc('El Coloso absorbe piedra: más masa → necesitas más fuerza para detenerlo.');
+    }
+    if (st.def.id === 'bruja' && !st.phase2 && st.hp <= st.maxHp / 2 && st.hp > 0) {
+      st.phase2 = true;
+      this.floatText(ev.baseX, 110, 'μ máximo: sus golpes crecen', '#9bf07a');
+      this.calc('La Bruja aumenta el coeficiente de fricción: sus ataques ganan +4.');
     }
     if (st.hp <= 0) await this.killEnemy(ev);
     else this.refreshEnemy(ev);
@@ -752,9 +1037,24 @@ export class CombatScene extends Phaser.Scene {
     } else if (this.turn > 1) {
       this.block = 0;
     }
-    this.energy = this.maxEnergy;
+    this.energy = this.maxEnergy + this.jPerTurn;
     let draw = 5;
     this.firstAttack = false;
+    if (this.pCalor > 0) {
+      const run = Game.run!;
+      run.hp -= this.pCalor;
+      this.calc(`Calor: pierdes ${this.pCalor} de vida (energía térmica que no se disipa)`);
+      this.floatText(this.heroX, 200, `-${this.pCalor} 🔥`, '#e0a070');
+      this.pCalor--;
+      if (run.hp <= 0) return this.defeat('el Calor');
+    }
+    if (this.isArc) {
+      if (this.velPerTurn) this.vel = Math.min(12, this.vel + this.velPerTurn);
+      if (this.friccion) {
+        this.vel = Math.max(0, this.vel - this.friccion);
+        this.calc(`Fricción: la rapidez baja ${this.friccion} m/s (v = ${this.vel})`);
+      }
+    }
     const eq = boonLevel('j_equivalente');
     if ((eq === 1 && this.turn === 1) || (eq === 2 && [1, 3, 5].includes(this.turn))) {
       this.energy += 1;
@@ -780,7 +1080,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private async endTurn() {
-    if (this.busy) return;
+    if (this.busy || this.discardMode > 0) return;
     this.cancelSelect();
     this.busy = true;
     this.endBtn.setEnabled(false);
@@ -798,6 +1098,12 @@ export class CombatScene extends Phaser.Scene {
     for (const ev of this.alive()) {
       const st = ev.st;
       st.block = 0;
+      if (st.calor > 0) {
+        this.calc(`${st.def.name}: Calor −${st.calor}`);
+        await this.hitEnemy(ev, st.calor, true, 'calor');
+        st.calor = Math.max(0, st.calor - 1);
+        if (ev.dead) continue;
+      }
       const it = st.intent;
       if (it.kind === 'stunned') {
         st.stunned = Math.max(0, st.stunned - 1);
@@ -807,6 +1113,7 @@ export class CombatScene extends Phaser.Scene {
         await new Promise<void>((r) => this.tweens.add({ targets: ev.root, x: ev.baseX - 50, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => r() }));
         if (it.kind === 'block') {
           st.block += it.block;
+          if (st.def.id === 'muelle') st.carga++;
           if (it.dmg) await this.hurtPlayer(it.dmg, ev);
         } else if (it.kind === 'attack') {
           for (let h = 0; h < (it.hits ?? 1); h++) {
@@ -814,6 +1121,14 @@ export class CombatScene extends Phaser.Scene {
             if (Game.run!.hp <= 0 || ev.dead) break;
             await this.wait(140);
           }
+          if (st.def.id === 'muelle') st.carga = 0;
+        }
+        if (it.calor && Game.run!.hp > 0) {
+          this.pCalor += it.calor;
+          this.calc(`${st.def.name} te transfiere ${it.calor} de Calor`);
+        }
+        if (it.add) this.addStatus(it.add);
+        {
           if (it.friccion) {
             if (this.has('botas')) this.calc('Botas de Agarre: el lodo no te afecta.');
             else {
@@ -828,6 +1143,7 @@ export class CombatScene extends Phaser.Scene {
           }
         }
         if (st.def.umbral && !ev.dead) st.inercia++;
+        if (st.fatiga > 0) st.fatiga--;
         await this.wait(250);
       }
       if (Game.run!.hp <= 0) return this.defeat(ev.st.def.name);
@@ -867,12 +1183,21 @@ export class CombatScene extends Phaser.Scene {
     audio.sfx('victory');
     logEvent('combate', '', true, { tipo: this.kind, piso: this.floor, turnos: this.turn, vida: run.hp });
     saveLocal();
+    if (this.kind === 'boss' && this.acto === 1) {
+      codexFlag('acto1');
+      logEvent('acto', '', true, { acto: 1, vida: run.hp });
+      saveLocal();
+      syncRun('en curso', 'Acto I superado');
+      await this.banner(T.combate.victoria);
+      fadeTo(this, 'ActTransition');
+      return true;
+    }
     if (this.kind === 'boss') {
       run.done = true;
-      saveLocal();
+      codexFlag('acto2');
       codexWin(run.gravity);
       saveLocal();
-      syncRun('victoria', 'Coloso Inerte derrotado');
+      syncRun('victoria', 'Bruja de la Fricción derrotada');
       await this.banner(T.combate.victoria);
       fadeTo(this, 'End', { victory: true });
       return true;

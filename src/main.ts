@@ -23,6 +23,7 @@ import { SanctuaryScene } from './scenes/Sanctuary';
 import { CodexScene } from './scenes/Codex';
 import { RankingScene } from './scenes/Ranking';
 import { CreditsScene } from './scenes/Credits';
+import { ActTransitionScene } from './scenes/ActTransition';
 import { Game } from './state';
 
 const game = new Phaser.Game({
@@ -42,7 +43,7 @@ const game = new Phaser.Game({
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
   scene: [BootScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda

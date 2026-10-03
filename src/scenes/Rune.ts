@@ -85,7 +85,8 @@ export class RuneScene extends Phaser.Scene {
 
     const ev = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
     const fig = data.figureId ? FIGURES.find((f) => f.id === data.figureId) : undefined;
-    this.p = randomProblem(ev?.concepts ?? fig?.concepts);
+    const act2 = (Game.run?.acto ?? 1) === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion'] : undefined;
+    this.p = randomProblem(ev?.concepts ?? fig?.concepts ?? act2);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);

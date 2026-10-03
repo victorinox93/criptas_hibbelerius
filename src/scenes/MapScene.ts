@@ -31,21 +31,31 @@ export class MapScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(300);
-    audio.play('mapa');
+    audio.play((Game.run?.acto ?? 1) === 2 ? 'mapa2' : 'mapa');
     const run = Game.run!;
     const tip = new Tooltip(this);
 
     // fondo: pergamino oscuro
     const bg = this.add.graphics().setDepth(-10);
-    bg.fillStyle(0x060508, 1).fillRect(0, 0, W, H);
-    for (let i = 0; i < 260; i++) {
+    const act2 = (run.acto ?? 1) === 2;
+    bg.fillStyle(act2 ? 0x020203 : 0x060508, 1).fillRect(0, 0, W, H);
+    if (act2) {
+      // mapa estilo calabozo de Wizardry: cuadrícula de líneas frías
+      bg.lineStyle(1, 0x1c2630, 0.9);
+      for (let x = 0; x <= W; x += 24) bg.lineBetween(x, 44, x, H);
+      for (let y = 44; y <= H; y += 24) bg.lineBetween(0, y, W, y);
+      bg.lineStyle(1, 0x2a3846, 0.9);
+      for (let x = 0; x <= W; x += 96) bg.lineBetween(x, 44, x, H);
+      for (let y = 44; y <= H; y += 96) bg.lineBetween(0, y, W, y);
+    }
+    for (let i = 0; i < (act2 ? 0 : 260); i++) {
       bg.fillStyle(0x15111a, Math.random() * 0.7).fillRect(Math.random() * W, 44 + Math.random() * (H - 44), 3 + Math.random() * 10, 2 + Math.random() * 4);
     }
     embers(this);
     vignette(this);
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
-    title(this, W / 2, 66, T.mapa.titulo, 28);
+    title(this, W / 2, 66, act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
     const current = run.pos >= 0 ? byId.get(run.pos)! : null;
@@ -74,7 +84,7 @@ export class MapScene extends Phaser.Scene {
     // nodos
     for (const n of run.map) {
       const { x, y } = nodeXY(n);
-      const info = NODE_INFO[n.type];
+      const info = n.type === 'jefe' && act2 ? { ...NODE_INFO.jefe, name: T.mapa.jefe2[0], desc: T.mapa.jefe2[1] } : NODE_INFO[n.type];
       const size = n.type === 'jefe' ? 76 : 46;
       const g = this.add.graphics();
       const isAvail = available.has(n.id);
@@ -113,7 +123,7 @@ export class MapScene extends Phaser.Scene {
     types.forEach((t, i) => {
       const x = 24 + i * 118;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
-      const lt = txt(this, x + 16, H - 33, NODE_INFO[t].name, 18, CSS.dim);
+      const lt = txt(this, x + 16, H - 33, t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
       if (lt.width > 96) lt.setScale(96 / lt.width, 1);
     });
   }

@@ -35,7 +35,7 @@ export class EndScene extends Phaser.Scene {
     panel(this, 80, 150, 520, 300);
     const F = T.final.filas;
     const rows: [string, string | number][] = [
-      [F[0], `${run.floor}/9`],
+      [F[0], `${((run.acto ?? 1) - 1) * 9 + run.floor}/18`],
       [F[1], run.stats.combates],
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { api, isOnline, RankRow } from '../api';
-import { ARMORS, CAPES, CSS, UI, VISORS } from '../art/palette';
+import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
-import { makeKnight } from '../art/sprites';
+import { makeHeroFromAvatar } from '../art/sprites';
 import { W } from '../config';
 import { gravityOf } from '../data/gravity';
 import { Game } from '../state';
@@ -94,17 +94,17 @@ export class RankingScene extends Phaser.Scene {
       const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
       R(txt(this, COLS[0], y + 8, `${p.lugar}`, 26, medal));
       // avatar dibujado con sus colores
-      let av: { helm?: string; cape?: number; armor?: number; visor?: number } = {};
+      let av: { helm?: string; cape?: number; armor?: number; visor?: number; clase?: string } = {};
       try { av = p.avatar ? JSON.parse(p.avatar) : {}; } catch { av = {}; }
       const key = `rk_${this.scope}_${this.page}_${i}`;
-      makeKnight(this, key, av.helm ?? 'penacho', CAPES[av.cape ?? 0] ?? CAPES[0], ARMORS[av.armor ?? 0] ?? ARMORS[0], (VISORS[av.visor ?? 0] ?? VISORS[0]).c);
+      makeHeroFromAvatar(this, { helm: av.helm ?? 'penacho', cape: av.cape ?? 0, armor: av.armor, visor: av.visor, clase: av.clase }, key);
       R(this.add.image(COLS[1] + 18, y + 19, key).setScale(1.6));
       const name = txt(this, COLS[2], y + 6, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);
       R(txt(this, COLS[3], y + 10, p.grupo, 20, CSS.dim));
       R(txt(this, COLS[4], y + 8, `✦ ${p.puntaje}`, 24, CSS.gold));
-      R(txt(this, COLS[5], y + 8, `${Math.min(p.piso, 9)}/9`, 24, CSS.bone));
+      R(txt(this, COLS[5], y + 8, `${Math.min(p.piso, 18)}/18`, 24, CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));
     });

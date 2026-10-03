@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { CardInst, STARTER_DECK } from './data/cards';
+import { CardInst, starterDeck } from './data/cards';
+import { CLASSES } from './data/classes';
 import { enqueue, isOnline } from './api';
 import { gravityOf } from './data/gravity';
 
@@ -50,6 +51,7 @@ export interface Run {
   score: number;
   stats: { combates: number; elites: number; runasOk: number; runasTotal: number; ergiosTotal?: number };
   gravity: number; // nivel de gravedad (1 = Tierra)
+  clase: string; // 'caballero' | 'arcanista'
   ergios: number;
   effects: Effect[];
   shop?: ShopState;
@@ -87,11 +89,12 @@ export interface Codex {
   effects: string[];
   gravedadMax: number; // nivel de gravedad más alto vencido (0 = ninguno)
   victorias: number;
+  flags?: string[]; // logros: 'acto1' (venció al Coloso), 'acto2'
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
 export function emptyCodex(): Codex {
-  return { enemies: [], npcs: [], figures: [], cards: [], relics: [], boons: [], effects: [], gravedadMax: 0, victorias: 0 };
+  return { enemies: [], npcs: [], figures: [], cards: [], relics: [], boons: [], effects: [], gravedadMax: 0, victorias: 0, flags: [] };
 }
 
 export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Codex> | null | undefined): Codex {
@@ -101,6 +104,7 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   }
   c.gravedadMax = Math.max(a?.gravedadMax ?? 0, b?.gravedadMax ?? 0);
   c.victorias = Math.max(a?.victorias ?? 0, b?.victorias ?? 0);
+  c.flags = [...new Set([...(a?.flags ?? []), ...(b?.flags ?? [])])];
   return c;
 }
 
@@ -119,6 +123,19 @@ export function unlock(kind: CodexKind, id: string) {
     list.push(id);
     codexDirty = true;
   }
+}
+
+export function codexFlag(flag: string) {
+  const f = (Game.codex.flags ??= []);
+  if (!f.includes(flag)) {
+    f.push(flag);
+    codexDirty = true;
+  }
+}
+
+/** ¿El Arcanista está desbloqueado? (al vencer al Coloso al menos una vez) */
+export function arcanistaUnlocked() {
+  return (Game.codex.flags ?? []).includes('acto1') || Game.codex.victorias > 0;
 }
 
 export function codexWin(gravedad: number) {
@@ -174,7 +191,7 @@ export function clearSession() {
 }
 
 // ── mapa ──
-export function generateMap(): MapNode[] {
+export function generateMap(acto = 1): MapNode[] {
   const nodes = new Map<string, MapNode>();
   let id = 0;
   const get = (f: number, l: number) => {
@@ -212,7 +229,7 @@ export function generateMap(): MapNode[] {
     const cands = by((n) => n.floor >= floors[0] && n.floor <= floors[1] && n.type === 'combate');
     for (let i = have; i < count && cands.length; i++) cands.pop()!.type = type;
   };
-  ensure('elite', 1, [3, 6]);
+  ensure('elite', acto === 2 ? 2 : 1, [3, 6]);
   ensure('runa', 1, [1, 5]);
   ensure('evento', 2, [1, 6]);
   ensure('mercader', 1, [3, 5]);
@@ -220,14 +237,15 @@ export function generateMap(): MapNode[] {
   return [...list, boss];
 }
 
-export function newRun(runId: string, gravity = 1): Run {
+export function newRun(runId: string, gravity = 1, clase = 'caballero'): Run {
+  const baseHp = (CLASSES.find((c) => c.id === clase)?.hp ?? 70) + (gravityOf(gravity).startHp - 70);
   let uid = 1;
   return {
     runId,
     acto: 1,
-    hp: gravityOf(gravity).startHp,
-    maxHp: gravityOf(gravity).startHp,
-    deck: STARTER_DECK.map((id) => ({ uid: uid++, id, up: false })),
+    hp: baseHp,
+    maxHp: baseHp,
+    deck: starterDeck(clase).map((id) => ({ uid: uid++, id, up: false })),
     relics: [],
     map: generateMap(),
     pos: -1,
@@ -236,6 +254,7 @@ export function newRun(runId: string, gravity = 1): Run {
     score: 0,
     stats: { combates: 0, elites: 0, runasOk: 0, runasTotal: 0, ergiosTotal: 0 },
     gravity,
+    clase,
     ergios: 25,
     effects: [],
     boons: [],
@@ -271,7 +290,7 @@ export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abando
     token: Game.profile.token,
     runId: r.runId,
     acto: r.acto,
-    piso: r.floor,
+    piso: (r.acto - 1) * (FLOORS + 1) + r.floor,
     vida: r.hp,
     puntaje: r.score,
     resultado,
@@ -313,6 +332,8 @@ export function migrateRun(r: Run | null): Run | null {
   r.visited ??= [];
   r.boons ??= [];
   r.gravity ??= 1;
+  r.clase ??= 'caballero';
+  r.acto ??= 1;
   r.met ??= [];
   return r;
 }

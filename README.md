@@ -2,7 +2,7 @@
 
 Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los alumnos crean a su héroe, bajan por las criptas y pelean con mecánicas que *son* física: cada golpe calcula **F = m·a**, la energía se paga en **Joules**, los enemigos con **inercia** sólo se detienen con una fuerza neta suficiente, y los altares rúnicos plantean problemas tipo Hibbeler con parámetros aleatorios.
 
-> Versión 0.3 · Acto I (Leyes de Newton y energía). Clase jugable: Caballero de la Masa.
+> Versión 0.5 · Actos I y II (Leyes de Newton y energía). Clases: Caballero de la Masa y Arcanista Cinético.
 >
 > **¿Quieres agregar enemigos, preguntas, figuras históricas o música?** Lee la [Guía para ampliar el juego](docs/GUIA-AMPLIAR.md).
 
@@ -17,6 +17,9 @@ Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los a
 | Encuentros | 5 personajes que hacen una pregunta de física: si aciertas, bendición; si fallas, maldición pasajera (dura 1–2 combates) |
 | Mercader | Cartas, reliquia, olvidar una carta y curación, pagando con Ergios. Se puede regatear resolviendo un problema (−30 %) |
 | Música | Dark synth generada en vivo (sin archivos): 7 pistas (menú, mapa, dos de combate, jefe, calma y santuario) y efectos de sonido |
+| Acto II | Al vencer al Coloso la expedición continúa en **Las Galerías de la Fricción**: arte en primera persona inspirado en Wizardry, mapa tipo cuadrícula, 6 enemigos nuevos y la Bruja de la Fricción como jefa. Las preguntas de los altares se enfocan en trabajo y energía |
+| Arcanista Cinético | Segunda clase (se desbloquea al vencer al Coloso): acumula rapidez *v* y ataca con K = ½·m·v². La fricción lo frena |
+| Cartas | 38 cartas: neutrales (ganar Joules, robar y descartar, daño igual a tu Bloque), daño elemental físico (Calor, Resonancia, Fatiga del material) y cartas basura que meten los enemigos (Lodo Pegajoso, Ruido Blanco, Error de Signo) |
 | Pantalla | Se dibuja al doble de resolución; botón de pantalla completa y control de volumen arriba a la derecha |
 | Combate | 12 cartas, 7 enemigos (incluye la Gárgola de Piedra y el Péndulo Errante, que convierte U en K), Pergamino de cálculos que muestra la física de cada acción |
 | Runas | 17 tipos de problema: leyes de Newton, peso, fricción, plano inclinado, polea, montacargas, trabajo, energía cinética y potencial, conservación y teorema trabajo-energía, con solución paso a paso |

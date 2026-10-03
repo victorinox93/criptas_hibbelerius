@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.4.0 · Acto I';
+export const VERSION = '0.5.0 · Actos I y II';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.
@@ -30,4 +30,7 @@ export const MUSIC_FILES: Record<string, string> = {
   jefe: '',
   calma: '',
   santuario: '',
+  mapa2: '',
+  combate3: '',
+  jefe2: '',
 };

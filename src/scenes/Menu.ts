@@ -5,9 +5,10 @@ import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { STARTER_DECK } from '../data/cards';
+import { starterDeck } from '../data/cards';
+import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
-import { clearSession, Game, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { arcanistaUnlocked, clearSession, Game, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -32,7 +33,7 @@ export class MenuScene extends Phaser.Scene {
 
     panel(this, 60, 412, 380, 108);
     txt(this, 80, 422, av.alias, 30, CSS.gold);
-    txt(this, 80, 454, `Caballero de la Masa · ${p.matricula}`, 20, CSS.bone);
+    txt(this, 80, 454, `${CLASSES.find((c) => c.id === av.clase)?.name ?? 'Caballero de la Masa'} · ${p.matricula}`, 20, CSS.bone);
     const gmax = Game.codex.gravedadMax;
     txt(this, 80, 476, `${T.menu.mejorGravedad}: ${gmax ? GRAVITY[gmax - 1].name : T.menu.ninguna}`, 18, CSS.dim);
     txt(this, 80, 496, p.offline || !isOnline() ? `● ${T.menu.desconectado}` : `● ${T.menu.conectado} ${p.grupo}`, 18,
@@ -101,8 +102,9 @@ export class MenuScene extends Phaser.Scene {
         console.warn(e);
       }
     }
-    Game.run = newRun(runId, gravity);
-    STARTER_DECK.forEach((id) => unlock('cards', id));
+    const clase = av.clase === 'arcanista' && arcanistaUnlocked() ? 'arcanista' : 'caballero';
+    Game.run = newRun(runId, gravity, clase);
+    starterDeck(clase).forEach((id) => unlock('cards', id));
     saveLocal();
     logEvent('inicio', '', '', { clase: av.clase, gravedad: gravity });
     fadeTo(this, 'Help', { next: 'Map', first: true });

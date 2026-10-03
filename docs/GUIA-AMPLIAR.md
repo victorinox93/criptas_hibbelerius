@@ -232,6 +232,27 @@ Los efectos disponibles están en `src/data/effects.ts`. Para el personaje puede
 
 ## 5. Agregar cartas
 
+**Archivo:** `src/data/cards.ts`. Cada carta tiene `cls`, que define quién puede obtenerla:
+
+| `cls` | Aparece para |
+|---|---|
+| (sin valor) | Caballero de la Masa |
+| `'arcanista'` | Arcanista Cinético |
+| `'neutral'` | Ambas clases |
+| `'estado'` | Nadie la gana: sólo la meten los enemigos |
+
+Ganchos que ya existen y puedes reutilizar en `playOn()` de `src/scenes/Combat.ts`: `this.energy` (Joules), `this.drawCards(n)`, `this.discardMode = 1` (el jugador elige qué descartar), `this.gainBlock(n)`, `this.hitEnemy(enemigo, daño)`, `enemigo.st.calor`, `enemigo.st.fatiga`, `this.addResonance(enemigo, n)` y, para el Arcanista, `this.vel` (rapidez).
+
+### Cartas basura de los enemigos
+
+En la intención de un enemigo agrega `add: { id: 'lodoCarta', n: 2, to: 'discard' }` (o `to: 'draw'`). Otras opciones de intención: `calor: 3` (te quema 3, 2, 1…) y `friccion: 1`.
+
+### Enemigos del Acto II
+
+Van en `ENCOUNTERS_2` dentro de `src/data/enemies.ts`, con la misma estructura que los del Acto I.
+
+## 5b. Agregar cartas (detalle)
+
 **Archivo:** `src/data/cards.ts`. Copia una carta parecida, cambia `id`, `name` y números, y agrégala a `REWARD_POOL` para que aparezca como recompensa y en la tienda. Si su efecto es nuevo, añade un `case 'tu_id':` en `playOn()` de `src/scenes/Combat.ts`.
 
 ---

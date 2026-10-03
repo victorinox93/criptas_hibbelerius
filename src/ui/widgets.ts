@@ -313,6 +313,74 @@ export function dungeonBackground(s: Phaser.Scene, seed = 7, tint = 0x1c1722) {
   return g;
 }
 
+/**
+ * Fondo del Acto II inspirado en los calabozos en primera persona de Wizardry:
+ * un pasillo en perspectiva de líneas frías que se pierde en la oscuridad.
+ */
+export function wizardryBackground(s: Phaser.Scene, seed = 7, boss = false) {
+  const r = rng(seed);
+  const g = s.add.graphics().setDepth(-10);
+  g.fillStyle(0x020203, 1).fillRect(0, 0, W, H);
+  const vx = W / 2 + 60, vy = 200; // punto de fuga
+  const frames = 7;
+  const rect = (i: number) => {
+    const k = Math.pow(0.68, i);
+    return { x0: vx - 620 * k, x1: vx + 620 * k, y0: vy - 210 * k, y1: vy + 150 * k };
+  };
+  const line = boss ? 0x5a3a4a : 0x34404e;
+  // paredes, techo y suelo de cada tramo
+  for (let i = frames - 1; i >= 0; i--) {
+    const a = rect(i), b = rect(i + 1);
+    const shade = 0.11 * Math.pow(0.72, i);
+    const wall = Phaser.Display.Color.GetColor(40 * shade * 4, 46 * shade * 4, 56 * shade * 4);
+    const floorC = Phaser.Display.Color.GetColor(26 * shade * 4, 30 * shade * 4, 34 * shade * 4);
+    g.fillStyle(wall, 1);
+    g.fillPoints([{ x: a.x0, y: a.y0 }, { x: b.x0, y: b.y0 }, { x: b.x0, y: b.y1 }, { x: a.x0, y: a.y1 }], true);
+    g.fillPoints([{ x: a.x1, y: a.y0 }, { x: b.x1, y: b.y0 }, { x: b.x1, y: b.y1 }, { x: a.x1, y: a.y1 }], true);
+    g.fillStyle(0x040406, 1);
+    g.fillPoints([{ x: a.x0, y: a.y0 }, { x: a.x1, y: a.y0 }, { x: b.x1, y: b.y0 }, { x: b.x0, y: b.y0 }], true);
+    g.fillStyle(floorC, 1);
+    g.fillPoints([{ x: a.x0, y: a.y1 }, { x: a.x1, y: a.y1 }, { x: b.x1, y: b.y1 }, { x: b.x0, y: b.y1 }], true);
+    const alpha = 0.75 * Math.pow(0.7, i);
+    g.lineStyle(2, line, alpha);
+    g.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+    // juntas de piedra en las paredes
+    g.lineStyle(1, line, alpha * 0.6);
+    for (let j = 1; j < 4; j++) {
+      const t = j / 4;
+      g.lineBetween(a.x0 + (b.x0 - a.x0) * 0, a.y0 + (a.y1 - a.y0) * t, b.x0, b.y0 + (b.y1 - b.y0) * t);
+      g.lineBetween(a.x1, a.y0 + (a.y1 - a.y0) * t, b.x1, b.y0 + (b.y1 - b.y0) * t);
+    }
+    if (r() < 0.4) {
+      const t = 0.3 + r() * 0.4;
+      g.lineBetween(a.x0 + (b.x0 - a.x0) * t, a.y0 + (b.y0 - a.y0) * t, a.x0 + (b.x0 - a.x0) * t, a.y1 + (b.y1 - a.y1) * t);
+    }
+  }
+  // aristas que fugan al centro
+  g.lineStyle(2, line, 0.55);
+  const a0 = rect(0), z = rect(frames);
+  g.lineBetween(a0.x0, a0.y0, z.x0, z.y0);
+  g.lineBetween(a0.x1, a0.y0, z.x1, z.y0);
+  g.lineBetween(a0.x0, a0.y1, z.x0, z.y1);
+  g.lineBetween(a0.x1, a0.y1, z.x1, z.y1);
+  // suelo en cuadrícula, como el mapa de un calabozo
+  g.lineStyle(1, line, 0.25);
+  for (let j = -6; j <= 6; j++) g.lineBetween(vx + j * 160, H + 40, vx + j * 160 * Math.pow(0.68, frames), z.y1);
+  // el fondo se pierde en negro
+  g.fillStyle(0x000000, 1).fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
+  const glow = s.add.circle(vx, vy, 60, boss ? 0x9bf07a : 0x5a7a9a, 0.05).setBlendMode(Phaser.BlendModes.ADD).setDepth(-9);
+  s.tweens.add({ targets: glow, alpha: 0.02, duration: 2400, yoyo: true, repeat: -1 });
+  // gotas de agua y polvo
+  s.add.particles(0, 0, 'px', {
+    x: { min: 0, max: W }, y: { min: 40, max: 120 }, speedY: { min: 60, max: 120 }, lifespan: 2600, frequency: 400,
+    scale: { start: 1, end: 0.6 }, alpha: { start: 0.35, end: 0 }, tint: 0x6a8a9a,
+  }).setDepth(-7);
+  mist(s, 320);
+  vignette(s);
+  vignette(s);
+  return g;
+}
+
 export function mist(s: Phaser.Scene, y = 300) {
   for (let i = 0; i < 5; i++) {
     const m = s.add.ellipse(Math.random() * W, y + Math.random() * 60, 420 + Math.random() * 200, 70, 0x3a3346, 0.08).setDepth(-6);

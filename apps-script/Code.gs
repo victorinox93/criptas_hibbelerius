@@ -201,13 +201,14 @@ function actualizarPanel() {
 
   var por = {};
   alumnos.forEach(function (a) {
-    por[a[0]] = { mat: a[0], grupo: a[1], alias: a[2], ultimo: a[8], partidas: 0, piso: 0, victorias: 0, puntaje: 0, ok: 0, tot: 0 };
+    por[a[0]] = { mat: a[0], grupo: a[1], alias: a[2], ultimo: a[8], partidas: 0, piso: 0, acto: 0, victorias: 0, puntaje: 0, ok: 0, tot: 0 };
   });
   partidas.forEach(function (p) {
     var s = por[p[1]];
     if (!s) return;
     s.partidas++;
     s.piso = Math.max(s.piso, num_(p[8]));
+    s.acto = Math.max(s.acto, num_(p[7]));
     s.puntaje = Math.max(s.puntaje, num_(p[10]));
     if (p[11] === 'victoria') s.victorias++;
   });
@@ -225,18 +226,18 @@ function actualizarPanel() {
 
   var panel = ss.getSheetByName('Panel') || ss.insertSheet('Panel');
   panel.clear();
-  var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 9)', 'Acto I superado', 'Puntaje máx.',
+  var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 18)', 'Acto máx.', 'Expedición completa', 'Puntaje máx.',
     'Runas correctas', 'Runas intentadas', '% aciertos', 'Último acceso'];
   var data = Object.keys(por).map(function (k) {
     var s = por[k];
-    return [s.mat, s.grupo, s.alias, s.partidas, s.piso, s.victorias > 0 ? 'Sí' : 'No', s.puntaje, s.ok, s.tot,
+    return [s.mat, s.grupo, s.alias, s.partidas, s.piso, s.acto, s.victorias > 0 ? 'Sí' : 'No', s.puntaje, s.ok, s.tot,
       s.tot ? s.ok / s.tot : '', s.ultimo];
   }).sort(function (a, b) { return String(a[1]).localeCompare(String(b[1])) || b[4] - a[4]; });
   panel.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
   if (data.length) {
     panel.getRange(2, 1, data.length, head.length).setValues(data);
-    panel.getRange(2, 10, data.length, 1).setNumberFormat('0%');
-    panel.getRange(2, 11, data.length, 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    panel.getRange(2, 11, data.length, 1).setNumberFormat('0%');
+    panel.getRange(2, 12, data.length, 1).setNumberFormat('dd/mm/yyyy hh:mm');
   }
   panel.setFrozenRows(1);
   panel.autoResizeColumns(1, head.length);
@@ -258,7 +259,7 @@ function actualizarPanel() {
   }
   cs.setFrozenRows(1);
   cs.autoResizeColumns(1, ch.length);
-  panel.getRange(1, 13).setValue('Actualizado: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'));
+  panel.getRange(1, 14).setValue('Actualizado: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'));
 }
 
 // ───────────────────────── utilidades ─────────────────────────

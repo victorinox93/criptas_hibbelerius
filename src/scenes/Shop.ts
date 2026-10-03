@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { CARDS, REWARD_POOL, cardName } from '../data/cards';
+import { CARDS, rewardPool, cardName } from '../data/cards';
 import { RELICS } from '../data/relics';
 import { addCard, addErgios, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock } from '../state';
 import { T } from '../textos';
@@ -13,7 +13,7 @@ import { randomRelics } from './Reward';
 import { grantRelic } from './Reward';
 
 function makeStock(node: number): ShopState {
-  const ids = Phaser.Utils.Array.Shuffle([...new Set(REWARD_POOL)]).slice(0, 3);
+  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase))]).slice(0, 3);
   const [rel] = randomRelics(1);
   return {
     node,
