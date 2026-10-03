@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { EVENTS } from '../data/events';
-import { Game, logEvent, saveLocal, syncRun } from '../state';
+import { Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, embers, fadeTo, frame, icon, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
@@ -17,6 +17,8 @@ export class EventScene extends Phaser.Scene {
     audio.play('calma');
     const run = Game.run!;
     const ev = EVENTS[(Math.max(0, run.pos) * 3 + run.runId.length) % EVENTS.length];
+    unlock('npcs', ev.id);
+    saveLocal();
 
     this.add.rectangle(0, 0, W, H, 0x050407).setOrigin(0);
     const floor = this.add.graphics();

@@ -5,7 +5,7 @@ import { audio } from '../audio';
 import { T } from '../textos';
 import { CARDS, REWARD_POOL } from '../data/cards';
 import { RELIC_POOL, RELICS } from '../data/relics';
-import { addCard, Game, saveLocal } from '../state';
+import { addCard, Game, saveLocal, unlock } from '../state';
 import { cardView } from '../ui/card';
 import { topBar } from '../ui/hud';
 import { button, dungeonBackground, fadeTo, frame, icon, title, Tooltip, txt } from '../ui/widgets';
@@ -14,6 +14,7 @@ export function grantRelic(id: string) {
   const r = Game.run!;
   if (r.relics.includes(id)) return;
   r.relics.push(id);
+  unlock('relics', id);
   if (id === 'ascua') {
     r.maxHp += 10;
     r.hp = Math.min(r.maxHp, r.hp + 10);

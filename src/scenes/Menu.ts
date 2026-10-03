@@ -4,9 +4,11 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
-import { W } from '../config';
-import { clearSession, Game, logEvent, newRun, saveLocal, syncRun } from '../state';
-import { button, dungeonBackground, embers, fadeTo, panel, title, torch, txt } from '../ui/widgets';
+import { W, H } from '../config';
+import { STARTER_DECK } from '../data/cards';
+import { GRAVITY } from '../data/gravity';
+import { clearSession, Game, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
@@ -23,53 +25,86 @@ export class MenuScene extends Phaser.Scene {
     title(this, W / 2, 50, T.titulo, 50);
     txt(this, W / 2, 90, T.menu.lugar, 24, CSS.dim).setOrigin(0.5);
 
-    // héroe junto a la fogata
     torch(this, 300, 330);
     this.add.image(300, 352, 'i_fire').setScale(5);
     const hero = this.add.image(200, 330, 'hero').setScale(6);
     this.tweens.add({ targets: hero, y: 326, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
-    panel(this, 60, 420, 360, 98);
-    txt(this, 80, 432, av.alias, 30, CSS.gold);
-    txt(this, 80, 464, `Caballero de la Masa · ${p.matricula}`, 20, CSS.bone);
-    txt(this, 80, 488, p.offline || !isOnline() ? `● ${T.menu.desconectado}` : `● ${T.menu.conectado} ${p.grupo}`, 18,
+    panel(this, 60, 412, 380, 108);
+    txt(this, 80, 422, av.alias, 30, CSS.gold);
+    txt(this, 80, 454, `Caballero de la Masa · ${p.matricula}`, 20, CSS.bone);
+    const gmax = Game.codex.gravedadMax;
+    txt(this, 80, 476, `${T.menu.mejorGravedad}: ${gmax ? GRAVITY[gmax - 1].name : T.menu.ninguna}`, 18, CSS.dim);
+    txt(this, 80, 496, p.offline || !isOnline() ? `● ${T.menu.desconectado}` : `● ${T.menu.conectado} ${p.grupo}`, 18,
       p.offline || !isOnline() ? CSS.dim : CSS.green);
 
-    const x = 680;
-    let y = 170;
+    const x = 690;
+    let y = 150;
     const run = Game.run && !Game.run.done ? Game.run : null;
     if (run) {
-      button(this, x, y, 320, 50, `${T.menu.continuar} (${T.hud.piso.toLowerCase()} ${run.floor + 1})`, () => fadeTo(this, 'Map'), { color: UI.gold, size: 24 });
-      y += 66;
+      button(this, x, y, 330, 48, `${T.menu.continuar} (${T.hud.piso.toLowerCase()} ${run.floor + 1})`, () => fadeTo(this, 'Map'), { color: UI.gold, size: 24 });
+      y += 58;
     }
-    const startBtn = button(this, x, y, 320, 50, run ? T.menu.nueva : T.menu.comenzar, async () => {
-      if (run) {
-        syncRun('abandonada', 'nueva expedición');
+    button(this, x, y, 330, 48, run ? T.menu.nueva : T.menu.comenzar, () => this.pickGravity(), { color: run ? UI.border : UI.blood, size: 26 });
+    y += 72;
+    const grid: [string, () => void][] = [
+      [T.menu.grimorio, () => fadeTo(this, 'Codex')],
+      [T.menu.ranking, () => fadeTo(this, 'Ranking')],
+      [T.menu.ayuda, () => fadeTo(this, 'Help', { next: 'Menu' })],
+      [T.menu.editar, () => fadeTo(this, 'Avatar')],
+      [T.menu.creditos, () => fadeTo(this, 'Credits')],
+      [T.menu.salir, () => {
+        clearSession();
+        Game.profile = null;
+        Game.run = null;
+        fadeTo(this, 'Login');
+      }],
+    ];
+    grid.forEach(([label, fn], i) => {
+      button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 52, 160, 44, label, fn, { size: 21 });
+    });
+  }
+
+  /** Ventana para elegir el nivel de gravedad antes de una expedición */
+  private pickGravity() {
+    const layer = this.add.container(0, 0).setDepth(900);
+    const shade = this.add.rectangle(0, 0, W, H, 0x000000, 0.8).setOrigin(0).setInteractive();
+    const g = this.add.graphics();
+    frame(g, 150, 70, W - 300, 410, 0x0b090e, UI.gold);
+    layer.add([shade, g, title(this, W / 2, 104, T.menu.gravedad, 36),
+      txt(this, W / 2, 138, T.menu.gravedadInfo, 18, CSS.dim, { align: 'center', wordWrap: { width: W - 360 } }).setOrigin(0.5, 0)]);
+    GRAVITY.forEach((lv, i) => {
+      const unlocked = lv.id <= Game.codex.gravedadMax + 1;
+      const y = 200 + i * 86;
+      const b = button(this, W / 2, y + 18, W - 360, 74, '', () => {
+        layer.destroy();
+        this.start(lv.id);
+      }, { enabled: unlocked, color: i === 0 ? UI.border : i === 1 ? 0x6a8fc4 : 0xc87533 });
+      b.label.setText('');
+      b.add(txt(this, -(W - 360) / 2 + 20, -26, `${lv.name}  ·  g = ${lv.g} m/s²  ·  puntaje ×${lv.scoreMul}`, 23, unlocked ? CSS.gold : '#5a5468'));
+      b.add(txt(this, -(W - 360) / 2 + 20, 2, unlocked ? lv.desc : T.menu.gravedadBloqueada, 18, unlocked ? CSS.bone : '#5a5468',
+        { wordWrap: { width: W - 400 } }));
+      layer.add(b);
+    });
+    layer.add(button(this, W / 2, 458, 160, 34, T.menu.cancelar, () => layer.destroy(), { size: 20 }));
+  }
+
+  private async start(gravity: number) {
+    const p = Game.profile!;
+    const av = p.avatar!;
+    if (Game.run && !Game.run.done) syncRun('abandonada', 'nueva expedición');
+    let runId = `L-${Date.now().toString(36)}`;
+    if (!p.offline && isOnline()) {
+      try {
+        runId = (await api.startRun(p.token, av.clase, gravity)).runId;
+      } catch (e) {
+        console.warn(e);
       }
-      startBtn.setEnabled(false);
-      let runId = `L-${Date.now().toString(36)}`;
-      if (!p.offline && isOnline()) {
-        try {
-          runId = (await api.startRun(p.token, av.clase)).runId;
-        } catch (e) {
-          console.warn(e);
-        }
-      }
-      Game.run = newRun(runId);
-      saveLocal();
-      logEvent('inicio', '', '', { clase: av.clase });
-      fadeTo(this, 'Help', { next: 'Map', first: true });
-    }, { color: run ? UI.border : UI.blood, size: 26 });
-    y += 66;
-    button(this, x, y, 320, 50, T.menu.ayuda, () => fadeTo(this, 'Help', { next: 'Menu' }), { size: 24 });
-    y += 66;
-    button(this, x, y, 320, 50, T.menu.editar, () => fadeTo(this, 'Avatar'), { size: 24 });
-    y += 66;
-    button(this, x, y, 320, 50, T.menu.salir, () => {
-      clearSession();
-      Game.profile = null;
-      Game.run = null;
-      fadeTo(this, 'Login');
-    }, { size: 22 });
+    }
+    Game.run = newRun(runId, gravity);
+    STARTER_DECK.forEach((id) => unlock('cards', id));
+    saveLocal();
+    logEvent('inicio', '', '', { clase: av.clase, gravedad: gravity });
+    fadeTo(this, 'Help', { next: 'Map', first: true });
   }
 }

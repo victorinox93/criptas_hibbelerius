@@ -9,6 +9,7 @@ import { RELICS } from '../data/relics';
 import { checkAnswer, Problem, randomProblem } from '../data/runes';
 import { addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { FIGURES } from '../data/figures';
+import { gravityOf } from '../data/gravity';
 import { T } from '../textos';
 import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, panel, TextField, title, Tooltip, txt, vignette } from '../ui/widgets';
@@ -155,7 +156,7 @@ export class RuneScene extends Phaser.Scene {
     run.stats.runasTotal++;
     if (ok) {
       run.stats.runasOk++;
-      run.score += 25;
+      run.score += Math.round(25 * gravityOf(run.gravity).scoreMul);
       const tr = boonLevel('c_traductora');
       if (tr && this.d.source !== 'regateo') addErgios(15 * tr);
     }

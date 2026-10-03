@@ -13,6 +13,7 @@ export interface CalcCtx {
   masaBonus: number; // kg extra (Forja Pesada, reliquias)
   acelBonus: number; // m/s² extra este turno
   friccion: number; // reduce aceleración (Babosa de Lodo)
+  g?: number; // gravedad del nivel (m/s²)
 }
 
 export interface CardStats {
@@ -117,7 +118,8 @@ export const CARDS: Record<string, CardDef> = {
     stats: (up) => ({ cost: 2, m: up ? 1.5 : 1.2 }),
     text: (s, c) => {
       const m = (s.m ?? 0) + c.masaBonus;
-      return `W = m·g = ${r1(m)} kg × 9.81\n= ${Math.round(m * G)} N\nIgnora Bloque.`;
+      const g = c.g ?? G;
+      return `W = m·g = ${r1(m)} kg × ${g}\n= ${Math.round(m * g)} N\nIgnora Bloque.`;
     },
     lore: 'El peso es la fuerza de gravedad: W = m·g, con g = 9.81 m/s². No importa qué tan rápido te muevas: g es la misma.',
   },

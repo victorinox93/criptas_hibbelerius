@@ -4,7 +4,7 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { CARDS, REWARD_POOL, cardName } from '../data/cards';
 import { RELICS } from '../data/relics';
-import { addCard, addErgios, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun } from '../state';
+import { addCard, addErgios, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock } from '../state';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
 import { deckOverlay, topBar } from '../ui/hud';
@@ -44,6 +44,7 @@ export class ShopScene extends Phaser.Scene {
     this.cameras.main.fadeIn(300);
     audio.play('calma');
     const run = Game.run!;
+    unlock('npcs', 'mercader');
     if (!run.shop || run.shop.node !== run.pos) {
       run.shop = makeStock(run.pos);
       saveLocal();

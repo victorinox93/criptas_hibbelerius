@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CardInst, STARTER_DECK } from './data/cards';
 import { enqueue, isOnline } from './api';
+import { gravityOf } from './data/gravity';
 
 export interface Avatar {
   alias: string;
@@ -48,6 +49,7 @@ export interface Run {
   floor: number; // pisos completados
   score: number;
   stats: { combates: number; elites: number; runasOk: number; runasTotal: number; ergiosTotal?: number };
+  gravity: number; // nivel de gravedad (1 = Tierra)
   ergios: number;
   effects: Effect[];
   shop?: ShopState;
@@ -74,21 +76,75 @@ export interface ShopState {
 export const FLOORS = 8; // pisos antes del jefe
 export const LANES = 5;
 
+/** Lo descubierto por el alumno (persiste entre expediciones) */
+export interface Codex {
+  enemies: string[];
+  npcs: string[];
+  figures: string[];
+  cards: string[];
+  relics: string[];
+  boons: string[];
+  effects: string[];
+  gravedadMax: number; // nivel de gravedad más alto vencido (0 = ninguno)
+  victorias: number;
+}
+export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
+
+export function emptyCodex(): Codex {
+  return { enemies: [], npcs: [], figures: [], cards: [], relics: [], boons: [], effects: [], gravedadMax: 0, victorias: 0 };
+}
+
+export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Codex> | null | undefined): Codex {
+  const c = emptyCodex();
+  for (const k of ['enemies', 'npcs', 'figures', 'cards', 'relics', 'boons', 'effects'] as CodexKind[]) {
+    c[k] = [...new Set([...(a?.[k] ?? []), ...(b?.[k] ?? [])])];
+  }
+  c.gravedadMax = Math.max(a?.gravedadMax ?? 0, b?.gravedadMax ?? 0);
+  c.victorias = Math.max(a?.victorias ?? 0, b?.victorias ?? 0);
+  return c;
+}
+
 export const Game = {
   profile: null as Profile | null,
   run: null as Run | null,
+  codex: emptyCodex(),
 };
+
+let codexDirty = false;
+
+/** Marca algo como descubierto en el Grimorio */
+export function unlock(kind: CodexKind, id: string) {
+  const list = Game.codex[kind];
+  if (!list.includes(id)) {
+    list.push(id);
+    codexDirty = true;
+  }
+}
+
+export function codexWin(gravedad: number) {
+  Game.codex.victorias++;
+  Game.codex.gravedadMax = Math.max(Game.codex.gravedadMax, gravedad);
+  codexDirty = true;
+}
+
+/** Envía el Grimorio al servidor si cambió (se llama al guardar) */
+function syncCodex() {
+  if (!codexDirty || !Game.profile || Game.profile.offline || !isOnline()) return;
+  codexDirty = false;
+  enqueue('saveCodex', { token: Game.profile.token, grimorio: JSON.stringify(Game.codex) });
+}
 
 // ── almacenamiento local (siempre protegido) ──
 const key = () => `criptas:${Game.profile?.matricula ?? 'invitado'}`;
 
 export function saveLocal() {
   try {
-    localStorage.setItem(key(), JSON.stringify({ avatar: Game.profile?.avatar, run: Game.run }));
+    localStorage.setItem(key(), JSON.stringify({ avatar: Game.profile?.avatar, run: Game.run, codex: Game.codex }));
   } catch { /* sin almacenamiento disponible */ }
+  syncCodex();
 }
 
-export function loadLocal(): { avatar: Avatar | null; run: Run | null } {
+export function loadLocal(): { avatar: Avatar | null; run: Run | null; codex?: Codex } {
   try {
     const raw = localStorage.getItem(key());
     if (raw) {
@@ -164,13 +220,13 @@ export function generateMap(): MapNode[] {
   return [...list, boss];
 }
 
-export function newRun(runId: string): Run {
+export function newRun(runId: string, gravity = 1): Run {
   let uid = 1;
   return {
     runId,
     acto: 1,
-    hp: 70,
-    maxHp: 70,
+    hp: gravityOf(gravity).startHp,
+    maxHp: gravityOf(gravity).startHp,
     deck: STARTER_DECK.map((id) => ({ uid: uid++, id, up: false })),
     relics: [],
     map: generateMap(),
@@ -179,6 +235,7 @@ export function newRun(runId: string): Run {
     floor: 0,
     score: 0,
     stats: { combates: 0, elites: 0, runasOk: 0, runasTotal: 0, ergiosTotal: 0 },
+    gravity,
     ergios: 25,
     effects: [],
     boons: [],
@@ -190,6 +247,7 @@ export function newRun(runId: string): Run {
 
 export function addCard(id: string, up = false) {
   const r = Game.run!;
+  unlock('cards', id);
   r.deck.push({ uid: r.nextUid++, id, up });
 }
 
@@ -223,6 +281,7 @@ export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abando
     runasOk: r.stats.runasOk,
     runasTotal: r.stats.runasTotal,
     mazo: r.deck.length,
+    gravedad: r.gravity,
   });
 }
 
@@ -239,6 +298,7 @@ export function boonLevel(id: string): number {
 }
 
 export function addEffect(id: string, combats: number) {
+  unlock('effects', id);
   const r = Game.run!;
   const e = r.effects.find((x) => x.id === id);
   if (e) e.left += combats;
@@ -252,6 +312,7 @@ export function migrateRun(r: Run | null): Run | null {
   r.effects ??= [];
   r.visited ??= [];
   r.boons ??= [];
+  r.gravity ??= 1;
   r.met ??= [];
   return r;
 }

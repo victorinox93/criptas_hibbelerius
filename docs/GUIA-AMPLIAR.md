@@ -18,6 +18,17 @@ npm run dev     # abre http://localhost:5173
 
 > Un error de escritura (una coma o comilla de más) hace que la publicación falle. En la pestaña **Actions** de GitHub verás una ✗ roja con el renglón del error. Corrígelo y vuelve a subir.
 
+## Forja de Sprites: ver tu pixel art en vivo
+
+El juego trae su propio editor: **`public/forja-de-sprites.html`**. Una vez publicado, ábrelo en `https://<tu-usuario>.github.io/<tu-repo>/forja-de-sprites.html`.
+
+1. Pega la matriz (por ejemplo `espectro: mirrorHalf([ ... ]),`) en el recuadro **Código**.
+2. Mírala en vivo con los colores del juego. Las letras que no existan en la paleta salen en magenta y el editor te avisa.
+3. Pinta con el ratón (clic izquierdo pinta, clic derecho borra). Con `mirrorHalf` sólo editas la mitad y la otra se refleja.
+4. Da clic en **Copiar código para sprites.ts** y pégalo dentro de `SPRITES` en `src/art/sprites.ts`.
+
+Todo lo que agregues (enemigos, personajes, figuras, cartas, reliquias, dones) aparece solo en el **Grimorio**, bloqueado hasta que el alumno lo encuentre. No hay que registrarlo en otro lado.
+
 ---
 
 ## 1. Agregar un enemigo
@@ -257,7 +268,13 @@ Usa sólo música con licencia que permita su uso (por ejemplo CC0 o CC-BY con a
 
 ---
 
-## 7. Lista rápida
+## 7. Niveles de gravedad (dificultad)
+
+**Archivo:** `src/data/gravity.ts`. Cada nivel es un astro con su *g* real y multiplicadores de vida y daño enemigo, curación de fogatas, vida inicial y puntaje. Peso Muerto y la Manzana de Newton usan la *g* del nivel. Un nivel se desbloquea al vencer al Coloso en el anterior. Para agregar uno (por ejemplo Saturno, g = 10.44 m/s²), copia una fila y cambia `id`, `name` y los números.
+
+---
+
+## 8. Lista rápida
 
 | Quiero agregar… | Archivo(s) |
 |---|---|
@@ -269,4 +286,6 @@ Usa sólo música con licencia que permita su uso (por ejemplo CC0 o CC-BY con a
 | Carta | `src/data/cards.ts` (+ `Combat.ts` si el efecto es nuevo) |
 | Reliquia | `src/data/relics.ts` (+ `Combat.ts`) |
 | Música | `src/audio.ts` o `public/musica/` + `src/config.ts` |
-| Textos de pantalla | `src/textos.ts` |
+| Textos de pantalla y créditos | `src/textos.ts` |
+| Niveles de dificultad | `src/data/gravity.ts` |
+| Pixel art | Forja de Sprites → `src/art/sprites.ts` |

@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { BOONS, FIGURES, FigureDef } from '../data/figures';
-import { addErgios, Game, logEvent, saveLocal, syncRun } from '../state';
+import { addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
@@ -34,6 +34,8 @@ export class SanctuaryScene extends Phaser.Scene {
     const run = Game.run!;
     const fig = (data.figureId && FIGURES.find((f) => f.id === data.figureId)) || pickFigure();
     const phase = data.phase ?? 'intro';
+    unlock('figures', fig.id);
+    saveLocal();
 
     // ── ambiente: haz de luz espectral ──
     this.add.rectangle(0, 0, W, H, 0x040308).setOrigin(0);
@@ -129,6 +131,7 @@ export class SanctuaryScene extends Phaser.Scene {
         z.on('pointerout', () => draw(false));
         z.on('pointerdown', () => {
           run.boons.push({ id, epic });
+          unlock('boons', id);
           audio.sfx('heal');
           logEvent('don', fig.id, epic, { don: id, epico: epic });
           finish(`${T.santuario.don}: ${b.name} (${epic ? T.santuario.epico : T.santuario.comun})`);

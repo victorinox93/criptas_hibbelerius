@@ -27,6 +27,20 @@ export interface LoginResp {
   grupo: string;
   alias: string;
   avatar: string; // JSON
+  grimorio?: string; // JSON
+}
+
+export interface RankRow {
+  alias: string;
+  avatar: string;
+  grupo: string;
+  puntaje: number;
+  piso: number;
+  victorias: number;
+  gravedad: number;
+  partidas: number;
+  yo: boolean;
+  lugar: number;
 }
 
 export const api = {
@@ -34,7 +48,9 @@ export const api = {
     call<LoginResp>('register', { matricula, passHash, grupo }),
   login: (matricula: string, passHash: string) => call<LoginResp>('login', { matricula, passHash }),
   saveProfile: (token: string, alias: string, avatar: string) => call('saveProfile', { token, alias, avatar }),
-  startRun: (token: string, clase: string) => call<{ ok: true; runId: string }>('startRun', { token, clase }),
+  startRun: (token: string, clase: string, gravedad = 1) => call<{ ok: true; runId: string }>('startRun', { token, clase, gravedad }),
+  leaderboard: (token: string, alcance: 'grupo' | 'todos') =>
+    call<{ ok: true; grupo: string; total: number; lista: RankRow[] }>('leaderboard', { token, alcance }),
 };
 
 // ── Cola de registro "dispara y olvida": nunca bloquea el juego ──

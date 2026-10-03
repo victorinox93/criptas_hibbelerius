@@ -1,0 +1,377 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forja de Sprites</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=VT323&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  /* Taller de herrería de píxeles: una sola atmósfera oscura, igual que el juego. Columna de código | yunque (lienzo) | vista en el juego */
+  :root {
+    --bg: #09080c;
+    --panel: #14111a;
+    --panel-2: #1d1825;
+    --line: #3a3146;
+    --fg: #ddd5c6;
+    --dim: #8a8296;
+    --gold: #e8c15a;
+    --ember: #c87533;
+    --ok: #9bc96a;
+    --display: 'Pirata One', Georgia, serif;
+    --pixel: 'VT323', ui-monospace, monospace;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { margin: 0; font-family: var(--pixel); font-size: 20px; padding-inline: 16px; padding-block: 18px 40px; }
+  .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 18px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+  h1 { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 5vw, 52px); color: var(--gold); margin: 0; letter-spacing: .5px; text-shadow: 0 3px 0 #000; }
+  header p { margin: 0; color: var(--dim); max-width: 62ch; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, .9fr); gap: 16px; align-items: start; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .box { background: var(--panel); border: 2px solid var(--line); box-shadow: 4px 4px 0 #000; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+  .box h2 { font-family: var(--pixel); font-weight: 400; font-size: 24px; margin: 0; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+  label { color: var(--dim); font-size: 18px; }
+  textarea, input[type=text], input[type=number], select {
+    width: 100%; background: #07060a; color: var(--fg); border: 2px solid var(--line); padding: 8px 10px;
+    font-family: var(--mono); font-size: 14px; line-height: 1.45; outline: none;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--gold); }
+  textarea { min-height: 300px; resize: vertical; white-space: pre; overflow-x: auto; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .row > * { flex: 0 1 auto; min-width: 0; }
+  .row label { display: flex; gap: 6px; align-items: center; }
+  input[type=number] { width: 74px; }
+  button {
+    font-family: var(--pixel); font-size: 20px; color: var(--fg); background: var(--panel-2); border: 2px solid var(--line);
+    padding: 4px 12px; cursor: pointer; box-shadow: 2px 2px 0 #000;
+  }
+  button:hover { border-color: var(--gold); }
+  button:focus-visible, .sw:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  button.primary { border-color: var(--ember); background: #2a1a12; }
+  .msg { min-height: 1.2em; font-size: 18px; color: var(--dim); }
+  .msg.err { color: #e08a8a; }
+  .msg.ok { color: var(--ok); }
+  .canvas-wrap { max-width: 100%; overflow: auto; background: repeating-conic-gradient(#121016 0% 25%, #0b0a0e 0% 50%) 0 0 / 16px 16px; border: 2px solid var(--line); display: grid; place-items: center; min-height: 320px; }
+  canvas { image-rendering: pixelated; display: block; touch-action: none; }
+  #paint { cursor: crosshair; }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+  .sw { display: grid; grid-template-rows: 26px auto; gap: 2px; place-items: center; background: #07060a; border: 2px solid var(--line); padding: 3px; cursor: pointer; color: var(--fg); font-family: var(--mono); font-size: 13px; }
+  .sw i { display: block; width: 100%; height: 26px; border: 1px solid #000; }
+  .sw.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+  .sw.eraser i { background: repeating-conic-gradient(#3a3146 0% 25%, #1a1620 0% 50%) 0 0 / 8px 8px; }
+  .scene { background: linear-gradient(#0d0b11, #15111b 62%, #0b090e 62%); border: 2px solid var(--line); display: grid; place-items: end center; height: 260px; position: relative; overflow: hidden; }
+  .scene::after { content: ''; position: absolute; left: 0; right: 0; top: 62%; height: 6px; background: #000a; }
+  .scene canvas { margin-bottom: 30%; position: relative; z-index: 1; }
+  .legend { font-size: 17px; color: var(--dim); display: grid; gap: 2px; }
+  .legend b { color: var(--fg); font-weight: 400; font-family: var(--mono); font-size: 13px; }
+  .hint { color: var(--dim); font-size: 17px; }
+  kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); padding: 0 4px; color: var(--fg); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head><body>
+
+<div class="wrap">
+  <header>
+    <h1>Forja de Sprites</h1>
+    <p>Pega una matriz de <em>Las Criptas de Hibbelerius</em>, mírala en vivo con la paleta del juego, píntala con el ratón y copia el código de regreso a <code>src/art/sprites.ts</code>.</p>
+  </header>
+
+  <div class="grid">
+    <section class="box" aria-labelledby="h-code">
+      <h2 id="h-code">1 · Código</h2>
+      <div class="row">
+        <label for="ejemplo">Ejemplo</label>
+        <select id="ejemplo" style="width:auto">
+          <option value="espectro">Espectro (nuevo)</option>
+          <option value="skeleton">Esqueleto Errante</option>
+          <option value="slime">Babosa de Lodo</option>
+          <option value="gargola">Gárgola de Piedra</option>
+          <option value="newton">Retrato · Newton</option>
+          <option value="icono">Ícono 9×9 · Manzana</option>
+        </select>
+      </div>
+      <textarea id="code" spellcheck="false" aria-label="Código del sprite"></textarea>
+      <div class="row">
+        <label><input type="checkbox" id="mirror"> mirrorHalf: dibuja la mitad y se refleja</label>
+      </div>
+      <div class="msg" id="msg" role="status"></div>
+      <label for="ov">Colores propios (opcional), como en <code>ov</code>: <span class="hint">{ c: '#4a3428', W: '#f0ece4' }</span></label>
+      <input type="text" id="ov" spellcheck="false" placeholder="{ c: '#3a5a8a' }">
+    </section>
+
+    <section class="box" aria-labelledby="h-anvil">
+      <h2 id="h-anvil">2 · Yunque</h2>
+      <div class="row">
+        <label>Nombre <input type="text" id="name" value="espectro" style="width:140px"></label>
+        <label>Ancho <input type="number" id="wIn" min="1" max="48"></label>
+        <label>Alto <input type="number" id="hIn" min="1" max="48"></label>
+        <button id="resize" type="button">Cambiar tamaño</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="paint" width="320" height="320" aria-label="Lienzo para pintar"></canvas></div>
+      <div class="row">
+        <button id="undo" type="button">Deshacer</button>
+        <button id="clear" type="button">Limpiar</button>
+        <label><input type="checkbox" id="showGrid" checked> cuadrícula</label>
+        <span class="hint">Clic: pintar · clic derecho: borrar · <kbd>Ctrl</kbd>+<kbd>Z</kbd></span>
+      </div>
+      <div class="palette" id="palette" role="radiogroup" aria-label="Colores"></div>
+    </section>
+
+    <section class="box" aria-labelledby="h-view">
+      <h2 id="h-view">3 · En el juego</h2>
+      <div class="scene"><canvas id="preview" aria-label="Vista en el juego"></canvas></div>
+      <div class="row">
+        <label>Escala <input type="range" id="scale" min="2" max="9" value="5"></label>
+        <span id="scaleV" class="hint">×5</span>
+      </div>
+      <button class="primary" id="copy" type="button">Copiar código para sprites.ts</button>
+      <textarea id="out" readonly spellcheck="false" style="min-height:150px" aria-label="Código generado"></textarea>
+      <div class="legend" id="legend"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const PAL = {
+  k: ['#0d0b10', 'contorno'], d: ['#2a2433', 'sombra'], g: ['#5a5468', 'piedra / metal'], l: ['#9a93a8', 'metal claro'],
+  w: ['#d8d0c0', 'hueso'], r: ['#8b1e2b', 'rojo oscuro'], R: ['#c43a3a', 'rojo'], o: ['#c87533', 'fuego'], y: ['#e8c15a', 'oro'],
+  b: ['#3b5a8a', 'azul'], B: ['#6a8fc4', 'azul claro'], L: ['#6b7a3a', 'lodo claro'], G: ['#3d4a22', 'lodo oscuro'],
+  n: ['#6b4a2b', 'madera'], p: ['#4a2a5e', 'púrpura'], P: ['#8e5bb0', 'púrpura claro'], E: ['#ffd27a', 'brillo de ojos'],
+  F: ['#ff5a3a', 'ojos rojos'], s: ['#e0b48a', 'piel'], q: ['#a8806a', 'sombra de piel'], h: ['#4a3a2e', 'cabello'],
+  W: ['#f0ece4', 'blanco'], c: ['#86223a', 'capa'], C: ['#4e1222', 'capa sombra'],
+};
+const EXAMPLES = {
+  espectro: { name: 'espectro', mirror: true, rows: ['....kkkk', '...kllll', '..kllwww', '..klwkFw', '..klwwww', '..kllwww', '...kllll', '..kllll.', '.kll.ll.', '.kl..l..'] },
+  skeleton: { name: 'skeleton', mirror: true, rows: ['.....kkk', '....kwww', '...kwwww', '...kwkkw', '...kwkFk', '...kwwwk', '....kwkw', '.....kww', '...kkkww', '..kwkwkk', '..kwkkww', '..kwkwkk', '..kk.kww', '..kk..kw', '.....kww', '.....kwk', '.....kw.', '.....kw.', '....kkw.'] },
+  slime: { name: 'slime', mirror: true, rows: ['......kkk', '....kkLLL', '...kLLLLL', '..kLLwLLL', '..kLwwLLL', '.kLLLLkkL', '.kLLLLkFk', '.kLLLLLLL', '.kGLLLLkk', 'kGGLLLLLL', 'kGGGGLLLL', 'kGGGGGGGG', '.kkkkkkkk'] },
+  gargola: { name: 'gargola', mirror: true, rows: ['k.......', 'gk......', 'ggk...kk', 'gggk.kgg', 'kgggkggl', '.kggkgFl', '.kgggggg', '..kgkggk', '...kgggg', '...kglgg', '..kggggg', '..kgglgg', '..kggggk', '...kgg.k', '..kggk..', '..kkkk..'] },
+  newton: { name: 'fig_newton', mirror: true, ov: "{ w: '#e4e0d8', s: '#e0c0a0', q: '#b8907a', c: '#4a3428', W: '#f0ece4' }", rows: ['...wwwww', '..wwwwww', '.wwwssss', '.wwsssss', '.wwskkss', '.wwsssss', '.wwssssq', '.wwsssss', 'wwwssqqq', 'www.ssss', 'ww...sss', 'w..ccccW', '..cccccW', '.ccccccW', 'cccccccW', 'cccccccc', 'cccccccc'] },
+  icono: { name: 'i_apple', mirror: false, rows: ['....n....', '...nG....', '.RRRnRR..', 'RRwRRRRR.', 'RwRRRRRRR', 'RRRRRRRRR', 'RRRRRRRRk', '.RRRRRRk.', '..RRkRk..'] },
+};
+
+const $ = (id) => document.getElementById(id);
+let rows = [];       // matriz editable (si mirror: sólo la mitad izquierda)
+let mirror = true;
+let current = 'k';
+let history = [];
+let overrides = {};
+let syncing = false;
+
+function colorOf(ch) {
+  if (ch === '.' || ch === ' ') return null;
+  if (overrides[ch]) return overrides[ch];
+  return PAL[ch] ? PAL[ch][0] : '#ff00ff';
+}
+function full() {
+  return mirror ? rows.map((r) => r + r.split('').reverse().join('')) : rows.slice();
+}
+function dims() {
+  const f = full();
+  return { w: Math.max(1, ...f.map((r) => r.length)), h: f.length };
+}
+
+function parse(text) {
+  const isMirror = /mirrorHalf\s*\(/.test(text);
+  const out = [];
+  const re = /(['"`])((?:(?!\1).)*)\1/g;
+  const body = text.replace(/\/\/.*$/gm, '');
+  let m;
+  while ((m = re.exec(body))) out.push(m[2]);
+  const nameM = text.match(/^\s*([A-Za-z_][\w]*)\s*:/m);
+  return { rows: out, mirror: isMirror, name: nameM ? nameM[1] : null };
+}
+
+function normalize() {
+  const w = Math.max(1, ...rows.map((r) => r.length));
+  rows = rows.map((r) => r.padEnd(w, '.'));
+}
+
+function codeText() {
+  const name = ($('name').value || 'sprite').trim();
+  const lines = rows.map((r) => `    '${r}',`).join('\n');
+  return mirror ? `  ${name}: mirrorHalf([\n${lines}\n  ]),` : `  ${name}: [\n${lines}\n  ],`;
+}
+
+function render() {
+  const { w, h } = dims();
+  const f = full();
+  // lienzo de pintura
+  const pc = $('paint');
+  const avail = Math.max(120, pc.parentElement.clientWidth - 8);
+  const cell = Math.max(6, Math.min(28, Math.floor(Math.min(avail / w, 560 / h))));
+  pc.width = w * cell; pc.height = h * cell;
+  const ctx = pc.getContext('2d');
+  ctx.clearRect(0, 0, pc.width, pc.height);
+  f.forEach((r, y) => [...r].forEach((ch, x) => {
+    const c = colorOf(ch);
+    if (c) { ctx.fillStyle = c; ctx.fillRect(x * cell, y * cell, cell, cell); }
+  }));
+  if ($('showGrid').checked) {
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x++) { ctx.beginPath(); ctx.moveTo(x * cell + .5, 0); ctx.lineTo(x * cell + .5, h * cell); ctx.stroke(); }
+    for (let y = 0; y <= h; y++) { ctx.beginPath(); ctx.moveTo(0, y * cell + .5); ctx.lineTo(w * cell, y * cell + .5); ctx.stroke(); }
+    if (mirror) {
+      ctx.strokeStyle = 'rgba(232,193,90,.6)';
+      ctx.beginPath(); ctx.moveTo((w / 2) * cell + .5, 0); ctx.lineTo((w / 2) * cell + .5, h * cell); ctx.stroke();
+    }
+  }
+  pc.dataset.cell = cell;
+  // vista en el juego
+  const s = +$('scale').value;
+  $('scaleV').textContent = `×${s} · ${w}×${h} px`;
+  const pv = $('preview');
+  pv.width = w * s; pv.height = h * s;
+  const p2 = pv.getContext('2d');
+  p2.clearRect(0, 0, pv.width, pv.height);
+  f.forEach((r, y) => [...r].forEach((ch, x) => {
+    const c = colorOf(ch);
+    if (c) { p2.fillStyle = c; p2.fillRect(x * s, y * s, s, s); }
+  }));
+  // salida
+  $('out').value = codeText();
+  $('wIn').value = rows[0] ? rows[0].length : 0;
+  $('hIn').value = rows.length;
+  // leyenda de letras usadas
+  const used = [...new Set(f.join('').replace(/[. ]/g, ''))];
+  $('legend').innerHTML = used.map((ch) => `<div><b>${ch}</b> ${PAL[ch] ? PAL[ch][1] : (overrides[ch] ? 'color propio' : '<span style="color:#e08a8a">letra sin color en la paleta</span>')}</div>`).join('');
+}
+
+function syncCode() {
+  syncing = true;
+  $('code').value = codeText();
+  syncing = false;
+}
+
+function loadFromText() {
+  if (syncing) return;
+  const p = parse($('code').value);
+  if (!p.rows.length) {
+    $('msg').textContent = 'No encontré filas entre comillas. Cada fila va entre comillas, como \'..kkk..\'.';
+    $('msg').className = 'msg err';
+    return;
+  }
+  rows = p.rows; mirror = p.mirror; $('mirror').checked = mirror;
+  if (p.name) $('name').value = p.name;
+  normalize();
+  const unknown = [...new Set(rows.join('').replace(/[. ]/g, ''))].filter((ch) => !PAL[ch] && !overrides[ch]);
+  $('msg').textContent = unknown.length ? `Letras sin color: ${unknown.join(' ')} (se ven en magenta). Defínelas en "Colores propios".` : `Leídas ${rows.length} filas${mirror ? ' (se reflejan)' : ''}.`;
+  $('msg').className = unknown.length ? 'msg err' : 'msg ok';
+  render();
+}
+
+function loadOverrides() {
+  const t = $('ov').value.trim();
+  overrides = {};
+  if (!t) { render(); return; }
+  const re = /([A-Za-z])\s*:\s*['"](#[0-9a-fA-F]{3,8})['"]/g;
+  let m;
+  while ((m = re.exec(t))) overrides[m[1]] = m[2];
+  render();
+}
+
+function loadExample(key) {
+  const ex = EXAMPLES[key];
+  $('ov').value = ex.ov || '';
+  overrides = {};
+  loadOverridesSilent();
+  rows = ex.rows.slice(); mirror = ex.mirror; $('mirror').checked = mirror; $('name').value = ex.name;
+  history = [];
+  syncCode(); render();
+  $('msg').textContent = 'Ejemplo cargado. Edita el código o pinta en el yunque.';
+  $('msg').className = 'msg';
+}
+function loadOverridesSilent() {
+  const t = $('ov').value.trim();
+  const re = /([A-Za-z])\s*:\s*['"](#[0-9a-fA-F]{3,8})['"]/g;
+  let m; overrides = {};
+  while ((m = re.exec(t))) overrides[m[1]] = m[2];
+}
+
+// paleta
+function buildPalette() {
+  const pal = $('palette');
+  pal.innerHTML = '';
+  const make = (ch, color, title, extra = '') => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sw' + extra + (ch === current ? ' on' : '');
+    b.title = title;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', ch === current);
+    b.innerHTML = `<i style="${color ? `background:${color}` : ''}"></i>${ch === '.' ? 'borrar' : ch}`;
+    b.onclick = () => { current = ch; buildPalette(); };
+    pal.appendChild(b);
+  };
+  make('.', null, 'Borrador (transparente)', ' eraser');
+  Object.entries(PAL).forEach(([ch, [c, n]]) => make(ch, overrides[ch] || c, `${ch} · ${n}`));
+}
+
+// pintar
+let painting = false, paintChar = 'k';
+function cellAt(ev) {
+  const pc = $('paint');
+  const r = pc.getBoundingClientRect();
+  const cell = +pc.dataset.cell;
+  const x = Math.floor((ev.clientX - r.left) * (pc.width / r.width) / cell);
+  const y = Math.floor((ev.clientY - r.top) * (pc.height / r.height) / cell);
+  return { x, y };
+}
+function setPixel(x, y, ch) {
+  const halfW = rows[0].length;
+  const fullW = mirror ? halfW * 2 : halfW;
+  if (y < 0 || y >= rows.length || x < 0 || x >= fullW) return;
+  if (mirror && x >= halfW) x = fullW - 1 - x;
+  const row = rows[y];
+  if (row[x] === ch) return;
+  rows[y] = row.slice(0, x) + ch + row.slice(x + 1);
+  render();
+}
+$('paint').addEventListener('pointerdown', (ev) => {
+  ev.preventDefault();
+  history.push(rows.slice()); if (history.length > 80) history.shift();
+  painting = true;
+  paintChar = ev.button === 2 ? '.' : current;
+  $('paint').setPointerCapture(ev.pointerId);
+  const { x, y } = cellAt(ev); setPixel(x, y, paintChar);
+});
+$('paint').addEventListener('pointermove', (ev) => { if (!painting) return; const { x, y } = cellAt(ev); setPixel(x, y, paintChar); });
+const stop = () => { if (painting) { painting = false; syncCode(); } };
+$('paint').addEventListener('pointerup', stop);
+$('paint').addEventListener('pointercancel', stop);
+$('paint').addEventListener('contextmenu', (e) => e.preventDefault());
+
+function undo() { if (history.length) { rows = history.pop(); syncCode(); render(); } }
+$('undo').onclick = undo;
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && document.activeElement !== $('code')) { e.preventDefault(); undo(); } });
+$('clear').onclick = () => { history.push(rows.slice()); rows = rows.map((r) => '.'.repeat(r.length)); syncCode(); render(); };
+$('resize').onclick = () => {
+  const w = Math.max(1, Math.min(48, +$('wIn').value || 1)), h = Math.max(1, Math.min(48, +$('hIn').value || 1));
+  history.push(rows.slice());
+  const next = [];
+  for (let y = 0; y < h; y++) next.push((rows[y] || '').slice(0, w).padEnd(w, '.'));
+  rows = next; syncCode(); render();
+};
+$('mirror').onchange = () => {
+  history.push(rows.slice());
+  if ($('mirror').checked && !mirror) { const half = Math.ceil(rows[0].length / 2); rows = rows.map((r) => r.slice(0, half)); }
+  if (!$('mirror').checked && mirror) rows = full();
+  mirror = $('mirror').checked; syncCode(); render();
+};
+$('code').addEventListener('input', loadFromText);
+$('ov').addEventListener('input', () => { loadOverrides(); buildPalette(); });
+$('name').addEventListener('input', () => { syncCode(); render(); });
+$('scale').addEventListener('input', render);
+window.addEventListener('resize', render);
+$('showGrid').addEventListener('change', render);
+$('ejemplo').onchange = (e) => loadExample(e.target.value);
+$('copy').onclick = async () => {
+  const t = $('out').value;
+  try { await navigator.clipboard.writeText(t); $('msg').textContent = 'Código copiado. Pégalo dentro de SPRITES en src/art/sprites.ts.'; $('msg').className = 'msg ok'; }
+  catch { $('out').focus(); $('out').select(); $('msg').textContent = 'Selecciona el texto de abajo y cópialo con Ctrl+C.'; $('msg').className = 'msg'; }
+};
+
+buildPalette();
+loadExample('espectro');
+</script>
+</body></html>

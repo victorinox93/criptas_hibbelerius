@@ -76,7 +76,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   colossus: {
-    id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [120, 120], mass: 12, umbral: 15,
+    id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
     next: (e) => {
       if (e.turn % 3 === 2) return { kind: 'block', block: 12, dmg: 5, label: 'Pisotón' };

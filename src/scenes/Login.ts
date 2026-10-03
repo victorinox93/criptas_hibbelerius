@@ -3,7 +3,7 @@ import { api, hashPass, isOnline } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { VERSION, W } from '../config';
-import { Game, loadLocal, rememberSession, restoreSession, Avatar } from '../state';
+import { Codex, Game, loadLocal, mergeCodex, rememberSession, restoreSession, Avatar } from '../state';
 import { T } from '../textos';
 import { button, Btn, dungeonBackground, embers, fadeTo, frame, TextField, title, txt } from '../ui/widgets';
 
@@ -22,6 +22,7 @@ export class LoginScene extends Phaser.Scene {
       const local = loadLocal();
       if (!Game.profile.avatar && local.avatar) Game.profile.avatar = local.avatar;
       Game.run = local.run && !local.run.done ? local.run : null;
+      Game.codex = mergeCodex(local.codex, null);
       this.time.delayedCall(10, () => fadeTo(this, Game.profile!.avatar ? 'Menu' : 'Avatar'));
       return;
     }
@@ -107,7 +108,9 @@ export class LoginScene extends Phaser.Scene {
         let avatar: Avatar | null = null;
         try { avatar = r.avatar ? JSON.parse(r.avatar) : null; } catch { avatar = null; }
         Game.profile = { matricula: r.matricula, grupo: r.grupo, token: r.token, offline: false, avatar };
-        this.enter();
+        let server: Codex | null = null;
+        try { server = r.grimorio ? JSON.parse(r.grimorio) : null; } catch { server = null; }
+        this.enter(server);
       } catch (e) {
         say((e as Error).message || 'No se pudo conectar.');
         goBtn.setEnabled(true);
@@ -116,10 +119,11 @@ export class LoginScene extends Phaser.Scene {
     };
   }
 
-  enter() {
+  enter(serverCodex: Codex | null = null) {
     const local = loadLocal();
     if (!Game.profile!.avatar && local.avatar) Game.profile!.avatar = local.avatar;
     Game.run = local.run && !local.run.done ? local.run : null;
+    Game.codex = mergeCodex(local.codex, serverCodex);
     rememberSession();
     fadeTo(this, Game.profile!.avatar ? 'Menu' : 'Avatar');
   }

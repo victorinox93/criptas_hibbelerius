@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
-import { G, W, H } from '../config';
+import { W, H } from '../config';
+import { gravityOf, GravityLevel } from '../data/gravity';
 import { CalcCtx, CARDS, CardInst, force } from '../data/cards';
 import { ENCOUNTERS, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
+import { addErgios, boonLevel, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
@@ -48,6 +49,7 @@ export class CombatScene extends Phaser.Scene {
   private busy = false;
   private turn = 0;
   private firstAttack = false;
+  private grav: GravityLevel = gravityOf(1);
   private selected: CardView | null = null;
   private hero!: Phaser.GameObjects.Image;
   private heroX = 220;
@@ -97,7 +99,7 @@ export class CombatScene extends Phaser.Scene {
     return Game.run!.effects.some((e) => e.id === id && e.left > 0);
   }
   private ctx(): CalcCtx {
-    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion };
+    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g };
   }
   private wait(ms: number) {
     return new Promise<void>((r) => this.time.delayedCall(ms, () => r()));
@@ -107,6 +109,7 @@ export class CombatScene extends Phaser.Scene {
     this.cameras.main.fadeIn(300);
     audio.play(this.kind === 'boss' ? 'jefe' : Math.random() < 0.5 ? 'combate' : 'combate2');
     const run = Game.run!;
+    this.grav = gravityOf(run.gravity);
     dungeonBackground(this, 100 + this.floor * 7, this.kind === 'boss' ? 0x241820 : this.kind === 'elite' ? 0x201822 : 0x1c1722);
     this.tip = new Tooltip(this);
     this.hud = topBar(this, this.tip);
@@ -182,7 +185,21 @@ export class CombatScene extends Phaser.Scene {
   }
 
   // ───────────────────────── ENEMIGOS ─────────────────────────
+  /** Ajusta el daño de una intención según el nivel de gravedad */
+  private scaleIntent(i: Intent): Intent {
+    const m = this.grav.dmgMul;
+    if (m === 1) return i;
+    if (i.kind === 'attack') return { ...i, dmg: Math.round(i.dmg * m) };
+    if (i.kind === 'block' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
+    return i;
+  }
+
   private addEnemy(st: EnemyState, x: number) {
+    unlock('enemies', st.def.id);
+    if (this.grav.hpMul !== 1) {
+      st.maxHp = st.hp = Math.round(st.hp * this.grav.hpMul);
+    }
+    st.intent = this.scaleIntent(st.intent);
     const root = this.add.container(x, 0);
     const sprite = this.add.image(0, 330, st.def.sprite).setOrigin(0.5, 1).setScale(st.def.scale);
     const shadow = this.add.ellipse(0, 330, sprite.displayWidth * 0.9, 16, 0x000000, 0.5);
@@ -210,7 +227,7 @@ export class CombatScene extends Phaser.Scene {
     sprite.on('pointerover', (p: Phaser.Input.Pointer) => {
       if (this.selected) sprite.setTint(0xffaaaa);
       const d = st.def;
-      let body = `Masa: ${d.mass} kg · Peso: ${Math.round(d.mass * G)} N\n${d.desc}`;
+      let body = `Masa: ${d.mass} kg · Peso en ${this.grav.name}: ${Math.round(d.mass * this.grav.g)} N\n${d.desc}`;
       if (d.umbral) body += `\n\nUmbral para detenerlo: F ≥ ${st.phase2 ? d.umbral + 3 : d.umbral} N en un solo golpe (1ª ley).`;
       this.tip.show(p.worldX + 16, p.worldY - 120, d.name, body);
     });
@@ -536,8 +553,8 @@ export class CombatScene extends Phaser.Scene {
       }
       case 'pesoMuerto': {
         const m = (st.m ?? 0) + this.masa;
-        const Wt = Math.round(m * G);
-        this.calc(`Peso Muerto: W = ${r1(m)} kg × 9.81 m/s² = ${Wt} N (ignora Bloque)`);
+        const Wt = Math.round(m * this.grav.g);
+        this.calc(`Peso Muerto en ${this.grav.name}: W = ${r1(m)} kg × ${this.grav.g} m/s² = ${Wt} N (ignora Bloque)`);
         await this.heroLunge();
         if (target) await this.hitEnemy(target, Wt, true);
         break;
@@ -593,8 +610,8 @@ export class CombatScene extends Phaser.Scene {
   private async newtonApple() {
     const lvl = boonLevel('n_manzana');
     if (!lvl) return;
-    const W1 = Math.round(lvl * G);
-    this.calc(`La Manzana (Newton): W = ${lvl} kg × 9.81 m/s² ≈ ${W1} N a cada enemigo`);
+    const W1 = Math.round(lvl * this.grav.g);
+    this.calc(`La Manzana (Newton): W = ${lvl} kg × ${this.grav.g} m/s² ≈ ${W1} N a cada enemigo`);
     for (const ev of this.alive()) {
       const a = this.add.image(ev.baseX, 60, 'i_apple').setScale(3).setDepth(600);
       await new Promise<void>((r) => this.tweens.add({ targets: a, y: 240, duration: 420, ease: 'Quad.in', onComplete: () => { a.destroy(); r(); } }));
@@ -819,7 +836,7 @@ export class CombatScene extends Phaser.Scene {
       if (st.stunned > 0) st.intent = { kind: 'stunned' };
       else {
         st.detenido = false;
-        st.intent = st.def.next(st);
+        st.intent = this.scaleIntent(st.def.next(st));
       }
       this.refreshEnemy(ev);
       this.refreshPlayer();
@@ -837,7 +854,7 @@ export class CombatScene extends Phaser.Scene {
     const run = Game.run!;
     run.floor = this.floor + 1;
     run.stats.combates++;
-    const pts = this.kind === 'boss' ? 150 : this.kind === 'elite' ? 40 : 15;
+    const pts = Math.round((this.kind === 'boss' ? 150 : this.kind === 'elite' ? 40 : 15) * this.grav.scoreMul);
     run.score += pts;
     if (this.kind === 'elite') run.stats.elites++;
     // los efectos pasajeros se consumen al terminar el combate
@@ -852,6 +869,8 @@ export class CombatScene extends Phaser.Scene {
     saveLocal();
     if (this.kind === 'boss') {
       run.done = true;
+      saveLocal();
+      codexWin(run.gravity);
       saveLocal();
       syncRun('victoria', 'Coloso Inerte derrotado');
       await this.banner(T.combate.victoria);
