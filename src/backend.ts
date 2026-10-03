@@ -6,4 +6,4 @@
 //  Este archivo casi nunca cambia: al actualizar el juego,
 //  conserva tu versión.
 // ─────────────────────────────────────────────────────────────
-export const API_URL = '';
+export const API_URL = 'https://script.google.com/macros/s/AKfycbwTrDlaXhCL5QBxTVF6B4-aj_FdxfNuNu54sPdZrveCp_5B_yjWRo_5XigvY_TnYI6hQw/exec';
