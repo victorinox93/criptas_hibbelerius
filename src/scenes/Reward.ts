@@ -71,7 +71,10 @@ export class RewardScene extends Phaser.Scene {
     }
 
     txt(this, W / 2, y0, T.botin.elige, 26, CSS.bone).setOrigin(0.5);
-    const pool = Phaser.Utils.Array.Shuffle(rewardPool(Game.run!.clase).filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
+    // en el Acto III, las cartas de impulso salen el doble
+    const base = rewardPool(Game.run!.clase, Game.run!.acto);
+    const weighted = Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
+    const pool = Phaser.Utils.Array.Shuffle(weighted.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);
     picks.forEach((id, i) => {
       const up = Math.random() < (data.kind === 'elite' ? 0.35 : 0.1);

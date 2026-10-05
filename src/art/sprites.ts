@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ACT3_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
 
 // Cada sprite es una matriz de caracteres; cada carácter es un color de la paleta.
@@ -925,6 +926,9 @@ export function generateAllTextures(scene: Phaser.Scene) {
   makeTexture(scene, 'anima', SPRITES.anima, { y: '#c8743a', o: '#6a2a18', w: '#f0c070', R: '#8a3a20' });
   makeTexture(scene, 'bruja', SPRITES.bruja, { G: '#1c2418', L: '#34442a', p: '#24162e', P: '#46285a', s: '#7a8a6a', q: '#5a6a4e', F: '#c8f070', d: '#10140e' });
   makeTexture(scene, 'volante', SPRITES.volante, { g: '#3a3a44', l: '#6a6a7a', y: '#c87533', F: '#ffe080' });
+  // Acto III: la Torre del Tomo
+  makeTexture(scene, 'hibbelerius', HIBBELERIUS, HIB_PAL);
+  for (const [k, rows] of Object.entries(ACT3_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
   // pixel blanco para partículas
   if (!scene.textures.exists('px')) {
     const c = scene.textures.createCanvas('px', 2, 2)!;

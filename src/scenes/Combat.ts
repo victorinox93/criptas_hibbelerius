@@ -13,7 +13,7 @@ import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
 import { deckOverlay, Hud, topBar } from '../ui/hud';
-import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, Tooltip, txt, wizardryBackground } from '../ui/widgets';
+import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, towerBackground, Tooltip, txt, wizardryBackground } from '../ui/widgets';
 
 type Kind = 'easy' | 'normal' | 'elite' | 'boss';
 
@@ -83,6 +83,11 @@ export class CombatScene extends Phaser.Scene {
   private marco = 0; // golpes que anula Marco de Referencia (Einstein)
   private polonio = 0; // daño extra de la carta de ataque en curso (Curie)
   private famImg: Phaser.GameObjects.Image | null = null;
+  // v0.7: Acto III y cartas nuevas
+  private estela = false; // Estela Cinética: cada ataque da +1 m/s
+  private noFric = false; // Superficie Sin Fricción
+  private restE = 0; // Coeficiente de Restitución activo (0 = no)
+  private played = 0; // cartas jugadas este turno (Impulso Angular)
 
   constructor() { super('Combat'); }
 
@@ -116,6 +121,10 @@ export class CombatScene extends Phaser.Scene {
     this.marco = 0;
     this.polonio = 0;
     this.famImg = null;
+    this.estela = false;
+    this.noFric = false;
+    this.restE = 0;
+    this.played = 0;
   }
 
   private has(relic: string) {
@@ -137,7 +146,10 @@ export class CombatScene extends Phaser.Scene {
     this.acto = run.acto ?? 1;
     this.isArc = run.clase === 'arcanista';
     this.grav = gravityOf(run.gravity);
-    if (this.acto === 2) {
+    if (this.acto >= 3) {
+      audio.play(this.kind === 'boss' ? 'jefe3' : 'combate4');
+      towerBackground(this, 300 + this.floor * 7, this.kind === 'boss');
+    } else if (this.acto === 2) {
       audio.play(this.kind === 'boss' ? 'jefe2' : 'combate3');
       wizardryBackground(this, 200 + this.floor * 7, this.kind === 'boss');
     } else {
@@ -203,6 +215,16 @@ export class CombatScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-ESC', () => this.cancelSelect());
     this.input.keyboard?.on('keydown-E', () => this.endTurn());
+    // Modo profesor: K gana el combate al instante
+    if (Game.run!.debug) {
+      this.input.keyboard?.on('keydown-K', async () => {
+        if (this.busy) return;
+        this.calc('Modo profesor: combate ganado (tecla K)');
+        while (this.alive().length) for (const e of this.alive()) await this.killEnemy(e);
+        await this.checkEnd();
+      });
+      txt(this, W / 2, 531, 'Modo profesor · K = ganar', 15, '#e08a8a').setOrigin(0.5);
+    }
 
     // ── Inicio ──
     this.draw = Phaser.Utils.Array.Shuffle([...run.deck]);
@@ -228,7 +250,7 @@ export class CombatScene extends Phaser.Scene {
     }
     this.showFamiliar();
     this.refreshPlayer();
-    this.banner(this.kind === 'boss' ? T.combate.bannerJefe : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+    this.banner(this.kind === 'boss' ? T.combate.bannerJefes[Math.min(2, this.acto - 1)] : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
       if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
@@ -269,7 +291,8 @@ export class CombatScene extends Phaser.Scene {
     const hp = bar(this, x - 60, 344, 120, 14, 0x6a2a3a);
     const blockT = txt(this, x - 82, 351, '', 22, CSS.block).setOrigin(0.5);
     const top = 330 - sprite.displayHeight - (st.def.id === 'bat' ? 80 : 12);
-    const intentC = st.def.id === 'pendulo' ? this.add.container(x + 62, 170) : this.add.container(x, top);
+    const intentC = st.def.id === 'pendulo' ? this.add.container(x + 62, 170) : (st.def.id === 'hibbelerius' ? this.add.container(x - 120, 150) : this.add.container(x, Math.max(130, top)));
+    if (st.def.id === 'hibbelerius') this.hibAura(sprite, x);
     const statusC = this.add.container(x + 66, 351);
     txt(this, x, 370, st.def.name, 19, CSS.dim).setOrigin(0.5);
     const ev: EnemyView = { st, root, sprite, hp, blockT, intentC, statusC, baseX: x, dead: false };
@@ -303,7 +326,7 @@ export class CombatScene extends Phaser.Scene {
     if (i.kind === 'stunned') return { ic: 'i_stun', t: 'Detenido', d: 'Está detenido: no actuará este turno y recibe ×1.5 de daño.' };
     let r: { ic: string; t: string; d: string };
     if (i.kind === 'block')
-      r = { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloque${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
+      r = { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloqueo${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
     else if (i.kind === 'buff') r = { ic: 'i_rune', t: '', d: 'Prepara un efecto.' };
     else {
       const t = i.hits && i.hits > 1 ? `${i.dmg}×${i.hits}` : `${i.dmg}`;
@@ -355,7 +378,9 @@ export class CombatScene extends Phaser.Scene {
       [st.calor, 'i_fire', 'Calor', `Pierde ${st.calor} de vida al inicio de su turno; luego baja 1.`],
       [st.resonancia, 'i_wind', 'Resonancia', 'Con 3 cargas entra en resonancia y recibe 12 de daño.'],
       [st.fatiga, 'i_anvil', 'Fatiga del material', `Recibe +50 % de daño. Quedan ${st.fatiga} turno(s).`],
-      [st.carga, 'i_pend', 'Energía elástica', `Lleva ${st.carga} compresión(es): liberará ½kx² de golpe.`],
+      [st.carga, 'i_pend', st.def.id === 'muelle' ? 'Energía elástica' : 'Impulso acumulado',
+        st.def.id === 'muelle' ? `Lleva ${st.carga} compresión(es): liberará ½kx² de golpe.` : `Lleva ${st.carga} carga(s) de impulso (I = F·Δt). Detenlo para que las pierda.`],
+      [st.impulsoLeft ? st.impulso : 0, 'i_gaunt', 'Impulso Sostenido', `Recibe ${st.impulso} de daño en cada uno de sus próximos ${st.impulsoLeft} turno(s).`],
     ];
     for (const [n, ic0, h, b] of st2) {
       if (!n) continue;
@@ -387,7 +412,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.masa) items.push(['i_mass', `${this.masa > 0 ? '+' : ''}${this.masa}`, 'Masa extra', `${this.masa > 0 ? '+' : ''}${this.masa} kg a todos tus ataques en este combate.`]);
     if (this.friccion) items.push(['i_mud', `${this.friccion}`, 'Fricción', `El lodo resta ${this.friccion} m/s² a la aceleración de tus ataques. Baja 1 por turno.`]);
     if (this.reflect) items.push(['i_reflect', '', 'Acción-Reacción', 'Este turno, cada golpe que recibas regresa con la misma fuerza al atacante (3ª ley).']);
-    if (this.keepBlock) items.push(['i_crystal', '', 'Inercia Defensiva', 'Tu Bloque no se perderá al iniciar tu siguiente turno (1ª ley).']);
+    if (this.keepBlock) items.push(['i_crystal', '', 'Inercia Defensiva', 'Tu Bloqueo no se perderá al iniciar tu siguiente turno (1ª ley).']);
     if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
     if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
     if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
@@ -702,7 +727,7 @@ export class CombatScene extends Phaser.Scene {
       case 'pesoMuerto': {
         const m = (st.m ?? 0) + this.masa;
         const Wt = Math.round(m * this.grav.g);
-        this.calc(`Peso Muerto en ${this.grav.name}: W = ${r1(m)} kg × ${this.grav.g} m/s² = ${Wt} N (ignora Bloque)`);
+        this.calc(`Peso Muerto en ${this.grav.name}: W = ${r1(m)} kg × ${this.grav.g} m/s² = ${Wt} N (ignora Bloqueo)`);
         await this.heroLunge();
         if (target) await this.hitEnemy(target, Wt, true);
         break;
@@ -711,7 +736,7 @@ export class CombatScene extends Phaser.Scene {
       case 'accion':
       case 'inerciaDef': {
         this.gainBlock(st.block!);
-        this.calc(`${def.name}: +${st.block} de Bloque`);
+        this.calc(`${def.name}: +${st.block} de Bloqueo`);
         if (def.id === 'accion') this.reflect = true;
         if (def.id === 'inerciaDef') this.keepBlock = true;
         break;
@@ -725,7 +750,7 @@ export class CombatScene extends Phaser.Scene {
         }, 0);
         const b = Math.min(inc, st.extra!);
         this.gainBlock(b);
-        this.calc(`ΣF = 0: fuerza entrante ${inc} N → +${b} de Bloque`);
+        this.calc(`ΣF = 0: fuerza entrante ${inc} N → +${b} de Bloqueo`);
         break;
       }
       case 'carrera': {
@@ -760,7 +785,7 @@ export class CombatScene extends Phaser.Scene {
       case 'muroMasa': {
         const b = st.block! + 3 * Math.max(0, this.masa);
         this.gainBlock(b);
-        this.calc(`Muro de Masa: ${st.block} + 3×${Math.max(0, this.masa)} kg = ${b} de Bloque`);
+        this.calc(`Muro de Masa: ${st.block} + 3×${Math.max(0, this.masa)} kg = ${b} de Bloqueo`);
         break;
       }
 
@@ -789,7 +814,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       case 'rebote': {
         const dmg = this.block;
-        this.calc(`Rebote Elástico: tu Bloque (${dmg}) regresa como daño`);
+        this.calc(`Rebote Elástico: tu Bloqueo (${dmg}) regresa como daño`);
         await this.heroLunge();
         if (target) await this.hitEnemy(target, dmg);
         break;
@@ -819,12 +844,12 @@ export class CombatScene extends Phaser.Scene {
       case 'conservacion': {
         const b = st.extra! * this.energy;
         this.gainBlock(b);
-        this.calc(`Conservación: ${this.energy} J sin usar × ${st.extra} = ${b} de Bloque`);
+        this.calc(`Conservación: ${this.energy} J sin usar × ${st.extra} = ${b} de Bloqueo`);
         break;
       }
       case 'amortiguador':
         this.gainBlock(st.block!);
-        this.calc(`Amortiguador: +${st.block} de Bloque`);
+        this.calc(`Amortiguador: +${st.block} de Bloqueo`);
         break;
       case 'lodoCarta':
         this.calc('Lodo Pegajoso: gastaste energía sin avanzar.');
@@ -850,7 +875,7 @@ export class CombatScene extends Phaser.Scene {
       }
       case 'escudoE':
         this.gainBlock(st.block!);
-        this.calc(`Escudo de Energía: +${st.block} de Bloque`);
+        this.calc(`Escudo de Energía: +${st.block} de Bloqueo`);
         break;
       case 'acelerar': {
         const vv = boonLevel('c_visviva');
@@ -865,7 +890,7 @@ export class CombatScene extends Phaser.Scene {
         const b = Math.round(0.5 * m * (v * v - v2 * v2));
         this.vel = v2;
         this.gainBlock(b);
-        this.calc(`Frenado: ΔK = ½·${m}·(${v}² − ${v2}²) = ${b} → Bloque`);
+        this.calc(`Frenado: ΔK = ½·${m}·(${v}² − ${v2}²) = ${b} → Bloqueo`);
         break;
       }
       case 'impulsoCte':
@@ -887,9 +912,119 @@ export class CombatScene extends Phaser.Scene {
       case 'barrera': {
         const b = Math.round(st.extra! * this.vel);
         this.gainBlock(b);
-        this.calc(`Barrera Inercial: ${st.extra}·v = ${st.extra}·${this.vel} = ${b} de Bloque`);
+        this.calc(`Barrera Inercial: ${st.extra}·v = ${st.extra}·${this.vel} = ${b} de Bloqueo`);
         break;
       }
+      // ── Arcanista (v0.7) ──
+      case 'chispa': {
+        const k = kinetic(st, c);
+        this.calc(`Chispa: K = ½·${r1(k.m)}·${k.v}² = ${k.K} J, luego +1 m/s`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, k.K);
+        this.vel = Math.min(VMAX, this.vel + 1);
+        break;
+      }
+      case 'picada': {
+        const h = st.extra ?? 0.5;
+        const dv = Math.floor(Math.sqrt(2 * this.grav.g * h));
+        const before = this.vel;
+        this.vel = Math.min(VMAX, this.vel + dv);
+        this.calc(`Picada: v = √(2·${this.grav.g}·${h}) ≈ ${dv} m/s → v ${before} → ${this.vel}`);
+        break;
+      }
+      case 'torbellino': {
+        const k = kinetic(st, c);
+        this.calc(`Torbellino: 3 × K = 3 × ½·${r1(k.m)}·${k.v}² = 3 × ${k.K}`);
+        for (let i = 0; i < 3 && target && !target.dead; i++) {
+          await this.heroLunge();
+          await this.hitEnemy(target, k.K);
+        }
+        break;
+      }
+      case 'cometa': {
+        const k = kinetic(st, c);
+        this.calc(`Cometa: K = ½·${r1(k.m)}·${k.v}² = ${k.K} J… y quedas en reposo`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, k.K);
+        this.vel = 0;
+        break;
+      }
+      case 'estela':
+        this.estela = true;
+        this.calc('Estela Cinética: cada ataque te dará +1 m/s');
+        break;
+      case 'sinFriccion':
+        this.noFric = true;
+        this.friccion = 0;
+        this.vel = Math.min(VMAX, this.vel + (st.extra ?? 1));
+        this.calc(`Superficie Sin Fricción: μ = 0, +${st.extra} m/s`);
+        break;
+
+      // ── Acto III: impulso y cantidad de movimiento ──
+      case 'impulsoSost':
+        if (target) {
+          const F = st.block ?? 4;
+          this.calc(`Impulso Sostenido: F = ${F} N durante 3 turnos → I = F·Δt = ${F * 3} N·s`);
+          await this.heroLunge();
+          await this.hitEnemy(target, F);
+          if (!target.dead) {
+            target.st.impulso = Math.max(target.st.impulso, F);
+            target.st.impulsoLeft = 2;
+            this.refreshEnemy(target);
+          }
+        }
+        break;
+      case 'choquePlastico':
+        if (target) {
+          this.calc(`Choque Plástico (e = 0): ${st.block} de daño y pierde su cantidad de movimiento`);
+          await this.heroLunge();
+          const hadInertia = target.st.inercia > 0 || target.st.carga > 0;
+          await this.hitEnemy(target, st.block ?? 9);
+          if (!target.dead && target.st.def.umbral && hadInertia && !target.st.detenido) {
+            target.st.inercia = 0;
+            target.st.carga = 0;
+            target.st.detenido = true;
+            target.st.stunned = 1;
+            target.st.intent = { kind: 'stunned' };
+            this.floatText(target.baseX, 140, T.combate.detenido, CSS.gold);
+            this.calc('e = 0: quedan juntos, sin rebote → ¡DETENIDO!');
+            audio.sfx('stop');
+            this.refreshEnemy(target);
+          }
+        }
+        break;
+      case 'restitucion':
+        this.gainBlock(st.block ?? 5);
+        this.restE = st.extra ?? 0.6;
+        this.calc(`Restitución: +${st.block} de Bloqueo; los golpes rebotan con e = ${this.restE}`);
+        break;
+      case 'conservP':
+        if (target) {
+          const b = target.st.block;
+          target.st.block = 0;
+          if (b > 0) this.gainBlock(b);
+          this.beam(target, 0x9ad8f0);
+          this.calc(`Conservación de p: ${b} de Bloqueo pasa del enemigo a ti`);
+          this.refreshEnemy(target);
+        }
+        break;
+      case 'retroceso':
+        this.calc(`Retroceso: ${st.block} de daño; m·v del disparo te empuja → +${st.extra} de Bloqueo`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.block ?? 8);
+        this.gainBlock(st.extra ?? 4);
+        break;
+      case 'impulsoAng': {
+        const dmg = (st.block ?? 4) + 2 * this.played;
+        this.calc(`Impulso Angular: M·t = ${st.block} + 2×${this.played} cartas = ${dmg} a todos`);
+        await this.heroLunge();
+        for (const e of this.alive()) await this.hitEnemy(e, dmg);
+        break;
+      }
+      case 'tarea':
+        this.calc('Entregas la tarea. «Gracias.» — Hibbelerius');
+        break;
+
       case 'sobrecarga':
         this.energy += st.extra!;
         this.vel = Math.max(0, this.vel - 1);
@@ -898,6 +1033,11 @@ export class CombatScene extends Phaser.Scene {
     }
     this.acel -= plano;
     if (planoV) this.vel = Math.max(0, this.vel - planoV);
+    this.played++;
+    if (this.estela && def.type === 'Ataque') {
+      this.vel = Math.min(VMAX, this.vel + 1);
+      this.calc(`Estela Cinética: +1 m/s (v = ${this.vel})`);
+    }
     this.polonio = 0;
     // Einstein · Efecto Fotoeléctrico: cada Habilidad lanza un fotón
     const fot = boonLevel('e_foton');
@@ -976,6 +1116,8 @@ export class CombatScene extends Phaser.Scene {
         st.detenido = true;
         st.stunned = 1;
         st.inercia = 0;
+        if (st.carga) this.calc(`Al detenerlo pierde todo su impulso acumulado (${st.carga})`);
+        st.carga = 0;
         st.intent = { kind: 'stunned' };
         this.calc(`1ª ley: F = ${F} N ≥ ${umbral} N → ¡${st.def.name} DETENIDO!`);
         this.floatText(ev.baseX, 140, T.combate.detenido, CSS.gold);
@@ -995,6 +1137,16 @@ export class CombatScene extends Phaser.Scene {
       st.phase2 = true;
       this.floatText(ev.baseX, 110, 'μ máximo: sus golpes crecen', '#9bf07a');
       this.calc('La Bruja aumenta el coeficiente de fricción: sus ataques ganan +4.');
+    }
+    if (st.def.id === 'hibbelerius' && st.hp > 0) {
+      if (!st.phase2 && st.hp <= st.maxHp * 0.66) {
+        st.phase2 = true;
+        this.hibPhase(ev, 'Capítulo 14 · Trabajo y energía', '«¿Creías que bastaba con F = m·a? Pasemos a la energía.»');
+      } else if (st.phase2 && !st.phase3 && st.hp <= st.maxHp * 0.33) {
+        st.phase3 = true;
+        st.carga = 0;
+        this.hibPhase(ev, 'Capítulo 15 · Impulso', '«Último capítulo. DETENME antes de que suelte mi impulso.»');
+      }
     }
     if (st.hp <= 0) await this.killEnemy(ev);
     else this.refreshEnemy(ev);
@@ -1017,6 +1169,12 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private async killEnemy(ev: EnemyView) {
+    if (ev.dead) return;
+    const split = ev.st.def.split;
+    if (split) {
+      this.calc(`${ev.st.def.name} se divide: m·v = m₁v₁ + m₂v₂ (se conserva p)`);
+      for (let i = 0; i < split.n; i++) this.addEnemy(spawn(split.id), ev.baseX + (i === 0 ? -70 : 70));
+    }
     ev.dead = true;
     ev.st.hp = 0;
     ev.hp.set(0, ev.st.maxHp);
@@ -1061,6 +1219,11 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Acción y Reacción (Newton): el atacante recibe ${3 * nr} N`);
       await this.hitEnemy(from, 3 * nr);
     }
+    if (from && this.restE > 0 && !from.dead && dmg > 0) {
+      const back = Math.round(dmg * this.restE);
+      this.calc(`Restitución: rebota e·F = ${this.restE}·${dmg} = ${back}`);
+      await this.hitEnemy(from, back);
+    }
     if (from && this.reflect && !from.dead) {
       this.calc(`3ª ley: te golpeó con ${dmg} N → recibe ${dmg} N de reacción`);
       await this.hitEnemy(from, dmg);
@@ -1104,7 +1267,7 @@ export class CombatScene extends Phaser.Scene {
     if (fam?.id === 'lechuza') draw += 1;
     if (this.isArc) {
       if (this.velPerTurn) this.vel = Math.min(VMAX, this.vel + this.velPerTurn);
-      if (this.friccion) {
+      if (this.friccion && !this.noFric) {
         this.vel = Math.max(0, this.vel - this.friccion);
         this.calc(`Fricción: la rapidez baja ${this.friccion} m/s (v = ${this.vel})`);
       }
@@ -1129,6 +1292,8 @@ export class CombatScene extends Phaser.Scene {
     }
     this.acel = this.baseAcel;
     this.reflect = false;
+    this.restE = 0;
+    this.played = 0;
     this.drawCards(draw);
     this.refreshPlayer();
     this.hint(`${T.combate.turno} ${this.turn}`);
@@ -1136,13 +1301,13 @@ export class CombatScene extends Phaser.Scene {
     if (fam?.id === 'tortuga') {
       this.famHop();
       this.gainBlock(4);
-      this.calc('Tortuga de Zenón: +4 de Bloque');
+      this.calc('Tortuga de Zenón: +4 de Bloqueo');
     } else if (fam?.id === 'gato' && this.alive().length) {
       this.busy = true;
       this.famHop();
       if (Math.random() < 0.5) {
         this.gainBlock(5);
-        this.calc('Gato de Schrödinger: la caja se abre… ¡escudo! +5 de Bloque');
+        this.calc('Gato de Schrödinger: la caja se abre… ¡escudo! +5 de Bloqueo');
       } else {
         const t = Phaser.Utils.Array.GetRandom(this.alive());
         this.calc('Gato de Schrödinger: la caja se abre… ¡zarpazo! 5 de daño');
@@ -1160,6 +1325,14 @@ export class CombatScene extends Phaser.Scene {
     this.cancelSelect();
     this.busy = true;
     this.endBtn.setEnabled(false);
+    // tareas pendientes: si siguen en la mano, cuestan vida
+    const tareas = this.hand.filter((c) => c.inst.id === 'tarea').length;
+    if (tareas) {
+      Game.run!.hp -= 3 * tareas;
+      this.calc(`Tarea Pendiente ×${tareas}: pierdes ${3 * tareas} de vida`);
+      this.floatText(this.heroX, 200, `-${3 * tareas} tarea`, '#e08a8a');
+      if (Game.run!.hp <= 0 && (await this.dies('la tarea pendiente'))) return;
+    }
     // descartar mano
     for (const c of this.hand) {
       this.discard.push(c.inst);
@@ -1199,6 +1372,13 @@ export class CombatScene extends Phaser.Scene {
         st.calor = Math.max(0, st.calor - 1);
         if (ev.dead) continue;
       }
+      if (st.impulsoLeft > 0) {
+        this.calc(`${st.def.name}: el Impulso Sostenido sigue empujando (${st.impulso})`);
+        await this.hitEnemy(ev, st.impulso, false, 'res');
+        st.impulsoLeft--;
+        if (!st.impulsoLeft) st.impulso = 0;
+        if (ev.dead) continue;
+      }
       const it = st.intent;
       if (it.kind === 'stunned') {
         st.stunned = Math.max(0, st.stunned - 1);
@@ -1208,7 +1388,10 @@ export class CombatScene extends Phaser.Scene {
         await new Promise<void>((r) => this.tweens.add({ targets: ev.root, x: ev.baseX - 50, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => r() }));
         if (it.kind === 'block') {
           st.block += it.block;
-          if (st.def.id === 'muelle') st.carga++;
+          if (it.charge) {
+            st.carga++;
+            this.floatText(ev.baseX, 150, `Carga +1 (${st.carga})`, '#e0a070');
+          }
           if (it.dmg) await this.hurtPlayer(it.dmg, ev);
         } else if (it.kind === 'attack') {
           for (let h = 0; h < (it.hits ?? 1); h++) {
@@ -1216,7 +1399,7 @@ export class CombatScene extends Phaser.Scene {
             if (Game.run!.hp <= 0 || ev.dead) break;
             await this.wait(140);
           }
-          if (st.def.id === 'muelle') st.carga = 0;
+          if (it.release) st.carga = 0;
         }
         if (it.calor && Game.run!.hp > 0) {
           this.pCalor += it.calor;
@@ -1232,7 +1415,7 @@ export class CombatScene extends Phaser.Scene {
               const jc = boonLevel('j_calor');
               if (jc) {
                 this.gainBlock(4 * jc);
-                this.calc(`Calor por Fricción (Joule): +${4 * jc} de Bloque`);
+                this.calc(`Calor por Fricción (Joule): +${4 * jc} de Bloqueo`);
               }
             }
           }
@@ -1300,12 +1483,22 @@ export class CombatScene extends Phaser.Scene {
       fadeTo(this, 'ActTransition');
       return true;
     }
-    if (this.kind === 'boss') {
-      run.done = true;
+    if (this.kind === 'boss' && this.acto === 2) {
       codexFlag('acto2');
       codexWin(run.gravity);
+      logEvent('acto', '', true, { acto: 2, vida: run.hp });
       saveLocal();
-      syncRun('victoria', 'Bruja de la Fricción derrotada');
+      syncRun('en curso', 'Acto II superado');
+      await this.banner(T.combate.victoria);
+      fadeTo(this, 'ActTransition', { to: 3 });
+      return true;
+    }
+    if (this.kind === 'boss') {
+      run.done = true;
+      codexFlag('acto3');
+      logEvent('acto', '', true, { acto: 3, vida: run.hp });
+      saveLocal();
+      syncRun('victoria', 'Hibbelerius derrotado');
       await this.banner(T.combate.victoria);
       fadeTo(this, 'End', { victory: true });
       return true;
@@ -1402,7 +1595,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   /**
-   * Radiación: daño que ignora tu Bloque. Devuelve false si te mató
+   * Radiación: daño que ignora tu Bloqueo. Devuelve false si te mató
    * (y no tenías vida extra).
    */
   private async radiate(n: number, src: string): Promise<boolean> {
@@ -1411,7 +1604,7 @@ export class CombatScene extends Phaser.Scene {
     this.hero.setTintFill(0x9bf07a);
     this.time.delayedCall(120, () => this.hero.clearTint());
     this.floatText(this.heroX + 30, 190, `-${n} rad`, '#9bf07a');
-    this.calc(`Radiación (${src}): pierdes ${n} de vida (ignora el Bloque)`);
+    this.calc(`Radiación (${src}): pierdes ${n} de vida (ignora el Bloqueo)`);
     this.refreshPlayer();
     await this.wait(220);
     if (run.hp <= 0) return !(await this.dies('la radiación'));
@@ -1441,6 +1634,37 @@ export class CombatScene extends Phaser.Scene {
     const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
     g.lineStyle(4, color, 0.9).lineBetween(this.heroX + 30, 250, to.baseX, 260);
     this.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+  }
+
+  // ───────────────────────── HIBBELERIUS ─────────────────────────
+  /** Aura del Archimago: resplandor, fórmulas que orbitan y ojos que parpadean */
+  private hibAura(sprite: Phaser.GameObjects.Image, x: number) {
+    const glow = this.add.ellipse(x, 230, 260, 300, 0x6a3f8a, 0.12).setBlendMode(Phaser.BlendModes.ADD).setDepth(-2);
+    this.tweens.add({ targets: glow, alpha: 0.05, scaleX: 1.08, duration: 1600, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: sprite, y: sprite.y - 8, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const eqs = ['F = m·a', '½mv²', '∫F dt', 'ΣM = Iα', 'mv₁ = mv₂', 'U = mgh'];
+    eqs.forEach((e, i) => {
+      const t = txt(this, x, 200, e, 18, '#b89ad0').setOrigin(0.5).setAlpha(0.55).setDepth(-1);
+      const o = { a: (i / eqs.length) * Math.PI * 2 };
+      this.tweens.add({
+        targets: o, a: o.a + Math.PI * 2, duration: 14000, repeat: -1,
+        onUpdate: () => t.setPosition(x + Math.cos(o.a) * 150, 205 + Math.sin(o.a) * 46).setDepth(Math.sin(o.a) > 0 ? 5 : -3),
+      });
+    });
+    this.add.particles(x, 330, 'px', {
+      x: { min: -90, max: 90 }, speedY: { min: -50, max: -20 }, lifespan: 2400, frequency: 120,
+      scale: { start: 1.6, end: 0 }, alpha: { start: 0.6, end: 0 }, tint: [0x8e5bb0, 0xc8a050, 0x7fd8ff], blendMode: 'ADD',
+    }).setDepth(-1);
+  }
+
+  private hibPhase(ev: EnemyView, cap: string, quote: string) {
+    this.cameras.main.flash(400, 120, 60, 160);
+    this.cameras.main.shake(300, 0.01);
+    this.floatText(ev.baseX, 110, cap, '#b89ad0');
+    this.calc(`Hibbelerius pasa la página: ${cap}`);
+    this.calc(quote);
+    ev.sprite.setTint(ev.st.phase3 ? 0xffb0a0 : 0xd8c0ff);
+    this.burst(ev.baseX, 200, 0xd8ccb0, 40);
   }
 
   private banner(s: string, color = CSS.gold) {

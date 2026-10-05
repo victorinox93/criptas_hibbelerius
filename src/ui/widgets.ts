@@ -381,6 +381,73 @@ export function wizardryBackground(s: Phaser.Scene, seed = 7, boss = false) {
   return g;
 }
 
+/** Acto III: interior de la Torre del Tomo (libreros, vitral con engrane, velas y páginas flotando) */
+export function towerBackground(s: Phaser.Scene, seed = 7, boss = false) {
+  const r = rng(seed);
+  const g = s.add.graphics().setDepth(-10);
+  g.fillStyle(0x050407, 1).fillRect(0, 0, W, H);
+  // vitral gótico con un engrane (como la portada)
+  const wx = W / 2, wy = 190;
+  g.fillStyle(boss ? 0x1a0c18 : 0x0c1018, 1);
+  g.fillRect(wx - 90, wy - 40, 180, 190);
+  g.fillCircle(wx, wy - 40, 90);
+  const glass = boss ? 0x5a1a2a : 0x22344a;
+  g.lineStyle(3, glass, 0.9);
+  g.strokeCircle(wx, wy - 30, 60);
+  g.strokeCircle(wx, wy - 30, 26);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    g.lineBetween(wx + Math.cos(a) * 26, wy - 30 + Math.sin(a) * 26, wx + Math.cos(a) * 60, wy - 30 + Math.sin(a) * 60);
+    g.fillStyle(glass, 0.9).fillRect(wx + Math.cos(a) * 66 - 4, wy - 30 + Math.sin(a) * 66 - 4, 8, 8);
+  }
+  g.lineBetween(wx, wy + 30, wx, wy + 150);
+  g.lineBetween(wx - 90, wy + 70, wx + 90, wy + 70);
+  const moon = s.add.circle(wx, wy - 30, 110, boss ? 0xc84a4a : 0x6a8aba, 0.06).setBlendMode(Phaser.BlendModes.ADD).setDepth(-9);
+  s.tweens.add({ targets: moon, alpha: 0.025, duration: 3000, yoyo: true, repeat: -1 });
+  // libreros a los lados
+  const spines = [0x3a1a1e, 0x2a2a1a, 0x1e2a22, 0x2a1e34, 0x3a2e1e, 0x1a2230, 0x2e2e2e];
+  const shelf = (x0: number, x1: number) => {
+    g.fillStyle(0x0d0a0c, 1).fillRect(x0, 44, x1 - x0, 300);
+    for (let y = 92; y <= 340; y += 50) {
+      let x = x0 + 6;
+      while (x < x1 - 10) {
+        const w = 6 + Math.floor(r() * 8), h = 26 + Math.floor(r() * 16);
+        if (r() < 0.1) { x += w; continue; }
+        g.fillStyle(spines[Math.floor(r() * spines.length)], 1).fillRect(x, y - h, w - 1, h);
+        if (r() < 0.4) g.fillStyle(0x6a5a3a, 0.6).fillRect(x + 1, y - h + 5, w - 3, 2);
+        x += w;
+      }
+      g.fillStyle(0x2a1e16, 1).fillRect(x0, y, x1 - x0, 5);
+    }
+    g.fillStyle(0x1a1410, 1).fillRect(x0, 44, 6, 300).fillRect(x1 - 6, 44, 6, 300);
+  };
+  shelf(0, 270);
+  shelf(W - 270, W);
+  // suelo de losas
+  g.fillStyle(0x0a080b, 1).fillRect(0, 336, W, H - 336);
+  g.lineStyle(1, 0x221a24, 0.8);
+  for (let y = 350; y < H; y += 22) g.lineBetween(0, y, W, y);
+  for (let x = -400; x < W + 400; x += 70) g.lineBetween(W / 2 + (x - W / 2) * 0.35, 336, x, H);
+  // velas flotantes
+  for (let i = 0; i < 7; i++) {
+    const x = 120 + r() * (W - 240), y = 70 + r() * 110;
+    const c = s.add.container(x, y).setDepth(-8);
+    c.add(s.add.rectangle(0, 8, 6, 16, 0xd8ccb0));
+    const f = s.add.ellipse(0, -2, 6, 10, 0xffc860).setBlendMode(Phaser.BlendModes.ADD);
+    c.add([f, s.add.circle(0, -2, 18, 0xffb040, 0.08).setBlendMode(Phaser.BlendModes.ADD)]);
+    s.tweens.add({ targets: c, y: y - 8, duration: 1800 + r() * 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    s.tweens.add({ targets: f, scaleY: 0.7, duration: 120 + r() * 120, yoyo: true, repeat: -1 });
+  }
+  // páginas que caen
+  s.add.particles(0, 0, 'px', {
+    x: { min: 0, max: W }, y: 40, speedY: { min: 14, max: 40 }, speedX: { min: -20, max: 20 }, lifespan: 9000, frequency: 520,
+    scaleX: { min: 2, max: 4 }, scaleY: { min: 1.5, max: 3 }, rotate: { min: 0, max: 360 }, alpha: { start: 0.45, end: 0 }, tint: 0xd8ccb0,
+  }).setDepth(-7);
+  mist(s, 330);
+  vignette(s);
+  vignette(s);
+}
+
 export function mist(s: Phaser.Scene, y = 300) {
   for (let i = 0; i < 5; i++) {
     const m = s.add.ellipse(Math.random() * W, y + Math.random() * 60, 420 + Math.random() * 200, 70, 0x3a3346, 0.08).setDepth(-6);

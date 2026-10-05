@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { Game, saveLocal } from '../state';
+import { Game, saveLocal, TOTAL_PISOS } from '../state';
 import { button, embers, fadeTo, panel, title, txt, vignette } from '../ui/widgets';
 
 const TIPS = T.final.consejos;
@@ -22,7 +22,7 @@ export class EndScene extends Phaser.Scene {
     if (data.victory) {
       title(this, W / 2, 70, T.final.victoria, 54);
       txt(this, W / 2, 112, T.final.victoriaTexto, 22, CSS.bone).setOrigin(0.5);
-      const wz = this.add.image(W - 170, 300, 'wizard').setScale(7).setAlpha(0);
+      const wz = this.add.image(W - 170, 300, 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
       this.tweens.add({ targets: wz, alpha: 0.9, duration: 2500, delay: 800 });
       this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       const q = txt(this, W - 170, 470, T.final.cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
@@ -35,7 +35,7 @@ export class EndScene extends Phaser.Scene {
     panel(this, 80, 150, 520, 300);
     const F = T.final.filas;
     const rows: [string, string | number][] = [
-      [F[0], `${((run.acto ?? 1) - 1) * 9 + run.floor}/18`],
+      [F[0], `${((run.acto ?? 1) - 1) * 9 + run.floor}/${TOTAL_PISOS}`],
       [F[1], run.stats.combates],
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],

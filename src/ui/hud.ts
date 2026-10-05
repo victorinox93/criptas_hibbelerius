@@ -5,7 +5,7 @@ import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { BOONS } from '../data/figures';
 import { RELICS } from '../data/relics';
-import { Game } from '../state';
+import { Game, ROMAN } from '../state';
 import { T } from '../textos';
 import { cardView, CW, CH } from './card';
 import { button, frame, icon, Tooltip, txt } from './widgets';
@@ -37,7 +37,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
   const ergT = D(txt(s, 461, 6, '', 24, CSS.gold));
   tip.attach(coin, T.moneda, 'Moneda de las criptas (el ergio es una unidad de energía). Se gana en combates y runas; se gasta con el Mercader.', 20);
 
-  const deckBtn = D(button(s, W - 205, 20, 120, 30, '', () => deckOverlay(s), { size: 20 }));
+  const deckBtn = D(button(s, W - 232, 20, 116, 30, '', () => deckOverlay(s), { size: 20 }));
   const relicRow = s.add.container(530, 20).setDepth(401);
   const effRow = s.add.container(W - 36, 62).setDepth(401);
   const boonRow = s.add.container(26, 62).setDepth(401);
@@ -50,12 +50,12 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
     refresh() {
       const r = Game.run!;
       hud.setHp(r.hp, r.maxHp);
-      floorT.setText(`${(r.acto ?? 1) === 2 ? 'II' : 'I'}·${Math.min(r.floor + 1, 9)}/9`);
+      floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, 9)}/9`);
       scoreT.setText(`✦${r.score}`);
       ergT.setText(`${r.ergios}`);
       deckBtn.label.setText(`${T.hud.mazo} (${r.deck.length})`);
       relicRow.removeAll(true);
-      const step = Math.min(32, 150 / Math.max(1, r.relics.length - 1));
+      const step = Math.min(32, 128 / Math.max(1, r.relics.length - 1));
       r.relics.forEach((id, i) => {
         const rel = RELICS[id];
         if (!rel) return;

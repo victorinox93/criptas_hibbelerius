@@ -39,6 +39,7 @@ export interface CardDef {
   unplayable?: boolean;
   target: 'enemy' | 'all' | 'self';
   exhaust?: boolean;
+  act?: number; // sólo aparece como recompensa a partir de este acto
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -229,7 +230,7 @@ export const CARDS: Record<string, CardDef> = {
   // ════════════ ARCANISTA CINÉTICO ════════════
   proyectil: {
     id: 'proyectil', name: 'Proyectil Arcano', type: 'Ataque', icon: 'i_momentum', concept: 'Energía cinética', rarity: 'inicial', target: 'enemy', cls: 'arcanista',
-    stats: (up) => ({ cost: 1, m: up ? 1.5 : 1 }),
+    stats: (up) => ({ cost: 1, m: up ? 1.6 : 1.2 }),
     text: (s, c) => `${kText(s, c)}\nInflige K. Pierdes 1 m/s.`,
     lore: 'K = ½·m·v²: la energía cinética crece con el CUADRADO de la rapidez.',
   },
@@ -256,7 +257,7 @@ export const CARDS: Record<string, CardDef> = {
   },
   choque: {
     id: 'choque', name: 'Choque Elástico', type: 'Ataque', icon: 'i_reflect', concept: 'Energía cinética', rarity: 'común', target: 'enemy', cls: 'arcanista',
-    stats: (up) => ({ cost: 1, m: up ? 1.5 : 1 }),
+    stats: (up) => ({ cost: 1, m: up ? 1.6 : 1.2 }),
     text: (s, c) => `${kText(s, c)}\nInflige K. No pierdes rapidez.`,
     lore: 'En un choque perfectamente elástico se conserva la energía cinética.',
   },
@@ -297,6 +298,85 @@ export const CARDS: Record<string, CardDef> = {
     lore: 'Conviertes parte de tu energía cinética en trabajo útil.',
   },
 
+  // ── Arcanista: más formas de ganar rapidez y de atacar ──
+  chispa: {
+    id: 'chispa', name: 'Chispa Cinética', type: 'Ataque', icon: 'i_bolt', concept: 'Energía cinética', rarity: 'inicial', target: 'enemy', cls: 'arcanista',
+    stats: (up) => ({ cost: 0, m: up ? 0.8 : 0.5 }),
+    text: (s, c) => `${kText(s, c)}\nInflige K. Luego +1 m/s.`,
+    lore: 'Un golpe ligero que, por reacción, te empuja hacia adelante.',
+  },
+  picada: {
+    id: 'picada', name: 'Picada Gravitatoria', type: 'Habilidad', icon: 'i_feather', concept: 'Conservación', rarity: 'común', target: 'self', cls: 'arcanista',
+    stats: (up) => ({ cost: 1, extra: up ? 1 : 0.5 }),
+    text: (s, c) => {
+      const dv = Math.floor(Math.sqrt(2 * (c.g ?? G) * (s.extra ?? 0.5)));
+      return `Caes h = ${s.extra} m:\nv = √(2gh) → +${dv} m/s\n(¡más en Júpiter!)`;
+    },
+    lore: 'Conservación de la energía: m·g·h = ½·m·v², así que v = √(2gh). Más gravedad, más rapidez.',
+  },
+  torbellino: {
+    id: 'torbellino', name: 'Torbellino', type: 'Ataque', icon: 'i_wind', concept: 'Energía cinética', rarity: 'común', target: 'enemy', cls: 'arcanista',
+    stats: (up) => ({ cost: 1, m: up ? 0.45 : 0.3 }),
+    text: (s, c) => `${kText(s, c)}\nInflige K tres veces.`,
+    lore: 'Tres masas pequeñas a la misma rapidez: la energía se reparte en varios impactos.',
+  },
+  cometa: {
+    id: 'cometa', name: 'Cometa', type: 'Ataque', icon: 'i_fire', concept: 'Energía cinética', rarity: 'rara', target: 'enemy', cls: 'arcanista',
+    stats: (up) => ({ cost: 2, m: up ? 2.5 : 2 }),
+    text: (s, c) => `${kText(s, c)}\nInflige K. Tu rapidez\nqueda en 0.`,
+    lore: 'Toda tu energía cinética en un solo choque: al final no queda nada en movimiento.',
+  },
+  estela: {
+    id: 'estela', name: 'Estela Cinética', type: 'Poder', icon: 'i_momentum', concept: '2ª ley', rarity: 'rara', target: 'self', cls: 'arcanista', exhaust: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Cada ataque que juegues\nte da +1 m/s.\nSe agota.`,
+    lore: 'Cada impulso suma: la rapidez crece golpe a golpe.',
+  },
+  sinFriccion: {
+    id: 'sinFriccion', name: 'Superficie Sin Fricción', type: 'Poder', icon: 'i_boots', concept: 'Fricción', rarity: 'común', target: 'self', cls: 'arcanista', exhaust: true,
+    stats: (up) => ({ cost: 1, extra: up ? 2 : 1 }),
+    text: (s) => `La fricción ya no\nte frena. +${s.extra} m/s.\nSe agota.`,
+    lore: 'Sin fricción no hay fuerza que se oponga: por la 1ª ley, tu rapidez se conserva.',
+  },
+
+  // ════════════ ACTO III · IMPULSO Y CANTIDAD DE MOVIMIENTO (ambas clases) ════════════
+  impulsoSost: {
+    id: 'impulsoSost', name: 'Impulso Sostenido', type: 'Ataque', icon: 'i_gaunt', concept: 'Impulso', rarity: 'común', target: 'enemy', cls: 'neutral', act: 3,
+    stats: (up) => ({ cost: 1, block: up ? 6 : 4, extra: 3 }),
+    text: (s) => `F = ${s.block} N durante Δt = 3:\n${s.block} ahora y ${s.block} en cada uno\nde sus 2 turnos. I = ${(s.block ?? 4) * 3} N·s`,
+    lore: 'Impulso: I = F·Δt. Una fuerza pequeña que dura mucho produce el mismo cambio de movimiento que una grande que dura poco.',
+  },
+  choquePlastico: {
+    id: 'choquePlastico', name: 'Choque Plástico', type: 'Ataque', icon: 'i_stun', concept: 'Choques', rarity: 'común', target: 'enemy', cls: 'neutral', act: 3,
+    stats: (up) => ({ cost: 2, block: up ? 12 : 9 }),
+    text: (s) => `e = 0: inflige ${s.block}.\nSi tiene Inercia, se la\nquita toda y lo DETIENE.`,
+    lore: 'En un choque perfectamente plástico (e = 0) los cuerpos quedan juntos: no hay rebote y se pierde la mayor parte de la energía.',
+  },
+  restitucion: {
+    id: 'restitucion', name: 'Coeficiente de Restitución', type: 'Defensa', icon: 'i_reflect', concept: 'Choques', rarity: 'común', target: 'self', cls: 'neutral', act: 3,
+    stats: (up) => ({ cost: 1, block: up ? 8 : 5, extra: up ? 0.9 : 0.6 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nEste turno los golpes que\nrecibas rebotan ×e = ${s.extra}.`,
+    lore: 'e = (velocidad de separación)/(velocidad de acercamiento). Con e = 1 el rebote es perfecto; con e = 0 no hay rebote.',
+  },
+  conservP: {
+    id: 'conservP', name: 'Conservación de p', type: 'Habilidad', icon: 'i_crystal', concept: 'Cantidad de movimiento', rarity: 'rara', target: 'enemy', cls: 'neutral', act: 3,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `El Bloqueo del enemigo\npasa a ti.\n(lo que uno pierde, otro lo gana)`,
+    lore: 'En un sistema aislado la cantidad de movimiento total se conserva: Σ m·v antes = Σ m·v después.',
+  },
+  retroceso: {
+    id: 'retroceso', name: 'Retroceso', type: 'Ataque', icon: 'i_momentum', concept: 'Cantidad de movimiento', rarity: 'común', target: 'enemy', cls: 'neutral', act: 3,
+    stats: (up) => ({ cost: 1, block: up ? 11 : 8, extra: up ? 6 : 4 }),
+    text: (s) => `Inflige ${s.block}.\nEl retroceso te da\n${s.extra} de Bloqueo.`,
+    lore: 'Al disparar, m_bala·v_bala = m_cañón·V_cañón: el cañón retrocede. Aquí el retroceso te pone en guardia.',
+  },
+  impulsoAng: {
+    id: 'impulsoAng', name: 'Impulso Angular', type: 'Ataque', icon: 'i_pend', concept: 'Impulso angular', rarity: 'rara', target: 'all', cls: 'neutral', act: 3,
+    stats: (up) => ({ cost: 2, block: up ? 6 : 4 }),
+    text: (s) => `Inflige ${s.block} a TODOS,\n+2 por cada carta que\njugaste este turno.`,
+    lore: 'Un par M aplicado durante un tiempo t produce un impulso angular M·t: entre más tiempo giras, más fuerte golpeas.',
+  },
+
   // ════════════ ESTADOS (cartas basura que dan los enemigos) ════════════
   lodoCarta: {
     id: 'lodoCarta', name: 'Lodo Pegajoso', type: 'Estado', icon: 'i_mud', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
@@ -316,20 +396,27 @@ export const CARDS: Record<string, CardDef> = {
     text: () => `Injugable.\nAl robarla pierdes 1 J.`,
     lore: 'Un signo mal puesto en el diagrama arruina todo el análisis.',
   },
+  tarea: {
+    id: 'tarea', name: 'Tarea Pendiente', type: 'Estado', icon: 'i_book', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
+    stats: () => ({ cost: 1 }),
+    text: () => `Si sigue en tu mano al\nterminar el turno, pierdes\n3 de vida. Jugarla la entrega.`,
+    lore: '«Problema 15-23. Para el lunes.» — Hibbelerius',
+  },
 };
 
 export const STARTER_DECK = ['golpe', 'golpe', 'golpe', 'golpe', 'normal', 'normal', 'normal', 'normal', 'embestida', 'carrera'];
-export const STARTER_ARCANISTA = ['proyectil', 'proyectil', 'proyectil', 'proyectil', 'escudoE', 'escudoE', 'escudoE', 'escudoE', 'acelerar', 'frenado'];
+export const STARTER_ARCANISTA = ['proyectil', 'proyectil', 'proyectil', 'proyectil', 'escudoE', 'escudoE', 'escudoE', 'chispa', 'acelerar', 'frenado'];
 
 export function starterDeck(clase: string) {
   return clase === 'arcanista' ? STARTER_ARCANISTA : STARTER_DECK;
 }
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */
-export function rewardPool(clase: string): string[] {
-  const own = Object.values(CARDS).filter((c) =>
+export function rewardPool(clase: string, acto = 1): string[] {
+  const ok = (c: CardDef) => (c.act ?? 1) <= acto;
+  const own = Object.values(CARDS).filter((c) => ok(c) &&
     c.rarity !== 'estado' && (clase === 'arcanista' ? c.cls === 'arcanista' : (c.cls ?? 'caballero') === 'caballero'));
-  const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral');
+  const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && ok(c));
   return [...own, ...neutral].filter((c) => c.rarity !== 'inicial' || ['embestida', 'carrera', 'acelerar', 'frenado'].includes(c.id)).map((c) => c.id);
 }
 

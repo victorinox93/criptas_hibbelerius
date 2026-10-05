@@ -237,11 +237,130 @@ const GENERATORS: (() => Problem)[] = [
       solution: ['K = ½·m·v²', 'Con 2v: K\' = ½·m·(2v)² = 4·K'],
     };
   },
+  // ════════ Acto III · Impulso y cantidad de movimiento (Hibbeler cap. 15) ════════
+  // Impulso de una fuerza constante
+  () => {
+    const F = ri(20, 400), t = f2(ri(2, 30) / 10);
+    return {
+      concept: 'Impulso', title: 'Runa del Impulso',
+      prompt: `Un ariete empuja la puerta de la torre con una fuerza constante de ${F} N durante ${t} s.\n¿Qué impulso le aplica?`,
+      unit: 'N·s', answer: F * t, tol: 0.02,
+      solution: ['I = F·Δt  (fuerza constante)', `I = (${F} N)(${t} s)`, `I = ${f2(F * t)} N·s`],
+    };
+  },
+  // Principio de impulso y cantidad de movimiento
+  () => {
+    const m = ri(2, 30), v1 = ri(0, 6), F = ri(10, 120), t = ri(1, 5);
+    const v2 = v1 + (F * t) / m;
+    return {
+      concept: 'Impulso', title: 'Runa del Empujón',
+      prompt: `Un carro de libros de ${m} kg se mueve a ${v1} m/s sobre un piso liso. Lo empujas en la misma dirección con ${F} N durante ${t} s.\n¿Qué rapidez tiene al final?`,
+      unit: 'm/s', answer: v2, tol: 0.02,
+      solution: ['m·v₁ + F·Δt = m·v₂', `v₂ = v₁ + F·Δt/m = ${v1} + (${F})(${t})/${m}`, `v₂ = ${f2(v2)} m/s`],
+    };
+  },
+  // Fuerza promedio en un impacto
+  () => {
+    const m = f2(ri(2, 20) / 10), v = ri(5, 30), t = f2(ri(2, 20) / 1000);
+    const F = (m * v) / t;
+    return {
+      concept: 'Impulso', title: 'Runa del Impacto',
+      prompt: `Una esfera de ${m} kg que viaja a ${v} m/s se detiene por completo al chocar con un muro en ${t} s.\n¿Qué fuerza promedio ejerce el muro sobre ella?`,
+      unit: 'N', answer: F, tol: 0.02,
+      solution: ['F_prom·Δt = Δp = m·v − 0', `F_prom = m·v/Δt = (${m})(${v})/${t}`, `F_prom = ${f2(F)} N`],
+    };
+  },
+  // Choque plástico (conservación de p)
+  () => {
+    const m1 = ri(1, 10), v1 = ri(4, 20), m2 = ri(2, 30);
+    const v = (m1 * v1) / (m1 + m2);
+    return {
+      concept: 'Cantidad de movimiento', title: 'Runa del Choque Plástico',
+      prompt: `Un proyectil de ${m1} kg a ${v1} m/s se incrusta en un bloque de ${m2} kg en reposo sobre hielo.\n¿Con qué rapidez se mueven juntos después del choque?`,
+      unit: 'm/s', answer: v, tol: 0.02,
+      solution: ['m₁v₁ + m₂·0 = (m₁ + m₂)·v', `v = (${m1})(${v1}) / (${m1} + ${m2})`, `v = ${f2(v)} m/s`],
+    };
+  },
+  // Retroceso de un cañón
+  () => {
+    const mb = f2(ri(5, 50) / 10), vb = ri(80, 400), M = ri(100, 1500);
+    const V = (mb * vb) / M;
+    return {
+      concept: 'Cantidad de movimiento', title: 'Runa del Retroceso',
+      prompt: `Un cañón de ${M} kg, en reposo y libre de moverse, dispara una bala de ${mb} kg a ${vb} m/s.\n¿Con qué rapidez retrocede el cañón?`,
+      unit: 'm/s', answer: V, tol: 0.02,
+      solution: ['0 = m_b·v_b − M·V  (se conserva p)', `V = m_b·v_b / M = (${mb})(${vb})/${M}`, `V = ${f2(V)} m/s`],
+    };
+  },
+  // Coeficiente de restitución por alturas de rebote
+  () => {
+    const h1 = ri(2, 9), e = pick([0.4, 0.5, 0.6, 0.7, 0.8, 0.9]);
+    const h2 = f2(e * e * h1);
+    return {
+      concept: 'Choques', title: 'Runa del Rebote',
+      prompt: `Una esfera se suelta desde ${h1} m y, tras chocar con el piso, rebota hasta ${h2} m.\n¿Cuál es el coeficiente de restitución e?`,
+      unit: '', answer: Math.sqrt(h2 / h1), tol: 0.03,
+      solution: ['v = √(2gh) antes y después del choque', 'e = v_después / v_antes = √(h₂/h₁)', `e = √(${h2}/${h1}) = ${f2(Math.sqrt(h2 / h1))}`],
+    };
+  },
+  // Choque central con e (masas iguales)
+  () => {
+    const v = ri(2, 12), e = pick([0, 0.5, 1]);
+    const s1 = shuffleChoices(
+      e === 1
+        ? ['A se detiene y B sale a ' + v + ' m/s.', 'Ambas siguen juntas a ' + v / 2 + ' m/s.', 'A rebota hacia atrás a ' + v + ' m/s.', 'Ninguna se mueve.']
+        : e === 0
+          ? ['Ambas siguen juntas a ' + v / 2 + ' m/s.', 'A se detiene y B sale a ' + v + ' m/s.', 'A rebota hacia atrás a ' + v + ' m/s.', 'B sale a ' + 2 * v + ' m/s.']
+          : ['A sigue a ' + v / 4 + ' m/s y B sale a ' + (3 * v) / 4 + ' m/s.', 'Ambas siguen juntas a ' + v / 2 + ' m/s.', 'A se detiene y B sale a ' + v + ' m/s.', 'A rebota a ' + v / 2 + ' m/s.'],
+      0);
+    return {
+      concept: 'Choques', title: 'Runa de las Esferas Gemelas',
+      prompt: `Dos esferas IGUALES: A viaja a ${v} m/s y choca de frente con B, en reposo. El coeficiente de restitución es e = ${e}.\n¿Qué pasa después del choque?`,
+      unit: '', ...s1,
+      solution: ['Se conserva p: v_A + v_B = ' + v, 'Restitución: v_B − v_A = e·' + v, `v_A = ${f2((v * (1 - e)) / 2)} m/s,  v_B = ${f2((v * (1 + e)) / 2)} m/s`],
+    };
+  },
+  // Conservación de la cantidad de movimiento angular
+  () => {
+    const I1 = ri(4, 12), w1 = ri(2, 8), I2 = f2(ri(15, 35) / 10);
+    const w2 = (I1 * w1) / I2;
+    return {
+      concept: 'Impulso angular', title: 'Runa del Giro',
+      prompt: `Un hechicero gira sobre un pedestal sin fricción con I = ${I1} kg·m² y ω = ${w1} rad/s. Recoge los brazos y su momento de inercia baja a ${I2} kg·m².\n¿Cuál es su nueva rapidez angular?`,
+      unit: 'rad/s', answer: w2, tol: 0.02,
+      solution: ['Sin par externo se conserva H = I·ω', `ω₂ = I₁·ω₁ / I₂ = (${I1})(${w1})/${I2}`, `ω₂ = ${f2(w2)} rad/s`],
+    };
+  },
+  // Conceptual: impulso y tiempo de contacto
+  () => {
+    const s1 = shuffleChoices(
+      [
+        'Alarga el tiempo de contacto: con el mismo impulso, la fuerza promedio es menor.',
+        'Reduce el impulso total que recibes.',
+        'Disminuye tu masa durante el choque.',
+        'Aumenta tu rapidez final.',
+      ], 0);
+    return {
+      concept: 'Impulso', title: 'Runa del Colchón',
+      prompt: 'Saltas desde un librero y caes sobre una pila de pergaminos en vez de sobre la piedra. ¿Por qué duele menos?',
+      unit: '', ...s1,
+      solution: ['El cambio de cantidad de movimiento Δp es el mismo en ambos casos.', 'F_prom = Δp/Δt: si Δt crece, F_prom disminuye.'],
+    };
+  },
 ];
+
+/** Temas del Acto III: no salen en los altares de los actos anteriores */
+export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques', 'Impulso angular'];
 
 /** Problema al azar; si se dan conceptos, sólo de esos temas */
 export function randomProblem(concepts?: string[]): Problem {
-  if (!concepts?.length) return pick(GENERATORS)();
+  if (!concepts?.length) {
+    for (let i = 0; i < 80; i++) {
+      const p = pick(GENERATORS)();
+      if (!IMPULSE_CONCEPTS.includes(p.concept)) return p;
+    }
+    return GENERATORS[0]();
+  }
   for (let i = 0; i < 80; i++) {
     const p = pick(GENERATORS)();
     if (concepts.includes(p.concept)) return p;

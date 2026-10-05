@@ -130,7 +130,7 @@ export class DilemmaScene extends Phaser.Scene {
       }
     }
     if (r.card) {
-      const pool = rewardPool(run.clase).filter((id) => r.card === 'random' || r.card !== 'rara' || CARDS[id].rarity === 'rara');
+      const pool = rewardPool(run.clase, run.acto).filter((id) => r.card === 'random' || r.card !== 'rara' || CARDS[id].rarity === 'rara');
       const cid = r.card === 'rara' || r.card === 'random' ? Phaser.Utils.Array.GetRandom(pool) : r.card;
       addCard(cid, !!r.cardUp);
       out.push(`Carta: ${CARDS[cid].name}${r.cardUp ? '+' : ''}`);

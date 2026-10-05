@@ -104,7 +104,7 @@ export class RankingScene extends Phaser.Scene {
       R(name);
       R(txt(this, COLS[3], y + 10, p.grupo, 20, CSS.dim));
       R(txt(this, COLS[4], y + 8, `✦ ${p.puntaje}`, 24, CSS.gold));
-      R(txt(this, COLS[5], y + 8, `${Math.min(p.piso, 18)}/18`, 24, CSS.bone));
+      R(txt(this, COLS[5], y + 8, `${Math.min(p.piso, 27)}/27`, 24, CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));
     });

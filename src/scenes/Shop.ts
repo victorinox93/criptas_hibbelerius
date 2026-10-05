@@ -14,7 +14,7 @@ import { randomRelics } from './Reward';
 import { grantRelic } from './Reward';
 
 function makeStock(node: number): ShopState {
-  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase))]).slice(0, 3);
+  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase, Game.run!.acto))]).slice(0, 3);
   const [rel] = randomRelics(1);
   return {
     node,

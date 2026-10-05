@@ -4,6 +4,7 @@ import { CLASSES } from './data/classes';
 import { enqueue, isOnline } from './api';
 import { gravityOf } from './data/gravity';
 import { FAMILIAR_POOL, FAMILIARS } from './data/familiars';
+import { ADMINS } from './config';
 
 export interface Avatar {
   alias: string;
@@ -62,6 +63,7 @@ export interface Run {
   familiar?: { id: string; left: number } | null; // criatura que te acompaña
   nextUid: number;
   done: boolean;
+  debug?: boolean; // partida de prueba del Modo profesor: no se registra
 }
 
 export interface ShopItem {
@@ -136,6 +138,16 @@ export function codexFlag(flag: string) {
     codexDirty = true;
   }
 }
+
+/** ¿El usuario actual es administrador (Modo profesor)? Requiere sesión en línea. */
+export function isAdmin() {
+  const p = Game.profile;
+  return !!p && ADMINS.includes(String(p.matricula).trim()) && (!p.offline || import.meta.env.DEV);
+}
+
+/** Total de pisos de la expedición (3 actos de 9) */
+export const TOTAL_PISOS = 27;
+export const ROMAN = ['I', 'II', 'III'];
 
 /** ¿El Arcanista está desbloqueado? (al vencer al Coloso al menos una vez) */
 export function arcanistaUnlocked() {
@@ -233,7 +245,7 @@ export function generateMap(acto = 1): MapNode[] {
     const cands = by((n) => n.floor >= floors[0] && n.floor <= floors[1] && n.type === 'combate');
     for (let i = have; i < count && cands.length; i++) cands.pop()!.type = type;
   };
-  ensure('elite', acto === 2 ? 2 : 1, [3, 6]);
+  ensure('elite', acto >= 2 ? 2 : 1, [3, 6]);
   ensure('runa', 1, [1, 5]);
   ensure('evento', 2, [1, 6]);
   ensure('mercader', 1, [3, 5]);
@@ -278,7 +290,7 @@ export function addCard(id: string, up = false) {
 
 // ── registro docente ──
 export function logEvent(tipo: string, concepto = '', correcto: boolean | '' = '', detalle: Record<string, unknown> = {}) {
-  if (!Game.profile || Game.profile.offline || !isOnline()) return;
+  if (!Game.profile || Game.profile.offline || !isOnline() || Game.run?.debug) return;
   enqueue('logEvent', {
     token: Game.profile.token,
     runId: Game.run?.runId ?? '',
@@ -291,7 +303,7 @@ export function logEvent(tipo: string, concepto = '', correcto: boolean | '' = '
 
 export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abandonada', causa = '') {
   const r = Game.run;
-  if (!r || !Game.profile || Game.profile.offline || !isOnline()) return;
+  if (!r || !Game.profile || Game.profile.offline || !isOnline() || r.debug) return;
   enqueue('updateRun', {
     token: Game.profile.token,
     runId: r.runId,

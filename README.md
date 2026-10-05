@@ -2,7 +2,7 @@
 
 Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los alumnos crean a su héroe, bajan por las criptas y pelean con mecánicas que *son* física: cada golpe calcula **F = m·a**, la energía se paga en **Joules**, los enemigos con **inercia** sólo se detienen con una fuerza neta suficiente, y los altares rúnicos plantean problemas tipo Hibbeler con parámetros aleatorios.
 
-> Versión 0.6 · Actos I y II (Leyes de Newton y energía). Clases: Caballero de la Masa y Arcanista Cinético. Novedades: Einstein y Curie con dones radiactivos, dilemas de riesgo, familiares, condiciones de piso al azar y un encuentro especial con el profe.
+> Versión 0.7 · Expedición completa en 3 actos: Leyes de Newton (I), trabajo y energía (II) e impulso y cantidad de movimiento (III), con **Hibbelerius** como jefe final. Clases: Caballero de la Masa y Arcanista Cinético.
 >
 > **¿Quieres agregar enemigos, preguntas, figuras históricas o música?** Lee la [Guía para ampliar el juego](docs/GUIA-AMPLIAR.md).
 
@@ -17,10 +17,13 @@ Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los a
 | Encuentros | Cada nodo «?» se sortea: 5 personajes con pregunta (bendición o maldición pasajera), 7 **dilemas** de riesgo con probabilidades visibles (pozo, notario, núcleo inestable, demonio de Laplace, balanza, criatura, puente) o, rara vez (14 %), **el Profe Victorino**, que regala una vida extra |
 | Familiares | Gato de Schrödinger, Lechuza de Minerva, Salamandra Ígnea, Tortuga de Zenón y Cuervo: pelean contigo 3–5 combates. Se consiguen en dilemas, en la tienda o tras una élite |
 | Azar | 35 % de los combates traen una **condición de piso** (viento, niebla, lodo, anomalía gravitatoria…); a veces un combate normal suelta una reliquia |
+| Acto III | **La Torre del Tomo**: biblioteca gótica con vitral de engrane, 6 enemigos nuevos (Bala de Cañón, Tomo Volador que deja *Tarea Pendiente*, Cohete de Masa Variable, Granada que se divide, Ariete y Giróscopo como élites) y **Hibbelerius** en tres capítulos: Fuerza (13), Energía (14) e Impulso (15). En el último hay que DETENERLO antes de su Impulso Final. Los altares preguntan impulso, choques (e), retroceso y cantidad de movimiento angular |
 | Mercader | Cartas, reliquia, a veces un familiar, olvidar una carta y curación, pagando con Ergios. Se puede regatear resolviendo un problema (−30 %) |
-| Música | Dark synth generada en vivo (sin archivos): 7 pistas (menú, mapa, dos de combate, jefe, calma y santuario) y efectos de sonido |
+| Música | Menú, encuentros y mapa del Acto III: «Cold Soul» de [Lost in The Forest](https://lostintheforest.bandcamp.com/album/cold-soul) (uso libre con atribución). Combates, jefes y santuario: dark synth generado en vivo (13 pistas) |
 | Acto II | Al vencer al Coloso la expedición continúa en **Las Galerías de la Fricción**: arte en primera persona inspirado en Wizardry, mapa tipo cuadrícula, 6 enemigos nuevos y la Bruja de la Fricción como jefa. Las preguntas de los altares se enfocan en trabajo y energía |
-| Arcanista Cinético | Segunda clase (se desbloquea al vencer al Coloso): acumula rapidez *v* (máx. 8 m/s) y ataca con K = ½·m·v². Tiene 48 de vida; la fricción lo frena |
+| Arcanista Cinético | Segunda clase (se desbloquea al vencer al Coloso): acumula rapidez *v* (máx. 8 m/s) y ataca con K = ½·m·v². Tiene 48 de vida; la fricción lo frena. Cartas propias: Chispa, Picada Gravitatoria (v = √(2gh), más fuerte en Júpiter), Torbellino, Cometa, Estela Cinética y Superficie Sin Fricción |
+| Modo profesor | Sólo para las matrículas de `ADMINS` en `src/config.ts`: empezar en cualquier acto, saltar al jefe, a una figura, al profesor o a un dilema, desbloquear el Grimorio y ganar un combate con la tecla K. Esas partidas no se registran |
+| Estilo grabado | Botón del pincel (arriba a la derecha): filtro experimental de tinta y tramado, inspirado en el arte de Vermis |
 | Cartas | 38 cartas: neutrales (ganar Joules, robar y descartar, daño igual a tu Bloque), daño elemental físico (Calor, Resonancia, Fatiga del material) y cartas basura que meten los enemigos (Lodo Pegajoso, Ruido Blanco, Error de Signo) |
 | Pantalla | Se dibuja al doble de resolución; botón de pantalla completa y control de volumen arriba a la derecha |
 | Combate | 12 cartas, 7 enemigos (incluye la Gárgola de Piedra y el Péndulo Errante, que convierte U en K), Pergamino de cálculos que muestra la física de cada acción |
@@ -121,15 +124,19 @@ apps-script/Code.gs  backend para Google Sheets
 
 Para agregar contenido (enemigos, cartas, preguntas, figuras, encuentros, música) sigue la [Guía para ampliar el juego](docs/GUIA-AMPLIAR.md).
 
+## Créditos de la música
+
+- **«Cold Soul», partes 1–3**, de **Lost in The Forest** — https://lostintheforest.bandcamp.com/album/cold-soul. El artista permite usar su música en cualquier proyecto pidiendo sólo un enlace a su Bandcamp (está en la pantalla de Créditos del juego y aquí).
+- Las pistas están en `public/musica/`, recomprimidas a 80 kbps para que pesen ~17 MB en total (GitHub acepta archivos de hasta 25 MB por la web y 100 MB por git).
+
 ## Hoja de ruta
 
 - ~~**Acto II · Las Galerías de la Fricción:** trabajo y energía (cap. 14). Arcanista Cinético (½mv²).~~ Listo en la v0.5.
-- **Acto III · La Torre del Tomo:** impulso y cantidad de movimiento (cap. 15). Jefe final: Hibbelerius, el Archimago del Tomo.
-  - Mecánicas: cartas de **impulso** I = F·Δt (la fuerza se reparte en varios turnos), **cantidad de movimiento** p = m·v que se conserva entre aliados y enemigos, **choques** con coeficiente de restitución *e* (0 = plástico, 1 = elástico) y enemigos que **se dividen** (conservación de p en explosiones).
-  - Altares: impulso y cantidad de movimiento, conservación de p, choques (con *e*), impulso angular y chorros/masa variable.
-  - Clase nueva: Explorador de Alturas (mgh) o el Guardián del Equilibrio.
+- ~~**Acto III · La Torre del Tomo:** impulso y cantidad de movimiento (cap. 15) con Hibbelerius.~~ Listo en la v0.7.
+- Tercera clase (ver propuestas en la conversación: Guardián del Equilibrio, Explorador de Alturas o Duelista del Impulso).
+- Pase de arte completo en estilo grabado.
 - Más enemigos, encuentros y opciones de personalización (armas, emblemas, retratos).
 
-## Actualizar el backend en la v0.6
+## Actualizar el backend en la v0.7
 
-Sólo cambió el formato de la hoja **Panel** (la columna «Runas intentadas» ya no sale en %). Pega el nuevo `apps-script/Code.gs` y crea una **nueva versión** de la implementación (pasos de la sección *Actualizar el backend*). Si no lo actualizas, el juego funciona igual.
+La hoja **Panel** ahora dice «Piso máx. (de 27)» y «Expedición completa» sólo cuenta a quien vence a Hibbelerius. Pega el nuevo `apps-script/Code.gs` y crea una **nueva versión** de la implementación (sección *Actualizar el backend*). Si no lo actualizas, el juego funciona igual.

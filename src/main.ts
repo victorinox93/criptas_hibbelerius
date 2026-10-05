@@ -25,7 +25,9 @@ import { RankingScene } from './scenes/Ranking';
 import { CreditsScene } from './scenes/Credits';
 import { ActTransitionScene } from './scenes/ActTransition';
 import { DilemmaScene } from './scenes/Dilemma';
+import { DebugScene } from './scenes/Debug';
 import { Game } from './state';
+import { applyGrabado, GrabadoFX } from './fx/grabado';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -43,8 +45,9 @@ const game = new Phaser.Game({
   },
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
+  pipeline: { Grabado: GrabadoFX } as any,
   scene: [BootScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, DebugScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda
@@ -53,6 +56,7 @@ game.events.once(Phaser.Core.Events.READY, () => {
     sc.sys.events.on(Phaser.Scenes.Events.CREATE, () => {
       sc.cameras.main.setOrigin(0, 0).setZoom(RES);
       sc.input.enabled = true;
+      applyGrabado(sc);
     });
   }
 });

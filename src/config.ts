@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.6.0 · Ecos radiactivos y familiares';
+export const VERSION = '0.7.0 · Acto III: la Torre del Tomo';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.
@@ -22,15 +22,27 @@ export const G = 9.81; // m/s²
 //  Si prefieres pistas propias, ponlas en public/musica/ y escribe
 //  aquí el nombre del archivo. Ej.: combate: 'combate.mp3'
 // ─────────────────────────────────────────────────────────────
+// Pistas de «Cold Soul» de Lost in The Forest (uso libre con atribución):
+// https://lostintheforest.bandcamp.com/album/cold-soul
 export const MUSIC_FILES: Record<string, string> = {
-  menu: '',
+  menu: 'cold-soul-1.mp3',
   mapa: '',
   combate: '',
   combate2: '',
   jefe: '',
-  calma: '',
+  calma: 'cold-soul-2.mp3',
   santuario: '',
   mapa2: '',
   combate3: '',
   jefe2: '',
+  mapa3: 'cold-soul-3.mp3',
+  combate4: '',
+  jefe3: '',
 };
+
+// ─────────────────────────────────────────────────────────────
+//  ADMINISTRADORES: estas matrículas ven el «Modo profesor»
+//  (depuración: saltar a cualquier acto, jefe, figura o encuentro).
+//  Sólo funciona con sesión en línea (protegida por contraseña).
+// ─────────────────────────────────────────────────────────────
+export const ADMINS = ['237440'];

@@ -366,3 +366,31 @@ Usa sólo música con licencia que permita su uso (por ejemplo CC0 o CC-BY con a
 | Textos de pantalla y créditos | `src/textos.ts` |
 | Niveles de dificultad | `src/data/gravity.ts` |
 | Pixel art | Forja de Sprites → `src/art/sprites.ts` |
+
+
+---
+
+## 9. Acto III, Modo profesor y estilo grabado (v0.7)
+
+**Enemigos del Acto III** (`src/data/enemies.ts`, sección `ACTO III`). Novedades que puedes reutilizar:
+
+| Campo | Qué hace | Ejemplo |
+|---|---|---|
+| `charge: true` en una intención | suma 1 a `e.carga` (impulso acumulado) | Ariete: «Tomar impulso» |
+| `release: true` | el ataque usa y vacía `e.carga`; si lo DETIENES antes, pierde todo | Ariete, Hibbelerius |
+| `split: { id, n }` en el enemigo | al morir se divide en *n* enemigos | Granada → 2 Fragmentos |
+| `add: { id: 'tarea', n }` | mete «Tarea Pendiente» (−3 de vida si sigue en tu mano) | Tomo Volador |
+
+Las fases de Hibbelerius están en `next()` (usa `e.phase2` y `e.phase3`) y los cambios de capítulo en `hitEnemy()` de `Combat.ts` (busca `hibbelerius`).
+
+**Su dibujo** se genera con `python3 tools/arte/hib.py` (y los enemigos con `tools/arte/en3.py`): son dibujos hechos con figuras (círculos, líneas) que se exportan a matrices en `src/art/act3.ts`. Cambia colores en `pal` o formas en el script y vuelve a correrlo.
+
+**Cartas de un acto.** Una carta con `act: 3` sólo sale como recompensa desde el Acto III (en ese acto salen el doble).
+
+**Problemas de impulso** (`src/data/runes.ts`, sección `Acto III`): conceptos `Impulso`, `Cantidad de movimiento`, `Choques` e `Impulso angular`. No aparecen en los altares de los actos I y II.
+
+**Modo profesor.** Agrega matrículas a `ADMINS` en `src/config.ts`. Sólo funciona con sesión en línea (protegida por contraseña) o en `npm run dev`.
+
+**Estilo grabado.** El filtro está en `src/fx/grabado.ts`: los colores `ink`, `shade`, `mid` y `bone` definen la paleta; `smoothstep(0.45, 0.8, sat)` decide cuánto color saturado sobrevive.
+
+**Música en archivo.** Para cambiar qué pista suena en cada momento, edita `MUSIC_FILES` en `src/config.ts` (las pistas van en `public/musica/`). Si una pista pesa mucho, comprímela: `ffmpeg -i original.mp3 -b:a 80k nueva.mp3`.

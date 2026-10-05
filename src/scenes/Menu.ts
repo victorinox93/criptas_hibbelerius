@@ -8,7 +8,7 @@ import { W, H } from '../config';
 import { starterDeck } from '../data/cards';
 import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
-import { arcanistaUnlocked, clearSession, Game, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { arcanistaUnlocked, clearSession, Game, isAdmin, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -64,6 +64,7 @@ export class MenuScene extends Phaser.Scene {
     grid.forEach(([label, fn], i) => {
       button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 52, 160, 44, label, fn, { size: 21 });
     });
+    if (isAdmin()) button(this, x, y + 156, 330, 40, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
   }
 
   /** Ventana para elegir el nivel de gravedad antes de una expedición */

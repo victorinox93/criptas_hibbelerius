@@ -6,7 +6,7 @@ import { cardName } from '../data/cards';
 import { EFFECTS } from '../data/effects';
 import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
-import { checkAnswer, Problem, randomProblem } from '../data/runes';
+import { checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
 import { addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
@@ -90,8 +90,10 @@ export class RuneScene extends Phaser.Scene {
 
     const ev = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
     const fig = data.figureId ? FIGURES.find((f) => f.id === data.figureId) : undefined;
-    const act2 = (Game.run?.acto ?? 1) === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion'] : undefined;
-    this.p = randomProblem(ev?.concepts ?? fig?.concepts ?? act2);
+    const acto = Game.run?.acto ?? 1;
+    const actC = acto >= 3 ? [...IMPULSE_CONCEPTS, 'Conservacion']
+      : acto === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion'] : undefined;
+    this.p = randomProblem(ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);

@@ -10,7 +10,7 @@ export interface EffectDef {
 
 export const EFFECTS: Record<string, EffectDef> = {
   impulso: { id: 'impulso', name: 'Impulso del Péndulo', good: true, icon: 'i_wind', text: '+1 m/s² a tus ataques.', lore: 'Más aceleración, más fuerza: ΣF = m·a.' },
-  manto: { id: 'manto', name: 'Manto de la Normal', good: true, icon: 'i_shield', text: 'Empiezas cada combate con 8 de Bloque.', lore: 'El suelo te sostiene: la normal siempre empuja de vuelta.' },
+  manto: { id: 'manto', name: 'Manto de la Normal', good: true, icon: 'i_shield', text: 'Empiezas cada combate con 8 de Bloqueo.', lore: 'El suelo te sostiene: la normal siempre empuja de vuelta.' },
   vigor: { id: 'vigor', name: 'Vigor Cinético', good: true, icon: 'i_bolt', text: '+1 J en tu primer turno.', lore: 'Energía extra para hacer más trabajo.' },
   yunque: { id: 'yunque', name: 'Bendición del Yunque', good: true, icon: 'i_mass', text: '+1 kg a tus ataques.', lore: 'A igual aceleración, más masa es más fuerza.' },
   reactor: { id: 'reactor', name: 'Núcleo Activo', good: true, icon: 'i_rad', text: '+1 J al inicio de cada turno.', lore: 'Un poco de masa convertida en mucha energía: E = mc².' },

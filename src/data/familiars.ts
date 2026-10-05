@@ -17,7 +17,7 @@ export interface FamiliarDef {
 export const FAMILIARS: Record<string, FamiliarDef> = {
   gato: {
     id: 'gato', name: 'Gato de Schrödinger', sprite: 'fam_gato', combats: 3,
-    text: 'Al inicio de tu turno, al azar (50 %): te da 5 de Bloque o araña a un enemigo por 5.',
+    text: 'Al inicio de tu turno, al azar (50 %): te da 5 de Bloqueo o araña a un enemigo por 5.',
     lore: 'Mientras nadie lo observa, está en superposición: escudo y ataque a la vez. Al mirarlo, la moneda cae.',
   },
   lechuza: {
@@ -32,7 +32,7 @@ export const FAMILIARS: Record<string, FamiliarDef> = {
   },
   tortuga: {
     id: 'tortuga', name: 'Tortuga de Zenón', sprite: 'fam_tortuga', combats: 3,
-    text: 'Al inicio de tu turno ganas 4 de Bloque.',
+    text: 'Al inicio de tu turno ganas 4 de Bloqueo.',
     lore: 'Zenón decía que Aquiles nunca alcanza a la tortuga. Los golpes, al parecer, tampoco.',
   },
   cuervo: {

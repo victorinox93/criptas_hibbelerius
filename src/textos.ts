@@ -98,7 +98,7 @@ export const T = {
       ['Curso', 'Dinámica · basado en los temas del libro de R. C. Hibbeler'],
       ['Inspirado en', 'Slay the Spire (Mega Crit), Loop Hero (Four Quarters) y Hades (Supergiant Games)'],
       ['Pixel art', 'Diseñado en código por Victorino Sepúlveda Arróniz con asistencia de Claude (Anthropic)'],
-      ['Música y sonido', 'Sintetizados en vivo con Web Audio'],
+      ['Música', '«Cold Soul» (partes 1–3) de Lost in The Forest · lostintheforest.bandcamp.com (clic para visitar). Pistas de combate: dark synth generado en vivo con Web Audio'],
       ['Tecnología', 'Phaser 3 · Vite · Google Apps Script'],
       ['Tipografías', 'VT323 (Peter Hull) y Pirata One (Rodrigo Fuenzalida y Nicolás Massi), licencia SIL OFL'],
     ] as [string, string][],
@@ -115,7 +115,7 @@ export const T = {
     filas: [
       ['i_bolt', 'Energía en Joules', 'Cada turno tienes 3 J. Jugar una carta cuesta trabajo: gasta Joules.'],
       ['i_combat', 'F = m · a', 'Tus ataques calculan su fuerza: masa del arma (kg) × aceleración (m/s²). El daño es F en newtons.'],
-      ['i_shield', 'Bloque', 'Absorbe daño. Se pierde al iniciar tu turno… salvo que la inercia diga lo contrario.'],
+      ['i_shield', 'Bloqueo', 'Absorbe daño. Se pierde al iniciar tu turno… salvo que la inercia diga lo contrario.'],
       ['i_momentum', 'Inercia (1ª ley)', 'Algunos enemigos avanzan sin detenerse y su golpe crece. Detenlos con UN golpe de F ≥ su umbral.'],
       ['i_shrine', 'Encuentros, ecos y familiares', 'Preguntas, dilemas arriesgados y figuras históricas (¡ojo con la radiación!). Un familiar puede pelear a tu lado unos combates.'],
       ['i_fire', 'Daño elemental y cartas basura', 'Calor quema cada turno, Resonancia estalla con 3 cargas y Fatiga hace que el enemigo reciba +50 %. Algunos enemigos te meten cartas inútiles al mazo.'],
@@ -126,6 +126,8 @@ export const T = {
     titulo: 'Acto I · Las Criptas de la Inercia',
     titulo2: 'Acto II · Las Galerías de la Fricción',
     jefe2: ['La Bruja de la Fricción', 'La guardiana del Acto II.'] as [string, string],
+    titulo3: 'Acto III · La Torre del Tomo',
+    jefe3: ['Hibbelerius, el Archimago del Tomo', 'El autor de todos los problemas. Te espera en la cima.'] as [string, string],
     pisos: 'Pisos',
     clicAvanzar: '▶ Clic para avanzar',
     nodos: {
@@ -152,6 +154,7 @@ export const T = {
     bannerCombate: 'Combate',
     bannerElite: '¡Élite!',
     bannerJefe: '¡El Coloso Inerte!',
+    bannerJefes: ['¡El Coloso Inerte!', '¡La Bruja de la Fricción!', '¡Hibbelerius!'],
     victoria: '¡Victoria!',
     derrota: 'La expedición termina…',
     detenido: '¡DETENIDO!',
@@ -224,10 +227,10 @@ export const T = {
 
   final: {
     victoria: '¡Expedición completada!',
-    victoriaTexto: 'La Bruja de la Fricción se disipa en vapor. Las galerías quedan en silencio.',
+    victoriaTexto: 'Hibbelerius cierra su tomo. Por primera vez en siglos, la torre guarda silencio.',
     derrota: 'La expedición termina',
     derrotaTexto: 'Te hizo retroceder',
-    cita: '«Dominas la fuerza y la energía…\nPero aún no has visto el IMPULSO.»\n— Hibbelerius',
+    cita: '«Fuerza, energía e impulso…\nlo has resuelto todo.\nNos vemos en el examen final.»\n— Hibbelerius',
     consejo: 'Consejo del cronista',
     volver: 'Volver al Umbral',
     registrado: 'Tu progreso quedó registrado.',
@@ -236,9 +239,17 @@ export const T = {
     consejos: [
       'Recuerda: F = m·a. Si quieres más fuerza, sube la masa (Forja) o la aceleración (Carrera).',
       'Para detener a un enemigo con Inercia necesitas UN golpe con F ≥ su umbral: junta tus bonos antes de golpear.',
-      'La Embestida te devuelve ¼ de su fuerza: la 3ª ley no perdona. Ten Bloque listo.',
+      'La Embestida te devuelve ¼ de su fuerza: la 3ª ley no perdona. Ten Bloqueo listo.',
       'El lodo (fricción) resta aceleración. Peso Muerto usa g, que no cambia: ¡ignora la fricción!',
     ],
+  },
+
+  transicion2: {
+    titulo: 'Acto II completado',
+    texto: 'La Bruja de la Fricción se disipa en vapor y las galerías quedan en silencio.\nAl fondo, una escalera de caracol sube hacia una torre llena de libros.',
+    cita: '«Dominas la fuerza y la energía…\nPero aún no has visto el IMPULSO.\nSube. Te espero en la cima.»\n— Hibbelerius',
+    descender: 'Subir a la Torre del Tomo',
+    curacion: 'Descansas antes de subir: recuperas',
   },
 
   transicion: {

@@ -228,7 +228,7 @@ function actualizarPanel() {
   panel.clear();
   panel.clearFormats(); // borra formatos viejos (antes una columna salía en %)
   panel.clearConditionalFormatRules();
-  var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 18)', 'Acto máx.', 'Expedición completa', 'Puntaje máx.',
+  var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 27)', 'Acto máx.', 'Expedición completa', 'Puntaje máx.',
     'Runas correctas', 'Runas intentadas', '% aciertos', 'Último acceso'];
   var data = Object.keys(por).map(function (k) {
     var s = por[k];

@@ -84,15 +84,15 @@ export const BOONS: Record<string, BoonDef> = {
   },
   j_calor: {
     id: 'j_calor', figure: 'joule', name: 'Calor por Fricción', icon: 'i_fire',
-    text: ['Cada vez que te aplican Fricción, ganas 4 de Bloque.', 'Cada vez que te aplican Fricción, ganas 8 de Bloque.'],
+    text: ['Cada vez que te aplican Fricción, ganas 4 de Bloqueo.', 'Cada vez que te aplican Fricción, ganas 8 de Bloqueo.'],
     lore: 'La fricción convierte energía mecánica en calor.',
   },
   j_trabajo: {
     id: 'j_trabajo', figure: 'joule', name: 'Trabajo Acumulado', icon: 'i_shield',
-    text: ['Empiezas cada combate con 5 de Bloque.', 'Empiezas cada combate con 10 de Bloque.'],
+    text: ['Empiezas cada combate con 5 de Bloqueo.', 'Empiezas cada combate con 10 de Bloqueo.'],
     lore: 'El trabajo realizado sobre un sistema se queda en él como energía.',
   },
-  // ── Albert Einstein (dones poderosos con RADIACIÓN: daño que ignora tu Bloque) ──
+  // ── Albert Einstein (dones poderosos con RADIACIÓN: daño que ignora tu Bloqueo) ──
   e_mc2: {
     id: 'e_mc2', figure: 'einstein', name: 'E = mc²', icon: 'i_rad',
     text: ['+1 J al inicio de cada turno.\nRadiación: pierdes 2 de vida cada turno.', '+1 J al inicio de cada turno.\nRadiación: pierdes 1 de vida cada turno.'],

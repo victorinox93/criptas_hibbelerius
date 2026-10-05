@@ -6,6 +6,9 @@ interface IntentExtras {
   calor?: number; // te aplica Calor
   add?: AddCards; // te mete cartas de estado
   label?: string;
+  charge?: boolean; // acumula una carga (impulso o energía elástica)
+  release?: boolean; // libera todas sus cargas en este ataque
+
 }
 
 export type Intent =
@@ -29,6 +32,9 @@ export interface EnemyState {
   calor: number; // daño térmico por turno
   resonancia: number;
   fatiga: number; // recibe +50 % de daño
+  phase3?: boolean;
+  impulso: number; // daño de un Impulso Sostenido pendiente
+  impulsoLeft: number; // turnos que le quedan a ese impulso
 }
 
 export interface EnemyDef {
@@ -41,6 +47,7 @@ export interface EnemyDef {
   umbral?: number; // N necesarios en un solo golpe para detenerlo
   desc: string;
   act?: number;
+  split?: { id: string; n: number }; // al morir se divide (conservación de p)
   next: (e: EnemyState) => Intent;
 }
 
@@ -108,8 +115,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
     id: 'muelle', name: 'Muelle Errante', sprite: 'muelle', scale: 4, hp: [36, 40], mass: 4, act: 2,
     desc: 'Se comprime dos turnos (U = ½kx²) y luego libera toda esa energía de golpe.',
     next: (e) => (e.turn % 3 === 2
-      ? { kind: 'attack', dmg: 6 + 5 * e.carga, label: 'Liberar ½kx²' }
-      : { kind: 'block', block: 6, label: 'Comprimirse' }),
+      ? { kind: 'attack', dmg: 6 + 5 * e.carga, label: 'Liberar ½kx²', release: true }
+      : { kind: 'block', block: 6, label: 'Comprimirse', charge: true }),
   },
   minero: {
     id: 'minero', name: 'Minero Espectral', sprite: 'minero', scale: 5, hp: [30, 34], mass: 70, act: 2,
@@ -149,6 +156,76 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ════════ ACTO III · La Torre del Tomo (impulso y cantidad de movimiento) ════════
+  bala: {
+    id: 'bala', name: 'Bala de Cañón Espectral', sprite: 'bala', scale: 4, hp: [24, 28], mass: 10, act: 3,
+    desc: 'p = m·v: poca vida, pero llega con muchísima cantidad de movimiento. Recarga y dispara.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'block', block: 5, label: 'Recargar' }
+      : { kind: 'attack', dmg: 14, label: 'Disparo (p = m·v)' }),
+  },
+  tomo: {
+    id: 'tomo', name: 'Tomo Volador', sprite: 'tomo', scale: 4, hp: [24, 28], mass: 3, act: 3,
+    desc: 'Un libro de la biblioteca de Hibbelerius. Muerde… y te deja tarea.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'attack', dmg: 4, add: { id: 'tarea', n: 1, to: 'draw' }, label: 'Dejar tarea' }
+      : { kind: 'attack', dmg: 4, hits: 2, label: 'Hojear' }),
+  },
+  cohete: {
+    id: 'cohete', name: 'Cohete de Masa Variable', sprite: 'cohete', scale: 4, hp: [30, 34], mass: 20, act: 3,
+    desc: 'Quema su propia masa para empujarse: cada turno pesa menos y va más rápido, así que golpea más fuerte. ¡Acábalo pronto!',
+    next: (e) => ({ kind: 'attack', dmg: 4 + 3 * e.turn, label: `Empuje (pierde masa)` }),
+  },
+  granada: {
+    id: 'granada', name: 'Granada de Conservación', sprite: 'granada', scale: 4, hp: [22, 26], mass: 6, act: 3, split: { id: 'fragmento', n: 2 },
+    desc: 'Al destruirla se divide en dos fragmentos: la cantidad de movimiento total se conserva aunque el cuerpo se rompa.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 8 } : { kind: 'block', block: 6, dmg: 4 }),
+  },
+  fragmento: {
+    id: 'fragmento', name: 'Fragmento', sprite: 'fragmento', scale: 4, hp: [8, 10], mass: 3, act: 3,
+    desc: 'La mitad de una granada. Sale disparado en sentido opuesto a su gemelo: m₁v₁ + m₂v₂ = 0.',
+    next: () => ({ kind: 'attack', dmg: 4 }),
+  },
+  ariete: {
+    id: 'ariete', name: 'Ariete del Tomo', sprite: 'ariete', scale: 4, hp: [84, 90], mass: 40, umbral: 17, act: 3,
+    desc: 'Toma impulso dos turnos (I = F·Δt) y luego embiste con todo. Si lo DETIENES, pierde el impulso acumulado.',
+    next: (e) => (e.turn % 3 === 2
+      ? { kind: 'attack', dmg: 6 + 7 * e.carga, label: 'Embestida (I = F·Δt)', release: true }
+      : { kind: 'block', block: 8, label: 'Tomar impulso', charge: true }),
+  },
+  centinela: {
+    id: 'centinela', name: 'Giróscopo Centinela', sprite: 'centinela', scale: 4, hp: [90, 96], mass: 30, umbral: 18, act: 3,
+    desc: 'Gira sin parar y conserva su cantidad de movimiento angular (L = I·ω): cada vuelta suma un golpe.',
+    next: (e) => (e.turn % 3 === 2
+      ? { kind: 'block', block: 12, label: 'Precesión' }
+      : { kind: 'attack', dmg: 3 + e.inercia, hits: 3, label: 'Giro (L = I·ω)' }),
+  },
+  hibbelerius: {
+    id: 'hibbelerius', name: 'Hibbelerius, el Archimago del Tomo', sprite: 'hibbelerius', scale: 3.6, hp: [330, 330], mass: 80, umbral: 20, act: 3,
+    desc: 'El autor de todos los problemas. Pelea capítulo por capítulo: Fuerza (13), Energía (14) e Impulso (15). En el último, DETENLO antes de su Impulso Final.',
+    next: (e) => {
+      if (e.phase3) {
+        // Capítulo 15 · Impulso: carga dos turnos y suelta todo
+        return e.turn % 3 === 2
+          ? { kind: 'attack', dmg: 12 + 9 * e.carga, label: 'Impulso Final', release: true }
+          : { kind: 'block', block: 12, dmg: 5, label: 'Acumular impulso', charge: true };
+      }
+      if (e.phase2) {
+        // Capítulo 14 · Trabajo y energía
+        switch (e.turn % 3) {
+          case 0: return { kind: 'attack', dmg: 9, calor: 4, label: 'Calor disipado' };
+          case 1: return { kind: 'buff', friccion: 2, add: { id: 'errorSigno', n: 1, to: 'draw' }, label: 'Trabajo de la fricción' };
+          default: return { kind: 'attack', dmg: 20, label: 'U → K' };
+        }
+      }
+      // Capítulo 13 · Leyes de Newton
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 12 + 2 * e.inercia, label: 'F = m·a' };
+        case 1: return { kind: 'attack', dmg: 5, hits: 2, add: { id: 'tarea', n: 2, to: 'draw' }, label: 'Problemas impares' };
+        default: return { kind: 'block', block: 14, dmg: 6, label: 'Tercera ley' };
+      }
+    },
+  },
   colossus: {
     id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
@@ -173,14 +250,21 @@ export const ENCOUNTERS_2 = {
   boss: [['bruja']],
 };
 
+export const ENCOUNTERS_3 = {
+  easy: [['bala'], ['tomo', 'tomo'], ['cohete'], ['granada']],
+  normal: [['bala', 'tomo'], ['cohete', 'tomo'], ['granada', 'bala'], ['granada', 'cohete'], ['tomo', 'tomo', 'tomo'], ['bala', 'bala']],
+  elite: [['ariete'], ['centinela']],
+  boss: [['hibbelerius']],
+};
+
 export function encounters(acto: number) {
-  return acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
+  return acto >= 3 ? ENCOUNTERS_3 : acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
 }
 
 export function spawn(id: string): EnemyState {
   const def = ENEMIES[id];
   const hp = rnd(def.hp[0], def.hp[1]);
-  const e: EnemyState = { def, hp, maxHp: hp, block: 0, turn: 0, inercia: 0, stunned: 0, detenido: false, intent: { kind: 'attack', dmg: 0 }, carga: 0, calor: 0, resonancia: 0, fatiga: 0 };
+  const e: EnemyState = { def, hp, maxHp: hp, block: 0, turn: 0, inercia: 0, stunned: 0, detenido: false, intent: { kind: 'attack', dmg: 0 }, carga: 0, calor: 0, resonancia: 0, fatiga: 0, impulso: 0, impulsoLeft: 0 };
   e.intent = def.next(e);
   return e;
 }

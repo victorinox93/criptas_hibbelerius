@@ -20,10 +20,14 @@ export class CreditsScene extends Phaser.Scene {
     T.creditos.filas.forEach(([k, v], i) => {
       txt(this, 84, y, k, 20, CSS.dim);
       const t = txt(this, 290, y - 2, v, i === 0 ? 26 : 21, i === 0 ? CSS.gold : CSS.bone, { wordWrap: { width: W - 380 } });
+      if (v.includes('bandcamp.com')) {
+        t.setInteractive({ useHandCursor: true }).on('pointerdown', () => window.open('https://lostintheforest.bandcamp.com/album/cold-soul', '_blank'));
+        t.on('pointerover', () => t.setColor(CSS.gold)).on('pointerout', () => t.setColor(CSS.bone));
+      }
       y += Math.max(34, t.height + 10);
     });
     txt(this, W / 2, 464, T.creditos.nota, 18, CSS.dim, { align: 'center', wordWrap: { width: W - 180 } }).setOrigin(0.5);
-    this.add.image(W - 120, 470, 'wizard').setScale(3).setAlpha(0.35);
+    this.add.image(W - 90, 450, 'hibbelerius').setScale(1.6).setAlpha(0.35);
     button(this, W / 2, 510, 200, 36, T.creditos.volver, () => fadeTo(this, 'Menu'), { size: 22 });
   }
 }
