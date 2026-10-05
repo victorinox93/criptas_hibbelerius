@@ -62,10 +62,10 @@ export const EVENTS: EventDef[] = [
   },
   // ── Encuentro especial: aparece rara vez (ver PROFE_CHANCE) y una sola vez por expedición ──
   {
-    id: 'victorino', name: 'El Profe Victorino', npc: 'npc_victorino', prop: 'i_book', special: true,
-    intro: 'Un señor con lentes revisa exámenes a la luz de una vela.\n«¡Ah, alguien llegó hasta acá! Yo también me perdí buscando el salón… Contéstame una y te doy una vida extra. Si fallas… bueno, también te la doy, pero con tarea.»',
+    id: 'victorino', name: 'El Profesor', npc: 'npc_victorino', prop: 'i_book', special: true,
+    intro: 'Un académico con lentes revisa exámenes a la luz de una vela.\n«¡Ah, alguien llegó hasta acá! Yo también me perdí buscando el salón… Contéstame una y te doy una vida extra. Si fallas… bueno, también te la doy, pero con tarea.»',
     win: '«¡Eso! Ese diagrama de cuerpo libre me hizo llorar. Toma tu vida extra y unos Ergios para el camino.»',
-    lose: '«Mmm… no. Pero como soy buena onda, toma tu vida extra. Y repasa ese tema para el examen, ¿eh?»',
+    lose: '«Mmm… no. Pero como soy buena onda, toma tu vida extra. Y repasa ese tema para el examen, Te encargo el Avanza»',
     bless: { relic: 'vidaExtra', ergios: 30 }, curse: { relic: 'vidaExtra' },
     concepts: ['Friccion', '3a ley', 'Trabajo-energia', 'Plano inclinado'],
   },
