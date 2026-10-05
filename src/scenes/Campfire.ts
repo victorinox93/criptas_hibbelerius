@@ -27,7 +27,7 @@ export class CampfireScene extends Phaser.Scene {
 
     torch(this, W / 2, 330);
     this.add.image(W / 2, 360, 'i_fire').setScale(7);
-    const hero = this.add.image(W / 2 - 150, 340, 'hero').setScale(5);
+    const hero = this.add.image(W / 2 - 150, 340, 'hero').setScale(2.5);
     this.tweens.add({ targets: hero, y: 336, duration: 1100, yoyo: true, repeat: -1 });
 
     const heal = Math.round(run.maxHp * gravityOf(run.gravity).heal);

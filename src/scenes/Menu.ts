@@ -28,7 +28,7 @@ export class MenuScene extends Phaser.Scene {
 
     torch(this, 300, 330);
     this.add.image(300, 352, 'i_fire').setScale(5);
-    const hero = this.add.image(200, 330, 'hero').setScale(6);
+    const hero = this.add.image(200, 330, 'hero').setScale(3);
     this.tweens.add({ targets: hero, y: 326, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     panel(this, 60, 412, 380, 108);

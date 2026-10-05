@@ -3,17 +3,14 @@ import { api } from '../api';
 import { ARMORS, CAPES, CSS, UI, VISORS } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
+import { EXTRAS_K, EXTRAS_M, HELM_IDS, HELMS_K, HELMS_M, SKINS, WEAPONS_K, WEAPONS_M } from '../art/heroes';
 import { W } from '../config';
 import { CLASSES } from '../data/classes';
 import { arcanistaUnlocked, Avatar, Game, saveLocal, rememberSession } from '../state';
 import { T } from '../textos';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, TextField, title, txt } from '../ui/widgets';
 
-const HELMS = [
-  { id: 'penacho', name: 'Penacho', mage: 'Sombrero' },
-  { id: 'cuernos', name: 'Cuernos', mage: 'Capucha' },
-  { id: 'corona', name: 'Corona', mage: 'Diadema' },
-];
+const cyc = (n: number, d: number, len: number) => (n + d + len) % len;
 
 export class AvatarScene extends Phaser.Scene {
   constructor() { super('Avatar'); }
@@ -24,53 +21,62 @@ export class AvatarScene extends Phaser.Scene {
     dungeonBackground(this, 23);
     embers(this);
     const prof = Game.profile!;
-    const av: Avatar = { alias: '', clase: 'caballero', helm: 'penacho', cape: 0, armor: 0, visor: 0, ...(prof.avatar ?? {}) };
-    let helmIdx = Math.max(0, HELMS.findIndex((h) => h.id === av.helm));
-    const st = { cape: av.cape, armor: av.armor ?? 0, visor: av.visor ?? 0 };
+    const av: Avatar = { alias: '', clase: 'caballero', helm: 'penacho', cape: 0, armor: 0, visor: 0, arma: 0, extra: 0, piel: 1, ...(prof.avatar ?? {}) };
+    const st = {
+      helm: Math.max(0, HELM_IDS.indexOf(av.helm)), cape: av.cape, armor: av.armor ?? 0, visor: av.visor ?? 0,
+      arma: av.arma ?? 0, extra: av.extra ?? 0, piel: av.piel ?? 1,
+    };
     let clase = av.clase;
+    const look = () => ({ helm: HELM_IDS[st.helm], cape: st.cape, armor: st.armor, visor: st.visor, arma: st.arma, extra: st.extra, piel: st.piel });
 
     title(this, W / 2, 40, T.avatar.titulo, 46);
 
     // ── Vista previa ──
     panel(this, 28, 78, 320, 446);
-    const alias = new TextField(this, 188, 112, 290, { placeholder: T.avatar.nombre, maxLength: 16, value: av.alias, center: true, color: CSS.gold, size: 26 });
+    const alias = new TextField(this, 188, 108, 290, { placeholder: T.avatar.nombre, maxLength: 16, value: av.alias, center: true, color: CSS.gold, size: 26 });
     const ped = this.add.graphics();
-    ped.fillStyle(0x060508, 1).fillEllipse(188, 286, 170, 28);
-    ped.fillStyle(0x1e1926, 1).fillEllipse(188, 282, 150, 20);
-    const glow = this.add.circle(188, 214, 80, 0xe8c15a, 0.04).setBlendMode(Phaser.BlendModes.ADD);
+    ped.fillStyle(0x060508, 1).fillEllipse(188, 266, 170, 26);
+    ped.fillStyle(0x1e1926, 1).fillEllipse(188, 262, 150, 18);
+    const glow = this.add.circle(188, 196, 80, 0xe8c15a, 0.04).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({ targets: glow, alpha: 0.09, duration: 1400, yoyo: true, repeat: -1 });
-    const hero = this.add.image(188, 210, 'hero').setScale(6);
-    this.tweens.add({ targets: hero, y: 206, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const hero = this.add.image(188, 262, 'hero').setOrigin(0.5, 1).setScale(3);
+    this.tweens.add({ targets: hero, scaleY: 3.06, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     const refreshers: (() => void)[] = [];
     const redraw = () => {
-      const look = { helm: HELMS[helmIdx].id, cape: st.cape, armor: st.armor, visor: st.visor };
-      makeHeroFromAvatar(this, { ...look, clase });
-      makeHeroFromAvatar(this, { ...look, clase: 'caballero' }, 'cls_caballero');
-      makeHeroFromAvatar(this, { ...look, clase: 'arcanista' }, 'cls_arcanista');
+      makeHeroFromAvatar(this, { ...look(), clase });
+      makeHeroFromAvatar(this, { ...look(), clase: 'caballero' }, 'cls_caballero');
+      makeHeroFromAvatar(this, { ...look(), clase: 'arcanista' }, 'cls_arcanista');
       hero.setTexture('hero');
       refreshers.forEach((f) => f());
     };
 
-    const selector = (y: number, label: string, get: () => string, step: (d: number) => void) => {
-      txt(this, 46, y - 12, label, 21, CSS.dim);
-      const v = txt(this, 262, y, '', 22, CSS.bone).setOrigin(0.5);
-      const upd = () => v.setText(get());
+    const mage = () => clase === 'arcanista';
+    const selector = (y: number, label: () => string, get: () => string, step: (d: number) => void) => {
+      const lt = txt(this, 44, y - 11, '', 19, CSS.dim);
+      const v = txt(this, 262, y, '', 19, CSS.bone).setOrigin(0.5);
+      const upd = () => {
+        lt.setText(label());
+        v.setText(get()).setScale(1);
+        if (v.width > 96) v.setScale(96 / v.width, 1);
+      };
       refreshers.push(upd);
-      button(this, 196, y, 32, 30, '‹', () => { step(-1); upd(); redraw(); }, { size: 22 });
-      button(this, 328, y, 32, 30, '›', () => { step(1); upd(); redraw(); }, { size: 22 });
+      button(this, 198, y, 30, 26, '‹', () => { step(-1); redraw(); audio.sfx('click'); }, { size: 20, silent: true });
+      button(this, 326, y, 30, 26, '›', () => { step(1); redraw(); audio.sfx('click'); }, { size: 20, silent: true });
       upd();
     };
-    const cyc = (n: number, d: number, len: number) => (n + d + len) % len;
-    selector(322, T.avatar.yelmo, () => (clase === 'arcanista' ? HELMS[helmIdx].mage : HELMS[helmIdx].name), (d) => (helmIdx = cyc(helmIdx, d, HELMS.length)));
-    selector(360, T.avatar.armadura, () => ARMORS[st.armor].name, (d) => (st.armor = cyc(st.armor, d, ARMORS.length)));
-    selector(398, T.avatar.visor, () => VISORS[st.visor].name, (d) => (st.visor = cyc(st.visor, d, VISORS.length)));
+    selector(290, () => (mage() ? 'Sombrero' : T.avatar.yelmo), () => (mage() ? HELMS_M : HELMS_K)[st.helm], (d) => (st.helm = cyc(st.helm, d, HELM_IDS.length)));
+    selector(321, () => (mage() ? 'Ribete' : T.avatar.armadura), () => ARMORS[st.armor].name, (d) => (st.armor = cyc(st.armor, d, ARMORS.length)));
+    selector(352, () => (mage() ? 'Ojos' : T.avatar.visor), () => VISORS[st.visor].name, (d) => (st.visor = cyc(st.visor, d, VISORS.length)));
+    selector(383, () => (mage() ? 'Bastón' : 'Arma'), () => (mage() ? WEAPONS_M : WEAPONS_K)[st.arma], (d) => (st.arma = cyc(st.arma, d, 4)));
+    selector(414, () => (mage() ? 'Barba' : 'Escudo'), () => (mage() ? EXTRAS_M : EXTRAS_K)[st.extra], (d) => (st.extra = cyc(st.extra, d, 3)));
+    selector(445, () => (mage() ? 'Piel' : 'Piel (arcanista)'), () => SKINS[st.piel].name, (d) => (st.piel = cyc(st.piel, d, SKINS.length)));
 
-    txt(this, 46, 422, T.avatar.capa, 21, CSS.dim);
+    txt(this, 44, 470, T.avatar.capa, 19, CSS.dim);
     const sw: Phaser.GameObjects.Rectangle[] = [];
-    const capeT = txt(this, 188, 498, '', 20, CSS.dim).setOrigin(0.5);
+    const capeT = txt(this, 330, 470, '', 18, CSS.dim).setOrigin(1, 0);
     CAPES.forEach((c, i) => {
       const r = this.add
-        .rectangle(68 + i * 48, 466, 34, 34, Phaser.Display.Color.HexStringToColor(c.c).color)
+        .rectangle(62 + i * 37, 504, 28, 28, Phaser.Display.Color.HexStringToColor(c.c).color)
         .setStrokeStyle(3, 0x0d0b10)
         .setInteractive({ useHandCursor: true });
       r.on('pointerdown', () => {
@@ -82,7 +88,7 @@ export class AvatarScene extends Phaser.Scene {
       });
       sw.push(r);
     });
-    sw[st.cape].emit('pointerdown');
+    sw[Math.min(st.cape, CAPES.length - 1)].emit('pointerdown');
 
     // ── Clases ──
     txt(this, 372, 78, T.avatar.clase, 26, CSS.gold);
@@ -98,7 +104,7 @@ export class AvatarScene extends Phaser.Scene {
       };
       draw();
       cards.push(g);
-      const img = this.add.image(x + 46, y + 74, c.id === 'arcanista' ? 'cls_arcanista' : c.id === 'caballero' ? 'cls_caballero' : 'inertKnight').setScale(3.4);
+      const img = this.add.image(x + 46, y + 74, c.id === 'arcanista' ? 'cls_arcanista' : c.id === 'caballero' ? 'cls_caballero' : 'inertKnight').setScale(c.id === 'arcanista' || c.id === 'caballero' ? 1.7 : 3.4);
       if (!ok) img.setTint(0x000000).setAlpha(0.7);
       const nm = txt(this, x + 92, y + 14, c.name, 23, ok ? CSS.bone : CSS.dim);
       if (nm.width > 170) nm.setScale(170 / nm.width, 1);
@@ -123,7 +129,7 @@ export class AvatarScene extends Phaser.Scene {
         alias.focus();
         return;
       }
-      prof.avatar = { alias: name, clase, helm: HELMS[helmIdx].id, cape: st.cape, armor: st.armor, visor: st.visor };
+      prof.avatar = { alias: name, clase, ...look() };
       saveLocal();
       rememberSession();
       if (!prof.offline) api.saveProfile(prof.token, name, JSON.stringify(prof.avatar)).catch((e) => console.warn(e));

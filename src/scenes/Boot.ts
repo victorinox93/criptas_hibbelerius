@@ -3,6 +3,9 @@ import { generateAllTextures } from '../art/sprites';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
+  preload() {
+    this.load.image('portada', 'portada.jpg');
+  }
   async create() {
     generateAllTextures(this);
     try {
@@ -12,6 +15,6 @@ export class BootScene extends Phaser.Scene {
       ]);
     } catch { /* fuentes de respaldo */ }
     this.scene.launch('Overlay');
-    this.scene.start('Login');
+    this.scene.start('Title');
   }
 }

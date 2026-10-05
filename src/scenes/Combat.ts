@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
 import { CalcCtx, CARDS, CardInst, force, kinetic, VMAX } from '../data/cards';
-import { AddCards, encounters, EnemyState, Intent, pick, spawn } from '../data/enemies';
+import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
@@ -27,10 +27,11 @@ interface EnemyView {
   statusC: Phaser.GameObjects.Container;
   baseX: number;
   dead: boolean;
+  nameT: Phaser.GameObjects.Text;
 }
 
-const HAND_Y = 478;
-const CARD_SCALE = 0.8;
+const HAND_Y = 460;
+const CARD_SCALE = 0.66;
 
 export class CombatScene extends Phaser.Scene {
   private kind: Kind = 'easy';
@@ -94,6 +95,7 @@ export class CombatScene extends Phaser.Scene {
   private desvioUsed = false; // Efecto Coriolis (primer golpe de cada turno enemigo)
   private carry = 0; // Simetría en el Tiempo: J que pasan al siguiente turno
   private attacksTurn = 0; // ataques jugados este turno (Travail)
+  private drainNext = 0; // J que te roban para tu siguiente turno (Sifón)
 
   constructor() { super('Combat'); }
 
@@ -136,6 +138,7 @@ export class CombatScene extends Phaser.Scene {
     this.desvioUsed = false;
     this.carry = 0;
     this.attacksTurn = 0;
+    this.drainNext = 0;
   }
 
   private has(relic: string) {
@@ -178,12 +181,12 @@ export class CombatScene extends Phaser.Scene {
     }
     const av = Game.profile?.avatar;
     if (av) makeHeroFromAvatar(this, { ...av, clase: run.clase });
-    this.hero = this.add.image(this.heroX, 272, 'hero').setScale(5);
-    this.tweens.add({ targets: this.hero, scaleY: 5.12, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.hero = this.add.image(this.heroX, 272, 'hero').setScale(2.5);
+    this.tweens.add({ targets: this.hero, scaleY: 2.56, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.add.ellipse(this.heroX, 330, 110, 16, 0x000000, 0.5).setDepth(-1);
     this.hpBar = bar(this, this.heroX - 70, 344, 140, 14, 0x9a3a4a);
     this.pBlockT = txt(this, this.heroX - 92, 351, '', 22, CSS.block).setOrigin(0.5);
-    this.pStatus = this.add.container(this.heroX - 70, 376);
+    this.pStatus = this.add.container(this.heroX - 70, 371);
 
     // ── Enemigos ──
     const enc = pick(encounters(this.acto)[this.kind]);
@@ -311,8 +314,9 @@ export class CombatScene extends Phaser.Scene {
     const intentC = st.def.id === 'pendulo' ? this.add.container(x + 62, 170) : (st.def.id === 'hibbelerius' ? this.add.container(x - 120, 150) : this.add.container(x, Math.max(130, top)));
     if (st.def.id === 'hibbelerius') this.hibAura(sprite, x);
     const statusC = this.add.container(x + 66, 351);
-    txt(this, x, 370, st.def.name, 19, CSS.dim).setOrigin(0.5);
-    const ev: EnemyView = { st, root, sprite, hp, blockT, intentC, statusC, baseX: x, dead: false };
+    const nameT = txt(this, x, 370, st.def.name, 19, CSS.dim).setOrigin(0.5);
+    if (nameT.width > 180) nameT.setScale(180 / nameT.width, 1);
+    const ev: EnemyView = { st, root, sprite, hp, blockT, intentC, statusC, baseX: x, dead: false, nameT };
     this.enemies.push(ev);
 
     sprite.setInteractive({ useHandCursor: true, pixelPerfect: false });
@@ -344,13 +348,17 @@ export class CombatScene extends Phaser.Scene {
     let r: { ic: string; t: string; d: string };
     if (i.kind === 'block')
       r = { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloqueo${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
-    else if (i.kind === 'buff') r = { ic: 'i_rune', t: '', d: 'Prepara un efecto.' };
+    else if (i.kind === 'buff') r = { ic: i.summon ? 'i_skull' : 'i_rune', t: '', d: i.summon ? '' : 'Prepara un efecto.' };
     else {
       const t = i.hits && i.hits > 1 ? `${i.dmg}×${i.hits}` : `${i.dmg}`;
       r = { ic: 'i_combat', t, d: `Atacará con una fuerza de ${i.dmg} N${i.hits && i.hits > 1 ? `, ${i.hits} veces` : ''}.` };
     }
     if (i.friccion) r.d += `\nTe cubrirá de lodo: +${i.friccion} Fricción (${this.isArc ? `pierdes ${i.friccion} m/s de rapidez cada turno` : `−${i.friccion} m/s² a tus ataques`}).`;
     if (i.calor) r.d += `\nTe transferirá ${i.calor} de Calor (pierdes vida cada turno).`;
+    if (i.summon) r.d += `\nInvocará: ${ENEMIES[i.summon]?.name ?? i.summon} (si hay lugar).`;
+    if (i.shieldAll) r.d += `\nDará ${i.shieldAll} de Bloqueo a todos sus aliados.`;
+    if (i.heal) r.d += `\nSe curará ${i.heal} de vida.`;
+    if (i.drain) r.d += `\nTe robará ${i.drain} J para tu siguiente turno.`;
     if (i.add) r.d += `\nMeterá ${i.add.n} «${CARDS[i.add.id].name}» a tu ${i.add.to === 'draw' ? 'mazo de robo' : 'descarte'}.`;
     return r;
   }
@@ -370,7 +378,11 @@ export class CombatScene extends Phaser.Scene {
       if (ii.kind !== 'stunned') {
         if (ii.friccion) { ev.intentC.add(icon(this, ex, 0, 'i_mud', 3)); ex += 30; }
         if (ii.calor) { ev.intentC.add(icon(this, ex, 0, 'i_fire', 3)); ex += 30; }
-        if (ii.add) ev.intentC.add(icon(this, ex, 0, 'i_fog', 3));
+        if (ii.add) { ev.intentC.add(icon(this, ex, 0, 'i_fog', 3)); ex += 30; }
+        if (ii.summon) { ev.intentC.add(icon(this, ex, 0, 'i_skull', 3)); ex += 30; }
+        if (ii.shieldAll) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3)); ex += 30; }
+        if (ii.heal) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3)); ex += 30; }
+        if (ii.drain) ev.intentC.add(icon(this, ex, 0, 'i_bolt', 3));
       }
       this.tip.attach(ic, 'Intención', it.d);
       this.tweens.add({ targets: ev.intentC, y: ev.intentC.y - 4, duration: 600, yoyo: true, repeat: 1 });
@@ -407,6 +419,15 @@ export class CombatScene extends Phaser.Scene {
       ev.statusC.add([ic, t]);
       sx += 40;
     }
+  }
+
+  /** Un lugar libre en el campo para un enemigo nuevo (invocado o fragmento) */
+  private freeX(prefer: number): number | null {
+    const xs = this.alive().map((e) => e.baseX);
+    for (const x of [prefer, 510, 700, 890, 605, 795, 415, 860]) {
+      if (x >= 400 && x <= 900 && xs.every((o) => Math.abs(o - x) > 128)) return x;
+    }
+    return null;
   }
 
   private alive() {
@@ -475,9 +496,9 @@ export class CombatScene extends Phaser.Scene {
       if (this.busy || this.selected) return;
       v.setDepth(300);
       audio.sfx('hover');
-      this.tweens.add({ targets: v, y: HAND_Y - 76, scale: 1, angle: 0, duration: 120 });
+      this.tweens.add({ targets: v, y: HAND_Y - 96, scale: 1.12, angle: 0, duration: 120 });
       const def = CARDS[v.inst.id];
-      this.tip.show(v.x + 82, HAND_Y - 260, def.concept, def.lore);
+      this.tip.show(v.x + 100, HAND_Y - 300, def.concept, def.lore);
     });
     v.on('pointerout', () => {
       this.tip.hide();
@@ -1126,6 +1147,10 @@ export class CombatScene extends Phaser.Scene {
     if (ev.dead) return false;
     const st = ev.st;
     if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
+    if (st.def.thorns && (kind === 'golpe' || typeof kind === 'number')) {
+      this.calc(`Púas: el golpe te regresa ${st.def.thorns} (3ª ley)`);
+      this.time.delayedCall(10, () => this.hurtPlayer(st.def.thorns!, null));
+    }
     let dmg = F;
     if (st.detenido) dmg = Math.round(dmg * 1.5);
     if (st.fatiga > 0 && kind !== 'calor') dmg = Math.round(dmg * 1.5);
@@ -1221,12 +1246,23 @@ export class CombatScene extends Phaser.Scene {
 
   private async killEnemy(ev: EnemyView) {
     if (ev.dead) return;
+    ev.dead = true;
     const split = ev.st.def.split;
     if (split) {
       this.calc(`${ev.st.def.name} se divide: m·v = m₁v₁ + m₂v₂ (se conserva p)`);
-      for (let i = 0; i < split.n; i++) this.addEnemy(spawn(split.id), ev.baseX + (i === 0 ? -70 : 70));
+      for (let i = 0; i < split.n; i++) {
+        const x = this.freeX(ev.baseX + (i === 0 ? -70 : 70));
+        if (x !== null) this.addEnemy(spawn(split.id), x);
+      }
     }
-    ev.dead = true;
+    if (ev.st.def.explode) {
+      this.cameras.main.shake(250, 0.012);
+      this.burst(ev.baseX, 260, 0xffb040, 40);
+      this.floatText(ev.baseX, 160, '¡Fisión!', '#ffb040');
+      this.calc(`${ev.st.def.name} explota: liberas ${ev.st.def.explode} de energía… sobre ti`);
+      await this.hurtPlayer(ev.st.def.explode, null);
+      if (Game.run!.hp <= 0) await this.dies('una fisión');
+    }
     ev.st.hp = 0;
     ev.hp.set(0, ev.st.maxHp);
     ev.intentC.removeAll(true);
@@ -1235,7 +1271,7 @@ export class CombatScene extends Phaser.Scene {
     this.burst(ev.baseX, 260, 0x8a8296, 30);
     this.tweens.killTweensOf(ev.sprite);
     this.tweens.add({ targets: ev.root, alpha: 0, y: 20, duration: 500 });
-    this.tweens.add({ targets: [ev.hp.g, ev.hp.t], alpha: 0, duration: 400 });
+    this.tweens.add({ targets: [ev.hp.g, ev.hp.t, ev.nameT], alpha: 0, duration: 400 });
     await this.wait(300);
   }
 
@@ -1314,7 +1350,9 @@ export class CombatScene extends Phaser.Scene {
     } else if (this.turn > 1) {
       this.block = 0;
     }
-    this.energy = this.maxEnergy + this.jPerTurn + this.carry;
+    this.energy = Math.max(0, this.maxEnergy + this.jPerTurn + this.carry - this.drainNext);
+    if (this.drainNext) this.calc(`Te robaron ${this.drainNext} J`);
+    this.drainNext = 0;
     if (this.carry) this.calc(`Simetría en el Tiempo (Noether): conservas ${this.carry} J`);
     this.carry = 0;
     this.attacksTurn = 0;
@@ -1496,6 +1534,26 @@ export class CombatScene extends Phaser.Scene {
           this.calc(`${st.def.name} te transfiere ${it.calor} de Calor`);
         }
         if (it.add) this.addStatus(it.add);
+        if (it.summon) {
+          const x = this.alive().length < 4 ? this.freeX(ev.baseX - 190) : null;
+          if (x !== null) {
+            this.addEnemy(spawn(it.summon), x);
+            this.floatText(x, 200, '¡Invocado!', '#e0a070');
+            this.calc(`${st.def.name} invoca: ${ENEMIES[it.summon].name}`);
+          } else this.calc(`${st.def.name} intenta invocar, pero no hay lugar`);
+        }
+        if (it.shieldAll) {
+          for (const a of this.alive()) { a.st.block += it.shieldAll; this.refreshEnemy(a); }
+          this.calc(`${st.def.name}: +${it.shieldAll} de Bloqueo a todos sus aliados`);
+        }
+        if (it.heal) {
+          st.hp = Math.min(st.maxHp, st.hp + it.heal);
+          this.floatText(ev.baseX, 180, `+${it.heal}`, CSS.green);
+        }
+        if (it.drain) {
+          this.drainNext += it.drain;
+          this.calc(`${st.def.name} te roba ${it.drain} J para tu siguiente turno`);
+        }
         {
           if (it.friccion) {
             if (this.has('botas')) this.calc('Botas de Agarre: el lodo no te afecta.');

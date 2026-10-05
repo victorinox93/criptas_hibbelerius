@@ -13,6 +13,9 @@ export interface Avatar {
   cape: number;
   armor?: number;
   visor?: number;
+  arma?: number; // arma (caballero) o bastón (arcanista)
+  extra?: number; // escudo (caballero) o barba (arcanista)
+  piel?: number; // tono de piel
 }
 
 export interface Profile {
@@ -64,6 +67,7 @@ export interface Run {
   nextUid: number;
   done: boolean;
   debug?: boolean; // partida de prueba del Modo profesor: no se registra
+  temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
 }
 
 export interface ShopItem {
@@ -354,6 +358,7 @@ export function migrateRun(r: Run | null): Run | null {
   r.acto ??= 1;
   r.met ??= [];
   r.seen ??= [];
+  r.temas ??= {};
   r.familiar ??= null;
   return r;
 }

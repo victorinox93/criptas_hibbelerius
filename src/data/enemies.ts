@@ -8,6 +8,10 @@ interface IntentExtras {
   label?: string;
   charge?: boolean; // acumula una carga (impulso o energía elástica)
   release?: boolean; // libera todas sus cargas en este ataque
+  summon?: string; // invoca a otro enemigo (si hay lugar)
+  shieldAll?: number; // da Bloqueo a todos sus aliados (y a sí mismo)
+  heal?: number; // se cura
+  drain?: number; // te roba J para tu siguiente turno
 
 }
 
@@ -48,6 +52,8 @@ export interface EnemyDef {
   desc: string;
   act?: number;
   split?: { id: string; n: number }; // al morir se divide (conservación de p)
+  thorns?: number; // cada golpe que le das te regresa este daño
+  explode?: number; // al morir explota y te hace este daño
   next: (e: EnemyState) => Intent;
 }
 
@@ -226,6 +232,87 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ════════ v0.9 · enemigos más duros ════════
+  // ── Acto I ──
+  babosaMadre: {
+    id: 'babosaMadre', name: 'Babosa Madre', sprite: 'babosaMadre', scale: 5, hp: [40, 44], mass: 12, split: { id: 'slime', n: 2 },
+    desc: 'Una babosa enorme. Al vencerla se parte en dos babosas de lodo: la masa no desaparece, se reparte.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 9 } : { kind: 'attack', dmg: 5, friccion: 1, label: 'Lodo' }),
+  },
+  nigromante: {
+    id: 'nigromante', name: 'Nigromante de Huesos', sprite: 'nigromante', scale: 5, hp: [30, 34], mass: 60,
+    desc: 'Levanta esqueletos cada tres turnos. Acaba primero con él o la cripta se llenará.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'buff', summon: 'skeleton', label: 'Levantar muertos' };
+      if (p === 1) return { kind: 'attack', dmg: 7 };
+      return { kind: 'block', block: 7, shieldAll: 4, label: 'Escudo de huesos' };
+    },
+  },
+  armaduraPuas: {
+    id: 'armaduraPuas', name: 'Armadura de Púas', sprite: 'armaduraPuas', scale: 5, hp: [56, 60], mass: 10, umbral: 12, thorns: 3,
+    desc: 'Cubierta de púas: cada golpe que le das te regresa 3 de daño (3ª ley: tú también recibes la fuerza). Mejor pocos golpes fuertes que muchos débiles.',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 10, dmg: 4, label: 'Erizarse' } : { kind: 'attack', dmg: 7 + 2 * e.inercia, label: 'Carga' }),
+  },
+  // ── Acto II ──
+  mercurio: {
+    id: 'mercurio', name: 'Gota de Mercurio', sprite: 'mercurio', scale: 5, hp: [34, 38], mass: 14, act: 2, split: { id: 'gotita', n: 2 },
+    desc: 'Metal líquido: al golpearla hasta romperla se divide en dos gotitas. La tensión superficial las mantiene enteras.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 10 } : { kind: 'block', block: 8, dmg: 5 }),
+  },
+  gotita: {
+    id: 'gotita', name: 'Gotita de Mercurio', sprite: 'gotita', scale: 3, hp: [12, 14], mass: 7, act: 2,
+    desc: 'La mitad de una gota de mercurio. Pequeña, densa y rápida.',
+    next: () => ({ kind: 'attack', dmg: 5 }),
+  },
+  colmena: {
+    id: 'colmena', name: 'Colmena de Ánimas', sprite: 'colmena', scale: 4, hp: [40, 44], mass: 8, act: 2,
+    desc: 'Un panal de energía disipada que suelta ánimas calóricas. Destrúyela antes de que te rodeen.',
+    next: (e) => (e.turn % 3 === 0
+      ? { kind: 'buff', summon: 'anima', label: 'Soltar ánima' }
+      : { kind: 'attack', dmg: 4, calor: 2, label: 'Zumbido' }),
+  },
+  sifon: {
+    id: 'sifon', name: 'Sifón Térmico', sprite: 'sifon', scale: 5, hp: [86, 92], mass: 5, umbral: 16, act: 2,
+    desc: 'Absorbe tu energía: te roba Joules para su siguiente turno y se cura con ellos. La energía no se crea… se roba.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'attack', dmg: 7 + e.inercia, drain: 1, label: 'Absorber (−1 J)' };
+      if (p === 1) return { kind: 'block', block: 10, heal: 10, label: 'Disipar y curarse' };
+      return { kind: 'attack', dmg: 14 + 2 * e.inercia, label: 'Descarga' };
+    },
+  },
+  // ── Acto III ──
+  bibliotecario: {
+    id: 'bibliotecario', name: 'Bibliotecario Espectral', sprite: 'bibliotecario', scale: 5, hp: [36, 40], mass: 55, act: 3,
+    desc: 'Invoca tomos voladores y encuaderna a sus aliados con Bloqueo. Silencio en la biblioteca.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'buff', summon: 'tomo', label: 'Abrir un tomo' };
+      if (p === 1) return { kind: 'block', block: 6, shieldAll: 8, label: 'Encuadernar' };
+      return { kind: 'attack', dmg: 9 };
+    },
+  },
+  atomo: {
+    id: 'atomo', name: 'Átomo Inestable', sprite: 'atomo', scale: 4, hp: [30, 34], mass: 1, act: 3, split: { id: 'electron', n: 2 }, explode: 8,
+    desc: 'Al destruirlo se fisiona: EXPLOTA (te hace 8 de daño) y suelta dos electrones. Ten Bloqueo listo.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 8 } : { kind: 'attack', dmg: 3, hits: 3, label: 'Radiación' }),
+  },
+  electron: {
+    id: 'electron', name: 'Electrón', sprite: 'electron', scale: 4, hp: [8, 10], mass: 0.1, act: 3,
+    desc: 'Casi sin masa, pero rapidísimo: golpea dos veces.',
+    next: () => ({ kind: 'attack', dmg: 3, hits: 2 }),
+  },
+  indice: {
+    id: 'indice', name: 'Guardián del Índice', sprite: 'indice', scale: 4, hp: [100, 108], mass: 90, umbral: 19, act: 3,
+    desc: 'Protege la biblioteca: da Bloqueo a todos sus aliados y llama a los tomos. Detenlo para romper su defensa.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 10, shieldAll: 10, label: 'Índice general' };
+      if (p === 1) return { kind: 'attack', dmg: 14 + 2 * e.inercia, label: 'Golpe de tomo' };
+      return { kind: 'attack', dmg: 6, summon: 'tomo', label: 'Llamar al tomo' };
+    },
+  },
   colossus: {
     id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
@@ -238,22 +325,25 @@ export const ENEMIES: Record<string, EnemyDef> = {
 
 export const ENCOUNTERS = {
   easy: [['skeleton'], ['bat', 'bat'], ['slime'], ['pendulo']],
-  normal: [['skeleton', 'bat'], ['slime', 'bat'], ['skeleton', 'skeleton'], ['slime', 'skeleton'], ['gargola'], ['pendulo', 'bat'], ['gargola', 'skeleton'], ['pendulo']],
-  elite: [['inertKnight']],
+  normal: [['skeleton', 'bat'], ['slime', 'bat'], ['skeleton', 'skeleton'], ['slime', 'skeleton'], ['gargola'], ['pendulo', 'bat'], ['gargola', 'skeleton'], ['pendulo'],
+    ['babosaMadre'], ['nigromante', 'skeleton'], ['babosaMadre', 'bat']],
+  elite: [['inertKnight'], ['armaduraPuas']],
   boss: [['colossus']],
 };
 
 export const ENCOUNTERS_2 = {
   easy: [['brea'], ['anima', 'anima'], ['muelle'], ['minero']],
-  normal: [['brea', 'anima'], ['muelle', 'anima'], ['minero', 'brea'], ['minero', 'anima'], ['muelle', 'minero'], ['brea', 'brea']],
-  elite: [['volante'], ['golem']],
+  normal: [['brea', 'anima'], ['muelle', 'anima'], ['minero', 'brea'], ['minero', 'anima'], ['muelle', 'minero'], ['brea', 'brea'],
+    ['mercurio', 'anima'], ['colmena'], ['mercurio']],
+  elite: [['volante'], ['golem'], ['sifon']],
   boss: [['bruja']],
 };
 
 export const ENCOUNTERS_3 = {
   easy: [['bala'], ['tomo', 'tomo'], ['cohete'], ['granada']],
-  normal: [['bala', 'tomo'], ['cohete', 'tomo'], ['granada', 'bala'], ['granada', 'cohete'], ['tomo', 'tomo', 'tomo'], ['bala', 'bala']],
-  elite: [['ariete'], ['centinela']],
+  normal: [['bala', 'tomo'], ['cohete', 'tomo'], ['granada', 'bala'], ['granada', 'cohete'], ['tomo', 'tomo', 'tomo'], ['bala', 'bala'],
+    ['bibliotecario', 'tomo'], ['atomo', 'bala'], ['atomo']],
+  elite: [['ariete'], ['centinela'], ['indice', 'tomo']],
   boss: [['hibbelerius']],
 };
 

@@ -41,7 +41,7 @@ export class DilemmaScene extends Phaser.Scene {
     img.setScale(Math.min(8, 200 / img.height, 220 / img.width));
     if (d.tint) img.setTint(d.tint);
     this.tweens.add({ targets: img, y: 364, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    const hero = this.add.image(90, 370, 'hero').setOrigin(0.5, 1).setScale(4);
+    const hero = this.add.image(90, 370, 'hero').setOrigin(0.5, 1).setScale(2);
     this.tweens.add({ targets: hero, y: 367, duration: 1100, yoyo: true, repeat: -1 });
 
     title(this, W / 2, 70, d.name, 40, CSS.bone);

@@ -94,11 +94,11 @@ export class RankingScene extends Phaser.Scene {
       const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
       R(txt(this, COLS[0], y + 8, `${p.lugar}`, 26, medal));
       // avatar dibujado con sus colores
-      let av: { helm?: string; cape?: number; armor?: number; visor?: number; clase?: string } = {};
+      let av: { helm?: string; cape?: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number } = {};
       try { av = p.avatar ? JSON.parse(p.avatar) : {}; } catch { av = {}; }
       const key = `rk_${this.scope}_${this.page}_${i}`;
-      makeHeroFromAvatar(this, { helm: av.helm ?? 'penacho', cape: av.cape ?? 0, armor: av.armor, visor: av.visor, clase: av.clase }, key);
-      R(this.add.image(COLS[1] + 18, y + 19, key).setScale(1.6));
+      makeHeroFromAvatar(this, { ...av, helm: av.helm ?? 'penacho', cape: av.cape ?? 0 }, key);
+      R(this.add.image(COLS[1] + 18, y + 19, key).setScale(0.8));
       const name = txt(this, COLS[2], y + 6, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);

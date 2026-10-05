@@ -372,7 +372,7 @@ Usa sólo música con licencia que permita su uso (por ejemplo CC0 o CC-BY con a
 
 ---
 
-## 9. Acto III, Modo profesor y estilo grabado (v0.7)
+## 9. Acto III y Modo profesor (v0.7)
 
 **Enemigos del Acto III** (`src/data/enemies.ts`, sección `ACTO III`). Novedades que puedes reutilizar:
 
@@ -393,6 +393,29 @@ Las fases de Hibbelerius están en `next()` (usa `e.phase2` y `e.phase3`) y los 
 
 **Modo profesor.** Agrega matrículas a `ADMINS` en `src/config.ts`. Sólo funciona con sesión en línea (protegida por contraseña) o en `npm run dev`.
 
-**Estilo grabado.** El filtro está en `src/fx/grabado.ts`: los colores `ink`, `shade`, `mid` y `bone` definen la paleta; `smoothstep(0.45, 0.8, sat)` decide cuánto color saturado sobrevive.
 
 **Música en archivo.** Para cambiar qué pista suena en cada momento, edita `MUSIC_FILES` en `src/config.ts` (las pistas van en `public/musica/`). Si una pista pesa mucho, comprímela: `ffmpeg -i original.mp3 -b:a 80k nueva.mp3`.
+
+
+---
+
+## 10. Mecánicas de enemigos (v0.9)
+
+| Campo | Dónde | Qué hace | Ejemplo |
+|---|---|---|---|
+| `summon: 'id'` | intención | invoca a otro enemigo si hay lugar (máx. 4 en pantalla) | Nigromante, Colmena |
+| `shieldAll: n` | intención | da *n* de Bloqueo a todos sus aliados | Guardián del Índice |
+| `heal: n` | intención | se cura *n* | Sifón Térmico |
+| `drain: n` | intención | te roba *n* J de tu siguiente turno | Sifón Térmico |
+| `split: { id, n }` | enemigo | al morir se divide | Babosa Madre → 2 Babosas |
+| `thorns: n` | enemigo | cada golpe que le das te regresa *n* | Armadura de Púas |
+| `explode: n` | enemigo | al morir te hace *n* de daño | Átomo Inestable |
+
+Para que aparezca, agrégalo a `ENCOUNTERS`, `ENCOUNTERS_2` o `ENCOUNTERS_3`. Muchos sprites nuevos son el de otro enemigo con otros colores (`makeTexture(scene, 'nuevo', SPRITES.slime, { L: '#...' })` en `generateAllTextures`).
+
+## 11. Héroes, repaso y pistas (v0.9)
+
+- **Héroes:** `src/art/heroes.ts` los dibuja por partes (capa, piernas, peto, yelmo, arma, escudo…). Para una opción nueva, agrega su nombre a la lista (`WEAPONS_K`, `HELMS_M`, etc.) y un `if` con su dibujo en `knight()` o `mage()`.
+- **Repaso final:** `src/data/lecciones.ts` tiene la fórmula y la idea clave de cada tema.
+- **Pistas:** el costo está en `PISTA_COSTO` (`src/config.ts`).
+- **Portada:** reemplaza `public/portada.jpg` por otra imagen (cualquier tamaño; se ajusta sola).

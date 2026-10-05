@@ -3,7 +3,8 @@ import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { Game, saveLocal, TOTAL_PISOS } from '../state';
+import { Game, logEvent, saveLocal, TOTAL_PISOS } from '../state';
+import { LECCIONES } from '../data/lecciones';
 import { button, embers, fadeTo, panel, title, txt, vignette } from '../ui/widgets';
 
 const TIPS = T.final.consejos;
@@ -19,14 +20,24 @@ export class EndScene extends Phaser.Scene {
     embers(this);
     vignette(this);
 
+    // temas falladas en esta expedición (de peor a mejor)
+    const temas = Object.entries(run.temas ?? {})
+      .filter(([, t]) => t.ok < t.total)
+      .sort((a, b) => a[1].ok / a[1].total - b[1].ok / b[1].total || b[1].total - a[1].total)
+      .slice(0, 3);
+    const repaso = temas.length > 0;
+    if (repaso) logEvent('repaso', '', '', { temas: temas.map(([c, t]) => `${c} ${t.ok}/${t.total}`) });
+
     if (data.victory) {
       title(this, W / 2, 70, T.final.victoria, 54);
       txt(this, W / 2, 112, T.final.victoriaTexto, 22, CSS.bone).setOrigin(0.5);
       const wz = this.add.image(W - 170, 300, 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
-      this.tweens.add({ targets: wz, alpha: 0.9, duration: 2500, delay: 800 });
+      this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : 0.9, duration: 2500, delay: 800 });
       this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      const q = txt(this, W - 170, 470, T.final.cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
-      this.tweens.add({ targets: q, alpha: 1, duration: 1500, delay: 2600 });
+      if (!repaso) {
+        const q = txt(this, W - 170, 470, T.final.cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
+        this.tweens.add({ targets: q, alpha: 1, duration: 1500, delay: 2600 });
+      }
     } else {
       title(this, W / 2, 70, T.final.derrota, 54, '#b8a8c8');
       txt(this, W / 2, 112, `${T.final.derrotaTexto}: ${data.by ?? '—'} · ${T.hud.piso.toLowerCase()} ${run.floor + 1}`, 22, CSS.dim).setOrigin(0.5);
@@ -46,7 +57,23 @@ export class EndScene extends Phaser.Scene {
       txt(this, 110, 172 + i * 40, k, 26, CSS.dim);
       txt(this, 570, 172 + i * 40, String(v), 28, i === rows.length - 1 ? CSS.gold : CSS.bone).setOrigin(1, 0);
     });
-    if (!data.victory) {
+    if (repaso) {
+      // ── repaso: los temas que fallaste, con su fórmula clave ──
+      panel(this, 620, 150, 320, 330);
+      txt(this, 780, 166, 'Temas para repasar', 24, CSS.gold).setOrigin(0.5, 0);
+      let y = 200;
+      for (const [c, t] of temas) {
+        if (y > 390) break;
+        const l = LECCIONES[c];
+        txt(this, 636, y, l?.nombre ?? c, 20, CSS.bone);
+        txt(this, 924, y + 2, `${t.ok}/${t.total}`, 18, '#e08a8a').setOrigin(1, 0);
+        if (l) {
+          txt(this, 636, y + 24, l.formula, 20, '#9ad8f0');
+          const idea = txt(this, 636, y + 48, l.idea, 15, CSS.dim, { wordWrap: { width: 296 } });
+          y += 60 + idea.height;
+        } else y += 34;
+      }
+    } else if (!data.victory) {
       txt(this, W - 175, 200, T.final.consejo, 24, CSS.gold).setOrigin(0.5);
       txt(this, W - 175, 226, Phaser.Utils.Array.GetRandom(TIPS), 21, CSS.bone, { wordWrap: { width: 290 }, align: 'center' }).setOrigin(0.5, 0);
     }

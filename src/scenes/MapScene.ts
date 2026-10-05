@@ -131,7 +131,7 @@ export class MapScene extends Phaser.Scene {
 
     // héroe en el mapa
     const hp = current ? nodeXY(current) : { x: 30, y: 280 };
-    const hero = this.add.image(hp.x, hp.y - 46, 'hero').setScale(2);
+    const hero = this.add.image(hp.x, hp.y - 46, 'hero').setScale(1);
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda

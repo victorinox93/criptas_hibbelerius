@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { ACT3_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
+import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
+import { heroMatrix, SKINS } from './heroes';
 
 // Cada sprite es una matriz de caracteres; cada carácter es un color de la paleta.
 // '.' = transparente. Las filas cortas se rellenan con transparente.
@@ -765,17 +766,21 @@ export function makeKnight(
   makeTexture(scene, key, knightMatrix(helm), { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor });
 }
 
-/** Dibuja el héroe del perfil actual en la textura 'hero' */
-export function makeHeroFromAvatar(scene: Phaser.Scene, av: { helm: string; cape: number; armor?: number; visor?: number; clase?: string }, key = 'hero') {
+/**
+ * Dibuja el héroe del perfil en la textura indicada ('hero' por omisión).
+ * Los héroes miden 42×44 (doble detalle): en pantalla se usan a la mitad
+ * de la escala que tenían los sprites de 21×22.
+ */
+export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'hero') {
   const cape = CAPES[av.cape] ?? CAPES[0];
   const armor = ARMORS[av.armor ?? 0] ?? ARMORS[0];
   const visor = (VISORS[av.visor ?? 0] ?? VISORS[0]).c;
-  if (av.clase === 'arcanista') {
-    makeTexture(scene, key, mageMatrix(av.helm), { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor });
-  } else {
-    makeKnight(scene, key, av.helm, cape, armor, visor);
-  }
+  const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
+  makeTexture(scene, key, heroMatrix({ clase: av.clase, helm: av.helm, arma: av.arma, extra: av.extra }), {
+    c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q,
+  });
 }
+export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number }
 
 const NPC = mirrorHalf([
   '.....kkk',
@@ -957,6 +962,16 @@ export function generateAllTextures(scene: Phaser.Scene) {
   // Acto III: la Torre del Tomo
   makeTexture(scene, 'hibbelerius', HIBBELERIUS, HIB_PAL);
   for (const [k, rows] of Object.entries(ACT3_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
+  // v0.9: enemigos más duros (casi todos son variantes de color de otros)
+  for (const [k, rows] of Object.entries(EXTRA_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
+  makeTexture(scene, 'babosaMadre', SPRITES.slime, { L: '#8a6a3a', G: '#4a3418', w: '#c8a070', F: '#ff8a3a' });
+  makeTexture(scene, 'nigromante', NPC, { c: '#1e2a1e', C: '#0e160e', E: '#9bf07a', s: '#8a9a7a' });
+  makeTexture(scene, 'armaduraPuas', knightMatrix('cuernos'), { l: '#6a3a2a', g: '#3a1e16', c: '#2a1210', C: '#160806', E: '#ff8a3a', w: '#c8b8a0', y: '#a83a1e' }, true);
+  makeTexture(scene, 'mercurio', SPRITES.slime, { L: '#c4c8d4', G: '#7a7e8c', w: '#ffffff', F: '#3a6aff' });
+  makeTexture(scene, 'gotita', SPRITES.slime, { L: '#aeb4c4', G: '#6a6e7c', w: '#ffffff', F: '#3a6aff' });
+  makeTexture(scene, 'sifon', SPRITES.anima, { y: '#3ac8c8', o: '#1a4a5a', w: '#b8f0f0', R: '#1a6a6a' });
+  makeTexture(scene, 'bibliotecario', NPC, { c: '#3a2a4e', C: '#1e1430', E: '#7fd8ff', s: '#9a8aa8' });
+  makeTexture(scene, 'indice', SPRITES.colossus, { g: '#3a2e4a', l: '#6a5a86', o: '#c8a050', y: '#e8c15a', E: '#7fd8ff', d: '#1a1424' });
   // pixel blanco para partículas
   if (!scene.textures.exists('px')) {
     const c = scene.textures.createCanvas('px', 2, 2)!;

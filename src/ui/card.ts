@@ -3,8 +3,8 @@ import { CSS, UI } from '../art/palette';
 import { CalcCtx, CARDS, CardInst } from '../data/cards';
 import { frame, txt } from './widgets';
 
-export const CW = 150;
-export const CH = 210;
+export const CW = 172;
+export const CH = 240;
 
 const TYPE_COLOR: Record<string, number> = {
   Ataque: 0xa8323e,
@@ -29,13 +29,14 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   const col = TYPE_COLOR[def.type];
   frame(g, -CW / 2, -CH / 2, CW, CH, 0x1a151f, col);
   // caja de arte
-  g.fillStyle(0x0d0b10, 1).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 62);
-  g.lineStyle(2, col, 0.6).strokeRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 62);
-  const art = s.add.image(0, -CH / 2 + 65, def.icon).setScale(5);
+  g.fillStyle(0x0d0b10, 1).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
+  g.lineStyle(2, col, 0.6).strokeRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
+  const art = s.add.image(0, -CH / 2 + 62, def.icon).setScale(4.6);
   const name = txt(s, 6, -CH / 2 + 18, def.name + (inst.up ? '+' : ''), 21, inst.up ? CSS.green : CSS.bone).setOrigin(0.5);
   if (name.width > CW - 44) name.setScale((CW - 44) / name.width, 1);
-  const type = txt(s, 0, -CH / 2 + 106, `${def.type} · ${def.concept}`, 16, CSS.dim).setOrigin(0.5);
-  const body = txt(s, 0, -CH / 2 + 122, '', 18, CSS.bone, { align: 'center', lineSpacing: -4 }).setOrigin(0.5, 0);
+  const type = txt(s, 0, -CH / 2 + 100, `${def.type} · ${def.concept}`, 16, CSS.dim).setOrigin(0.5);
+  if (type.width > CW - 16) type.setScale((CW - 16) / type.width, 1);
+  const body = txt(s, 0, -CH / 2 + 114, '', 20, CSS.bone, { align: 'center', lineSpacing: -4 }).setOrigin(0.5, 0);
   // gema de costo
   const gem = s.add.graphics();
   gem.fillStyle(0x000000, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 16);
@@ -49,7 +50,12 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   c.refresh = (cx: CalcCtx, playable = true) => {
     const st = def.stats(inst.up);
     body.setText(def.text(st, cx));
-    const k = Math.min(1, 84 / body.height, (CW - 14) / body.width);
+    // el texto se ajusta bajando el tamaño de letra (no aplastándolo)
+    const maxH = CH / 2 - 8 - (-CH / 2 + 114), maxW = CW - 14;
+    let fs = 20;
+    body.setScale(1).setFontSize(fs);
+    while ((body.height > maxH || body.width > maxW) && fs > 13) body.setFontSize(--fs);
+    const k = Math.min(1, maxH / body.height, maxW / body.width);
     body.setScale(k);
     cost.setText(String(st.cost));
     c.setAlpha(playable ? 1 : 0.55);

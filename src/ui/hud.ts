@@ -110,13 +110,15 @@ export function deckOverlay(s: Phaser.Scene, title = 'Tu mazo', cards = Game.run
   const bg = s.add.rectangle(0, 0, W, H, 0x000000, 0.88).setOrigin(0).setInteractive();
   layer.add(bg);
   layer.add(txt(s, W / 2, 30, title, 32, CSS.gold).setOrigin(0.5));
-  const sc = 0.62;
-  const perRow = 8;
+  const sc = 0.6;
+  const step = CW * sc + 12;
+  const perRow = Math.floor((W - 40) / step);
+  const x0 = (W - perRow * step) / 2 + step / 2;
   const inner = s.add.container(0, 0);
   layer.add(inner);
   cards.forEach((ci, i) => {
-    const x = 90 + (i % perRow) * (CW * sc + 14);
-    const y = 140 + Math.floor(i / perRow) * (CH * sc + 14);
+    const x = x0 + (i % perRow) * step;
+    const y = 150 + Math.floor(i / perRow) * (CH * sc + 14);
     const v = cardView(s, x, y, ci).setScale(sc);
     if (onPick) {
       v.setInteractive({ useHandCursor: true });
@@ -130,7 +132,7 @@ export function deckOverlay(s: Phaser.Scene, title = 'Tu mazo', cards = Game.run
     inner.add(v);
   });
   const rows = Math.ceil(cards.length / perRow);
-  const maxScroll = Math.max(0, 140 + rows * (CH * sc + 14) - (H - 70));
+  const maxScroll = Math.max(0, 150 + rows * (CH * sc + 14) - (H - 70));
   bg.on('wheel', (_p: unknown, _dx: number, dy: number) => {
     inner.y = Phaser.Math.Clamp(inner.y - dy * 0.5, -maxScroll, 0);
   });

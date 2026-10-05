@@ -4,7 +4,6 @@ import { audio } from '../audio';
 import { W } from '../config';
 import { T } from '../textos';
 import { frame, Tooltip, txt } from '../ui/widgets';
-import { grabadoOn, toggleGrabado } from '../fx/grabado';
 
 /** Capa siempre visible: pantalla completa y volumen */
 export class OverlayScene extends Phaser.Scene {
@@ -47,12 +46,7 @@ export class OverlayScene extends Phaser.Scene {
       if (this.scale.isFullscreen) this.scale.stopFullscreen();
       else this.scale.startFullscreen();
     }, T.ajustes.pantalla, () => (this.scale.isFullscreen ? 'Clic para salir' : 'Clic para entrar'));
-    const brush = mk(W - 146, 'i_feather', () => {
-      toggleGrabado(this.game);
-      refresh();
-    }, 'Estilo grabado (experimental)', () => `Filtro de tinta y tramado, estilo grimorio.\nAhora: ${grabadoOn() ? 'activado' : 'desactivado'} (clic para cambiar)`);
     const refresh = () => {
-      brush.im.setAlpha(grabadoOn() ? 1 : 0.4);
       music.im.setAlpha(audio.level === 0 ? 0.35 : 1);
       lvl.setText(audio.level === 0 ? '×' : '');
     };

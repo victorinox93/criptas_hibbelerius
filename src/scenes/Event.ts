@@ -54,7 +54,7 @@ export class EventScene extends Phaser.Scene {
     const npc = this.add.image(W / 2 - 140, 300, ev.npc).setScale(7);
     this.tweens.add({ targets: npc, y: 294, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     if (ev.prop) this.add.image(W / 2 - 40, 360, ev.prop).setScale(4);
-    const hero = this.add.image(130, 340, 'hero').setScale(4);
+    const hero = this.add.image(130, 340, 'hero').setScale(2);
     this.tweens.add({ targets: hero, y: 337, duration: 1100, yoyo: true, repeat: -1 });
 
     title(this, W / 2, 76, ev.name, 40, CSS.bone);

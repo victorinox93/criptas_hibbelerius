@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.8.0 · Más ecos y preguntas';
+export const VERSION = '0.9.0 · Portada, héroes nuevos y repaso';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.
@@ -46,3 +46,6 @@ export const MUSIC_FILES: Record<string, string> = {
 //  Sólo funciona con sesión en línea (protegida por contraseña).
 // ─────────────────────────────────────────────────────────────
 export const ADMINS = ['237440'];
+
+/** Costo en Ergios de una pista en los altares y encuentros */
+export const PISTA_COSTO = 15;

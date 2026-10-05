@@ -11,6 +11,7 @@ import { addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } f
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
 import { T } from '../textos';
+import { PISTA_COSTO } from '../config';
 import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, panel, TextField, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
@@ -121,10 +122,12 @@ export class RuneScene extends Phaser.Scene {
 
     this.resultC = this.add.container(0, 0);
 
+    const choiceBtns: Btn[] = [];
     if (p.choices) {
       p.choices.forEach((ch, i) => {
         const b: Btn = button(this, W / 2, 360 + i * 44, 660, 38, ch, () => this.answer(i), { size: 20, silent: true });
         this.answerUi.push(b);
+        choiceBtns.push(b);
       });
     } else {
       const f = (this.field = new TextField(this, W / 2 - 80, 372, 230, {
@@ -139,6 +142,36 @@ export class RuneScene extends Phaser.Scene {
       const rules = txt(this, W / 2, 412, T.runa.reglas, 18, CSS.dim).setOrigin(0.5);
       this.answerUi.push(f.c, unit, b, rules);
       this.time.delayedCall(400, () => f.focus());
+    }
+
+    // ── Pista a cambio de Ergios ──
+    const run = Game.run;
+    if (run) {
+      const hint: Btn = button(this, W - 72, 360, 124, 48, `Pista\n−${PISTA_COSTO} ${T.moneda}`, () => {
+        if (run.ergios < PISTA_COSTO) {
+          this.flash(`Necesitas ${PISTA_COSTO} ${T.moneda} para una pista.`, CSS.blood);
+          return;
+        }
+        addErgios(-PISTA_COSTO);
+        this.hud.refresh();
+        audio.sfx('coin');
+        hint.setEnabled(false);
+        hint.label.setText('Pista\nusada');
+        logEvent('pista', p.concept, '', { titulo: p.title, fuente: this.d.source });
+        if (p.choices) {
+          // descarta dos opciones incorrectas
+          const wrong = Phaser.Utils.Array.Shuffle(p.choices.map((_, i) => i).filter((i) => i !== p.correct)).slice(0, 2);
+          for (const i of wrong) {
+            choiceBtns[i].setEnabled(false);
+            choiceBtns[i].label.setColor('#4a4256');
+          }
+        } else {
+          // muestra la fórmula con la que se resuelve
+          txt(this, 136, 306, `Pista: ${p.solution[0]}`, 19, CSS.gold).setDepth(5);
+        }
+      }, { size: 18, color: UI.gold, silent: true });
+      this.answerUi.push(hint);
+      if (run.ergios < PISTA_COSTO) hint.label.setColor('#6a5a5a');
     }
   }
 
@@ -162,6 +195,9 @@ export class RuneScene extends Phaser.Scene {
     this.field?.blur();
     this.answerUi.forEach((o) => o.destroy());
     run.stats.runasTotal++;
+    const tm = ((run.temas ??= {})[p.concept] ??= { ok: 0, total: 0 });
+    tm.total++;
+    if (ok) tm.ok++;
     if (ok) {
       run.stats.runasOk++;
       run.score += Math.round(25 * gravityOf(run.gravity).scoreMul);
