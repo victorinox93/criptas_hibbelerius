@@ -13,7 +13,7 @@ Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los a
 | Cuentas | Matrícula, contraseña creada por el alumno y clave de grupo que da el profesor |
 | Avatar | Nombre, yelmo (3), armadura (4), brillo del visor (4) y capa (6). Las clases Arcanista, Explorador y Guardián aparecen bloqueadas para los actos siguientes |
 | Mapa | 9 pisos generados al azar: combates, élites, encuentros, ecos del pasado, altares rúnicos, mercader, fogatas y el jefe |
-| Ecos del Pasado | Estilo Hades: Newton, Galileo, Émilie du Châtelet, Joule, **Einstein** y **Marie Curie** ofrecen dones para toda la expedición; si respondes bien su pregunta, los dones son épicos. Los dones de Einstein y Curie son más fuertes pero cobran **radiación** (daño que ignora el Bloque) |
+| Ecos del Pasado | Estilo Hades: Newton, Galileo, Émilie du Châtelet, Joule, **Einstein**, **Marie Curie**, **Huygens**, **Hooke**, **Emmy Noether** y **Coriolis** ofrecen dones para toda la expedición; si respondes bien su pregunta, los dones son épicos. Los dones de Einstein y Curie son más fuertes pero cobran **radiación** (daño que ignora el Bloque) |
 | Encuentros | Cada nodo «?» se sortea: 5 personajes con pregunta (bendición o maldición pasajera), 7 **dilemas** de riesgo con probabilidades visibles (pozo, notario, núcleo inestable, demonio de Laplace, balanza, criatura, puente) o, rara vez (14 %), **el Profe Victorino**, que regala una vida extra |
 | Familiares | Gato de Schrödinger, Lechuza de Minerva, Salamandra Ígnea, Tortuga de Zenón y Cuervo: pelean contigo 3–5 combates. Se consiguen en dilemas, en la tienda o tras una élite |
 | Azar | 35 % de los combates traen una **condición de piso** (viento, niebla, lodo, anomalía gravitatoria…); a veces un combate normal suelta una reliquia |
@@ -27,7 +27,7 @@ Roguelike de cartas en estilo dark fantasy para el curso de **Dinámica**. Los a
 | Cartas | 38 cartas: neutrales (ganar Joules, robar y descartar, daño igual a tu Bloque), daño elemental físico (Calor, Resonancia, Fatiga del material) y cartas basura que meten los enemigos (Lodo Pegajoso, Ruido Blanco, Error de Signo) |
 | Pantalla | Se dibuja al doble de resolución; botón de pantalla completa y control de volumen arriba a la derecha |
 | Combate | 12 cartas, 7 enemigos (incluye la Gárgola de Piedra y el Péndulo Errante, que convierte U en K), Pergamino de cálculos que muestra la física de cada acción |
-| Runas | 17 tipos de problema: leyes de Newton, peso, fricción, plano inclinado, polea, montacargas, trabajo, energía cinética y potencial, conservación y teorema trabajo-energía, con solución paso a paso |
+| Runas | 26 tipos de problema numérico con datos al azar y **39 preguntas de opción múltiple** conceptuales (`src/data/preguntas.ts`, fáciles de ampliar). Cerca del 60 % de las preguntas son de opción múltiple (`MCQ_SHARE`). Todas muestran la solución paso a paso |
 | Registro | Cada alumno, partida, piso alcanzado y respuesta a runas se guarda en Google Sheets |
 
 ### Cómo se traduce la física al juego

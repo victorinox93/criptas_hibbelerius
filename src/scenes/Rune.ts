@@ -92,7 +92,7 @@ export class RuneScene extends Phaser.Scene {
     const fig = data.figureId ? FIGURES.find((f) => f.id === data.figureId) : undefined;
     const acto = Game.run?.acto ?? 1;
     const actC = acto >= 3 ? [...IMPULSE_CONCEPTS, 'Conservacion']
-      : acto === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion'] : undefined;
+      : acto === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion', 'Potencia'] : undefined;
     this.p = randomProblem(ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {

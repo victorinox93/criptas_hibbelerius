@@ -100,6 +100,8 @@ Al final del archivo, en `ENCOUNTERS`, agrega grupos que lo incluyan:
 
 ## 2. Agregar una pregunta (runas, encuentros y figuras)
 
+> **Lo más fácil (v0.8):** las preguntas de opción múltiple están en `src/data/preguntas.ts`. Copia un bloque, escribe la respuesta correcta en `correct` y tres distractores en `wrong`; el juego revuelve el orden solo. Usa como distractores los errores típicos de tus alumnos: así la pregunta también sirve de diagnóstico en la hoja «Conceptos». `MCQ_SHARE` (0 a 1) controla qué tan seguido salen frente a los cálculos.
+
 **Archivo:** `src/data/runes.ts`, dentro de la lista `GENERATORS`.
 
 ### Pregunta numérica con datos al azar

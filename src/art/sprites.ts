@@ -835,6 +835,34 @@ const FIG: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     ]),
     ov: { h: '#3a2e28', s: '#e8ccb4', q: '#c0a090', c: '#16161c', g: '#9bf07a' },
   },
+  fig_huygens: {
+    rows: mirrorHalf([
+      '...hhhhh', '..hhhhhh', '.hhhssss', '.hhsssss', 'hhhskkss', 'hhhsssss', 'hhhssssq', 'hhhsbbbb',
+      'hhhhsbss', 'hhh.ssss', 'hh..WWWW', 'h..WWWWW', '..ccWWWW', '.cccccWW', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#2e2218', b: '#3a2a1e', s: '#e0bea0', q: '#b08e78', c: '#1e1a26', W: '#ece8e0' },
+  },
+  fig_hooke: {
+    rows: mirrorHalf([
+      '....kkkk', '...kkkkk', '..kkkkkk', '..kkkkkk', '..kkkkkk', '..kkkkkk', '..kkk?kk', '..kkkkkk',
+      '...kkkkk', '....kkkk', '.....kkk', '..ccccck', '.cccccWW', 'ccccccWW', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { k: '#1a1820', c: '#2a2630', W: '#4a4656', '?': '#e8c15a' },
+  },
+  fig_noether: {
+    rows: mirrorHalf([
+      '........', '....hhhh', '...hhhhh', '..hhhhhh', '..hhssss', '..hsssss', '..hgGGgs', '..hsssss',
+      '..hssssq', '...sssss', '....ssss', '.....sss', '...cccss', '..cccccc', '.ccccccc', 'cccccccy', 'cccccccc',
+    ]),
+    ov: { h: '#3a2e26', s: '#e4c8b0', q: '#c0a090', g: '#2a2420', G: '#9ab8c8', c: '#2a3040', y: '#c8a050' },
+  },
+  fig_coriolis: {
+    rows: mirrorHalf([
+      '........', '....hhhh', '...hhhhh', '..hhhsss', '..hsssss', '..hskkss', '.hhsssss', '.hhssssq',
+      '..hsssss', '...sssss', '....ssss', '...cWWWW', '..ccWWWW', '.cccccWW', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#2a1e18', s: '#e0bea0', q: '#b08e78', c: '#16161e', W: '#ece8e0' },
+  },
   fig_joule: {
     rows: mirrorHalf([
       '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hskkss', '..bsssss', '..bssssq', '..bbssss',

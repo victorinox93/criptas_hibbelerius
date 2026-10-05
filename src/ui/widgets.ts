@@ -129,7 +129,9 @@ export class TextField {
       position: 'fixed', left: '0', top: '0', width: '1px', height: '1px', opacity: '0',
       border: '0', padding: '0', fontSize: '16px', pointerEvents: 'none',
     });
-    document.body.appendChild(el);
+    // Va DENTRO del contenedor del juego: en pantalla completa el navegador sólo
+    // deja enfocar elementos que estén dentro del elemento que está en pantalla completa.
+    (s.game.canvas.parentElement ?? document.body).appendChild(el);
     el.value = o.value ?? '';
     el.addEventListener('input', () => this.sync());
     el.addEventListener('keydown', (e) => {

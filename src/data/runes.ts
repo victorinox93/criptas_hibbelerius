@@ -1,4 +1,5 @@
 import { G } from '../config';
+import { MCQ_SHARE, PREGUNTAS } from './preguntas';
 
 // Problemas tipo Hibbeler con parámetros aleatorios.
 export interface Problem {
@@ -349,23 +350,33 @@ const GENERATORS: (() => Problem)[] = [
   },
 ];
 
+// Las preguntas de opción múltiple de src/data/preguntas.ts se vuelven generadores
+for (const q of PREGUNTAS) {
+  GENERATORS.push(() => ({
+    concept: q.concept, title: q.title, prompt: q.prompt, unit: '',
+    ...shuffleChoices([q.correct, ...q.wrong], 0),
+    solution: q.solution,
+  }));
+}
+
 /** Temas del Acto III: no salen en los altares de los actos anteriores */
 export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques', 'Impulso angular'];
 
-/** Problema al azar; si se dan conceptos, sólo de esos temas */
+/**
+ * Problema al azar; si se dan conceptos, sólo de esos temas.
+ * Con probabilidad MCQ_SHARE prefiere una pregunta de opción múltiple.
+ */
 export function randomProblem(concepts?: string[]): Problem {
-  if (!concepts?.length) {
-    for (let i = 0; i < 80; i++) {
-      const p = pick(GENERATORS)();
-      if (!IMPULSE_CONCEPTS.includes(p.concept)) return p;
-    }
-    return GENERATORS[0]();
-  }
-  for (let i = 0; i < 80; i++) {
+  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept));
+  const wantChoice = Math.random() < MCQ_SHARE;
+  let fallback: Problem | null = null;
+  for (let i = 0; i < 200; i++) {
     const p = pick(GENERATORS)();
-    if (concepts.includes(p.concept)) return p;
+    if (!okTopic(p)) continue;
+    if (!!p.choices === wantChoice) return p;
+    fallback ??= p;
   }
-  return pick(GENERATORS)();
+  return fallback ?? GENERATORS[0]();
 }
 
 export function checkAnswer(p: Problem, value: number | string): boolean {

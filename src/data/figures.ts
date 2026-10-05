@@ -124,6 +124,70 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['Al ganar un combate, +2 de Vida máxima.\nRadiación: pierdes 3 de vida al iniciar cada combate.', 'Al ganar un combate, +3 de Vida máxima.\nRadiación: pierdes 2 de vida al iniciar cada combate.'],
     lore: 'En cada vida media decae la mitad de los núcleos. Lo que hoy te desgasta, mañana te hace más resistente.',
   },
+  // ── Christiaan Huygens ──
+  h_reloj: {
+    id: 'h_reloj', figure: 'huygens', name: 'Reloj de Péndulo', icon: 'i_pend',
+    text: ['En tus turnos pares robas 1 carta más.', 'Desde tu segundo turno robas 1 carta más cada turno.'],
+    lore: 'Huygens inventó el reloj de péndulo: un ritmo regular y preciso, como tu mano de cartas.',
+  },
+  h_elastico: {
+    id: 'h_elastico', figure: 'huygens', name: 'Choque Elástico', icon: 'i_reflect',
+    text: ['Cuando tu Bloqueo absorbe por completo un golpe, recuperas 2 de vida.', 'Recuperas 4 de vida.'],
+    lore: 'Huygens describió los choques elásticos: si nada se deforma, la energía cinética no se pierde.',
+  },
+  h_centripeta: {
+    id: 'h_centripeta', figure: 'huygens', name: 'Fuerza Centrípeta', icon: 'i_wind',
+    text: ['Tu primer ataque de cada combate inflige +6 de daño.', 'Tu primer ataque de cada combate inflige +12 de daño.'],
+    lore: 'Al girar, a = v²/r: Huygens fue de los primeros en calcularlo. Gira antes de golpear.',
+  },
+  // ── Robert Hooke ──
+  k_resorte: {
+    id: 'k_resorte', figure: 'hooke', name: 'Ut tensio, sic vis', icon: 'i_pend',
+    text: ['Al inicio de cada turno ganas 2 de Bloqueo.', 'Al inicio de cada turno ganas 4 de Bloqueo.'],
+    lore: '«Como la extensión, así la fuerza»: F = k·x. Un resorte siempre empuja de vuelta.',
+  },
+  k_retorno: {
+    id: 'k_retorno', figure: 'hooke', name: 'Retorno Elástico', icon: 'i_reflect',
+    text: ['El primer golpe que te hace daño en cada combate regresa a la mitad al atacante.', 'Regresa completo al atacante.'],
+    lore: 'Lo que deforma un material elástico, el material lo devuelve al recuperar su forma.',
+  },
+  k_micro: {
+    id: 'k_micro', figure: 'hooke', name: 'Micrographia', icon: 'i_crystal',
+    text: ['Cada enemigo empieza el combate con 1 de Fatiga (+50 % de daño).', 'Cada enemigo empieza con 2 de Fatiga.'],
+    lore: 'Hooke vio con el microscopio las celdas y grietas de los materiales. Ahora tú también ves sus puntos débiles.',
+  },
+  // ── Emmy Noether ──
+  y_tiempo: {
+    id: 'y_tiempo', figure: 'noether', name: 'Simetría en el Tiempo', icon: 'i_bolt',
+    text: ['Hasta 1 J que no gastes en un turno pasa al siguiente.', 'Hasta 2 J que no gastes pasan al siguiente.'],
+    lore: 'Teorema de Noether: si las leyes no cambian con el tiempo, la ENERGÍA se conserva.',
+  },
+  y_espacio: {
+    id: 'y_espacio', figure: 'noether', name: 'Simetría en el Espacio', icon: 'i_momentum',
+    text: ['Cuando matas a un enemigo, el daño sobrante pasa a otro enemigo.', 'El daño sobrante pasa ×1.5 a otro enemigo.'],
+    lore: 'Si las leyes son iguales en todo lugar, la CANTIDAD DE MOVIMIENTO se conserva: nada se pierde, se transfiere.',
+  },
+  y_rotacion: {
+    id: 'y_rotacion', figure: 'noether', name: 'Simetría de Rotación', icon: 'i_pend',
+    text: ['Cada 3 cartas que juegues en un turno, robas 1.', 'Cada 2 cartas que juegues en un turno, robas 1.'],
+    lore: 'Si las leyes son iguales en toda dirección, la CANTIDAD DE MOVIMIENTO ANGULAR se conserva.',
+  },
+  // ── Gaspard-Gustave Coriolis ──
+  co_travail: {
+    id: 'co_travail', figure: 'coriolis', name: 'Travail', icon: 'i_anvil',
+    text: ['Cada ataque inflige +1 por cada ataque que ya jugaste este turno.', 'Cada ataque inflige +2 por cada ataque que ya jugaste este turno.'],
+    lore: 'Coriolis bautizó el «trabajo» (travail): el esfuerzo se acumula, golpe tras golpe.',
+  },
+  co_medio: {
+    id: 'co_medio', figure: 'coriolis', name: 'El ½ de ½mv²', icon: 'i_mass',
+    text: ['Caballero: +1 kg a tus ataques. Arcanista: empiezas cada combate con +1 m/s.', 'Caballero: +2 kg. Arcanista: +2 m/s.'],
+    lore: 'Coriolis puso el ½ en la energía cinética para que trabajo y energía cuadraran: W = ΔK = ½mv₂² − ½mv₁².',
+  },
+  co_desvio: {
+    id: 'co_desvio', figure: 'coriolis', name: 'Efecto Coriolis', icon: 'i_wind',
+    text: ['El primer golpe enemigo de cada turno se desvía: recibes 3 menos.', 'Recibes 5 menos.'],
+    lore: 'En un marco que gira, lo que se mueve parece desviarse. Los golpes, también.',
+  },
 };
 
 /** Dones con efecto secundario de radiación (se marcan en verde en el santuario) */
@@ -171,5 +235,33 @@ export const FIGURES: FigureDef[] = [
     farewell: '«En la vida no hay que temer nada, sólo comprenderlo. Ahora, sigue.»',
     concepts: ['Energia potencial', 'Trabajo', 'Conservacion'],
     boons: ['m_radio', 'm_polonio', 'm_vidamedia'],
+  },
+  {
+    id: 'huygens', name: 'Christiaan Huygens', years: '1629–1695', epithet: 'El Relojero de los Choques', sprite: 'fig_huygens',
+    intro: '«Medí el tiempo con un péndulo y descubrí qué se conserva cuando dos esferas chocan.\nResponde, y tu ritmo será tan preciso como mis relojes.»',
+    farewell: '«Que tus choques sean elásticos y tus péndulos, isócronos.»',
+    concepts: ['Choques', 'Cantidad de movimiento', 'Conservacion'],
+    boons: ['h_reloj', 'h_elastico', 'h_centripeta'],
+  },
+  {
+    id: 'hooke', name: 'Robert Hooke', years: '1635–1703', epithet: 'El Maestro de los Resortes', sprite: 'fig_hooke',
+    intro: '«No queda ningún retrato mío, viajero; sólo mis resortes y mis dibujos al microscopio.\nResponde y te prestaré su elasticidad.»',
+    farewell: '«Cede como el resorte… y regresa con fuerza.»',
+    concepts: ['Energia potencial', 'Trabajo', '2a ley'],
+    boons: ['k_resorte', 'k_retorno', 'k_micro'],
+  },
+  {
+    id: 'noether', name: 'Emmy Noether', years: '1882–1935', epithet: 'La Guardiana de las Simetrías', sprite: 'fig_noether',
+    intro: '«Toda simetría de la naturaleza esconde algo que se conserva: el tiempo, la energía; el espacio, el momento.\nDemuéstrame que entiendes qué se conserva.»',
+    farewell: '«Busca la simetría y encontrarás la ley.»',
+    concepts: ['Conservacion', 'Cantidad de movimiento', 'Impulso angular'],
+    boons: ['y_tiempo', 'y_espacio', 'y_rotacion'],
+  },
+  {
+    id: 'coriolis', name: 'Gaspard-Gustave Coriolis', years: '1792–1843', epithet: 'El que Nombró al Trabajo', sprite: 'fig_coriolis',
+    intro: '«Yo le puse nombre al trabajo y el ½ a la energía cinética.\nSi sabes cuánto trabajo cuesta mover algo, te enseñaré a desviar los golpes.»',
+    farewell: '«W = ΔK. No lo olvides en el examen.»',
+    concepts: ['Trabajo', 'Trabajo-energia', 'Energia cinetica'],
+    boons: ['co_travail', 'co_medio', 'co_desvio'],
   },
 ];

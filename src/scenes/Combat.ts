@@ -88,6 +88,12 @@ export class CombatScene extends Phaser.Scene {
   private noFric = false; // Superficie Sin Fricción
   private restE = 0; // Coeficiente de Restitución activo (0 = no)
   private played = 0; // cartas jugadas este turno (Impulso Angular)
+  // v0.8: dones de Huygens, Hooke, Noether y Coriolis
+  private centriUsed = false; // Fuerza Centrípeta (primer ataque del combate)
+  private retornoUsed = false; // Retorno Elástico (primer golpe que te hace daño)
+  private desvioUsed = false; // Efecto Coriolis (primer golpe de cada turno enemigo)
+  private carry = 0; // Simetría en el Tiempo: J que pasan al siguiente turno
+  private attacksTurn = 0; // ataques jugados este turno (Travail)
 
   constructor() { super('Combat'); }
 
@@ -125,6 +131,11 @@ export class CombatScene extends Phaser.Scene {
     this.noFric = false;
     this.restE = 0;
     this.played = 0;
+    this.centriUsed = false;
+    this.retornoUsed = false;
+    this.desvioUsed = false;
+    this.carry = 0;
+    this.attacksTurn = 0;
   }
 
   private has(relic: string) {
@@ -247,6 +258,12 @@ export class CombatScene extends Phaser.Scene {
       // (la mitad de los bonos, para que no se dispare K = ½mv²)
       this.vel = Math.min(VMAX, 3 + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
       this.baseAcel = 0;
+    }
+    // Coriolis · El ½ de ½mv²
+    const cm = boonLevel('co_medio');
+    if (cm) {
+      if (this.isArc) this.vel = Math.min(VMAX, this.vel + cm);
+      else this.masa += cm;
     }
     this.showFamiliar();
     this.refreshPlayer();
@@ -688,6 +705,22 @@ export class CombatScene extends Phaser.Scene {
     // Curie · Polonio: los ataques pegan más
     const pol = boonLevel('m_polonio');
     this.polonio = def.type === 'Ataque' && pol ? (pol === 2 ? 5 : 3) : 0;
+    if (def.type === 'Ataque') {
+      // Huygens · Fuerza Centrípeta: el primer ataque del combate
+      const hc = boonLevel('h_centripeta');
+      if (hc && !this.centriUsed) {
+        this.centriUsed = true;
+        this.polonio += 6 * hc;
+        this.calc(`Fuerza Centrípeta (Huygens): a = v²/r → +${6 * hc} a este primer ataque`);
+      }
+      // Coriolis · Travail: el trabajo se acumula
+      const tv = boonLevel('co_travail');
+      if (tv && this.attacksTurn) {
+        this.polonio += tv * this.attacksTurn;
+        this.calc(`Travail (Coriolis): +${tv * this.attacksTurn} por ${this.attacksTurn} ataque(s) previos`);
+      }
+      this.attacksTurn++;
+    }
     const c = this.ctx();
     switch (def.id) {
       case 'golpe':
@@ -1034,6 +1067,12 @@ export class CombatScene extends Phaser.Scene {
     this.acel -= plano;
     if (planoV) this.vel = Math.max(0, this.vel - planoV);
     this.played++;
+    // Noether · Simetría de Rotación
+    const yr = boonLevel('y_rotacion');
+    if (yr && this.played % (yr === 2 ? 2 : 3) === 0) {
+      this.calc('Simetría de Rotación (Noether): se conserva L → robas 1 carta');
+      this.drawCards(1);
+    }
     if (this.estela && def.type === 'Ataque') {
       this.vel = Math.min(VMAX, this.vel + 1);
       this.calc(`Estela Cinética: +1 m/s (v = ${this.vel})`);
@@ -1148,8 +1187,20 @@ export class CombatScene extends Phaser.Scene {
         this.hibPhase(ev, 'Capítulo 15 · Impulso', '«Último capítulo. DETENME antes de que suelte mi impulso.»');
       }
     }
-    if (st.hp <= 0) await this.killEnemy(ev);
-    else this.refreshEnemy(ev);
+    const overkill = st.hp < 0 ? -st.hp : 0;
+    if (st.hp <= 0) {
+      await this.killEnemy(ev);
+      // Noether · Simetría en el Espacio: el daño sobrante se transfiere
+      const ys = boonLevel('y_espacio');
+      const others = this.alive();
+      if (ys && overkill > 0 && others.length) {
+        const t = Phaser.Utils.Array.GetRandom(others);
+        const pass = Math.round(overkill * (ys === 2 ? 1.5 : 1));
+        this.calc(`Simetría en el Espacio (Noether): ${pass} de daño sobrante pasa a ${t.st.def.name}`);
+        this.beam(t, 0x9ad8f0);
+        await this.hitEnemy(t, pass, true, 'res');
+      }
+    } else this.refreshEnemy(ev);
     await this.wait(160);
     this.children.list.filter((o) => o.getData && o.getData('tmp')).forEach((o) => this.tweens.add({ targets: o, alpha: 0, duration: 400, onComplete: () => o.destroy() }));
     return stopped;
@@ -1197,6 +1248,14 @@ export class CombatScene extends Phaser.Scene {
       audio.sfx('block');
       return;
     }
+    // Coriolis · Efecto Coriolis: el primer golpe de cada turno enemigo se desvía
+    const cd = boonLevel('co_desvio');
+    if (from && cd && !this.desvioUsed && dmg > 0) {
+      this.desvioUsed = true;
+      const red = cd === 2 ? 5 : 3;
+      this.calc(`Efecto Coriolis: el golpe se desvía (−${red})`);
+      dmg = Math.max(0, dmg - red);
+    }
     const absorbed = Math.min(this.block, dmg);
     this.block -= absorbed;
     const real = dmg - absorbed;
@@ -1213,6 +1272,20 @@ export class CombatScene extends Phaser.Scene {
     } else {
       const t = txt(this, this.heroX, 210, T.combate.bloqueado, 28, CSS.block).setOrigin(0.5).setDepth(700).setStroke('#000', 5);
       this.tweens.add({ targets: t, y: 170, alpha: 0, duration: 800, onComplete: () => t.destroy() });
+    }
+    // Huygens · Choque Elástico: bloqueo perfecto = no se pierde energía
+    const he = boonLevel('h_elastico');
+    if (from && he && real === 0 && absorbed > 0) {
+      run.hp = Math.min(run.maxHp, run.hp + 2 * he);
+      this.calc(`Choque Elástico (Huygens): +${2 * he} de vida`);
+    }
+    // Hooke · Retorno Elástico: el primer golpe que te hace daño regresa
+    const kr = boonLevel('k_retorno');
+    if (from && kr && real > 0 && !this.retornoUsed && !from.dead) {
+      this.retornoUsed = true;
+      const back = kr === 2 ? real : Math.ceil(real / 2);
+      this.calc(`Retorno Elástico (Hooke): F = k·x → ${back} de regreso`);
+      await this.hitEnemy(from, back, false, 'res');
     }
     const nr = boonLevel('n_reaccion');
     if (from && nr && real === 0 && absorbed > 0 && !from.dead) {
@@ -1241,8 +1314,22 @@ export class CombatScene extends Phaser.Scene {
     } else if (this.turn > 1) {
       this.block = 0;
     }
-    this.energy = this.maxEnergy + this.jPerTurn;
+    this.energy = this.maxEnergy + this.jPerTurn + this.carry;
+    if (this.carry) this.calc(`Simetría en el Tiempo (Noether): conservas ${this.carry} J`);
+    this.carry = 0;
+    this.attacksTurn = 0;
+    const kres = boonLevel('k_resorte');
+    if (kres) {
+      this.gainBlock(2 * kres);
+      this.calc(`Ut tensio, sic vis (Hooke): +${2 * kres} de Bloqueo`);
+    }
+
     let draw = 5;
+    const hr = boonLevel('h_reloj');
+    if ((hr === 1 && this.turn % 2 === 0) || (hr === 2 && this.turn >= 2)) {
+      draw += 1;
+      this.calc('Reloj de Péndulo (Huygens): +1 carta');
+    }
     this.firstAttack = false;
     if (this.pCalor > 0) {
       const run = Game.run!;
@@ -1325,6 +1412,9 @@ export class CombatScene extends Phaser.Scene {
     this.cancelSelect();
     this.busy = true;
     this.endBtn.setEnabled(false);
+    const yt = boonLevel('y_tiempo');
+    this.carry = yt ? Math.min(this.energy, yt) : 0;
+    this.desvioUsed = false;
     // tareas pendientes: si siguen en la mano, cuestan vida
     const tareas = this.hand.filter((c) => c.inst.id === 'tarea').length;
     if (tareas) {
@@ -1585,6 +1675,11 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Radio (Curie): +${n} de Calor a los enemigos; tú recibes ${radio === 2 ? 1 : 2}`);
       this.refreshPlayer();
       await this.wait(300);
+    }
+    const km = boonLevel('k_micro');
+    if (km) {
+      for (const e of this.alive()) { e.st.fatiga += km; this.refreshEnemy(e); }
+      this.calc(`Micrographia (Hooke): los enemigos empiezan con ${km} de Fatiga`);
     }
     const marco = boonLevel('e_marco');
     if (marco && !(await this.radiate(marco === 2 ? 3 : 4, 'Marco de Referencia'))) return false;
