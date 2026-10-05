@@ -154,3 +154,23 @@ Pega el nuevo `apps-script/Code.gs`, ejecuta **`setup`** (agrega la columna `min
 ### Si un alumno olvida su contraseña
 
 Menú **Criptas → Reiniciar contraseña de un alumno…**, escribe su matrícula. Luego el alumno entra con **Entrar** escribiendo una contraseña NUEVA: esa queda guardada. No pierde su avatar, su Grimorio ni sus partidas. (La pantalla de inicio de sesión ya les explica esto.)
+
+## Novedades de la v0.11
+
+- **Puntaje estilo arcade** (`src/data/puntaje.ts`): cada enemigo vale su vida máxima × 10 (×1.5 élite, ×2 jefe); combate sin perder vida +500 (élite/jefe +1,000); runa correcta +300 con **racha** de hasta ×2; pista −100; acto superado +2,000 × acto; vencer a Hibbelerius +10,000. Al terminar: +20 por vida restante, +3,000 si no usaste la Vida Extra, +200 por poción y +5 por Ergio. Todo ×gravedad. En la pantalla final, pasa el cursor sobre el puntaje para ver el desglose.
+- **El profe de mal humor** (5 % de los encuentros, una vez por expedición, nunca si ya viste al profe amable): te avienta el Hibbeler y pierdes la mitad de la vida. Si contestas bien: +60 Ergios y +8 de vida; si fallas: 2 «Tarea Pendiente».
+- **Almas en pena** (`src/data/almas.ts`): Ícaro el Recursador, la Ayudante Sin Nombre y Sir Bernoulli el Errante. Si les ayudas o contestas su pregunta con compasión, se vuelven tu **aliado** y pelean a tu lado en élites y jefes. Sólo un aliado por expedición.
+- **Música de Hibbelerius** más lenta y oscura (bajo distorsionado, campana con tritono).
+- **Tiempo jugado total** en el menú.
+
+## Limpiar la hoja (pruebas y beta testers)
+
+En el menú **Criptas** del Google Sheet (pega el `Code.gs` nuevo y recarga la hoja; no hace falta nueva implementación para el menú, pero sí para el juego si cambiaste algo más):
+
+| Opción | Qué hace |
+|---|---|
+| Borrar datos de un alumno… | Quita una matrícula (cuenta, partidas y eventos). Útil si un amigo probó en el grupo real. |
+| Borrar datos de un grupo… | Quita todo lo de una clave (p. ej. `BETA`). La clave sigue en «Grupos». |
+| Borrar TODO y empezar de cero… | Deja Alumnos, Partidas y Eventos vacías (los grupos se conservan). Pide escribir BORRAR. |
+
+Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Drive («Respaldo Criptas fecha»). Recomendación: da a tus amigos una clave aparte, por ejemplo `BETA`, y bórrala con «Borrar datos de un grupo…» antes de empezar con alumnos.

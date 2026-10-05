@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
 import { heroMatrix, SKINS } from './heroes';
+import { ALMAS } from '../data/almas';
 import { POCIONES } from '../data/pociones';
 
 // Cada sprite es una matriz de caracteres; cada carácter es un color de la paleta.
@@ -884,6 +885,12 @@ const PROFE = mirrorHalf([
   '...sssss', '...ssqqq', '....ssss', '..WWWWWt', '.ccccWWt', 'cccccWWT', 'cccccWWT', 'ccccccWT', 'ccccccWW', 'cccccccc',
 ]);
 
+// El profe de mal humor: cejas fruncidas, boca apretada
+const PROFE_ENOJADO = mirrorHalf([
+  '........', '....hhhh', '...hhhhh', '...hhhhh', '..hhssss', '..hsKKKs', '..hgGGgg', '..hsssss',
+  '...sssss', '...sKKKK', '....ssss', '..WWWWWt', '.ccccWWt', 'cccccWWT', 'cccccWWT', 'ccccccWT', 'ccccccWW', 'cccccccc',
+]);
+
 // Familiares (miran al frente)
 const FAMS: Record<string, { rows: string[]; ov: Record<string, string> }> = {
   fam_gato: {
@@ -953,6 +960,11 @@ export function generateAllTextures(scene: Phaser.Scene) {
   makeTexture(scene, 'npc_victorino', PROFE, {
     h: '#2a2420', s: '#d8b08a', q: '#a8806a', g: '#1a1a1a', G: '#9ad8f0', W: '#e8e4dc', t: '#8a2030', T: '#8a2030', c: '#2a3a5a',
   });
+  makeTexture(scene, 'npc_profe_enojado', PROFE_ENOJADO, {
+    h: '#2a2420', s: '#e0907a', q: '#b06a5a', g: '#1a1a1a', G: '#ff5a3a', K: '#3a1210', W: '#e8e4dc', t: '#8a2030', T: '#8a2030', c: '#2a3a5a',
+  });
+  // Almas en pena (fantasmas aliados): usan el generador de héroes
+  for (const a of Object.values(ALMAS)) makeTexture(scene, `alma_${a.id}`, heroMatrix(a.look), a.pal);
   // Acto II: variantes oscuras de sprites existentes
   makeTexture(scene, 'brea', SPRITES.slime, { L: '#2e2c26', G: '#141310', w: '#5a5440', F: '#e0a040' });
   makeTexture(scene, 'minero', NPC, { c: '#2c3836', C: '#161e1c', E: '#9bf0c0', s: '#4a5a58' });

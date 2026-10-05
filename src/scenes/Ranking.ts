@@ -103,7 +103,7 @@ export class RankingScene extends Phaser.Scene {
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);
       R(txt(this, COLS[3], y + 10, p.grupo, 20, CSS.dim));
-      R(txt(this, COLS[4], y + 8, `✦ ${p.puntaje}`, 24, CSS.gold));
+      R(txt(this, COLS[4], y + 8, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
       R(txt(this, COLS[5], y + 8, `${Math.min(p.piso, TOTAL_PISOS)}/${TOTAL_PISOS}`, 24, CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));

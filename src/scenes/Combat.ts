@@ -7,7 +7,9 @@ import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '
 import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
+import { ALMAS } from '../data/almas';
 import { RELICS } from '../data/relics';
+import { bonosFinales, JEFES, PUNTOS, sumar } from '../data/puntaje';
 import { POCIONES } from '../data/pociones';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
@@ -85,6 +87,7 @@ export class CombatScene extends Phaser.Scene {
   private marco = 0; // golpes que anula Marco de Referencia (Einstein)
   private polonio = 0; // daño extra de la carta de ataque en curso (Curie)
   private famImg: Phaser.GameObjects.Image | null = null;
+  private aliadoImg: Phaser.GameObjects.Image | null = null; // alma en pena aliada (élites y jefes)
   // v0.7: Acto III y cartas nuevas
   private estela = false; // Estela Cinética: cada ataque da +1 m/s
   private noFric = false; // Superficie Sin Fricción
@@ -106,6 +109,7 @@ export class CombatScene extends Phaser.Scene {
   private orbit = 0; // Órbita Cerrada (masa del satélite)
   private entropia = 0; // Entropía (J por turno a cambio de vida)
   private extraDraw = 0; // Formulario
+  private hpStart = 0; // vida al empezar (combate perfecto)
 
   constructor() { super('Combat'); }
 
@@ -139,6 +143,7 @@ export class CombatScene extends Phaser.Scene {
     this.marco = 0;
     this.polonio = 0;
     this.famImg = null;
+    this.aliadoImg = null;
     this.estela = false;
     this.noFric = false;
     this.restE = 0;
@@ -157,6 +162,7 @@ export class CombatScene extends Phaser.Scene {
     this.orbit = 0;
     this.entropia = 0;
     this.extraDraw = 0;
+    this.hpStart = Game.run?.hp ?? 0;
   }
 
   private has(relic: string) {
@@ -289,6 +295,7 @@ export class CombatScene extends Phaser.Scene {
       else this.masa += cm;
     }
     this.showFamiliar();
+    this.showAliado();
     this.refreshPlayer();
     this.banner(this.kind === 'boss' ? T.combate.bannerJefes[Math.min(2, this.acto - 1)] : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
@@ -1361,6 +1368,15 @@ export class CombatScene extends Phaser.Scene {
   private async killEnemy(ev: EnemyView) {
     if (ev.dead) return;
     ev.dead = true;
+    {
+      const run = Game.run!;
+      run.stats.kills = (run.stats.kills ?? 0) + 1;
+      const mul = JEFES.includes(ev.st.def.id) ? PUNTOS.jefeMul : this.kind === 'elite' && ev.st.maxHp >= 50 ? PUNTOS.eliteMul : 1;
+      const pts = sumar(run, 'Enemigos derrotados', ev.st.maxHp * PUNTOS.porVidaEnemigo * mul);
+      const t = txt(this, ev.baseX, 120, `+${pts}`, 22, CSS.gold).setOrigin(0.5).setDepth(700).setStroke('#000', 4);
+      this.tweens.add({ targets: t, y: 90, alpha: 0, duration: 1100, onComplete: () => t.destroy() });
+      this.hud.refresh();
+    }
     const split = ev.st.def.split;
     if (split) {
       this.calc(`${ev.st.def.name} se divide: m·v = m₁v₁ + m₂v₂ (se conserva p)`);
@@ -1626,6 +1642,11 @@ export class CombatScene extends Phaser.Scene {
       }
       if (await this.checkEnd()) return;
     }
+    // aliado (alma en pena): actúa al final de tu turno
+    if (this.aliadoImg && this.alive().length) {
+      await this.aliadoActua();
+      if (await this.checkEnd()) return;
+    }
 
     for (const ev of this.alive()) {
       const st = ev.st;
@@ -1732,8 +1753,14 @@ export class CombatScene extends Phaser.Scene {
     const run = Game.run!;
     run.floor = this.floor + 1;
     run.stats.combates++;
-    const pts = Math.round((this.kind === 'boss' ? 150 : this.kind === 'elite' ? 40 : 15) * this.grav.scoreMul);
-    run.score += pts;
+    // puntaje: combate perfecto (sin perder vida)
+    if (run.hp >= this.hpStart) {
+      run.stats.perfectos = (run.stats.perfectos ?? 0) + 1;
+      sumar(run, 'Combates perfectos', this.kind === 'elite' || this.kind === 'boss' ? PUNTOS.elitePerfecta : PUNTOS.combatePerfecto);
+      this.floatText(W / 2, 170, '¡Perfecto!', CSS.gold);
+    }
+    if (this.kind === 'boss') sumar(run, 'Actos superados', PUNTOS.acto * this.acto);
+    if (this.kind === 'boss' && this.acto >= 3) sumar(run, 'Victoria', PUNTOS.victoria);
     if (this.kind === 'elite') run.stats.elites++;
     // los efectos pasajeros se consumen al terminar el combate
     const cons = boonLevel('c_conserva');
@@ -1781,6 +1808,7 @@ export class CombatScene extends Phaser.Scene {
       run.done = true;
       codexFlag('acto3');
       logEvent('acto', '', true, { acto: 3, vida: run.hp });
+      bonosFinales(run);
       saveLocal();
       syncRun('victoria', 'Hibbelerius derrotado');
       await this.banner(T.combate.victoria);
@@ -1825,6 +1853,7 @@ export class CombatScene extends Phaser.Scene {
     this.busy = true;
     run.hp = 0;
     run.done = true;
+    bonosFinales(run);
     saveLocal();
     logEvent('derrota', '', false, { piso: this.floor, enemigo: by });
     syncRun('derrota', by);
@@ -1911,6 +1940,56 @@ export class CombatScene extends Phaser.Scene {
     img.setInteractive();
     this.tip.attach(img, `${def.name} (quedan ${fam.left} combate${fam.left > 1 ? 's' : ''})`, `${def.text}\n${def.lore}`);
     this.famImg = img;
+  }
+
+  // ───────────────────────── ALIADO (alma en pena) ─────────────────────────
+  private showAliado() {
+    const id = Game.run!.aliado;
+    const a = id ? ALMAS[id] : null;
+    if (!a || (this.kind !== 'elite' && this.kind !== 'boss')) return;
+    const x = this.heroX - 150;
+    const halo = this.add.image(x, 272, `alma_${a.id}`).setScale(2.3).setTintFill(0xe8c15a).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
+    const img = this.add.image(x, 272, `alma_${a.id}`).setScale(2.2).setAlpha(0);
+    this.tweens.add({ targets: img, alpha: 0.8, duration: 900, delay: 400 });
+    this.tweens.add({ targets: halo, alpha: 0.15, duration: 900, delay: 400 });
+    this.tweens.add({ targets: [img, halo], y: 266, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    img.setInteractive();
+    this.tip.attach(img, `${a.name} (aliado)`, `${a.habilidad}\nTe acompaña en élites y jefes durante toda la expedición.`);
+    this.aliadoImg = img;
+    this.time.delayedCall(900, () => this.floatText(x, 190, 'Alma invocada', CSS.gold));
+  }
+
+  private async aliadoActua() {
+    const run = Game.run!;
+    const img = this.aliadoImg!;
+    const a = ALMAS[run.aliado!];
+    this.tweens.add({ targets: img, x: img.x + 30, duration: 140, yoyo: true, ease: 'Quad.out' });
+    const rayo = (to: EnemyView) => {
+      const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+      g.lineStyle(4, 0xe8c15a, 0.9).lineBetween(img.x + 20, 250, to.baseX, 260);
+      this.tweens.add({ targets: g, alpha: 0, duration: 350, onComplete: () => g.destroy() });
+    };
+    if (a.id === 'icaro') {
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      const dmg = Phaser.Math.Between(6, 14);
+      rayo(t);
+      this.calc(`${a.name}: se lanza contra ${t.st.def.name} (${dmg})`);
+      await this.hitEnemy(t, dmg, false, 'res');
+    } else if (a.id === 'ayudante') {
+      this.gainBlock(6);
+      run.hp = Math.min(run.maxHp, run.hp + 2);
+      this.floatText(img.x, 200, '+2 ❤', CSS.green);
+      this.calc(`${a.name}: +6 de Bloqueo y +2 de vida`);
+      this.refreshPlayer();
+      this.hud.refresh();
+      await this.wait(300);
+    } else if (a.id === 'bernoulli') {
+      this.calc(`${a.name}: ¡la energía se conserva! 5 a todos`);
+      for (const t of this.alive()) {
+        rayo(t);
+        await this.hitEnemy(t, 5, false, 'res');
+      }
+    }
   }
 
   private famHop() {

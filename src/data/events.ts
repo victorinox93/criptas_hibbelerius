@@ -8,6 +8,7 @@ export interface Outcome {
   ergios?: number;
   heal?: number;
   relic?: string; // id de reliquia (src/data/relics.ts)
+  junk?: { id: string; n: number }; // cartas malas que se agregan al mazo
 }
 
 export interface EventDef {
@@ -69,7 +70,20 @@ export const EVENTS: EventDef[] = [
     bless: { relic: 'vidaExtra', ergios: 30 }, curse: { relic: 'vidaExtra' },
     concepts: ['Friccion', '3a ley', 'Trabajo-energia', 'Plano inclinado'],
   },
+  // ── Encuentro especial y MUY raro: el profe de mal humor (ver PROFE_ENOJADO_CHANCE) ──
+  // Al aparecer te quita la MITAD de tu vida (se hace en src/scenes/Event.ts).
+  {
+    id: 'profe_enojado', name: 'El Profesor (de mal humor)', npc: 'npc_profe_enojado', prop: 'i_book', special: true,
+    intro: 'El profe golpea el escritorio: nadie entregó la tarea.\n«¡¿OTRA VEZ copiaron?!» Te avienta el Hibbeler a la cabeza y pierdes la MITAD de tu vida.\n«A ver tú. Contesta.»',
+    win: '«…Bien. Está bien. Perdón por el librazo. Toma, para que te compres un café.»',
+    lose: '«¡Lo sabía! Tarea doble. Para el lunes.»',
+    bless: { ergios: 60, heal: 8 }, curse: { junk: { id: 'tarea', n: 2 } },
+    concepts: ['2a ley', 'Friccion', 'Trabajo-energia'],
+  },
 ];
+
+/** Probabilidad de que aparezca el profe de mal humor (una vez por expedición y nunca si ya viste al profe) */
+export const PROFE_ENOJADO_CHANCE = 0.05;
 
 /** Probabilidad de encontrar al profe en un nodo de encuentro (si aún no lo viste en esta expedición) */
 export const PROFE_CHANCE = 0.14;

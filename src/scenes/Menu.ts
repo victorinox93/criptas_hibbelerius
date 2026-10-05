@@ -43,6 +43,10 @@ export class MenuScene extends Phaser.Scene {
     txt(this, 80, 476, `${T.menu.mejorGravedad}: ${gmax ? GRAVITY[gmax - 1].name : T.menu.ninguna}`, 18, CSS.dim);
     txt(this, 80, 496, p.offline || !isOnline() ? `● ${T.menu.desconectado}` : `● ${T.menu.conectado} ${p.grupo}`, 18,
       p.offline || !isOnline() ? CSS.dim : CSS.green);
+    const seg = Game.codex.tiempo ?? 0;
+    const hrs = Math.floor(seg / 3600);
+    const min = Math.floor((seg % 3600) / 60);
+    txt(this, 424, 498, `Jugado: ${hrs ? `${hrs} h ` : ''}${min} min`, 16, CSS.dim).setOrigin(1, 0);
 
     const x = 690;
     let y = 150;

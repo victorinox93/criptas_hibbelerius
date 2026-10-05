@@ -66,7 +66,6 @@ export class ActTransitionScene extends Phaser.Scene {
       run.visited = [];
       run.floor = 0;
       run.shop = undefined;
-      run.score += 50 * (to - 1);
       saveLocal();
       logEvent('inicio_acto', '', '', { acto: to });
       syncRun('en curso');

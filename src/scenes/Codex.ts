@@ -1,3 +1,4 @@
+import { ALMAS } from '../data/almas';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -114,6 +115,16 @@ export class CodexScene extends Phaser.Scene {
               head(c, f.sprite, f.name, `Familiar · te acompaña ${f.combats} combates`, 6);
               body(c, 290, f.text, CSS.gold);
               body(c, 370, f.lore);
+            },
+          });
+        }
+        for (const a of Object.values(ALMAS)) {
+          list.push({
+            kind: 'npcs', id: `alma_${a.id}`, tex: `alma_${a.id}`, name: a.name,
+            detail: (c) => {
+              head(c, `alma_${a.id}`, a.name, 'Alma en pena · posible aliado', 2);
+              body(c, 290, a.intro, CSS.bone, 17);
+              body(c, 430, `Como aliado: ${a.habilidad}`, CSS.gold, 17);
             },
           });
         }

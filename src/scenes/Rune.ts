@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { cardName } from '../data/cards';
+import { cardName, CARDS } from '../data/cards';
 import { EFFECTS } from '../data/effects';
 import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
 import { checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
-import { addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
+import { multRacha, PUNTOS, sumar } from '../data/puntaje';
+import { addCard, addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
 import { T } from '../textos';
@@ -47,6 +48,10 @@ export function applyOutcome(o: Outcome): string {
     grantRelic(o.relic);
     parts.push(`Reliquia: ${RELICS[o.relic].name}`);
   }
+  if (o.junk) {
+    for (let i = 0; i < o.junk.n; i++) addCard(o.junk.id);
+    parts.push(`${o.junk.n} «${CARDS[o.junk.id].name}» a tu mazo`);
+  }
   return parts.join('\n');
 }
 
@@ -57,6 +62,8 @@ export function describeOutcome(o: Outcome): string {
     return `${e.name}: ${e.text} (${o.combats ?? 1} combate${(o.combats ?? 1) > 1 ? 's' : ''})`;
   }
   if (o.ergios) return `${o.ergios > 0 ? '+' : ''}${o.ergios} ${T.moneda}`;
+  if (o.ergios && o.heal) return `+${o.ergios} ${T.moneda} y +${o.heal} de vida`;
+  if (o.junk) return `${o.junk.n} «${CARDS[o.junk.id].name}» a tu mazo`;
   if (o.heal) return `+${o.heal} de vida`;
   return '';
 }
@@ -153,6 +160,7 @@ export class RuneScene extends Phaser.Scene {
           return;
         }
         addErgios(-PISTA_COSTO);
+        sumar(run, 'Pistas usadas', PUNTOS.pista);
         this.hud.refresh();
         audio.sfx('coin');
         hint.setEnabled(false);
@@ -200,10 +208,13 @@ export class RuneScene extends Phaser.Scene {
     if (ok) tm.ok++;
     if (ok) {
       run.stats.runasOk++;
-      run.score += Math.round(25 * gravityOf(run.gravity).scoreMul);
+      run.stats.racha = (run.stats.racha ?? 0) + 1;
+      run.stats.rachaMax = Math.max(run.stats.rachaMax ?? 0, run.stats.racha);
+      const pts = sumar(run, 'Preguntas correctas', PUNTOS.runa * multRacha(run.stats.racha));
+      if (run.stats.racha > 1) this.flash(`Racha ×${run.stats.racha}: +${pts} puntos`, CSS.gold);
       const tr = boonLevel('c_traductora');
       if (tr && this.d.source !== 'regateo') addErgios(15 * tr);
-    }
+    } else run.stats.racha = 0;
     if (this.d.source !== 'regateo') run.floor = this.d.floor + 1;
     saveLocal();
     syncRun('en curso');

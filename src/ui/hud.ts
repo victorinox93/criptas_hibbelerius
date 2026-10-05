@@ -1,3 +1,4 @@
+import { fmtPuntos } from '../data/puntaje';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
@@ -104,7 +105,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
       const r = Game.run!;
       hud.setHp(r.hp, r.maxHp);
       floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, FLOORS + 1)}/${FLOORS + 1}`);
-      scoreT.setText(`✦${r.score}`);
+      scoreT.setText(`✦${fmtPuntos(r.score)}`);
       ergT.setText(`${r.ergios}`);
       deckBtn.label.setText(`${T.hud.mazo} ${r.deck.length}`);
       potRow.removeAll(true);

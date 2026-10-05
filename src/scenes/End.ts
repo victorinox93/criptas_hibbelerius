@@ -6,7 +6,9 @@ import { T } from '../textos';
 import { addConocimiento, FLOORS, Game, logEvent, nivelActual, saveLocal, TOTAL_PISOS } from '../state';
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
-import { button, embers, fadeTo, panel, title, txt, vignette } from '../ui/widgets';
+import { ALMAS } from '../data/almas';
+import { button, embers, fadeTo, panel, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { gravityOf } from '../data/gravity';
 
 const TIPS = T.final.consejos;
 
@@ -70,9 +72,14 @@ export class EndScene extends Phaser.Scene {
       const wz = this.add.image(W - 170, 300, 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
       this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : 0.9, duration: 2500, delay: 800 });
       this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      if (!repaso) {
+      const alma = run.aliado ? ALMAS[run.aliado] : null;
+      if (!repaso && !alma) {
         const q = txt(this, W - 170, 470, T.final.cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: q, alpha: 1, duration: 1500, delay: 2600 });
+      }
+      if (alma) {
+        const al = txt(this, W - 175, repaso ? 506 : 470, alma.final, repaso ? 16 : 19, CSS.gold, { wordWrap: { width: 320 }, align: 'center' }).setOrigin(0.5).setAlpha(0);
+        this.tweens.add({ targets: al, alpha: 1, duration: 1500, delay: 3200 });
       }
     } else {
       title(this, W / 2, 70, T.final.derrota, 54, '#b8a8c8');
@@ -80,6 +87,7 @@ export class EndScene extends Phaser.Scene {
     }
 
     panel(this, 80, 150, 520, 300);
+    const tip = new Tooltip(this);
     const F = T.final.filas;
     const rows: [string, string | number][] = [
       [F[0], `${((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor}/${TOTAL_PISOS}`],
@@ -87,12 +95,22 @@ export class EndScene extends Phaser.Scene {
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],
       [F[4], run.stats.ergiosTotal ?? 0],
-      [F[5], run.score],
+      [F[5], run.score.toLocaleString('es-MX')],
       ['Tiempo de juego', `${Math.round((run.tiempo ?? 0) / 60)} min`],
     ];
     rows.forEach(([k, v], i) => {
       txt(this, 110, 172 + i * 40, k, 26, CSS.dim);
-      txt(this, 570, 172 + i * 40, String(v), 28, i === 5 ? CSS.gold : CSS.bone).setOrigin(1, 0);
+      const t = txt(this, 570, 172 + i * 40, String(v), 28, i === 5 ? CSS.gold : CSS.bone).setOrigin(1, 0);
+      if (i === 5) {
+        // desglose del puntaje (estilo arcade)
+        const d = Object.entries(run.desglose ?? {}).filter(([, n]) => n !== 0).sort((a, b) => b[1] - a[1]);
+        const body = d.length ? d.map(([c, n]) => `${c}: ${n > 0 ? '+' : ''}${n.toLocaleString('es-MX')}`).join('\n') : 'Sin puntos todavía.';
+        const mul = gravityOf(run.gravity).scoreMul;
+        const info = txt(this, 580, 178 + i * 40, 'ⓘ', 20, CSS.dim).setOrigin(0, 0);
+        [t, info].forEach((o) => o.setInteractive({ useHandCursor: true })
+          .on('pointerover', () => tip.show(600, 120, 'Desglose del puntaje', `${body}${mul !== 1 ? `\n(ya incluye ×${mul} por gravedad)` : ''}`))
+          .on('pointerout', () => tip.hide()));
+      }
     });
     if (repaso) {
       // ── repaso: los temas que fallaste, con su fórmula clave ──

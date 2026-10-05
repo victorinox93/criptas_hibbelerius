@@ -51,6 +51,10 @@ function onOpen() {
     .addItem('Actualizar panel cada hora', 'instalarDisparador')
     .addSeparator()
     .addItem('Reiniciar contraseña de un alumno…', 'reiniciarContrasena')
+    .addSeparator()
+    .addItem('Borrar datos de un alumno…', 'borrarAlumno')
+    .addItem('Borrar datos de un grupo…', 'borrarGrupo')
+    .addItem('Borrar TODO y empezar de cero…', 'borrarTodo')
     .addToUi();
 }
 
@@ -70,6 +74,93 @@ function reiniciarContrasena() {
   sh.getRange(row, 6).setValue('REINICIAR');
   sh.getRange(row, 7).setValue('');
   ui.alert('Listo. Pídele a ' + mat + ' que entre con «Entrar» y escriba una contraseña NUEVA: esa quedará guardada.');
+}
+
+// ───────────────────────── Limpieza (pruebas / beta testers) ─────────────────────────
+// Antes de borrar, se guarda una COPIA de respaldo de toda la hoja en tu Drive.
+
+/** Quita de una hoja las filas cuya columna col (1 = A) vale val. Devuelve cuántas quitó. */
+function quitarFilas_(name, col, val) {
+  var sh = sheet_(name);
+  var n = sh.getLastRow() - 1;
+  if (n < 1) return 0;
+  var w = sh.getLastColumn();
+  var data = sh.getRange(2, 1, n, w).getValues();
+  var keep = data.filter(function (r) { return String(r[col - 1]).trim().toUpperCase() !== val; });
+  var quitadas = data.length - keep.length;
+  if (!quitadas) return 0;
+  sh.getRange(2, 1, n, w).clearContent();
+  if (keep.length) sh.getRange(2, 1, keep.length, w).setValues(keep);
+  return quitadas;
+}
+
+function contarFilas_(name, col, val) {
+  var sh = sheet_(name);
+  var n = sh.getLastRow() - 1;
+  if (n < 1) return 0;
+  return sh.getRange(2, col, n, 1).getValues().filter(function (r) { return String(r[0]).trim().toUpperCase() === val; }).length;
+}
+
+function respaldo_() {
+  var ss = SpreadsheetApp.getActive();
+  var nombre = 'Respaldo Criptas ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+  ss.copy(nombre);
+  return nombre;
+}
+
+/** Borra a una persona (p. ej. un amigo que probó el juego en el grupo real) */
+function borrarAlumno() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('Borrar datos de un alumno', 'Matrícula a borrar (se quitan su cuenta, partidas y eventos):', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var mat = String(r.getResponseText()).trim().toUpperCase();
+  if (!mat) return;
+  var a = contarFilas_('Alumnos', 1, mat), p = contarFilas_('Partidas', 2, mat), e = contarFilas_('Eventos', 2, mat);
+  if (!a && !p && !e) { ui.alert('No encontré datos de ' + mat + '.'); return; }
+  if (ui.alert('¿Borrar a ' + mat + '?', a + ' cuenta, ' + p + ' partidas y ' + e + ' eventos. Se hará un respaldo antes.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  var copia = respaldo_();
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    quitarFilas_('Alumnos', 1, mat); quitarFilas_('Partidas', 2, mat); quitarFilas_('Eventos', 2, mat);
+  } finally { lock.releaseLock(); }
+  actualizarPanel();
+  ui.alert('Listo. Respaldo guardado en tu Drive como «' + copia + '».');
+}
+
+/** Borra todo lo de una clave de grupo (p. ej. BETA o PRUEBAS) */
+function borrarGrupo() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('Borrar datos de un grupo', 'Clave del grupo a borrar (p. ej. BETA). La clave sigue en «Grupos»; sólo se borran alumnos, partidas y eventos:', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var g = String(r.getResponseText()).trim().toUpperCase();
+  if (!g) return;
+  var a = contarFilas_('Alumnos', 2, g), p = contarFilas_('Partidas', 3, g), e = contarFilas_('Eventos', 3, g);
+  if (!a && !p && !e) { ui.alert('No hay datos del grupo ' + g + '.'); return; }
+  if (ui.alert('¿Borrar el grupo ' + g + '?', a + ' alumnos, ' + p + ' partidas y ' + e + ' eventos. Se hará un respaldo antes.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  var copia = respaldo_();
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    quitarFilas_('Alumnos', 2, g); quitarFilas_('Partidas', 3, g); quitarFilas_('Eventos', 3, g);
+  } finally { lock.releaseLock(); }
+  actualizarPanel();
+  ui.alert('Listo. Respaldo guardado en tu Drive como «' + copia + '».');
+}
+
+/** Deja la hoja como nueva (conserva los grupos) */
+function borrarTodo() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('Borrar TODO', 'Esto borra TODAS las cuentas, partidas y eventos (los grupos se conservan).\nSe guarda un respaldo antes. Escribe BORRAR para confirmar:', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK || String(r.getResponseText()).trim().toUpperCase() !== 'BORRAR') { ui.alert('Cancelado.'); return; }
+  var copia = respaldo_();
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    ['Alumnos', 'Partidas', 'Eventos'].forEach(function (n) {
+      var sh = sheet_(n);
+      if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
+    });
+  } finally { lock.releaseLock(); }
+  actualizarPanel();
+  ui.alert('Hoja limpia. Respaldo guardado en tu Drive como «' + copia + '».');
 }
 
 function instalarDisparador() {

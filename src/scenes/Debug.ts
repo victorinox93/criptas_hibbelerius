@@ -9,6 +9,7 @@ import { BOONS, FIGURES } from '../data/figures';
 import { EFFECTS } from '../data/effects';
 import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
+import { ALMA_IDS } from '../data/almas';
 import { RELIC_POOL, RELICS } from '../data/relics';
 import { codexFlag, emptyCodex, FLOORS, Game, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
@@ -85,12 +86,14 @@ export class DebugScene extends Phaser.Scene {
       ['Élite', () => this.go(acto(), 'Combat', { kind: 'elite', floor: 5 })],
       ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: FLOORS })],
       ['Profesor', () => this.go(acto(), 'Event', { floor: 2, eventId: 'victorino' })],
+      ['Profe enojado', () => this.go(acto(), 'Event', { floor: 2, eventId: 'profe_enojado' })],
+      ['Alma en pena', () => this.go(acto(), 'Alma', { floor: 2, id: Phaser.Utils.Array.GetRandom(ALMA_IDS) })],
       ['Mercader', () => this.go(acto(), 'Shop', { floor: 4 })],
       ['Altar', () => this.go(acto(), 'Rune', { floor: 3, source: 'altar' })],
       ['Fogata', () => this.go(acto(), 'Campfire', { floor: 7 })],
       ['Final', () => this.go(acto(), 'End', { victory: true })],
     ];
-    jumps.forEach(([s, fn], i) => btn(118 + (i % 4) * 196, 294 + Math.floor(i / 4) * 42, 180, s, fn));
+    jumps.forEach(([s, fn], i) => btn(122 + (i % 5) * 179, 294 + Math.floor(i / 5) * 42, 170, s, fn));
     const fig = FIGURES[OPTS.figura];
     btn(150, 386, 240, `Eco: ${fig.name}`, () => this.go(acto(), 'Sanctuary', { floor: 2, figureId: fig.id }));
     btn(300, 386, 50, '▸', () => { OPTS.figura = (OPTS.figura + 1) % FIGURES.length; this.draw(); });
@@ -107,6 +110,7 @@ export class DebugScene extends Phaser.Scene {
       unlock('npcs', 'mercader');
       DILEMMAS.forEach((d) => unlock('npcs', `dil_${d.id}`));
       FAMILIAR_POOL.forEach((f) => unlock('npcs', `fam_${f}`));
+      ALMA_IDS.forEach((a) => unlock('npcs', `alma_${a}`));
       FIGURES.forEach((f) => unlock('figures', f.id));
       Object.keys(CARDS).forEach((k) => unlock('cards', k));
       Object.keys(RELICS).forEach((k) => unlock('relics', k));

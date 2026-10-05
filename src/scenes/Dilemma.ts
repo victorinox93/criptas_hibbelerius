@@ -12,6 +12,7 @@ import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
+import { PUNTOS, sumar } from '../data/puntaje';
 
 /** Situaciones de riesgo: el jugador elige cuánto arriesgar */
 export class DilemmaScene extends Phaser.Scene {
@@ -109,7 +110,7 @@ export class DilemmaScene extends Phaser.Scene {
       out.push(`${n >= 0 ? '+' : ''}${n} ${T.moneda}`);
     }
     if (r.score) {
-      run.score += r.score;
+      sumar(run, 'Dilemas', r.score * PUNTOS.dilema);
       out.push(`+${r.score} puntos`);
     }
     const fx: [string, number][] = [...(r.effects ?? [])];

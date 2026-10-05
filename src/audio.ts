@@ -29,6 +29,10 @@ interface TrackDef {
   drone?: number; // volumen del drone grave (raíz + quinta) que suena todo el compás
   choir?: number; // volumen del coro sintético (vocal «ah»)
   tom?: string; // 16 pasos: tambor de guerra (1 = golpe, 2 = golpe fuerte)
+  grit?: string; // 16 pasos: bajo distorsionado (x = raíz, b = segunda menor, t = tritono, o = octava)
+  gritOct?: number;
+  knell?: boolean; // campana fúnebre grave al inicio de cada compás (raíz + tritono)
+  leadLen?: number; // duración de cada nota de la melodía, en pasos (3.5 por omisión)
 }
 
 // Notas MIDI: 36 = Do2, 48 = Do3, 60 = Do4. Acordes de una tríada por compás.
@@ -137,18 +141,21 @@ const TRACKS: Record<TrackId, TrackDef> = {
     tom: '2..1..1.2..1.11.',
   },
   jefe3: {
-    bpm: 100,
-    chords: [[47, 50, 54], [48, 52, 55], [45, 48, 52], [42, 46, 49]],
-    drone: 0.1, choir: 0.1, pad: 0.05, padCut: 1100,
-    bells: true,
-    arp: '1111111111111111', arpOct: 12,
-    bass: 'x.x.x.x.x.x.x.x.', bassOct: -24,
-    tom: '2.1.1.1.2.1.1.11',
+    // Hibbelerius (v0.11): más lento y oscuro, inspirado en Loop Hero.
+    // Si menor locrio: el tritono (Si–Fa) y la segunda menor (Si–Do) dan la tensión.
+    bpm: 76,
+    chords: [[47, 50, 53], [48, 51, 55], [47, 50, 54], [41, 44, 48]],
+    drone: 0.12, choir: 0.08, pad: 0.04, padCut: 650,
+    knell: true,
+    grit: 'x..x..x.x..b..t.', gritOct: -24,
+    arp: '1.1.1.1.1.1.1.1.', arpOct: 12,
+    tom: '2.....1.2...1.1.',
+    leadLen: 6,
     lead: [
-      71, null, 74, null, 78, null, 76, null, 74, null, 71, null, 70, null, null, null,
-      72, null, 76, null, 79, null, 78, null, 76, null, 72, null, 71, null, null, null,
-      69, null, 72, null, 76, null, 74, null, 72, null, 69, null, 66, null, null, null,
-      66, null, 70, null, 73, null, 76, null, 78, null, null, null, 71, null, null, null,
+      59, null, null, null, null, null, null, null, 60, null, null, null, 59, null, 57, null,
+      55, null, null, null, null, null, null, null, 56, null, null, null, null, null, null, null,
+      59, null, null, null, 62, null, null, null, 65, null, null, null, 64, null, 62, null,
+      65, null, null, null, null, null, null, null, 59, null, null, null, null, null, null, null,
     ],
   },
   // figuras históricas: coro etéreo en modo lidio
@@ -219,6 +226,13 @@ class Sequencer {
       if (c === 'o') e.bass(this.out, root + 12, t, dt * 0.9);
       if (c === '-') e.bass(this.out, root + 7, t, dt * 2);
     }
+    if (d.grit) {
+      const c = d.grit[s16];
+      const root = chord[0] + (d.gritOct ?? -24);
+      const off = c === 'x' ? 0 : c === 'b' ? 1 : c === 't' ? 6 : c === 'o' ? 12 : null;
+      if (off !== null) e.grit(this.out, root + off, t, dt * (d.grit[s16 + 1] === '.' ? 2.6 : 0.9));
+    }
+    if (d.knell && s16 === 0) e.knell(this.out, chord[0], t);
     if (d.arp && d.arp[s16] === '1') {
       const seq = [0, 1, 2, 1, 2, 0, 1, 2];
       const n = chord[seq[step % seq.length]] + (d.arpOct ?? 0) + (step % 32 >= 16 && d.bpm > 100 ? 12 : 0);
@@ -229,7 +243,7 @@ class Sequencer {
     if (d.hat && d.hat[s16] === '1') e.hat(this.out, t, s16 % 4 === 2 ? 0.07 : 0.035);
     if (d.lead) {
       const n = d.lead[step % d.lead.length];
-      if (n) e.lead(this.out, n, t, dt * 3.5);
+      if (n) e.lead(this.out, n, t, dt * (d.leadLen ?? 3.5));
     }
     if (d.bells && s16 % 8 === 4 && Math.random() < 0.6) {
       const n = chord[Math.floor(Math.random() * 3)] + 12;
@@ -531,6 +545,61 @@ export class AudioEngine {
     o.start(t);
     o.stop(t + 0.7);
     this.noiseHit(out, t, 'lowpass', 600, vol * 0.25, 0.12);
+  }
+
+  private gritCurve: Float32Array | null = null;
+  /** Bajo distorsionado (estilo Loop Hero): sierra + cuadrada por un saturador */
+  grit(out: AudioNode, n: number, t: number, dur: number) {
+    const ctx = this.ctx!;
+    if (!this.gritCurve) {
+      const c = new Float32Array(1024);
+      for (let i = 0; i < c.length; i++) {
+        const x = (i / (c.length - 1)) * 2 - 1;
+        c[i] = Math.tanh(x * 6) * 0.8;
+      }
+      this.gritCurve = c;
+    }
+    const sh = ctx.createWaveShaper();
+    sh.curve = this.gritCurve as Float32Array<ArrayBuffer>;
+    sh.oversample = '2x';
+    const pre = ctx.createGain();
+    pre.gain.value = 0.9;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = 3;
+    f.frequency.setValueAtTime(1100, t);
+    f.frequency.exponentialRampToValueAtTime(260, t + Math.max(0.1, dur));
+    const g = ctx.createGain();
+    this.env(g, t, 0.006, 0.13, Math.max(0.1, dur));
+    for (const [type, k, det] of [['sawtooth', 0, -8], ['square', 0, 8], ['sine', -12, 0]] as [OscillatorType, number, number][]) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = mtof(n + k);
+      o.detune.value = det;
+      o.connect(pre);
+      o.start(t);
+      o.stop(t + dur + 0.15);
+    }
+    pre.connect(sh).connect(f).connect(g).connect(out);
+  }
+
+  /** Campana fúnebre grave: la raíz y su tritono, con mucha reverberación */
+  knell(out: AudioNode, n: number, t: number) {
+    const ctx = this.ctx!;
+    const g = ctx.createGain();
+    this.env(g, t, 0.004, 0.09, 3.2);
+    g.connect(out);
+    g.connect(this.reverb!);
+    for (const [k, r, v] of [[0, 1, 1], [0, 2.76, 0.4], [6, 1, 0.5], [0, 5.4, 0.2]] as [number, number, number][]) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = mtof(n + k - 12) * r;
+      const og = ctx.createGain();
+      og.gain.value = v;
+      o.connect(og).connect(g);
+      o.start(t);
+      o.stop(t + 3.4);
+    }
   }
 
   /** Órgano: onda cuadrada con vibrato lento (la melodía de los jefes y del menú) */

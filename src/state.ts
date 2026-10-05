@@ -55,7 +55,7 @@ export interface Run {
   visited: number[];
   floor: number; // pisos completados
   score: number;
-  stats: { combates: number; elites: number; runasOk: number; runasTotal: number; ergiosTotal?: number };
+  stats: { combates: number; elites: number; runasOk: number; runasTotal: number; ergiosTotal?: number; kills?: number; racha?: number; rachaMax?: number; perfectos?: number };
   gravity: number; // nivel de gravedad (1 = Tierra)
   clase: string; // 'caballero' | 'arcanista'
   ergios: number;
@@ -70,6 +70,9 @@ export interface Run {
   debug?: boolean; // partida de prueba del Modo profesor: no se registra
   pociones?: string[]; // frascos (máx. 3)
   temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
+  aliado?: string; // alma en pena que te acompaña (src/data/almas.ts); sólo una por expedición
+  finalizado?: boolean; // ya se sumaron los bonos finales
+  desglose?: Record<string, number>; // de dónde salió el puntaje (src/data/puntaje.ts)
   tiempo?: number; // segundos de juego activo (para la hoja «Resumen» y «Actividad»)
 }
 
@@ -105,6 +108,7 @@ export interface Codex {
   victorias: number;
   flags?: string[]; // logros: 'acto1' (venció al Coloso), 'acto2'
   xp?: number; // Conocimiento acumulado (desbloqueos entre expediciones)
+  tiempo?: number; // segundos de juego activo en total (se muestra en el menú)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -121,6 +125,7 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.victorias = Math.max(a?.victorias ?? 0, b?.victorias ?? 0);
   c.flags = [...new Set([...(a?.flags ?? []), ...(b?.flags ?? [])])];
   c.xp = Math.max(a?.xp ?? 0, b?.xp ?? 0);
+  c.tiempo = Math.max(a?.tiempo ?? 0, b?.tiempo ?? 0);
   return c;
 }
 
