@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
 import { heroMatrix, SKINS } from './heroes';
+import { POCIONES } from '../data/pociones';
 
 // Cada sprite es una matriz de caracteres; cada carácter es un color de la paleta.
 // '.' = transparente. Las filas cortas se rellenan con transparente.
@@ -972,6 +973,14 @@ export function generateAllTextures(scene: Phaser.Scene) {
   makeTexture(scene, 'sifon', SPRITES.anima, { y: '#3ac8c8', o: '#1a4a5a', w: '#b8f0f0', R: '#1a6a6a' });
   makeTexture(scene, 'bibliotecario', NPC, { c: '#3a2a4e', C: '#1e1430', E: '#7fd8ff', s: '#9a8aa8' });
   makeTexture(scene, 'indice', SPRITES.colossus, { g: '#3a2e4a', l: '#6a5a86', o: '#c8a050', y: '#e8c15a', E: '#7fd8ff', d: '#1a1424' });
+  // pociones: el mismo frasco con el color de cada líquido
+  const FLASK = ['...kkk...', '...kWk...', '...kWk...', '..kpppk..', '.kpWpppk.', 'kppWppppk', 'kpppppPPk', 'kppppPPPk', '.kkkkkkk.'];
+  const EMPTY = ['...kkk...', '...kgk...', '...kgk...', '..kdddk..', '.kddddk..', 'kdddddddk', 'kdddddddk', 'kdddddddk', '.kkkkkkk.'];
+  for (const p of Object.values(POCIONES)) {
+    const dark = Phaser.Display.Color.HexStringToColor(p.color).darken(35).color.toString(16).padStart(6, '0');
+    makeTexture(scene, `pot_${p.id}`, FLASK, { p: p.color, P: `#${dark}`, W: '#f0ece4' });
+  }
+  makeTexture(scene, 'pot_vacia', EMPTY, { d: '#1a1520', g: '#3a3244' });
   // pixel blanco para partículas
   if (!scene.textures.exists('px')) {
     const c = scene.textures.createCanvas('px', 2, 2)!;

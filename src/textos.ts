@@ -28,6 +28,7 @@ export const T = {
     errContrasena: 'La contraseña debe tener al menos 6 caracteres.',
     errNoCoinciden: 'Las contraseñas no coinciden.',
     errGrupo: 'Escribe la clave de grupo.',
+    olvido: '¿Olvidaste tu contraseña? Pídele a tu profesor que la reinicie;\nluego entra aquí con una contraseña nueva.',
   },
 
   avatar: {
@@ -66,7 +67,7 @@ export const T = {
 
   grimorio: {
     titulo: 'Grimorio',
-    tabs: ['Bestiario', 'Personajes', 'Figuras', 'Cartas', 'Reliquias y dones'],
+    tabs: ['Bestiario', 'Personajes', 'Figuras', 'Cartas', 'Reliquias y dones', 'Progreso'],
     descubiertos: 'Descubiertos',
     bloqueado: 'Aún no lo descubres.\nSigue explorando las criptas.',
     volver: 'Volver',
@@ -98,7 +99,7 @@ export const T = {
       ['Curso', 'Dinámica · basado en los temas del libro de R. C. Hibbeler'],
       ['Inspirado en', 'Slay the Spire (Mega Crit), Loop Hero (Four Quarters) y Hades (Supergiant Games)'],
       ['Pixel art', 'Diseñado en código por Victorino Sepúlveda Arróniz con asistencia de Claude (Anthropic)'],
-      ['Música', '«Cold Soul» (partes 1–3) de Lost in The Forest · lostintheforest.bandcamp.com (clic para visitar). Pistas de combate: dark synth generado en vivo con Web Audio'],
+      ['Música', '«Cold Soul» (partes 1–3) de Lost in The Forest · lostintheforest.bandcamp.com (clic para visitar). Combates y jefes: dungeon synth generado en vivo con Web Audio'],
       ['Tecnología', 'Phaser 3 · Vite · Google Apps Script'],
       ['Tipografías', 'VT323 (Peter Hull) y Pirata One (Rodrigo Fuenzalida y Nicolás Massi), licencia SIL OFL'],
     ] as [string, string][],

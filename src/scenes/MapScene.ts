@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { Game, MapNode, NodeType, saveLocal } from '../state';
+import { FLOORS, Game, MapNode, NodeType, saveLocal } from '../state';
 import { topBar } from '../ui/hud';
 import { embers, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
@@ -21,8 +21,9 @@ const NODE_INFO = Object.fromEntries(
   Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),
 ) as Record<NodeType, { icon: string; color: number; name: string; desc: string }>;
 
-export const nodeXY = (n: MapNode) => ({
-  x: n.type === 'jefe' ? 878 : 80 + n.floor * 96,
+/** Posición de un nodo; el ancho entre pisos se ajusta a cuántos pisos tiene el mapa */
+export const nodeAt = (n: MapNode, maxFloor = FLOORS) => ({
+  x: n.type === 'jefe' ? 884 : 60 + n.floor * (790 / maxFloor),
   y: n.type === 'jefe' ? 280 : 112 + n.lane * 82,
 });
 
@@ -74,6 +75,8 @@ export class MapScene extends Phaser.Scene {
     title(this, W / 2, 66, act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
+    const maxF = Math.max(...run.map.map((n) => n.floor)) || FLOORS;
+    const nodeXY = (n: MapNode) => nodeAt(n, maxF);
     const current = run.pos >= 0 ? byId.get(run.pos)! : null;
     const available = new Set<number>(current ? current.next : run.map.filter((n) => n.floor === 0).map((n) => n.id));
     const visited = new Set<number>(run.visited ?? []);
@@ -101,12 +104,12 @@ export class MapScene extends Phaser.Scene {
     for (const n of run.map) {
       const { x, y } = nodeXY(n);
       const info = n.type === 'jefe' && (act2 || act3) ? { ...NODE_INFO.jefe, name: (act3 ? T.mapa.jefe3 : T.mapa.jefe2)[0], desc: (act3 ? T.mapa.jefe3 : T.mapa.jefe2)[1] } : NODE_INFO[n.type];
-      const size = n.type === 'jefe' ? 76 : 46;
+      const size = n.type === 'jefe' ? 76 : 42;
       const g = this.add.graphics();
       const isAvail = available.has(n.id);
       const isPast = n.floor < (current ? current.floor : 0) || (current && n.id === current.id);
       frame(g, x - size / 2, y - size / 2, size, size, isAvail ? 0x261e2c : 0x141017, isAvail ? info.color : 0x3a3244);
-      const im = n.type === 'jefe' && act3 ? this.add.image(x, y, 'hibbelerius').setScale(1.1) : this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.4);
+      const im = n.type === 'jefe' && act3 ? this.add.image(x, y, 'hibbelerius').setScale(1.1) : this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.1);
       if (!isAvail && !(current && n.id === current.id)) im.setAlpha(isPast ? 0.3 : 0.75);
       if (visited.has(n.id)) {
         const mark = this.add.graphics();

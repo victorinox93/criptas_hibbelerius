@@ -8,11 +8,12 @@ import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, s
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { RELICS } from '../data/relics';
+import { POCIONES } from '../data/pociones';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
-import { deckOverlay, Hud, topBar } from '../ui/hud';
+import { deckOverlay, Hud, setPotionHandler, topBar } from '../ui/hud';
 import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, towerBackground, Tooltip, txt, wizardryBackground } from '../ui/widgets';
 
 type Kind = 'easy' | 'normal' | 'elite' | 'boss';
@@ -96,6 +97,15 @@ export class CombatScene extends Phaser.Scene {
   private carry = 0; // Simetría en el Tiempo: J que pasan al siguiente turno
   private attacksTurn = 0; // ataques jugados este turno (Travail)
   private drainNext = 0; // J que te roban para tu siguiente turno (Sifón)
+  // v0.10: cartas desbloqueables
+  private palanca = false; // el siguiente ataque hace el doble
+  private mult = 1; // multiplicador del ataque en curso
+  private pierce = false; // Efecto Túnel: ignorar Bloqueo este turno
+  private masaDef = false; // Masa Inamovible
+  private blockPerTurn = 0; // Resistencia del Material
+  private orbit = 0; // Órbita Cerrada (masa del satélite)
+  private entropia = 0; // Entropía (J por turno a cambio de vida)
+  private extraDraw = 0; // Formulario
 
   constructor() { super('Combat'); }
 
@@ -139,6 +149,14 @@ export class CombatScene extends Phaser.Scene {
     this.carry = 0;
     this.attacksTurn = 0;
     this.drainNext = 0;
+    this.palanca = false;
+    this.mult = 1;
+    this.pierce = false;
+    this.masaDef = false;
+    this.blockPerTurn = 0;
+    this.orbit = 0;
+    this.entropia = 0;
+    this.extraDraw = 0;
   }
 
   private has(relic: string) {
@@ -171,6 +189,8 @@ export class CombatScene extends Phaser.Scene {
       dungeonBackground(this, 100 + this.floor * 7, this.kind === 'boss' ? 0x241820 : this.kind === 'elite' ? 0x201822 : 0x1c1722);
     }
     this.tip = new Tooltip(this);
+    setPotionHandler((id) => this.usePotion(id));
+    this.events.once('shutdown', () => setPotionHandler(null));
     this.hud = topBar(this, this.tip);
 
     // ── Jugador ──
@@ -741,6 +761,11 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Travail (Coriolis): +${tv * this.attacksTurn} por ${this.attacksTurn} ataque(s) previos`);
       }
       this.attacksTurn++;
+      if (this.palanca) {
+        this.palanca = false;
+        this.mult = 2;
+        this.calc('Palanca de Arquímedes: brazo doble → momento doble: ×2');
+      }
     }
     const c = this.ctx();
     switch (def.id) {
@@ -1075,6 +1100,87 @@ export class CombatScene extends Phaser.Scene {
         for (const e of this.alive()) await this.hitEnemy(e, dmg);
         break;
       }
+      // ── desbloqueables ──
+      case 'metabolismo':
+        Game.run!.hp -= st.extra ?? 3;
+        this.energy += 2;
+        this.floatText(this.heroX, 200, `-${st.extra}`, '#d08080');
+        this.calc(`Metabolismo Forzado: −${st.extra} de vida → +2 J`);
+        break;
+      case 'torbellinoAcero': {
+        const n = this.energy;
+        this.energy = 0;
+        const f = force(st, this.ctx());
+        this.calc(`Torbellino de Acero: ${n} J → ${n} golpes de F = ${f.F} N a todos`);
+        for (let i = 0; i < n && this.alive().length; i++) {
+          await this.heroLunge();
+          for (const e of this.alive()) await this.hitEnemy(e, f.F);
+        }
+        break;
+      }
+      case 'palanca':
+        this.palanca = true;
+        this.calc('Palanca de Arquímedes: tu siguiente ataque hará el doble (M = F·d)');
+        break;
+      case 'inerciaPura':
+        this.masaDef = true;
+        this.calc('Masa Inamovible: cada Defensa te dará +1 kg');
+        break;
+      case 'resistencia':
+        this.blockPerTurn += st.block ?? 3;
+        this.calc(`Resistencia del Material: +${st.block} de Bloqueo cada turno`);
+        break;
+      case 'sobreimpulso':
+        Game.run!.hp -= 3;
+        this.vel = Math.min(VMAX, this.vel + (st.extra ?? 3));
+        this.floatText(this.heroX, 200, '-3', '#d08080');
+        this.calc(`Postcombustión: −3 de vida → v = ${this.vel} m/s`);
+        break;
+      case 'orbita':
+        this.orbit = Math.max(this.orbit, st.m ?? 0.6);
+        this.calc('Órbita Cerrada: un satélite golpeará cada turno');
+        break;
+      case 'doppler': {
+        const k = kinetic(st, c);
+        const all = this.vel >= 6;
+        this.calc(`Efecto Doppler: K = ${k.K}${all ? ' a TODOS (v ≥ 6)' : ''}`);
+        await this.heroLunge();
+        if (all) for (const e of this.alive()) await this.hitEnemy(e, k.K);
+        else if (target) await this.hitEnemy(target, k.K);
+        break;
+      }
+      case 'tunel':
+        this.pierce = true;
+        this.calc('Efecto Túnel: tus ataques atraviesan el Bloqueo este turno');
+        break;
+      case 'singularidad': {
+        const k = kinetic(st, c);
+        this.calc(`Singularidad: K = ½·${r1(k.m)}·${k.v}² = ${k.K} a TODOS… y quedas en reposo`);
+        await this.heroLunge();
+        this.cameras.main.flash(250, 160, 120, 255);
+        for (const e of this.alive()) await this.hitEnemy(e, k.K);
+        this.vel = 0;
+        break;
+      }
+      case 'apuntes':
+        this.calc('Apuntes del Profe: robas 3');
+        this.drawCards(3);
+        break;
+      case 'cafe':
+        this.energy += st.extra ?? 2;
+        this.drawCards(1);
+        this.addStatus({ id: 'ruido', n: 1, to: 'discard' });
+        this.calc(`Café de Laboratorio: +${st.extra} J… y el bajón llegará`);
+        break;
+      case 'entropia':
+        this.entropia += 1;
+        this.calc('Entropía: cada turno −1 vida, +1 J');
+        break;
+      case 'formulario':
+        this.extraDraw += 1;
+        this.calc('Formulario: robas 1 carta más cada turno');
+        break;
+
       case 'tarea':
         this.calc('Entregas la tarea. «Gracias.» — Hibbelerius');
         break;
@@ -1099,6 +1205,11 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Estela Cinética: +1 m/s (v = ${this.vel})`);
     }
     this.polonio = 0;
+    this.mult = 1;
+    if (this.masaDef && def.type === 'Defensa') {
+      this.masa += 1;
+      this.calc(`Masa Inamovible: +1 kg (masa extra: ${this.masa} kg)`);
+    }
     // Einstein · Efecto Fotoeléctrico: cada Habilidad lanza un fotón
     const fot = boonLevel('e_foton');
     if (fot && def.type === 'Habilidad' && this.alive().length) {
@@ -1109,7 +1220,7 @@ export class CombatScene extends Phaser.Scene {
       await this.hitEnemy(t, dmg, true, 'res');
       if (!(await this.radiate(1, 'fotón'))) return;
     }
-    if (Game.run!.hp <= 0 && (await this.dies('tu propia Embestida'))) return;
+    if (Game.run!.hp <= 0 && (await this.dies('tu propio esfuerzo'))) return;
     if (pol && def.type === 'Ataque' && !(await this.radiate(1, 'polonio'))) return;
     this.refreshPlayer();
     this.layoutHand();
@@ -1147,6 +1258,9 @@ export class CombatScene extends Phaser.Scene {
     if (ev.dead) return false;
     const st = ev.st;
     if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
+    const cardHit = kind === 'golpe' || typeof kind === 'number';
+    if (cardHit && this.mult !== 1) F = Math.round(F * this.mult);
+    if (cardHit && this.pierce) ignoreBlock = true;
     if (st.def.thorns && (kind === 'golpe' || typeof kind === 'number')) {
       this.calc(`Púas: el golpe te regresa ${st.def.thorns} (3ª ley)`);
       this.time.delayedCall(10, () => this.hurtPlayer(st.def.thorns!, null));
@@ -1353,6 +1467,17 @@ export class CombatScene extends Phaser.Scene {
     this.energy = Math.max(0, this.maxEnergy + this.jPerTurn + this.carry - this.drainNext);
     if (this.drainNext) this.calc(`Te robaron ${this.drainNext} J`);
     this.drainNext = 0;
+    this.pierce = false;
+    if (this.entropia) {
+      Game.run!.hp -= this.entropia;
+      this.energy += this.entropia;
+      this.calc(`Entropía: −${this.entropia} de vida, +${this.entropia} J`);
+      if (Game.run!.hp <= 0 && (await this.dies('la entropía'))) return;
+    }
+    if (this.blockPerTurn) {
+      this.gainBlock(this.blockPerTurn);
+      this.calc(`Resistencia del Material: +${this.blockPerTurn} de Bloqueo`);
+    }
     if (this.carry) this.calc(`Simetría en el Tiempo (Noether): conservas ${this.carry} J`);
     this.carry = 0;
     this.attacksTurn = 0;
@@ -1362,7 +1487,7 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Ut tensio, sic vis (Hooke): +${2 * kres} de Bloqueo`);
     }
 
-    let draw = 5;
+    let draw = 5 + this.extraDraw;
     const hr = boonLevel('h_reloj');
     if ((hr === 1 && this.turn % 2 === 0) || (hr === 2 && this.turn >= 2)) {
       draw += 1;
@@ -1438,6 +1563,17 @@ export class CombatScene extends Phaser.Scene {
         this.calc('Gato de Schrödinger: la caja se abre… ¡zarpazo! 5 de daño');
         await this.hitEnemy(t, 5, false, 'res');
       }
+      this.busy = false;
+      if (await this.checkEnd()) return;
+    }
+    // Órbita Cerrada: el satélite golpea solo
+    if (this.orbit && this.alive().length) {
+      this.busy = true;
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      const K = Math.round(0.5 * this.orbit * this.vel * this.vel);
+      this.calc(`Órbita Cerrada: el satélite golpea con K = ½·${this.orbit}·${this.vel}² = ${K}`);
+      this.beam(t, 0x7fd8ff);
+      await this.hitEnemy(t, K, false, 'res');
       this.busy = false;
       if (await this.checkEnd()) return;
     }
@@ -1787,6 +1923,44 @@ export class CombatScene extends Phaser.Scene {
     const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
     g.lineStyle(4, color, 0.9).lineBetween(this.heroX + 30, 250, to.baseX, 260);
     this.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+  }
+
+  // ───────────────────────── POCIONES ─────────────────────────
+  /** Usa una poción (la llama la barra superior). Devuelve true si se usó. */
+  private usePotion(id: string): boolean {
+    if (this.busy || this.bannerT.getData('ended') || this.bannerT.getData('dead') || this.discardMode > 0) return false;
+    const run = Game.run!;
+    const al = this.alive();
+    switch (id) {
+      case 'vida': run.hp = Math.min(run.maxHp, run.hp + 15); this.floatText(this.heroX, 200, '+15', CSS.green); break;
+      case 'mayor': run.maxHp += 5; run.hp = Math.min(run.maxHp, run.hp + 30); this.floatText(this.heroX, 200, '+30', CSS.green); break;
+      case 'energia': this.energy += 2; break;
+      case 'bloqueo': this.gainBlock(12); break;
+      case 'masa':
+        if (this.isArc) this.vel = Math.min(VMAX, this.vel + 2);
+        else this.masa += 2;
+        break;
+      case 'aceite':
+        this.friccion = 0;
+        if (this.isArc) this.vel = Math.min(VMAX, this.vel + 2);
+        else this.acel += 3;
+        break;
+      case 'tinta': this.drawCards(3); break;
+      case 'fuego': al.forEach((e) => { e.st.calor += 6; this.burst(e.baseX, 260, 0xc87533, 14); this.refreshEnemy(e); }); break;
+      case 'corrosivo': al.forEach((e) => { e.st.fatiga += 2; this.refreshEnemy(e); }); break;
+      case 'leyden':
+        this.busy = true;
+        (async () => {
+          for (const e of this.alive()) { this.beam(e, 0x9bf07a); await this.hitEnemy(e, 10, false, 'res'); }
+          this.busy = false;
+          await this.checkEnd();
+        })();
+        break;
+      default: return false;
+    }
+    this.calc(`Poción: ${POCIONES[id].name} — ${POCIONES[id].text}`);
+    this.refreshPlayer();
+    return true;
   }
 
   // ───────────────────────── HIBBELERIUS ─────────────────────────

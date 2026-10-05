@@ -6,11 +6,20 @@ import { makeHeroFromAvatar } from '../art/sprites';
 import { EXTRAS_K, EXTRAS_M, HELM_IDS, HELMS_K, HELMS_M, SKINS, WEAPONS_K, WEAPONS_M } from '../art/heroes';
 import { W } from '../config';
 import { CLASSES } from '../data/classes';
-import { arcanistaUnlocked, Avatar, Game, saveLocal, rememberSession } from '../state';
+import { arcanistaUnlocked, Avatar, Game, nivelActual, saveLocal, rememberSession } from '../state';
 import { T } from '../textos';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, TextField, title, txt } from '../ui/widgets';
 
 const cyc = (n: number, d: number, len: number) => (n + d + len) % len;
+/** Avanza en una lista saltando lo que aún está bloqueado por nivel */
+const cycOk = (list: { lock?: number }[], n: number, d: number, nivel: number) => {
+  let i = n;
+  for (let k = 0; k < list.length; k++) {
+    i = cyc(i, d, list.length);
+    if ((list[i].lock ?? 0) <= nivel) return i;
+  }
+  return n;
+};
 
 export class AvatarScene extends Phaser.Scene {
   constructor() { super('Avatar'); }
@@ -65,8 +74,9 @@ export class AvatarScene extends Phaser.Scene {
       upd();
     };
     selector(290, () => (mage() ? 'Sombrero' : T.avatar.yelmo), () => (mage() ? HELMS_M : HELMS_K)[st.helm], (d) => (st.helm = cyc(st.helm, d, HELM_IDS.length)));
-    selector(321, () => (mage() ? 'Ribete' : T.avatar.armadura), () => ARMORS[st.armor].name, (d) => (st.armor = cyc(st.armor, d, ARMORS.length)));
-    selector(352, () => (mage() ? 'Ojos' : T.avatar.visor), () => VISORS[st.visor].name, (d) => (st.visor = cyc(st.visor, d, VISORS.length)));
+    const nivel = nivelActual();
+    selector(321, () => (mage() ? 'Ribete' : T.avatar.armadura), () => ARMORS[st.armor].name, (d) => (st.armor = cycOk(ARMORS, st.armor, d, nivel)));
+    selector(352, () => (mage() ? 'Ojos' : T.avatar.visor), () => VISORS[st.visor].name, (d) => (st.visor = cycOk(VISORS, st.visor, d, nivel)));
     selector(383, () => (mage() ? 'Bastón' : 'Arma'), () => (mage() ? WEAPONS_M : WEAPONS_K)[st.arma], (d) => (st.arma = cyc(st.arma, d, 4)));
     selector(414, () => (mage() ? 'Barba' : 'Escudo'), () => (mage() ? EXTRAS_M : EXTRAS_K)[st.extra], (d) => (st.extra = cyc(st.extra, d, 3)));
     selector(445, () => (mage() ? 'Piel' : 'Piel (arcanista)'), () => SKINS[st.piel].name, (d) => (st.piel = cyc(st.piel, d, SKINS.length)));
@@ -75,10 +85,18 @@ export class AvatarScene extends Phaser.Scene {
     const sw: Phaser.GameObjects.Rectangle[] = [];
     const capeT = txt(this, 330, 470, '', 18, CSS.dim).setOrigin(1, 0);
     CAPES.forEach((c, i) => {
+      const locked = (c.lock ?? 0) > nivel;
       const r = this.add
-        .rectangle(62 + i * 37, 504, 28, 28, Phaser.Display.Color.HexStringToColor(c.c).color)
+        .rectangle(56 + i * 24.5, 504, 20, 26, Phaser.Display.Color.HexStringToColor(c.c).color)
         .setStrokeStyle(3, 0x0d0b10)
-        .setInteractive({ useHandCursor: true });
+        .setInteractive({ useHandCursor: !locked });
+      if (locked) {
+        r.setAlpha(0.35);
+        txt(this, 56 + i * 24.5, 504, '🔒', 12, CSS.dim).setOrigin(0.5);
+        r.on('pointerdown', () => capeT.setText(`Nivel ${c.lock}`));
+        sw.push(r);
+        return;
+      }
       r.on('pointerdown', () => {
         st.cape = i;
         sw.forEach((s, j) => s.setStrokeStyle(3, j === i ? UI.gold : 0x0d0b10));

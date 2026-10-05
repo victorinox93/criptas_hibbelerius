@@ -1,5 +1,6 @@
 // ════════════════════════════════════════════════════════════════
-//  MÚSICA DARK SYNTH GENERADA EN VIVO + EFECTOS DE SONIDO
+//  MÚSICA DUNGEON SYNTH GENERADA EN VIVO + EFECTOS DE SONIDO
+//  (drones, coro sintético, clavecín, órgano y tambores de guerra)
 //  No usa archivos: todo se sintetiza con Web Audio.
 //  Para usar pistas propias, ve a MUSIC_FILES en src/config.ts.
 // ════════════════════════════════════════════════════════════════
@@ -25,59 +26,63 @@ interface TrackDef {
   hat?: string;
   bells?: boolean;
   lead?: (number | null)[]; // 64 pasos (4 compases) de melodía
+  drone?: number; // volumen del drone grave (raíz + quinta) que suena todo el compás
+  choir?: number; // volumen del coro sintético (vocal «ah»)
+  tom?: string; // 16 pasos: tambor de guerra (1 = golpe, 2 = golpe fuerte)
 }
 
+// Notas MIDI: 36 = Do2, 48 = Do3, 60 = Do4. Acordes de una tríada por compás.
+// El estilo es «dungeon synth»: lento, modal (eólico, frigio, menor armónico),
+// con drones, coro y clavecín; nada de hi-hats ni cajas electrónicas.
 const TRACKS: Record<TrackId, TrackDef> = {
-  // Re menor lento, sólo atmósfera
+  // Re menor armónico: la entrada de la cripta
   menu: {
-    bpm: 68,
+    bpm: 50,
     chords: [[50, 53, 57], [46, 50, 53], [43, 46, 50], [45, 49, 52]],
-    pad: 0.16, padCut: 700,
-    arp: '1...1...1...1...', arpOct: 12,
-    bass: 'x...............', bassOct: -12,
+    drone: 0.09, choir: 0.07, pad: 0.05, padCut: 500,
+    arp: '1.......1...1...', arpOct: 12,
+    lead: [
+      74, null, null, null, null, null, 72, null, 70, null, null, null, 69, null, null, null,
+      70, null, null, null, null, null, 69, null, 67, null, null, null, null, null, null, null,
+      67, null, null, null, 69, null, 70, null, 72, null, null, null, 70, null, 69, null,
+      69, null, null, null, null, null, null, null, 73, null, null, null, null, null, null, null,
+    ],
   },
-  // La menor, caminata por el mapa
+  // La menor eólico: caminar por las criptas
   mapa: {
-    bpm: 84,
-    chords: [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]],
-    pad: 0.11, padCut: 900,
-    arp: '1.1.1.1.1.1.1.1.', arpOct: 0,
-    bass: 'x.......x...-...', bassOct: -24,
-    kick: '1.......1.......',
-    hat: '....1.......1...',
+    bpm: 58,
+    chords: [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]],
+    drone: 0.08, choir: 0.05, pad: 0.05, padCut: 600,
+    arp: '1...1...1...1.1.', arpOct: 0,
+    tom: '1...............',
+    bells: true,
   },
-  // Mi menor, combate
+  // Mi menor: combate (tambores de guerra y clavecín)
   combate: {
-    bpm: 112,
+    bpm: 84,
     chords: [[52, 55, 59], [48, 52, 55], [45, 48, 52], [47, 51, 54]],
-    pad: 0.08, padCut: 1100,
-    arp: '1111111111111111', arpOct: 12,
-    bass: 'x.xox.xox.xox.xo', bassOct: -24,
-    kick: '1...1...1...1...',
-    snare: '....1.......1...',
-    hat: '..1...1...1...1.',
+    drone: 0.07, choir: 0.05, pad: 0.04, padCut: 800,
+    arp: '1.1.1.1.1.1.1.1.', arpOct: 12,
+    bass: 'x.......x...x...', bassOct: -24,
+    tom: '2..1..1.2...1.1.',
   },
-  // Sol menor, segunda pista de combate (más grave y sincopada)
+  // Sol menor: segunda pista de combate
   combate2: {
-    bpm: 104,
-    chords: [[55, 58, 62], [51, 55, 58], [53, 57, 60], [50, 54, 57]],
-    pad: 0.08, padCut: 1000,
+    bpm: 78,
+    chords: [[55, 58, 62], [51, 55, 58], [48, 51, 55], [50, 54, 57]],
+    drone: 0.07, choir: 0.06, pad: 0.04, padCut: 700,
     arp: '1..1..1.1..1..1.', arpOct: 12,
-    bass: 'x..x..x.x..x.ox.', bassOct: -24,
-    kick: '1..1..1.1...1...',
-    snare: '....1.......1..1',
-    hat: '.1.1.1.1.1.1.1.1',
+    bass: 'x.....x.x.......', bassOct: -24,
+    tom: '2.....1.2...1...',
   },
-  // Do menor, jefe
+  // Do menor armónico: jefe del Acto I
   jefe: {
-    bpm: 126,
+    bpm: 96,
     chords: [[48, 51, 55], [44, 48, 51], [41, 44, 48], [43, 47, 50]],
-    pad: 0.09, padCut: 1300,
+    drone: 0.09, choir: 0.08, pad: 0.05, padCut: 1000,
     arp: '1.11.11.1.11.11.', arpOct: 12,
-    bass: 'xoxoxoxoxoxoxoxo', bassOct: -24,
-    kick: '1...1...1...1.1.',
-    snare: '....1.......1...',
-    hat: '1111111111111111',
+    bass: 'x...x...x...x.x.', bassOct: -24,
+    tom: '2.1.1...2.1.1.1.',
     lead: [
       72, null, null, null, 75, null, 74, null, 72, null, null, null, 70, null, 67, null,
       68, null, null, null, 72, null, 70, null, 68, null, null, null, 67, null, 65, null,
@@ -85,34 +90,29 @@ const TRACKS: Record<TrackId, TrackDef> = {
       67, null, null, null, 71, null, 74, null, 72, null, null, null, null, null, null, null,
     ],
   },
-  // ── Acto II: más grave, frigio y con zumbido ──
+  // ── Acto II: frigio, más grave y húmedo ──
   mapa2: {
-    bpm: 72,
+    bpm: 48,
     chords: [[52, 55, 59], [53, 57, 60], [52, 55, 59], [50, 53, 57]],
-    pad: 0.13, padCut: 600,
-    bass: 'x...............', bassOct: -24,
+    drone: 0.1, choir: 0.07, pad: 0.04, padCut: 450,
     arp: '1.......1..1....', arpOct: 0,
-    kick: '1...............',
+    tom: '1...............',
   },
   combate3: {
-    bpm: 98,
+    bpm: 80,
     chords: [[52, 55, 59], [53, 57, 60], [50, 53, 57], [53, 57, 60]],
-    pad: 0.09, padCut: 800,
+    drone: 0.08, choir: 0.06, pad: 0.04, padCut: 650,
     arp: '1.1.11.11.1.11.1', arpOct: 0,
-    bass: 'x.x.x.xox.x.x.xo', bassOct: -24,
-    kick: '1..1..1.1..1..1.',
-    snare: '....1.......1...',
-    hat: '..1...1...1...11',
+    bass: 'x...x...x...x.x.', bassOct: -24,
+    tom: '2..1..1.2..1..1.',
   },
   jefe2: {
-    bpm: 116,
+    bpm: 92,
     chords: [[47, 50, 54], [48, 52, 55], [47, 50, 54], [45, 48, 52]],
-    pad: 0.1, padCut: 1000,
+    drone: 0.09, choir: 0.09, pad: 0.05, padCut: 900,
     arp: '1111111111111111', arpOct: 12,
-    bass: 'xoxoxoxoxoxoxoxo', bassOct: -24,
-    kick: '1...1...1...1.11',
-    snare: '....1.......1...',
-    hat: '1.1.1.1.1.1.1.1.',
+    bass: 'x.x.x.x.x.x.x.x.', bassOct: -24,
+    tom: '2.1.2.1.2.1.2.11',
     lead: [
       71, null, null, null, 72, null, 71, null, 69, null, null, null, 67, null, null, null,
       72, null, null, null, 74, null, 72, null, 71, null, null, null, 69, null, null, null,
@@ -120,34 +120,30 @@ const TRACKS: Record<TrackId, TrackDef> = {
       71, null, null, null, 69, null, 67, null, 66, null, null, null, null, null, null, null,
     ],
   },
-  // ── Acto III: la Torre del Tomo (órgano oscuro, Si menor armónico) ──
+  // ── Acto III: la Torre del Tomo (órgano y coro, Si menor armónico) ──
   mapa3: {
-    bpm: 64,
+    bpm: 52,
     chords: [[47, 50, 54], [43, 47, 50], [45, 48, 52], [42, 46, 49]],
-    pad: 0.15, padCut: 750,
+    drone: 0.09, choir: 0.08, pad: 0.05, padCut: 600,
     bells: true,
-    bass: 'x...............', bassOct: -12,
+    arp: '1.......1.......', arpOct: 12,
   },
   combate4: {
-    bpm: 108,
+    bpm: 86,
     chords: [[47, 50, 54], [43, 47, 50], [48, 52, 55], [42, 46, 49]],
-    pad: 0.09, padCut: 1000,
+    drone: 0.08, choir: 0.07, pad: 0.04, padCut: 750,
     arp: '1.11.1.11.1.11.1', arpOct: 12,
-    bass: 'x.xo.xx.x.xo.xxo', bassOct: -24,
-    kick: '1..1..1.1..1..1.',
-    snare: '....1.......1...',
-    hat: '1.1.1.1.1.1.1.11',
+    bass: 'x..x....x..x....', bassOct: -24,
+    tom: '2..1..1.2..1.11.',
   },
   jefe3: {
-    bpm: 132,
+    bpm: 100,
     chords: [[47, 50, 54], [48, 52, 55], [45, 48, 52], [42, 46, 49]],
-    pad: 0.11, padCut: 1400,
+    drone: 0.1, choir: 0.1, pad: 0.05, padCut: 1100,
     bells: true,
     arp: '1111111111111111', arpOct: 12,
-    bass: 'xoxoxoxoxoxoxoxo', bassOct: -24,
-    kick: '1...1...1...1.11',
-    snare: '....1.......1..1',
-    hat: '1111111111111111',
+    bass: 'x.x.x.x.x.x.x.x.', bassOct: -24,
+    tom: '2.1.1.1.2.1.1.11',
     lead: [
       71, null, 74, null, 78, null, 76, null, 74, null, 71, null, 70, null, null, null,
       72, null, 76, null, 79, null, 78, null, 76, null, 72, null, 71, null, null, null,
@@ -155,21 +151,20 @@ const TRACKS: Record<TrackId, TrackDef> = {
       66, null, 70, null, 73, null, 76, null, 78, null, null, null, 71, null, null, null,
     ],
   },
-  // figuras históricas: etérea, modo lidio (luminoso pero misterioso)
+  // figuras históricas: coro etéreo en modo lidio
   santuario: {
-    bpm: 58,
+    bpm: 46,
     chords: [[53, 57, 60, 64], [55, 59, 62, 66], [53, 57, 60, 64], [52, 55, 59, 62]],
-    pad: 0.12, padCut: 1400,
+    choir: 0.09, pad: 0.06, padCut: 1200,
     bells: true,
     arp: '1.......1.......', arpOct: 24,
   },
-  // fogata, encuentros, mercader
+  // fogata, encuentros, mercader (si no hay archivo MP3)
   calma: {
-    bpm: 62,
+    bpm: 50,
     chords: [[57, 60, 64], [52, 55, 59], [53, 57, 60], [52, 56, 59]],
-    pad: 0.14, padCut: 650,
+    drone: 0.07, choir: 0.05, pad: 0.06, padCut: 550,
     bells: true,
-    bass: 'x...............', bassOct: -24,
   },
 };
 
@@ -214,6 +209,9 @@ class Sequencer {
     const chord = d.chords[bar];
     const e = this.eng;
     if (s16 === 0 && d.pad) e.pad(this.out, chord, t, dt * 16, d.pad, d.padCut ?? 900);
+    if (s16 === 0 && d.drone) e.drone(this.out, chord[0] - 24, t, dt * 16, d.drone);
+    if (s16 === 0 && d.choir) e.choir(this.out, chord, t, dt * 16, d.choir);
+    if (d.tom && d.tom[s16] !== '.' && d.tom[s16]) e.tom(this.out, t, d.tom[s16] === '2' ? 0.55 : 0.32);
     if (d.bass) {
       const c = d.bass[s16];
       const root = chord[0] + (d.bassOct ?? -24);
@@ -291,16 +289,16 @@ export class AudioEngine {
     this.sfxBus.gain.value = 0.7;
     this.sfxBus.connect(comp);
     // reverberación generada
-    const len = ctx.sampleRate * 2.8;
+    const len = ctx.sampleRate * 4.5;
     const ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) {
       const d = ir.getChannelData(ch);
-      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
     }
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = ir;
     const rvGain = ctx.createGain();
-    rvGain.gain.value = 0.35;
+    rvGain.gain.value = 0.5;
     this.reverb.connect(rvGain).connect(this.musicBus);
     // eco
     this.delay = ctx.createDelay(1);
@@ -428,41 +426,131 @@ export class AudioEngine {
     sub.stop(t + dur + 0.1);
   }
 
+  /** Clavecín oscuro: dos dientes de sierra (nota y octava) con ataque brillante y caída rápida */
   pluck(out: AudioNode, n: number, t: number, vol: number) {
+    const ctx = this.ctx!;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = 2;
+    f.frequency.setValueAtTime(2600, t);
+    f.frequency.exponentialRampToValueAtTime(500, t + 0.35);
+    const g = ctx.createGain();
+    this.env(g, t, 0.003, vol * 0.8, 0.55);
+    for (const [mul, type] of [[1, 'sawtooth'], [2, 'triangle']] as [number, OscillatorType][]) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = mtof(n) * mul;
+      o.connect(f);
+      o.start(t);
+      o.stop(t + 0.65);
+    }
+    f.connect(g);
+    g.connect(out);
+    g.connect(this.delay!);
+    g.connect(this.reverb!);
+  }
+
+  /** Drone grave: raíz y quinta con un filtro que respira lentamente */
+  drone(out: AudioNode, n: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(180, t);
+    f.frequency.linearRampToValueAtTime(320, t + dur * 0.5);
+    f.frequency.linearRampToValueAtTime(180, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + dur * 0.2);
+    g.gain.setValueAtTime(vol, t + dur * 0.85);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur * 1.08);
+    f.connect(g).connect(out);
+    for (const [k, type] of [[0, 'sawtooth'], [7, 'sawtooth'], [-12, 'triangle']] as [number, OscillatorType][]) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = mtof(n + k);
+      o.detune.value = (Math.random() - 0.5) * 10;
+      o.connect(f);
+      o.start(t);
+      o.stop(t + dur * 1.1);
+    }
+  }
+
+  /** Coro sintético: dientes de sierra desafinados pasados por formantes de la vocal «ah» */
+  choir(out: AudioNode, notes: number[], t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(1.6, dur * 0.35));
+    g.gain.setValueAtTime(vol, t + dur * 0.8);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur * 1.1);
+    g.connect(out);
+    g.connect(this.reverb!);
+    const mix = ctx.createGain();
+    mix.gain.value = 1;
+    for (const [fr, q, v] of [[730, 8, 1], [1090, 10, 0.5], [2440, 12, 0.25]]) {
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = fr;
+      bp.Q.value = q;
+      const bg = ctx.createGain();
+      bg.gain.value = v * 2.2;
+      mix.connect(bp).connect(bg).connect(g);
+    }
+    for (const n of notes) {
+      for (const det of [-14, 0, 13]) {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = mtof(n);
+        o.detune.value = det;
+        const vib = ctx.createOscillator();
+        vib.frequency.value = 4.5 + Math.random();
+        const vg = ctx.createGain();
+        vg.gain.value = 5;
+        vib.connect(vg).connect(o.detune);
+        o.connect(mix);
+        o.start(t);
+        vib.start(t);
+        o.stop(t + dur * 1.15);
+        vib.stop(t + dur * 1.15);
+      }
+    }
+  }
+
+  /** Tambor de guerra: golpe grave con piel (seno que cae de tono + ruido) */
+  tom(out: AudioNode, t: number, vol: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(110, t);
+    o.frequency.exponentialRampToValueAtTime(48, t + 0.35);
+    const g = ctx.createGain();
+    this.env(g, t, 0.003, vol, 0.6);
+    o.connect(g);
+    g.connect(out);
+    g.connect(this.reverb!);
+    o.start(t);
+    o.stop(t + 0.7);
+    this.noiseHit(out, t, 'lowpass', 600, vol * 0.25, 0.12);
+  }
+
+  /** Órgano: onda cuadrada con vibrato lento (la melodía de los jefes y del menú) */
+  lead(out: AudioNode, n: number, t: number, dur: number) {
     const ctx = this.ctx!;
     const o = ctx.createOscillator();
     o.type = 'square';
     o.frequency.value = mtof(n);
-    const f = ctx.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.setValueAtTime(3000, t);
-    f.frequency.exponentialRampToValueAtTime(400, t + 0.2);
-    const g = ctx.createGain();
-    this.env(g, t, 0.004, vol, 0.22);
-    o.connect(f).connect(g);
-    g.connect(out);
-    g.connect(this.delay!);
-    o.start(t);
-    o.stop(t + 0.3);
-  }
-
-  lead(out: AudioNode, n: number, t: number, dur: number) {
-    const ctx = this.ctx!;
-    const o = ctx.createOscillator();
-    o.type = 'sawtooth';
-    o.frequency.value = mtof(n);
     const lfo = ctx.createOscillator();
-    lfo.frequency.value = 5.5;
+    lfo.frequency.value = 4.2;
     const lg = ctx.createGain();
     lg.gain.value = 6;
     lfo.connect(lg).connect(o.detune);
     const f = ctx.createBiquadFilter();
     f.type = 'lowpass';
-    f.frequency.value = 2400;
+    f.frequency.value = 1500;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.07, t + 0.03);
-    g.gain.setValueAtTime(0.07, t + dur * 0.8);
+    g.gain.exponentialRampToValueAtTime(0.06, t + 0.08);
+    g.gain.setValueAtTime(0.06, t + dur * 0.8);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(f).connect(g);
     g.connect(out);

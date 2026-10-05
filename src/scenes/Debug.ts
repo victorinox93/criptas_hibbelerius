@@ -10,7 +10,7 @@ import { EFFECTS } from '../data/effects';
 import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { RELIC_POOL, RELICS } from '../data/relics';
-import { codexFlag, emptyCodex, Game, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
+import { codexFlag, emptyCodex, FLOORS, Game, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
 
 /**
@@ -83,7 +83,7 @@ export class DebugScene extends Phaser.Scene {
     const jumps: [string, () => void][] = [
       ['Combate', () => this.go(acto(), 'Combat', { kind: 'normal', floor: 3 })],
       ['Élite', () => this.go(acto(), 'Combat', { kind: 'elite', floor: 5 })],
-      ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: 8 })],
+      ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: FLOORS })],
       ['Profesor', () => this.go(acto(), 'Event', { floor: 2, eventId: 'victorino' })],
       ['Mercader', () => this.go(acto(), 'Shop', { floor: 4 })],
       ['Altar', () => this.go(acto(), 'Rune', { floor: 3, source: 'altar' })],
@@ -114,8 +114,9 @@ export class DebugScene extends Phaser.Scene {
       Object.keys(EFFECTS).forEach((k) => unlock('effects', k));
       codexFlag('acto1');
       Game.codex.gravedadMax = Math.max(Game.codex.gravedadMax, 3);
+      Game.codex.xp = Math.max(Game.codex.xp ?? 0, 1000);
       saveLocal();
-      this.say('Grimorio, Arcanista y gravedades desbloqueados.');
+      this.say('Grimorio, Arcanista, gravedades y nivel 10 de Conocimiento desbloqueados.');
     });
     btn(570, 430, 220, 'Reiniciar mi Grimorio', () => {
       Game.codex = emptyCodex();

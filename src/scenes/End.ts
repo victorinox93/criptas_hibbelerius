@@ -3,7 +3,8 @@ import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { Game, logEvent, saveLocal, TOTAL_PISOS } from '../state';
+import { addConocimiento, FLOORS, Game, logEvent, nivelActual, saveLocal, TOTAL_PISOS } from '../state';
+import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
 import { button, embers, fadeTo, panel, title, txt, vignette } from '../ui/widgets';
 
@@ -11,6 +12,28 @@ const TIPS = T.final.consejos;
 
 export class EndScene extends Phaser.Scene {
   constructor() { super('End'); }
+
+  /** Ventana de «¡Subiste de nivel!» con lo que se desbloqueó */
+  private unlockPopup(nivel: number, all: typeof DESBLOQUEOS) {
+    const items = all.slice(0, 10);
+    const resto = all.length - items.length;
+    audio.sfx('victory');
+    const layer = this.add.container(0, 0).setDepth(900);
+    const shade = this.add.rectangle(0, 0, W, H, 0x000000, 0.75).setOrigin(0).setInteractive();
+    const g = this.add.graphics();
+    const h = 140 + items.length * 30 + (resto > 0 ? 26 : 0);
+    const y0 = (H - h) / 2;
+    g.fillStyle(0x0b090e, 0.98).fillRect(W / 2 - 280, y0, 560, h);
+    g.lineStyle(3, UI.gold, 1).strokeRect(W / 2 - 280, y0, 560, h);
+    layer.add([shade, g, title(this, W / 2, y0 + 34, `¡Nivel de Conocimiento ${nivel}!`, 34)]);
+    layer.add(txt(this, W / 2, y0 + 66, 'Se desbloqueó para tus próximas expediciones:', 18, CSS.dim).setOrigin(0.5));
+    items.forEach((d, i) => {
+      layer.add(txt(this, W / 2 - 250, y0 + 90 + i * 30, `◆ ${d.tipo}: ${d.nombre}`, 20, CSS.gold));
+      layer.add(txt(this, W / 2 + 250, y0 + 92 + i * 30, d.detalle, 17, CSS.bone).setOrigin(1, 0));
+    });
+    if (resto > 0) layer.add(txt(this, W / 2, y0 + 92 + items.length * 30, `…y ${resto} más (Grimorio → Progreso)`, 17, CSS.dim).setOrigin(0.5, 0));
+    layer.add(button(this, W / 2, y0 + h - 28, 180, 36, '¡Genial!', () => layer.destroy(), { size: 21, color: UI.gold }));
+  }
 
   create(data: { victory: boolean; by?: string }) {
     this.cameras.main.fadeIn(500);
@@ -27,6 +50,19 @@ export class EndScene extends Phaser.Scene {
       .slice(0, 3);
     const repaso = temas.length > 0;
     if (repaso) logEvent('repaso', '', '', { temas: temas.map(([c, t]) => `${c} ${t.ok}/${t.total}`) });
+
+    // ── Conocimiento ganado (desbloqueos entre expediciones) ──
+    const pisos = ((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor;
+    const antes = nivelActual();
+    const ganado = run.debug ? 0 : conocimientoGanado({ pisos, runasOk: run.stats.runasOk, elites: run.stats.elites, victoria: data.victory, actos: run.acto ?? 1 });
+    if (ganado) addConocimiento(ganado);
+    const despues = nivelActual();
+    const xp = Game.codex.xp ?? 0;
+    const sig = siguienteNivel(xp);
+    txt(this, W / 2, 136, `+${ganado} de Conocimiento  ·  Nivel ${despues}${sig ? ` (${xp}/${sig})` : ' (máximo)'}`, 19, '#9ad8f0').setOrigin(0.5);
+    const nuevos = DESBLOQUEOS.filter((d) => d.nivel > antes && d.nivel <= despues);
+    if (nuevos.length) this.time.delayedCall(1600, () => this.unlockPopup(despues, nuevos));
+    void nivelDe;
 
     if (data.victory) {
       title(this, W / 2, 70, T.final.victoria, 54);
@@ -46,16 +82,17 @@ export class EndScene extends Phaser.Scene {
     panel(this, 80, 150, 520, 300);
     const F = T.final.filas;
     const rows: [string, string | number][] = [
-      [F[0], `${((run.acto ?? 1) - 1) * 9 + run.floor}/${TOTAL_PISOS}`],
+      [F[0], `${((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor}/${TOTAL_PISOS}`],
       [F[1], run.stats.combates],
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],
       [F[4], run.stats.ergiosTotal ?? 0],
       [F[5], run.score],
+      ['Tiempo de juego', `${Math.round((run.tiempo ?? 0) / 60)} min`],
     ];
     rows.forEach(([k, v], i) => {
       txt(this, 110, 172 + i * 40, k, 26, CSS.dim);
-      txt(this, 570, 172 + i * 40, String(v), 28, i === rows.length - 1 ? CSS.gold : CSS.bone).setOrigin(1, 0);
+      txt(this, 570, 172 + i * 40, String(v), 28, i === 5 ? CSS.gold : CSS.bone).setOrigin(1, 0);
     });
     if (repaso) {
       // ── repaso: los temas que fallaste, con su fórmula clave ──

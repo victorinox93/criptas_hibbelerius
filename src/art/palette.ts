@@ -24,7 +24,8 @@ export const PAL: Record<string, string> = {
 };
 
 // Colores de capa disponibles en el creador de avatar
-export const CAPES: { name: string; c: string; C: string }[] = [
+// lock = nivel de Conocimiento necesario para usarlo (src/data/progreso.ts)
+export const CAPES: { name: string; c: string; C: string; lock?: number }[] = [
   { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
   { name: 'Ceniza', c: '#6e6a78', C: '#403c48' },
   { name: 'Abismo', c: '#2f4f8a', C: '#1b2d52' },
@@ -33,23 +34,30 @@ export const CAPES: { name: string; c: string; C: string }[] = [
   { name: 'Ánima', c: '#6d3f8f', C: '#3f2354' },
   { name: 'Medianoche', c: '#262a3a', C: '#14161f' },
   { name: 'Hueso', c: '#a89a7e', C: '#6a5e4a' },
+  { name: 'Ectoplasma', c: '#3a8a6a', C: '#1e4a3a', lock: 2 },
+  { name: 'Oro del Tomo', c: '#b8902a', C: '#6a4e14', lock: 5 },
+  { name: 'Pergamino Antiguo', c: '#c8b890', C: '#8a7a5a', lock: 8 },
+  { name: 'Capa del Archimago', c: '#4a1f5e', C: '#1e0c28', lock: 10 },
 ];
 
-export const ARMORS: { name: string; l: string; g: string }[] = [
+export const ARMORS: { name: string; l: string; g: string; lock?: number }[] = [
   { name: 'Acero', l: '#9a93a8', g: '#5a5468' },
   { name: 'Bronce', l: '#a8834e', g: '#6b4e2b' },
   { name: 'Obsidiana', l: '#55506a', g: '#2e2a3a' },
   { name: 'Plata pálida', l: '#c4c0cc', g: '#7d7889' },
   { name: 'Hierro negro', l: '#4a4652', g: '#26232c' },
   { name: 'Oro viejo', l: '#c8a050', g: '#7a5a28' },
+  { name: 'Obsidiana Rúnica', l: '#4e3e6a', g: '#22182e', lock: 3 },
+  { name: 'Ébano del Archimago', l: '#6a5a3a', g: '#2a1e10', lock: 9 },
 ];
-export const VISORS: { name: string; c: string }[] = [
+export const VISORS: { name: string; c: string; lock?: number }[] = [
   { name: 'Ámbar', c: '#ffd27a' },
   { name: 'Cian', c: '#7fe8ff' },
   { name: 'Verde fatuo', c: '#9bf07a' },
   { name: 'Violeta', c: '#d29bff' },
   { name: 'Carmesí', c: '#ff5a4a' },
   { name: 'Blanco espectral', c: '#f0f4ff' },
+  { name: 'Fuego de Hibbelerius', c: '#ff3a1a', lock: 7 },
 ];
 
 // UI

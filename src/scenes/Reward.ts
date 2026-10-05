@@ -5,8 +5,9 @@ import { audio } from '../audio';
 import { T } from '../textos';
 import { CARDS, rewardPool } from '../data/cards';
 import { RELIC_POOL, RELICS } from '../data/relics';
-import { addCard, addFamiliar, Game, saveLocal, unlock } from '../state';
+import { addCard, addFamiliar, Game, saveLocal, unlock, nivelActual } from '../state';
 import { FAMILIARS } from '../data/familiars';
+import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
 import { cardView } from '../ui/card';
 import { topBar } from '../ui/hud';
 import { button, dungeonBackground, fadeTo, frame, icon, title, Tooltip, txt } from '../ui/widgets';
@@ -60,6 +61,17 @@ export class RewardScene extends Phaser.Scene {
         y0 = 222;
       }
     }
+    // pociones: 40 % tras un combate normal, 75 % tras una élite
+    const run = Game.run!;
+    run.pociones ??= [];
+    if (run.pociones.length < MAX_POCIONES && Math.random() < (data.kind === 'elite' ? 0.75 : 0.4)) {
+      const pid = Phaser.Utils.Array.GetRandom(pocionesDisponibles(nivelActual()));
+      run.pociones.push(pid);
+      hud.refresh();
+      const pi = this.add.image(W / 2 - 290, y0 - 52, `pot_${pid}`).setScale(3.4);
+      tip.attach(pi, POCIONES[pid].name, POCIONES[pid].text);
+      txt(this, W / 2 - 290, y0 - 20, `Poción: ${POCIONES[pid].name}`, 18, CSS.gold).setOrigin(0.5);
+    }
     // azar: tras una élite, a veces una criatura decide seguirte (30 %)
     if (data.kind === 'elite' && Math.random() < 0.3) {
       const fid = addFamiliar('random');
@@ -72,7 +84,7 @@ export class RewardScene extends Phaser.Scene {
 
     txt(this, W / 2, y0, T.botin.elige, 26, CSS.bone).setOrigin(0.5);
     // en el Acto III, las cartas de impulso salen el doble
-    const base = rewardPool(Game.run!.clase, Game.run!.acto);
+    const base = rewardPool(Game.run!.clase, Game.run!.acto, nivelActual());
     const weighted = Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
     const pool = Phaser.Utils.Array.Shuffle(weighted.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);

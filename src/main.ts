@@ -59,5 +59,14 @@ game.events.once(Phaser.Core.Events.READY, () => {
   }
 });
 
+// ── tiempo de juego ACTIVO: cuenta sólo con la pestaña visible y si hubo actividad en los últimos 2 min ──
+let lastInput = Date.now();
+for (const ev of ['pointerdown', 'keydown', 'pointermove']) window.addEventListener(ev, () => (lastInput = Date.now()), { passive: true });
+setInterval(() => {
+  const r = Game.run;
+  if (!r || r.done || document.visibilityState !== 'visible' || Date.now() - lastInput > 120000) return;
+  r.tiempo = (r.tiempo ?? 0) + 5;
+}, 5000);
+
 // acceso de depuración sólo en modo desarrollo (npm run dev)
 if (import.meta.env.DEV) (window as any).__criptas = { game, Game };

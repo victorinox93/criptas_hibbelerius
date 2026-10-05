@@ -23,7 +23,7 @@ var HEAD = {
   Grupos: ['clave', 'nombre', 'activo', 'creado'],
   Alumnos: ['matricula', 'grupo', 'alias', 'avatar', 'salt', 'hash', 'token', 'creado', 'ultimoAcceso', 'grimorio'],
   Partidas: ['runId', 'matricula', 'grupo', 'alias', 'clase', 'inicio', 'actualizado', 'acto', 'pisoMax', 'vida',
-    'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo', 'gravedad'],
+    'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo', 'gravedad', 'minutos'],
   Eventos: ['fecha', 'matricula', 'grupo', 'runId', 'tipo', 'concepto', 'correcto', 'detalle'],
 };
 
@@ -38,7 +38,7 @@ function setup() {
   });
   var g = ss.getSheetByName('Grupos');
   if (g.getLastRow() < 2) g.appendRow(['DIN-OTO26', 'Dinámica · Otoño 2026', true, new Date()]);
-  ['Panel', 'Conceptos'].forEach(function (n) { if (!ss.getSheetByName(n)) ss.insertSheet(n); });
+  ['Panel', 'Conceptos', 'Resumen', 'Actividad'].forEach(function (n) { if (!ss.getSheetByName(n)) ss.insertSheet(n); });
   var def = ss.getSheetByName('Hoja 1') || ss.getSheetByName('Sheet1');
   if (def && ss.getSheets().length > 1) ss.deleteSheet(def);
   actualizarPanel();
@@ -49,7 +49,27 @@ function onOpen() {
     .addItem('Actualizar panel', 'actualizarPanel')
     .addItem('Configurar hojas', 'setup')
     .addItem('Actualizar panel cada hora', 'instalarDisparador')
+    .addSeparator()
+    .addItem('Reiniciar contraseña de un alumno…', 'reiniciarContrasena')
     .addToUi();
+}
+
+/**
+ * Para un alumno que olvidó su contraseña: escribe su matrícula y la próxima
+ * vez que entre, la contraseña que escriba se vuelve la nueva. No pierde su
+ * avatar, su Grimorio ni sus partidas.
+ */
+function reiniciarContrasena() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('Reiniciar contraseña', 'Matrícula del alumno:', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var mat = String(r.getResponseText()).trim().toUpperCase();
+  var sh = sheet_('Alumnos');
+  var row = findRow_(sh, 1, mat);
+  if (!row) { ui.alert('No encontré la matrícula ' + mat + '.'); return; }
+  sh.getRange(row, 6).setValue('REINICIAR');
+  sh.getRange(row, 7).setValue('');
+  ui.alert('Listo. Pídele a ' + mat + ' que entre con «Entrar» y escriba una contraseña NUEVA: esa quedará guardada.');
 }
 
 function instalarDisparador() {
@@ -100,11 +120,17 @@ var ACTIONS = {
     var row = findRow_(sh, 1, mat);
     if (!row) throw new Error('Matrícula o contraseña incorrecta.');
     var v = sh.getRange(row, 1, 1, HEAD.Alumnos.length).getValues()[0];
-    if (sha_(v[4] + r.passHash) !== v[5]) throw new Error('Matrícula o contraseña incorrecta.');
+    var reinicio = v[5] === 'REINICIAR';
+    if (reinicio) {
+      // el profesor reinició la contraseña: la que escribió ahora es la nueva
+      if (!/^[a-f0-9]{64}$/.test(r.passHash)) throw new Error('Contraseña inválida.');
+      var salt = Utilities.getUuid();
+      sh.getRange(row, 5, 1, 2).setValues([[salt, sha_(salt + r.passHash)]]);
+    } else if (sha_(v[4] + r.passHash) !== v[5]) throw new Error('Matrícula o contraseña incorrecta.');
     var token = Utilities.getUuid();
     sh.getRange(row, 7).setValue(token);
     sh.getRange(row, 9).setValue(new Date());
-    return { ok: true, token: token, matricula: mat, grupo: v[1], alias: v[2], avatar: v[3], grimorio: v[9] || '' };
+    return { ok: true, token: token, matricula: mat, grupo: v[1], alias: v[2], avatar: v[3], grimorio: v[9] || '', reinicio: reinicio };
   },
 
   saveProfile: function (r) {
@@ -118,7 +144,7 @@ var ACTIONS = {
     var u = auth_(r.token);
     var runId = 'R-' + Utilities.getUuid().slice(0, 8);
     sheet_('Partidas').appendRow([runId, u.mat, u.grupo, u.alias, clean_(r.clase, 20), new Date(), new Date(),
-      1, 0, '', 0, 'en curso', '', 0, 0, 0, 0, 10, num_(r.gravedad) || 1]);
+      1, 0, '', 0, 'en curso', '', 0, 0, 0, 0, 10, num_(r.gravedad) || 1, 0]);
     return { ok: true, runId: runId };
   },
 
@@ -142,6 +168,7 @@ var ACTIONS = {
     cur[16] = num_(r.runasTotal);
     cur[17] = num_(r.mazo);
     if (r.gravedad) cur[18] = num_(r.gravedad);
+    if (r.minutos !== undefined) cur[19] = Math.max(num_(cur[19]), num_(r.minutos));
     sh.getRange(row, 1, 1, cur.length).setValues([cur]);
     return { ok: true };
   },
@@ -201,7 +228,7 @@ function actualizarPanel() {
 
   var por = {};
   alumnos.forEach(function (a) {
-    por[a[0]] = { mat: a[0], grupo: a[1], alias: a[2], ultimo: a[8], partidas: 0, piso: 0, acto: 0, victorias: 0, puntaje: 0, ok: 0, tot: 0 };
+    por[a[0]] = { mat: a[0], grupo: a[1], alias: a[2], ultimo: a[8], partidas: 0, piso: 0, acto: 0, victorias: 0, puntaje: 0, ok: 0, tot: 0, min: 0 };
   });
   partidas.forEach(function (p) {
     var s = por[p[1]];
@@ -211,6 +238,7 @@ function actualizarPanel() {
     s.acto = Math.max(s.acto, num_(p[7]));
     s.puntaje = Math.max(s.puntaje, num_(p[10]));
     if (p[11] === 'victoria') s.victorias++;
+    s.min += num_(p[19]);
   });
   var conc = {};
   eventos.forEach(function (e) {
@@ -228,12 +256,12 @@ function actualizarPanel() {
   panel.clear();
   panel.clearFormats(); // borra formatos viejos (antes una columna salía en %)
   panel.clearConditionalFormatRules();
-  var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 27)', 'Acto máx.', 'Expedición completa', 'Puntaje máx.',
-    'Runas correctas', 'Runas intentadas', '% aciertos', 'Último acceso'];
+  var head = ['Matrícula', 'Grupo', 'Héroe', 'Partidas', 'Piso máx. (de 39)', 'Acto máx.', 'Expedición completa', 'Puntaje máx.',
+    'Runas correctas', 'Runas intentadas', '% aciertos', 'Último acceso', 'Minutos jugados', 'Min. por partida'];
   var data = Object.keys(por).map(function (k) {
     var s = por[k];
     return [s.mat, s.grupo, s.alias, s.partidas, s.piso, s.acto, s.victorias > 0 ? 'Sí' : 'No', s.puntaje, s.ok, s.tot,
-      s.tot ? s.ok / s.tot : '', s.ultimo];
+      s.tot ? s.ok / s.tot : '', s.ultimo, Math.round(s.min), s.partidas ? Math.round(s.min / s.partidas * 10) / 10 : 0];
   }).sort(function (a, b) { return String(a[1]).localeCompare(String(b[1])) || b[4] - a[4]; });
   panel.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
   if (data.length) {
@@ -242,6 +270,8 @@ function actualizarPanel() {
     panel.getRange(2, 7, data.length, 1).setNumberFormat('@');
     panel.getRange(2, 11, data.length, 1).setNumberFormat('0%');
     panel.getRange(2, 12, data.length, 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    panel.getRange(2, 13, data.length, 1).setNumberFormat('0');
+    panel.getRange(2, 14, data.length, 1).setNumberFormat('0.0');
   }
   panel.setFrozenRows(1);
   panel.autoResizeColumns(1, head.length);
@@ -263,7 +293,84 @@ function actualizarPanel() {
   }
   cs.setFrozenRows(1);
   cs.autoResizeColumns(1, ch.length);
-  panel.getRange(1, 14).setValue('Actualizado: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'));
+  resumenGrupos_(ss, alumnos, partidas, eventos);
+  panel.getRange(1, 16).setValue('Actualizado: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'));
+}
+
+// ───────────────────────── Resumen por grupo y actividad por día ─────────────────────────
+function resumenGrupos_(ss, alumnos, partidas, eventos) {
+  var G = {};
+  var g = function (k) {
+    return G[k] || (G[k] = { grupo: k, registrados: 0, jugaron: {}, partidas: 0, min: 0, completas: 0, pisos: 0, ok: 0, tot: 0, ultima: '' });
+  };
+  alumnos.forEach(function (a) { g(a[1]).registrados++; });
+  partidas.forEach(function (p) {
+    var x = g(p[2]);
+    x.partidas++;
+    x.jugaron[p[1]] = true;
+    x.min += num_(p[19]);
+    x.pisos += num_(p[8]);
+    if (p[11] === 'victoria') x.completas++;
+    if (!x.ultima || p[6] > x.ultima) x.ultima = p[6];
+  });
+  eventos.forEach(function (e) {
+    if (e[4] !== 'runa') return;
+    var x = g(e[2]);
+    x.tot++;
+    if (e[6] === true || e[6] === 'TRUE') x.ok++;
+  });
+  var rs = ss.getSheetByName('Resumen') || ss.insertSheet('Resumen');
+  rs.clear();
+  rs.clearFormats();
+  var h = ['Grupo', 'Alumnos registrados', 'Alumnos que jugaron', 'Partidas', 'Horas jugadas', 'Min. por partida',
+    'Min. por alumno', 'Expediciones completas', '% completas', 'Piso promedio', '% aciertos', 'Última actividad'];
+  var d = Object.keys(G).sort().map(function (k) {
+    var x = G[k];
+    var n = Object.keys(x.jugaron).length;
+    return [x.grupo, x.registrados, n, x.partidas, Math.round(x.min / 6) / 10, x.partidas ? Math.round(x.min / x.partidas * 10) / 10 : 0,
+      n ? Math.round(x.min / n * 10) / 10 : 0, x.completas, x.partidas ? x.completas / x.partidas : 0,
+      x.partidas ? Math.round(x.pisos / x.partidas * 10) / 10 : 0, x.tot ? x.ok / x.tot : '', x.ultima];
+  });
+  rs.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
+  if (d.length) {
+    rs.getRange(2, 1, d.length, h.length).setValues(d);
+    rs.getRange(2, 5, d.length, 3).setNumberFormat('0.0');
+    rs.getRange(2, 9, d.length, 1).setNumberFormat('0%');
+    rs.getRange(2, 11, d.length, 1).setNumberFormat('0%');
+    rs.getRange(2, 12, d.length, 1).setNumberFormat('dd/mm/yyyy hh:mm');
+  }
+  rs.setFrozenRows(1);
+  rs.autoResizeColumns(1, h.length);
+
+  // Actividad por día: cuántas partidas, alumnos y minutos (según el día en que inició cada partida)
+  var A = {};
+  var tz = Session.getScriptTimeZone();
+  partidas.forEach(function (p) {
+    if (!(p[5] instanceof Date)) return;
+    var dia = Utilities.formatDate(p[5], tz, 'yyyy-MM-dd');
+    var k = dia + '|' + p[2];
+    var x = A[k] || (A[k] = { dia: dia, grupo: p[2], partidas: 0, alumnos: {}, min: 0, completas: 0 });
+    x.partidas++;
+    x.alumnos[p[1]] = true;
+    x.min += num_(p[19]);
+    if (p[11] === 'victoria') x.completas++;
+  });
+  var as = ss.getSheetByName('Actividad') || ss.insertSheet('Actividad');
+  as.clear();
+  as.clearFormats();
+  var ah = ['Día', 'Grupo', 'Partidas iniciadas', 'Alumnos distintos', 'Minutos jugados', 'Min. por alumno', 'Expediciones completas'];
+  var ad = Object.keys(A).sort().map(function (k) {
+    var x = A[k];
+    var n = Object.keys(x.alumnos).length;
+    return [x.dia, x.grupo, x.partidas, n, Math.round(x.min), n ? Math.round(x.min / n * 10) / 10 : 0, x.completas];
+  });
+  as.getRange(1, 1, 1, ah.length).setValues([ah]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
+  if (ad.length) {
+    as.getRange(2, 1, ad.length, ah.length).setValues(ad);
+    as.getRange(2, 5, ad.length, 2).setNumberFormat('0.0');
+  }
+  as.setFrozenRows(1);
+  as.autoResizeColumns(1, ah.length);
 }
 
 // ───────────────────────── utilidades ─────────────────────────

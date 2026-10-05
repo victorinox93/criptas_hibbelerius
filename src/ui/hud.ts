@@ -5,10 +5,30 @@ import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { BOONS } from '../data/figures';
 import { RELICS } from '../data/relics';
-import { Game, ROMAN } from '../state';
+import { FLOORS, Game, ROMAN, saveLocal } from '../state';
+import { MAX_POCIONES, POCIONES } from '../data/pociones';
+import { audio } from '../audio';
 import { T } from '../textos';
 import { cardView, CW, CH } from './card';
 import { button, frame, icon, Tooltip, txt } from './widgets';
+
+/**
+ * Quién sabe usar una poción ahora mismo. El combate registra el suyo;
+ * fuera de combate sólo funcionan las que no son de combate (curación).
+ * Debe devolver true si la poción se usó.
+ */
+let potionHandler: ((id: string) => boolean) | null = null;
+export function setPotionHandler(fn: ((id: string) => boolean) | null) {
+  potionHandler = fn;
+}
+/** Uso fuera de combate (p. ej. en el mapa) */
+function usePotionOutside(id: string): boolean {
+  const r = Game.run!;
+  if (id === 'vida') r.hp = Math.min(r.maxHp, r.hp + 15);
+  else if (id === 'mayor') { r.maxHp += 5; r.hp = Math.min(r.maxHp, r.hp + 30); }
+  else return false;
+  return true;
+}
 
 export interface Hud {
   setHp(hp: number, max: number): void;
@@ -32,13 +52,46 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
   tip.attach(hpIcon, T.hud.vida, T.hud.vidaInfo, 20);
   D(icon(s, 270, 20, 'i_skull', 2.6));
   const floorT = D(txt(s, 286, 6, '', 24, CSS.bone));
-  const scoreT = D(txt(s, 365, 6, '', 24, CSS.gold));
-  const coin = D(icon(s, 445, 20, 'i_coin', 2.6));
-  const ergT = D(txt(s, 461, 6, '', 24, CSS.gold));
+  const scoreT = D(txt(s, 392, 6, '', 24, CSS.gold));
+  const coin = D(icon(s, 468, 20, 'i_coin', 2.6));
+  const ergT = D(txt(s, 484, 6, '', 24, CSS.gold));
   tip.attach(coin, T.moneda, 'Moneda de las criptas (el ergio es una unidad de energía). Se gana en combates y runas; se gasta con el Mercader.', 20);
 
-  const deckBtn = D(button(s, W - 232, 20, 116, 30, '', () => deckOverlay(s), { size: 20 }));
-  const relicRow = s.add.container(530, 20).setDepth(401);
+  const deckBtn = D(button(s, W - 182, 20, 96, 30, '', () => deckOverlay(s), { size: 19 }));
+  const potRow = s.add.container(552, 20).setDepth(401);
+  const relicRow = s.add.container(648, 20).setDepth(401);
+  let potMenu: Phaser.GameObjects.Container | null = null;
+  const closeMenu = () => { potMenu?.destroy(); potMenu = null; };
+  const openPotion = (i: number) => {
+    closeMenu();
+    tip.hide();
+    const r = Game.run!;
+    const id = r.pociones?.[i];
+    if (!id) return;
+    const def = POCIONES[id];
+    const x = 552 + i * 30;
+    const m = (potMenu = s.add.container(x - 10, 46).setDepth(950));
+    const g = s.add.graphics();
+    frame(g, 0, 0, 250, 116, 0x0b090e, UI.gold, 0.98);
+    m.add([g, txt(s, 12, 8, def.name, 21, CSS.gold), txt(s, 12, 32, def.text, 17, CSS.bone, { wordWrap: { width: 226 } })]);
+    const use = () => {
+      const ok = potionHandler ? potionHandler(id) : !def.combate && usePotionOutside(id);
+      if (!ok) {
+        m.add(txt(s, 12, 96, def.combate ? 'Sólo se puede usar en combate.' : 'No se puede usar ahora.', 15, CSS.blood));
+        return;
+      }
+      r.pociones!.splice(i, 1);
+      audio.sfx('heal');
+      saveLocal();
+      closeMenu();
+      hud.refresh();
+    };
+    m.add(button(s, 70, 84, 104, 28, 'Usar', use, { size: 18, color: UI.green }));
+    m.add(button(s, 180, 84, 104, 28, 'Tirar', () => { r.pociones!.splice(i, 1); saveLocal(); closeMenu(); hud.refresh(); }, { size: 18 }));
+    s.time.delayedCall(10, () => s.input.once('pointerdown', (_p: unknown, over: Phaser.GameObjects.GameObject[]) => {
+      if (!over.some((o) => m.exists(o))) closeMenu();
+    }));
+  };
   const effRow = s.add.container(W - 36, 62).setDepth(401);
   const boonRow = s.add.container(26, 62).setDepth(401);
   if (opts.onMenu) D(button(s, W - 34, 20, 56, 30, T.hud.menu, opts.onMenu, { size: 20 }));
@@ -50,12 +103,22 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
     refresh() {
       const r = Game.run!;
       hud.setHp(r.hp, r.maxHp);
-      floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, 9)}/9`);
+      floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, FLOORS + 1)}/${FLOORS + 1}`);
       scoreT.setText(`✦${r.score}`);
       ergT.setText(`${r.ergios}`);
-      deckBtn.label.setText(`${T.hud.mazo} (${r.deck.length})`);
+      deckBtn.label.setText(`${T.hud.mazo} ${r.deck.length}`);
+      potRow.removeAll(true);
+      for (let i = 0; i < MAX_POCIONES; i++) {
+        const id = r.pociones?.[i];
+        const im = s.add.image(i * 30, 0, id ? `pot_${id}` : 'pot_vacia').setScale(2.6);
+        if (id) {
+          im.setInteractive({ useHandCursor: true }).on('pointerdown', () => openPotion(i));
+          tip.attach(im, POCIONES[id].name, `${POCIONES[id].text}\n${POCIONES[id].lore}\n(clic para usarla)`, 20);
+        } else tip.attach(im, 'Frasco vacío', 'Las pociones se consiguen al ganar combates y en la tienda.', 20);
+        potRow.add(im);
+      }
       relicRow.removeAll(true);
-      const step = Math.min(32, 128 / Math.max(1, r.relics.length - 1));
+      const step = Math.min(30, 62 / Math.max(1, r.relics.length - 1));
       r.relics.forEach((id, i) => {
         const rel = RELICS[id];
         if (!rel) return;

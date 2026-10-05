@@ -5,6 +5,7 @@ import { enqueue, isOnline } from './api';
 import { gravityOf } from './data/gravity';
 import { FAMILIAR_POOL, FAMILIARS } from './data/familiars';
 import { ADMINS } from './config';
+import { nivelDe } from './data/progreso';
 
 export interface Avatar {
   alias: string;
@@ -67,7 +68,9 @@ export interface Run {
   nextUid: number;
   done: boolean;
   debug?: boolean; // partida de prueba del Modo profesor: no se registra
+  pociones?: string[]; // frascos (máx. 3)
   temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
+  tiempo?: number; // segundos de juego activo (para la hoja «Resumen» y «Actividad»)
 }
 
 export interface ShopItem {
@@ -79,13 +82,14 @@ export interface ShopState {
   cards: (ShopItem & { id: string; up: boolean })[];
   relic: (ShopItem & { id: string }) | null;
   familiar?: (ShopItem & { id: string }) | null;
+  pociones?: (ShopItem & { id: string })[];
   heal: ShopItem;
   remove: ShopItem;
   discount: boolean;
   haggled: boolean;
 }
 
-export const FLOORS = 8; // pisos antes del jefe
+export const FLOORS = 12; // pisos antes del jefe (cada acto tiene FLOORS + 1 nodos de profundidad)
 export const LANES = 5;
 
 /** Lo descubierto por el alumno (persiste entre expediciones) */
@@ -100,6 +104,7 @@ export interface Codex {
   gravedadMax: number; // nivel de gravedad más alto vencido (0 = ninguno)
   victorias: number;
   flags?: string[]; // logros: 'acto1' (venció al Coloso), 'acto2'
+  xp?: number; // Conocimiento acumulado (desbloqueos entre expediciones)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -115,6 +120,7 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.gravedadMax = Math.max(a?.gravedadMax ?? 0, b?.gravedadMax ?? 0);
   c.victorias = Math.max(a?.victorias ?? 0, b?.victorias ?? 0);
   c.flags = [...new Set([...(a?.flags ?? []), ...(b?.flags ?? [])])];
+  c.xp = Math.max(a?.xp ?? 0, b?.xp ?? 0);
   return c;
 }
 
@@ -143,6 +149,17 @@ export function codexFlag(flag: string) {
   }
 }
 
+/** Nivel de Conocimiento del alumno (desbloqueos) */
+export function nivelActual() {
+  return nivelDe(Game.codex.xp ?? 0);
+}
+
+/** Suma Conocimiento y marca el Grimorio para sincronizar */
+export function addConocimiento(n: number) {
+  Game.codex.xp = (Game.codex.xp ?? 0) + n;
+  codexDirty = true;
+}
+
 /** ¿El usuario actual es administrador (Modo profesor)? Requiere sesión en línea. */
 export function isAdmin() {
   const p = Game.profile;
@@ -150,7 +167,7 @@ export function isAdmin() {
 }
 
 /** Total de pisos de la expedición (3 actos de 9) */
-export const TOTAL_PISOS = 27;
+export const TOTAL_PISOS = 3 * (FLOORS + 1);
 export const ROMAN = ['I', 'II', 'III'];
 
 /** ¿El Arcanista está desbloqueado? (al vencer al Coloso al menos una vez) */
@@ -239,7 +256,7 @@ export function generateMap(acto = 1): MapNode[] {
     const r = Math.random();
     if (n.floor === 0) n.type = 'combate';
     else if (n.floor === FLOORS - 1) n.type = 'fogata';
-    else if (n.floor <= 2) n.type = r < 0.45 ? 'combate' : r < 0.63 ? 'evento' : r < 0.75 ? 'santuario' : r < 0.88 ? 'runa' : 'fogata';
+    else if (n.floor <= 3) n.type = r < 0.5 ? 'combate' : r < 0.68 ? 'evento' : r < 0.78 ? 'santuario' : r < 0.9 ? 'runa' : 'fogata';
     else n.type = r < 0.36 ? 'combate' : r < 0.52 ? 'elite' : r < 0.66 ? 'evento' : r < 0.75 ? 'runa' : r < 0.83 ? 'mercader' : r < 0.92 ? 'santuario' : 'fogata';
   }
   // garantías: una élite, una runa, dos encuentros y un mercader alcanzables
@@ -249,11 +266,12 @@ export function generateMap(acto = 1): MapNode[] {
     const cands = by((n) => n.floor >= floors[0] && n.floor <= floors[1] && n.type === 'combate');
     for (let i = have; i < count && cands.length; i++) cands.pop()!.type = type;
   };
-  ensure('elite', acto >= 2 ? 2 : 1, [3, 6]);
-  ensure('runa', 1, [1, 5]);
-  ensure('evento', 2, [1, 6]);
-  ensure('mercader', 1, [3, 5]);
-  ensure('santuario', 2, [1, 6]);
+  ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);
+  ensure('runa', 2, [1, FLOORS - 3]);
+  ensure('evento', 3, [1, FLOORS - 2]);
+  ensure('mercader', 2, [4, FLOORS - 2]);
+  ensure('santuario', 2, [2, FLOORS - 3]);
+  ensure('fogata', 2, [5, FLOORS - 3]);
   return [...list, boss];
 }
 
@@ -323,6 +341,7 @@ export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abando
     runasTotal: r.stats.runasTotal,
     mazo: r.deck.length,
     gravedad: r.gravity,
+    minutos: Math.round((r.tiempo ?? 0) / 6) / 10,
   });
 }
 
@@ -359,6 +378,7 @@ export function migrateRun(r: Run | null): Run | null {
   r.met ??= [];
   r.seen ??= [];
   r.temas ??= {};
+  r.pociones ??= [];
   r.familiar ??= null;
   return r;
 }

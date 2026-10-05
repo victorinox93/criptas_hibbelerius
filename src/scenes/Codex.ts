@@ -11,6 +11,7 @@ import { FAMILIARS } from '../data/familiars';
 import { BOONS, FIGURES } from '../data/figures';
 import { RELICS } from '../data/relics';
 import { CodexKind, Game } from '../state';
+import { DESBLOQUEOS, NIVELES, nivelDe, siguienteNivel } from '../data/progreso';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
@@ -43,7 +44,7 @@ export class CodexScene extends Phaser.Scene {
     title(this, W / 2, 40, T.grimorio.titulo, 44);
     this.countT = txt(this, 30, 518, '', 20, CSS.dim).setOrigin(0, 0.5);
     this.tabs = T.grimorio.tabs.map((name, i) =>
-      button(this, 40 + 88 + i * 176, 92, 168, 36, name, () => this.show(i), { size: 21 }));
+      button(this, 30 + 73 + i * 152, 92, 146, 36, name, () => this.show(i), { size: 19 }));
     const g = this.add.graphics();
     frame(g, 24, 120, 448, 380, 0x0e0b12, UI.border, 0.9);
     frame(g, DX - 8, 120, DW + 16, 380, 0x0e0b12, UI.border, 0.9);
@@ -139,6 +140,7 @@ export class CodexScene extends Phaser.Scene {
             L(c, txt(this, DX + 185, 150, cd.name, 26, CSS.gold, { wordWrap: { width: DW - 190 } }));
             L(c, txt(this, DX + 185, 186, `${cd.type} · ${cd.concept}\n${cd.rarity}`, 19, CSS.dim));
             L(c, txt(this, DX + 185, 250, cd.lore, 19, CSS.bone, { wordWrap: { width: DW - 190 }, lineSpacing: 2 }));
+            if (cd.lock) L(c, txt(this, DX + 185, 440, `Desbloqueable: nivel ${cd.lock} de Conocimiento`, 17, '#9ad8f0', { wordWrap: { width: DW - 190 } }));
           },
         }));
       default: {
@@ -173,18 +175,58 @@ export class CodexScene extends Phaser.Scene {
     }
   }
 
+  /** Pestaña «Progreso»: nivel de Conocimiento y lo que desbloquea cada nivel */
+  private showProgress() {
+    const xp = Game.codex.xp ?? 0;
+    const lv = nivelDe(xp);
+    const sig = siguienteNivel(xp);
+    const c = this.grid;
+    const g = this.add.graphics();
+    frame(g, 24, 120, W - 48, 380, 0x0e0b12, UI.border, 0.98);
+    c.add(g);
+    c.add(txt(this, 44, 132, `Nivel de Conocimiento ${lv}`, 26, CSS.gold));
+    c.add(txt(this, 44, 162, 'Ganas Conocimiento en cada expedición (pisos, runas, élites, actos y victoria). Cada nivel desbloquea cosas nuevas.', 17, CSS.dim, { wordWrap: { width: 600 } }));
+    // barra de avance
+    const prev = NIVELES[lv - 1];
+    const frac = sig ? (xp - prev) / (sig - prev) : 1;
+    g.fillStyle(0x1a1520, 1).fillRect(W - 330, 138, 280, 16);
+    g.fillStyle(0x6ad0e8, 1).fillRect(W - 330, 138, 280 * frac, 16);
+    g.lineStyle(2, UI.border, 1).strokeRect(W - 330, 138, 280, 16);
+    c.add(txt(this, W - 50, 160, sig ? `${xp} / ${sig}` : `${xp} (máximo)`, 17, CSS.bone).setOrigin(1, 0));
+    // lista en dos columnas
+    let col = 0, y = 196;
+    for (let n = 2; n <= NIVELES.length; n++) {
+      const items = DESBLOQUEOS.filter((d) => d.nivel === n);
+      if (!items.length) continue;
+      if (y + 22 + items.length * 19 > 494) { col++; y = 196; }
+      const x = 44 + col * 300;
+      const got = n <= lv;
+      c.add(txt(this, x, y, `Nivel ${n}${got ? '  ✓' : ''}`, 19, got ? CSS.green : CSS.dim));
+      y += 22;
+      for (const d of items) {
+        const t = txt(this, x + 12, y, `${d.tipo}: ${d.nombre}`, 16, got ? CSS.bone : '#5a5468');
+        if (t.width > 282) t.setScale(282 / t.width, 1);
+        c.add(t);
+        y += 19;
+      }
+      y += 6;
+    }
+    this.countT.setText(`Nivel ${lv}`);
+  }
+
   private show(tab: number) {
     this.tab = tab;
     audio.sfx('click');
     this.tabs.forEach((b, i) => b.label.setColor(i === tab ? CSS.gold : CSS.dim));
     this.grid.removeAll(true);
     this.detail.removeAll(true);
+    if (tab === 5) return this.showProgress();
     const list = this.entries(tab);
     const known = list.filter((e) => this.has(e.kind, e.id)).length;
     this.countT.setText(`${T.grimorio.descubiertos}: ${known} / ${list.length}`);
 
-    const many = list.length > 30;
-    const cols = many ? 8 : 6, size = many ? 48 : 62, gap = many ? 6 : 8, x0 = 44, y0 = 140;
+    const many = list.length > 30, lots = list.length > 48;
+    const cols = lots ? 10 : many ? 8 : 6, size = lots ? 38 : many ? 48 : 62, gap = lots ? 5 : many ? 6 : 8, x0 = 40, y0 = 136;
     let selected: Phaser.GameObjects.Graphics | null = null;
     list.forEach((e, i) => {
       const x = x0 + (i % cols) * (size + gap), y = y0 + Math.floor(i / cols) * (size + gap);
@@ -212,6 +254,8 @@ export class CodexScene extends Phaser.Scene {
           const sil = this.add.image(DX + 70, 210, e.tex).setTintFill(0x000000).setAlpha(0.7);
           sil.setScale(Math.min(8, 120 / sil.height, 120 / sil.width));
           this.detail.add([sil, txt(this, DX + 150, 150, '???', 30, CSS.dim), txt(this, DX + 8, 300, T.grimorio.bloqueado, 22, CSS.dim)]);
+          const lk = e.kind === 'cards' ? CARDS[e.id]?.lock : undefined;
+          if (lk) this.detail.add(txt(this, DX + 8, 370, `Se desbloquea en el nivel ${lk} de Conocimiento.`, 20, '#9ad8f0'));
         }
       });
       g.on('off', () => draw(false));

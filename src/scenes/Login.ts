@@ -69,11 +69,13 @@ export class LoginScene extends Phaser.Scene {
     const l4 = L(left, 374, T.login.grupo);
     const grp = new TextField(this, cx, 412, 380, { upper: true, maxLength: 20, onEnter: () => go() });
 
+    const olvido = txt(this, cx, 424, T.login.olvido, 17, CSS.dim, { align: 'center' }).setOrigin(0.5, 0);
     const tabs: Btn[] = [];
     const goBtn = button(this, cx, 0, 380, 46, '', () => go(), { color: UI.blood });
     const layout = () => {
       const reg = mode === 'reg';
       [l3, l4].forEach((o) => o.setVisible(reg));
+      olvido.setVisible(!reg);
       pass2.setVisible(reg);
       grp.setVisible(reg);
       pg.clear();

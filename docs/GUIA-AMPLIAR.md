@@ -419,3 +419,13 @@ Para que aparezca, agrégalo a `ENCOUNTERS`, `ENCOUNTERS_2` o `ENCOUNTERS_3`. Mu
 - **Repaso final:** `src/data/lecciones.ts` tiene la fórmula y la idea clave de cada tema.
 - **Pistas:** el costo está en `PISTA_COSTO` (`src/config.ts`).
 - **Portada:** reemplaza `public/portada.jpg` por otra imagen (cualquier tamaño; se ajusta sola).
+
+
+## 12. Progreso, cartas desbloqueables, pociones y música (v0.10)
+
+- **Niveles de Conocimiento:** `src/data/progreso.ts`. `NIVELES` dice cuánto Conocimiento pide cada nivel y `conocimientoGanado()` cuánto da una expedición. `DESBLOQUEOS` es la lista que ven los alumnos.
+- **Carta desbloqueable:** agrega `lock: 4` a su definición en `src/data/cards.ts` (sólo saldrá desde el nivel 4) y anótala en `DESBLOQUEOS`.
+- **Poción nueva:** agrégala a `POCIONES` en `src/data/pociones.ts` (con su color) y programa su efecto en `usePotion()` de `src/scenes/Combat.ts`.
+- **Cosmético desbloqueable:** agrega `lock: n` a un color en `CAPES`, `ARMORS` o `VISORS` (`src/art/palette.ts`).
+- **Pisos por acto:** `FLOORS` en `src/state.ts` (ahora 12 + el jefe).
+- **Música dungeon synth:** en `src/audio.ts` cada pista tiene `drone` (volumen del drone grave), `choir` (coro), `arp` (clavecín, 16 pasos), `tom` (tambor de guerra: 1 = golpe, 2 = fuerte) y `lead` (órgano, 64 pasos con notas MIDI). Para algo más oscuro: baja `bpm`, sube `drone`/`choir` y usa acordes menores o frigios.

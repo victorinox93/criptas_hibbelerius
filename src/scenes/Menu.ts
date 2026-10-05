@@ -8,7 +8,8 @@ import { W, H } from '../config';
 import { starterDeck } from '../data/cards';
 import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
-import { arcanistaUnlocked, clearSession, Game, isAdmin, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { siguienteNivel } from '../data/progreso';
+import { arcanistaUnlocked, clearSession, Game, isAdmin, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -33,6 +34,10 @@ export class MenuScene extends Phaser.Scene {
 
     panel(this, 60, 412, 380, 108);
     txt(this, 80, 422, av.alias, 30, CSS.gold);
+    const xp = Game.codex.xp ?? 0;
+    const sig = siguienteNivel(xp);
+    txt(this, 424, 428, `Conocimiento: nivel ${nivelActual()}`, 18, '#9ad8f0').setOrigin(1, 0);
+    txt(this, 424, 478, sig ? `${xp} / ${sig}` : 'máximo', 16, CSS.dim).setOrigin(1, 0);
     txt(this, 80, 454, `${CLASSES.find((c) => c.id === av.clase)?.name ?? 'Caballero de la Masa'} · ${p.matricula}`, 20, CSS.bone);
     const gmax = Game.codex.gravedadMax;
     txt(this, 80, 476, `${T.menu.mejorGravedad}: ${gmax ? GRAVITY[gmax - 1].name : T.menu.ninguna}`, 18, CSS.dim);

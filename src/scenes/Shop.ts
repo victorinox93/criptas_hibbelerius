@@ -5,7 +5,8 @@ import { W, H } from '../config';
 import { CARDS, rewardPool, cardName } from '../data/cards';
 import { RELICS } from '../data/relics';
 import { FAMILIAR_POOL, FAMILIARS } from '../data/familiars';
-import { addCard, addErgios, addFamiliar, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock } from '../state';
+import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
+import { addCard, addErgios, addFamiliar, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock, nivelActual } from '../state';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
 import { deckOverlay, topBar } from '../ui/hud';
@@ -14,7 +15,7 @@ import { randomRelics } from './Reward';
 import { grantRelic } from './Reward';
 
 function makeStock(node: number): ShopState {
-  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase, Game.run!.acto))]).slice(0, 3);
+  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase, Game.run!.acto, nivelActual()))]).slice(0, 3);
   const [rel] = randomRelics(1);
   return {
     node,
@@ -25,6 +26,7 @@ function makeStock(node: number): ShopState {
     }),
     relic: rel ? { id: rel, price: Phaser.Math.Between(115, 140), sold: false } : null,
     familiar: Math.random() < 0.6 ? { id: Phaser.Utils.Array.GetRandom(FAMILIAR_POOL), price: Phaser.Math.Between(55, 70), sold: false } : null,
+    pociones: Phaser.Utils.Array.Shuffle(pocionesDisponibles(nivelActual())).slice(0, 2).map((id) => ({ id, price: Phaser.Math.Between(22, 34), sold: false })),
     heal: { price: 30, sold: false },
     remove: { price: 55, sold: false },
     discount: false,
@@ -190,10 +192,29 @@ export class ShopScene extends Phaser.Scene {
     // servicios
     L(txt(this, 300, 372, T.mercader.servicios, 22, CSS.gold));
     const svc = (y: number, label: string, it: ShopItem | null, fn: () => void, enabled = true) => {
-      const b: Btn = button(this, 470, y, 340, 40, label, fn, { size: 21, enabled: enabled && !(it?.sold), silent: true });
+      const b: Btn = button(this, 455, y, 320, 40, label, fn, { size: 20, enabled: enabled && !(it?.sold), silent: true });
       L(b);
-      if (it) this.tag(680, y, it);
+      if (it) this.tag(650, y, it);
     };
+    // pociones
+    (s.pociones ?? []).forEach((it, i) => {
+      const p = POCIONES[it.id];
+      const y = 396 + i * 66;
+      const im = this.add.image(718, y, `pot_${p.id}`).setScale(3.2).setAlpha(it.sold ? 0.25 : 1);
+      L(im);
+      if (!it.sold) {
+        im.setInteractive({ useHandCursor: true });
+        im.on('pointerover', (pt: Phaser.Input.Pointer) => this.tip.show(pt.worldX - 320, pt.worldY - 100, p.name, `${p.text}\n${p.lore}`));
+        im.on('pointerout', () => this.tip.hide());
+        im.on('pointerdown', () => {
+          const r = Game.run!;
+          r.pociones ??= [];
+          if (r.pociones.length >= MAX_POCIONES) return this.say('Tus frascos están llenos.');
+          this.buy(it, `pocion ${p.id}`, () => r.pociones!.push(p.id));
+        });
+      }
+      this.tag(724, y + 30, it);
+    });
     const r = Game.run!;
     svc(412, T.mercader.olvidar, s.remove, () => {
       if (this.price(s.remove) > r.ergios) return this.buy(s.remove, '', () => undefined);

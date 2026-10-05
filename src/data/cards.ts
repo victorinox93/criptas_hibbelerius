@@ -40,6 +40,7 @@ export interface CardDef {
   target: 'enemy' | 'all' | 'self';
   exhaust?: boolean;
   act?: number; // sólo aparece como recompensa a partir de este acto
+  lock?: number; // nivel de Conocimiento necesario para que aparezca (src/data/progreso.ts)
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -377,6 +378,95 @@ export const CARDS: Record<string, CardDef> = {
     lore: 'Un par M aplicado durante un tiempo t produce un impulso angular M·t: entre más tiempo giras, más fuerte golpeas.',
   },
 
+  // ════════════ DESBLOQUEABLES (nivel de Conocimiento) ════════════
+  // ── Caballero ──
+  metabolismo: {
+    id: 'metabolismo', name: 'Metabolismo Forzado', type: 'Habilidad', icon: 'i_heart', concept: 'Energía', rarity: 'común', target: 'self', lock: 2,
+    stats: (up) => ({ cost: 0, extra: up ? 2 : 3, block: 2 }),
+    text: (s) => `Pierdes ${s.extra} de vida.\nGana 2 J.`,
+    lore: 'Tu cuerpo convierte energía química en trabajo… a costa de desgastarse.',
+  },
+  torbellinoAcero: {
+    id: 'torbellinoAcero', name: 'Torbellino de Acero', type: 'Ataque', icon: 'i_wind', concept: '2ª ley', rarity: 'rara', target: 'all', lock: 3,
+    stats: (up) => ({ cost: 0, m: up ? 3 : 2, a: 3 }),
+    text: (s, c) => `Gasta TODA tu energía.\nPor cada J: F = ${r1((s.m ?? 2) + c.masaBonus)} kg × ${Math.max(0, 3 + c.acelBonus - c.friccion)} m/s²\na todos.`,
+    lore: 'Giras con todo lo que tienes: cada joule invertido es un golpe más.',
+  },
+  palanca: {
+    id: 'palanca', name: 'Palanca de Arquímedes', type: 'Habilidad', icon: 'i_angle', concept: 'Momento de una fuerza', rarity: 'común', target: 'self', lock: 4,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Tu siguiente ataque\neste turno inflige\nel DOBLE (M = F·d).`,
+    lore: '«Dadme un punto de apoyo y moveré el mundo.» Duplicar el brazo de palanca duplica el momento.',
+  },
+  inerciaPura: {
+    id: 'inerciaPura', name: 'Masa Inamovible', type: 'Poder', icon: 'i_mass', concept: 'Masa', rarity: 'rara', target: 'self', exhaust: true, lock: 5,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `Cada Defensa que juegues\nte da +1 kg a tus ataques.\nSe agota.`,
+    lore: 'Mientras más resistes, más masa acumulas… y más pega tu siguiente golpe.',
+  },
+  resistencia: {
+    id: 'resistencia', name: 'Resistencia del Material', type: 'Poder', icon: 'i_shield', concept: 'Mecánica de materiales', rarity: 'común', target: 'self', exhaust: true, lock: 6,
+    stats: (up) => ({ cost: 1, block: up ? 5 : 3 }),
+    text: (s) => `Al inicio de cada turno\nganas ${s.block} de Bloqueo.\nSe agota.`,
+    lore: 'Un material bien elegido aguanta el esfuerzo una y otra vez sin fallar.',
+  },
+  // ── Arcanista ──
+  sobreimpulso: {
+    id: 'sobreimpulso', name: 'Postcombustión', type: 'Habilidad', icon: 'i_fire', concept: 'Cinemática', rarity: 'común', target: 'self', cls: 'arcanista', lock: 2,
+    stats: (up) => ({ cost: 0, extra: up ? 4 : 3 }),
+    text: (s) => `Pierdes 3 de vida.\n+${s.extra} m/s.`,
+    lore: 'Quemar de más da empuje extra… y calienta el motor.',
+  },
+  orbita: {
+    id: 'orbita', name: 'Órbita Cerrada', type: 'Poder', icon: 'i_pend', concept: 'Movimiento circular', rarity: 'rara', target: 'self', cls: 'arcanista', exhaust: true, lock: 3,
+    stats: (up) => ({ cost: up ? 0 : 1, m: 0.6 }),
+    text: (s, c) => `Al inicio de cada turno un\nsatélite golpea a un enemigo\ncon K = ½·${s.m}·v² (${Math.round(0.5 * (s.m ?? 0.6) * (c.vel ?? 0) ** 2)}). Se agota.`,
+    lore: 'Algo en órbita conserva su energía y vuelve una y otra vez al mismo punto.',
+  },
+  doppler: {
+    id: 'doppler', name: 'Efecto Doppler', type: 'Ataque', icon: 'i_wind', concept: 'Ondas', rarity: 'común', target: 'enemy', cls: 'arcanista', lock: 4,
+    stats: (up) => ({ cost: 1, m: up ? 1.2 : 1 }),
+    text: (s, c) => `${kText(s, c)}\nSi v ≥ 6: golpea a TODOS.`,
+    lore: 'Al acercarte rápido, tu frente de onda se comprime y alcanza a todos.',
+  },
+  tunel: {
+    id: 'tunel', name: 'Efecto Túnel', type: 'Habilidad', icon: 'i_crystal', concept: 'Energía', rarity: 'rara', target: 'self', cls: 'arcanista', exhaust: true, lock: 5,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Tus ataques de este turno\nignoran el Bloqueo.\nSe agota.`,
+    lore: 'En el mundo cuántico, a veces una partícula atraviesa una barrera que no podría saltar.',
+  },
+  singularidad: {
+    id: 'singularidad', name: 'Singularidad', type: 'Ataque', icon: 'i_rad', concept: 'Energía cinética', rarity: 'rara', target: 'all', cls: 'arcanista', lock: 6,
+    stats: (up) => ({ cost: 3, m: up ? 2 : 1.5 }),
+    text: (s, c) => `${kText(s, c)}\nK a TODOS. Tu rapidez\nqueda en 0.`,
+    lore: 'Toda tu energía cinética colapsa en un solo punto… y explota.',
+  },
+  // ── Neutrales ──
+  apuntes: {
+    id: 'apuntes', name: 'Apuntes del Profe', type: 'Habilidad', icon: 'i_book', concept: 'Análisis', rarity: 'común', target: 'self', cls: 'neutral', exhaust: true, lock: 2,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Roba 3 cartas.\nSe agota.`,
+    lore: 'Todo lo que necesitas ya lo dijo el profe en clase. Sólo hay que releerlo.',
+  },
+  cafe: {
+    id: 'cafe', name: 'Café de Laboratorio', type: 'Habilidad', icon: 'i_bolt', concept: 'Energía', rarity: 'común', target: 'self', cls: 'neutral', exhaust: true, lock: 3,
+    stats: (up) => ({ cost: 0, extra: up ? 3 : 2 }),
+    text: (s) => `Gana ${s.extra} J y roba 1.\nMete 1 «Ruido Blanco»\na tu descarte. Se agota.`,
+    lore: 'Energía rápida… y luego el bajón.',
+  },
+  entropia: {
+    id: 'entropia', name: 'Entropía', type: 'Poder', icon: 'i_fog', concept: '2ª ley de la termodinámica', rarity: 'rara', target: 'self', cls: 'neutral', exhaust: true, lock: 4,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Al inicio de cada turno\npierdes 1 de vida y\nganas 1 J. Se agota.`,
+    lore: 'Ningún proceso es perfecto: al convertir energía, algo siempre se desordena… y se pierde.',
+  },
+  formulario: {
+    id: 'formulario', name: 'Formulario', type: 'Poder', icon: 'i_rune', concept: 'Análisis', rarity: 'rara', target: 'self', cls: 'neutral', exhaust: true, lock: 5,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `Robas 1 carta más\ncada turno.\nSe agota.`,
+    lore: 'Con las fórmulas a la mano, cada turno ves más opciones.',
+  },
+
   // ════════════ ESTADOS (cartas basura que dan los enemigos) ════════════
   lodoCarta: {
     id: 'lodoCarta', name: 'Lodo Pegajoso', type: 'Estado', icon: 'i_mud', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
@@ -412,8 +502,8 @@ export function starterDeck(clase: string) {
 }
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */
-export function rewardPool(clase: string, acto = 1): string[] {
-  const ok = (c: CardDef) => (c.act ?? 1) <= acto;
+export function rewardPool(clase: string, acto = 1, nivel = 99): string[] {
+  const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel;
   const own = Object.values(CARDS).filter((c) => ok(c) &&
     c.rarity !== 'estado' && (clase === 'arcanista' ? c.cls === 'arcanista' : (c.cls ?? 'caballero') === 'caballero'));
   const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && ok(c));
