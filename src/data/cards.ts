@@ -16,7 +16,7 @@ export interface CalcCtx {
   friccion: number; // reduce aceleración (Babosa de Lodo)
   g?: number; // gravedad del nivel (m/s²)
   vel?: number; // rapidez del Arcanista (m/s)
-  block?: number; // tu Bloque actual
+  block?: number; // tu Bloqueo actual
   energy?: number; // Joules disponibles
 }
 
@@ -82,7 +82,7 @@ export const CARDS: Record<string, CardDef> = {
   normal: {
     id: 'normal', name: 'Fuerza Normal', type: 'Defensa', icon: 'i_shield', concept: 'Fuerza normal', rarity: 'inicial', target: 'self',
     stats: (up) => ({ cost: 1, block: up ? 8 : 5 }),
-    text: (s) => `Gana ${s.block} de Bloque.`,
+    text: (s) => `Gana ${s.block} de Bloqueo.`,
     lore: 'La fuerza normal es la que una superficie ejerce perpendicular a ella para impedir que la atravieses.',
   },
   embestida: {
@@ -124,13 +124,13 @@ export const CARDS: Record<string, CardDef> = {
   accion: {
     id: 'accion', name: 'Acción-Reacción', type: 'Defensa', icon: 'i_reflect', concept: '3ª ley', rarity: 'común', target: 'self',
     stats: (up) => ({ cost: 1, block: up ? 7 : 4 }),
-    text: (s) => `Gana ${s.block} de Bloque.\nEste turno, cada golpe que\nrecibas regresa al atacante.`,
+    text: (s) => `Gana ${s.block} de Bloqueo.\nEste turno, cada golpe que\nrecibas regresa al atacante.`,
     lore: 'Tercera ley: las fuerzas aparecen en pares iguales y opuestos. Si te golpean con F, tú los golpeas con F.',
   },
   inerciaDef: {
     id: 'inerciaDef', name: 'Inercia Defensiva', type: 'Defensa', icon: 'i_crystal', concept: '1ª ley', rarity: 'común', target: 'self',
     stats: (up) => ({ cost: 2, block: up ? 13 : 9 }),
-    text: (s) => `Gana ${s.block} de Bloque.\nTu Bloque NO se pierde\nal iniciar el siguiente turno.`,
+    text: (s) => `Gana ${s.block} de Bloqueo.\nTu Bloqueo NO se pierde\nal iniciar el siguiente turno.`,
     lore: 'Primera ley: sin fuerza neta, el estado no cambia. Tu postura se mantiene mientras nada la altere.',
   },
   pesoMuerto: {
@@ -139,14 +139,14 @@ export const CARDS: Record<string, CardDef> = {
     text: (s, c) => {
       const m = (s.m ?? 0) + c.masaBonus;
       const g = c.g ?? G;
-      return `W = m·g = ${r1(m)} kg × ${g}\n= ${Math.round(m * g)} N\nIgnora Bloque.`;
+      return `W = m·g = ${r1(m)} kg × ${g}\n= ${Math.round(m * g)} N\nIgnora Bloqueo.`;
     },
     lore: 'El peso es la fuerza de gravedad: W = m·g, con g = 9.81 m/s². No importa qué tan rápido te muevas: g es la misma.',
   },
   equilibrio: {
     id: 'equilibrio', name: 'ΣF = 0', type: 'Defensa', icon: 'i_shield', concept: 'Equilibrio', rarity: 'rara', target: 'self',
     stats: (up) => ({ cost: 1, extra: up ? 18 : 12 }),
-    text: (s) => `Gana Bloque igual a la fuerza\ntotal que los enemigos planean\nhacerte (máx. ${s.extra}).`,
+    text: (s) => `Gana Bloqueo igual a la fuerza\ntotal que los enemigos planean\nhacerte (máx. ${s.extra}).`,
     lore: 'Equilibrio: si la suma de fuerzas sobre ti es cero, no hay aceleración. Contrarrestas exactamente lo que viene.',
   },
 
@@ -172,7 +172,7 @@ export const CARDS: Record<string, CardDef> = {
   rebote: {
     id: 'rebote', name: 'Rebote Elástico', type: 'Ataque', icon: 'i_reflect', concept: 'Choque elástico', rarity: 'común', target: 'enemy', cls: 'neutral',
     stats: (up) => ({ cost: up ? 0 : 1 }),
-    text: (_s, c) => `Inflige daño igual a\ntu Bloque (${c.block ?? 0}).`,
+    text: (_s, c) => `Inflige daño igual a\ntu Bloqueo (${c.block ?? 0}).`,
     lore: 'En un choque elástico la energía no se pierde: la que absorbió tu escudo regresa al enemigo.',
   },
   friccionArd: {
@@ -202,13 +202,13 @@ export const CARDS: Record<string, CardDef> = {
   conservacion: {
     id: 'conservacion', name: 'Conservación', type: 'Defensa', icon: 'i_crystal', concept: 'Conservación', rarity: 'rara', target: 'self', cls: 'neutral',
     stats: (up) => ({ cost: 1, extra: up ? 4 : 3 }),
-    text: (s, c) => `Gana ${s.extra} de Bloque por\ncada J que te quede\n(${Math.max(0, (c.energy ?? 1) - 1) * s.extra!}).`,
+    text: (s, c) => `Gana ${s.extra} de Bloqueo por\ncada J que te quede\n(${Math.max(0, (c.energy ?? 1) - 1) * s.extra!}).`,
     lore: 'La energía no se crea ni se destruye: la que no usas para atacar te protege.',
   },
   amortiguador: {
     id: 'amortiguador', name: 'Amortiguador', type: 'Defensa', icon: 'i_shield', concept: 'Trabajo y energía', rarity: 'común', target: 'self', cls: 'neutral',
     stats: (up) => ({ cost: 2, block: up ? 17 : 13 }),
-    text: (s) => `Gana ${s.block} de Bloque.`,
+    text: (s) => `Gana ${s.block} de Bloqueo.`,
     lore: 'Un amortiguador hace trabajo negativo sobre el golpe y lo convierte en calor.',
   },
 
@@ -222,7 +222,7 @@ export const CARDS: Record<string, CardDef> = {
   muroMasa: {
     id: 'muroMasa', name: 'Muro de Masa', type: 'Defensa', icon: 'i_mass', concept: 'Masa', rarity: 'común', target: 'self',
     stats: (up) => ({ cost: 1, block: up ? 7 : 4 }),
-    text: (s, c) => `Gana ${s.block} + 3×(masa extra)\n= ${(s.block ?? 0) + 3 * Math.max(0, c.masaBonus)} de Bloque.`,
+    text: (s, c) => `Gana ${s.block} + 3×(masa extra)\n= ${(s.block ?? 0) + 3 * Math.max(0, c.masaBonus)} de Bloqueo.`,
     lore: 'Más masa, más inercia: cuesta más moverte.',
   },
 
@@ -236,7 +236,7 @@ export const CARDS: Record<string, CardDef> = {
   escudoE: {
     id: 'escudoE', name: 'Escudo de Energía', type: 'Defensa', icon: 'i_crystal', concept: 'Energía', rarity: 'inicial', target: 'self', cls: 'arcanista',
     stats: (up) => ({ cost: 1, block: up ? 8 : 5 }),
-    text: (s) => `Gana ${s.block} de Bloque.`,
+    text: (s) => `Gana ${s.block} de Bloqueo.`,
     lore: 'Una barrera que absorbe energía antes de que llegue a ti.',
   },
   acelerar: {
@@ -250,7 +250,7 @@ export const CARDS: Record<string, CardDef> = {
     stats: (up) => ({ cost: up ? 0 : 1, m: 1 }),
     text: (s, c) => {
       const v = c.vel ?? 0, v2 = Math.max(0, v - 2), m = s.m ?? 1;
-      return `Pierdes 2 m/s. Bloque =\nΔK = ½·${m}·(${v}² − ${v2}²)\n= ${Math.round(0.5 * m * (v * v - v2 * v2))}`;
+      return `Pierdes 2 m/s. Bloqueo =\nΔK = ½·${m}·(${v}² − ${v2}²)\n= ${Math.round(0.5 * m * (v * v - v2 * v2))}`;
     },
     lore: 'Teorema trabajo-energía: frenar quita energía cinética; aquí la conviertes en escudo.',
   },
@@ -287,7 +287,7 @@ export const CARDS: Record<string, CardDef> = {
   barrera: {
     id: 'barrera', name: 'Barrera Inercial', type: 'Defensa', icon: 'i_crystal', concept: 'Inercia', rarity: 'común', target: 'self', cls: 'arcanista',
     stats: (up) => ({ cost: 1, extra: up ? 2 : 1.5 }),
-    text: (s, c) => `Bloque = ${s.extra}·v\n= ${Math.round((s.extra ?? 1.5) * (c.vel ?? 0))}`,
+    text: (s, c) => `Bloqueo = ${s.extra}·v\n= ${Math.round((s.extra ?? 1.5) * (c.vel ?? 0))}`,
     lore: 'Lo que se mueve rápido es difícil de desviar.',
   },
   sobrecarga: {
