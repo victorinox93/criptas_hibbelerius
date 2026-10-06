@@ -4,7 +4,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
-import { W, H } from '../config';
+import { FORM_URL, W, H } from '../config';
 import { starterDeck } from '../data/cards';
 import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
@@ -63,6 +63,7 @@ export class MenuScene extends Phaser.Scene {
       [T.menu.ayuda, () => fadeTo(this, 'Help', { next: 'Menu' })],
       [T.menu.editar, () => fadeTo(this, 'Avatar')],
       [T.menu.creditos, () => fadeTo(this, 'Credits')],
+      ...(FORM_URL ? [['✎ Tu opinión', () => window.open(FORM_URL, '_blank')] as [string, () => void]] : []),
       [T.menu.salir, () => {
         clearSession();
         Game.profile = null;
@@ -73,7 +74,7 @@ export class MenuScene extends Phaser.Scene {
     grid.forEach(([label, fn], i) => {
       button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 52, 160, 44, label, fn, { size: 21 });
     });
-    if (isAdmin()) button(this, x, y + 156, 330, 40, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
+    if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 52, 330, 40, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
   }
 
   /** Ventana para elegir el nivel de gravedad antes de una expedición */

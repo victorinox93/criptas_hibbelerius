@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.14.0 · Penitente del Empuje, cartas legendarias y la Parca del Tomo';
+export const VERSION = '0.15.0 · Portada HD y pulido para la prueba con alumnos';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.
@@ -49,3 +49,10 @@ export const ADMINS = ['237440'];
 
 /** Costo en Ergios de una pista en los altares y encuentros */
 export const PISTA_COSTO = 15;
+
+/**
+ * Formulario de retroalimentación (Google Forms, etc.). Pega aquí su liga y
+ * aparecerá el botón «Danos tu opinión» al terminar cada expedición y en el menú.
+ * Vacío = el botón no aparece.
+ */
+export const FORM_URL = '';

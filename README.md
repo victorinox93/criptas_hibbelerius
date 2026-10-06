@@ -197,3 +197,10 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Tercer personaje: el Penitente del Empuje** (se desbloquea al vencer a Hibbelerius). Su vida es su **masa**: las cartas de Empuje queman kilos y lo aceleran con la ecuación del cohete, **Δv = vₑ·ln(m₀/m₁)** (con poca masa acelera muchísimo más). Golpea con **p = m·v**, no tiene Bloqueo y **esquiva** si va a 6 m/s o más (perdiendo 3 m/s). El aire lo frena 2 m/s por turno y recupera masa al derrotar enemigos. 13 cartas propias en `src/data/cards.ts` (busca «PENITENTE»).
 - **8 cartas legendarias** (marco dorado, una copia por expedición): Venganza de Newton, Tiro Parabólico (eliges el ángulo θ y ves el alcance R = v₀²·sen2θ/g), Péndulo, Patinadora, Resorte Comprimido, Dolor Resonante, Honda de David y Fuego Amigo. Se eligen tras vencer al jefe de los Actos I y II, y a veces salen tras una élite.
 - **Hibbelerius rediseñado como la Parca del Tomo**: encapuchado, esquelético, flotando, con guadaña y su tomo encadenado; lanza hoces giratorias al atacar (`tools/arte/hib2.py`).
+
+## Novedades de la v0.15
+
+- **Portada en alta definición:** la ilustración original se reescaló al doble con una red de superresolución (EDSR) y se limpió el ruido del JPG; ahora se muestra a 1080 px sin verse borrosa.
+- **Pergamino de cálculos:** las líneas largas se ajustan al cuadro (letra más chica o «…»). Pasa el cursor por el pergamino para leer los últimos 8 cálculos completos.
+- **Cuarto personaje «¿?»:** queda como *Próximamente* para que lo propongan los alumnos.
+- **Botón de retroalimentación:** pega la liga de tu formulario en `FORM_URL` (`src/config.ts`) y aparece «✎ Tu opinión» en el menú y «✎ Danos tu opinión» al terminar cada expedición.

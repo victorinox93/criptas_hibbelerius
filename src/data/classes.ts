@@ -15,6 +15,7 @@ export const CLASSES: ClassDef[] = [
     desc: 'Acumula rapidez (máx. 8 m/s) y la libera: K = ½mv². Doble rapidez, cuádruple daño… pero es frágil.' },
   { id: 'penitente', name: 'Penitente del Empuje', available: true, concept: 'Masa variable', hp: 80, energy: 3,
     desc: 'Quema su propia masa (su vida) para acelerar: Δv = vₑ·ln(m₀/m). Esquiva en vez de bloquear.' },
-  { id: 'guardian', name: 'Guardián del Equilibrio', available: false, concept: 'Trabajo y equilibrio', hp: 80, energy: 3,
-    desc: 'ΣF = 0. Contrarresta, refleja y convierte el trabajo enemigo en tuyo.' },
+  // Cuarto personaje: lo propondrán los alumnos (formulario de retroalimentación)
+  { id: 'misterio', name: '¿?', available: false, concept: 'Tú lo diseñas', hp: 0, energy: 3,
+    desc: '¿Qué física debería dominar el próximo héroe? Déjanos tu idea en el formulario.' },
 ];

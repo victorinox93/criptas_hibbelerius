@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
-import { W, H } from '../config';
+import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { addConocimiento, FLOORS, Game, logEvent, nivelActual, saveLocal, TOTAL_PISOS } from '../state';
@@ -81,7 +81,7 @@ export class EndScene extends Phaser.Scene {
         const q = txt(this, W - 170, 470, T.final.cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: q, alpha: 1, duration: 1500, delay: 2600 });
       }
-      if (alma) {
+      if (alma && !(repaso && FORM_URL)) {
         const al = txt(this, W - 175, repaso ? 506 : 470, alma.final, repaso ? 16 : 19, CSS.gold, { wordWrap: { width: 320 }, align: 'center' }).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: al, alpha: 1, duration: 1500, delay: 3200 });
       }
@@ -142,5 +142,8 @@ export class EndScene extends Phaser.Scene {
     Game.run = null;
     saveLocal();
     button(this, 340, 506, 260, 44, T.final.volver, () => fadeTo(this, 'Menu'), { color: UI.gold });
+    if (FORM_URL) {
+      button(this, W - 175, 506, 280, 40, '✎ Danos tu opinión', () => window.open(FORM_URL, '_blank'), { size: 20, color: UI.green });
+    }
   }
 }

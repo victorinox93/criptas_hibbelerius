@@ -307,6 +307,10 @@ export class CombatScene extends Phaser.Scene {
     frame(lg, W / 2 - 250, 48, 500, 66, 0x0f0c13, 0x2c2534, 0.85);
     txt(this, W / 2 - 238, 52, T.combate.pergamino, 16, '#5a5468');
     for (let i = 0; i < 2; i++) this.calcLines.push(txt(this, W / 2 - 238, 68 + i * 21, '', 20, i === 0 ? CSS.bone : CSS.dim));
+    // pasar el cursor por el pergamino muestra los últimos cálculos completos
+    const lz = this.add.zone(W / 2 - 250, 48, 500, 66).setOrigin(0).setInteractive();
+    lz.on('pointerover', () => this.tip.show(W / 2 - 250, 120, T.combate.pergamino, this.log.slice(0, 8).join('\n') || '—'));
+    lz.on('pointerout', () => this.tip.hide());
     this.hintT = txt(this, W / 2, 132, '', 22, CSS.gold).setOrigin(0.5).setDepth(700).setStroke('#000', 4);
     this.bannerT = this.add
       .text(W / 2, 220, '', { fontFamily: '"Pirata One", serif', fontSize: '56px', color: CSS.gold, stroke: '#000', strokeThickness: 8, resolution: 2 })
@@ -628,7 +632,19 @@ export class CombatScene extends Phaser.Scene {
 
   private calc(line: string) {
     this.log.unshift(line);
-    this.calcLines.forEach((t, i) => t.setText(this.log[i] ?? ''));
+    this.calcLines.forEach((t, i) => {
+      // si la línea no cabe en el pergamino, se achica la letra (y, si hace falta, se comprime)
+      t.setScale(1).setFontSize(20).setText(this.log[i] ?? '');
+      const max = 476;
+      let fs = 20;
+      while (t.width > max && fs > 15) t.setFontSize(--fs);
+      if (t.width > max * 1.2) {
+        // muy larga: se corta con «…» (pasa el cursor por el pergamino para leerla completa)
+        let s = this.log[i] ?? '';
+        while (s.length > 10 && t.width > max * 1.2) { s = s.slice(0, -4); t.setText(`${s}…`); }
+      }
+      if (t.width > max) t.setScale(max / t.width, 1);
+    });
   }
 
   private clickCard(v: CardView) {
