@@ -19,6 +19,9 @@ export const WEAPONS_K = ['Mazo', 'Espada', 'Hacha', 'Lanza'];
 export const WEAPONS_M = ['Orbe', 'Cristal', 'Engrane', 'Calavera'];
 export const EXTRAS_K = ['Sin escudo', 'Escudo redondo', 'Escudo de torre'];
 export const EXTRAS_M = ['Sin barba', 'Barba corta', 'Barba larga'];
+export const HELMS_P = ['Capirote', 'Capucha rota', 'Corona de espinas', 'Velo de hierro', 'Yelmo de bronce'];
+export const WEAPONS_P = ['Incensario', 'Lanza ígnea', 'Cadenas', 'Antorcha'];
+export const EXTRAS_P = ['Tanque de cobre', 'Tanque doble', 'Alas de hierro'];
 export const SKINS: { name: string; s: string; q: string }[] = [
   { name: 'Clara', s: '#f0d0b0', q: '#c8a088' },
   { name: 'Media', s: '#e0b48a', q: '#a8806a' },
@@ -276,9 +279,102 @@ function mage(look: HeroLook): Grid {
   return g;
 }
 
+// ───────────────────────── PENITENTE DEL EMPUJE ─────────────────────────
+function penitent(look: HeroLook): Grid {
+  const g = grid();
+  const arma = look.arma ?? 0, extra = look.extra ?? 0;
+  // tanque(s) en la espalda con tobera y llama
+  const tanque = (x0: number) => {
+    rect(g, x0, 15, x0 + 4, 31, 'l');
+    rect(g, x0 + 3, 15, x0 + 4, 31, 'g');
+    oval(g, x0 + 2, 15, 2.5, 1.5, 'l');
+    rect(g, x0, 19, x0 + 4, 19, 'y'); rect(g, x0, 27, x0 + 4, 27, 'y');
+    poly(g, [[x0, 32], [x0 + 4, 32], [x0 + 5, 35], [x0 - 1, 35]], 'g');
+    poly(g, [[x0 - 1, 36], [x0 + 5, 36], [x0 + 3, 40], [x0 + 2, 43], [x0 + 1, 40]], 'o');
+    poly(g, [[x0 + 1, 36], [x0 + 3, 36], [x0 + 2, 40]], 'y');
+    put(g, x0 + 2, 37, 'W');
+  };
+  if (extra === 2) {
+    // alas de hierro (aletas)
+    poly(g, [[10, 14], [2, 6], [1, 10], [4, 18], [9, 24]], 'g');
+    line(g, 2, 7, 9, 15, 'l'); line(g, 2, 11, 9, 19, 'l');
+  }
+  tanque(9);
+  if (extra === 1) tanque(4);
+  // túnica larga de penitente
+  poly(g, [[15, 15], [25, 15], [29, 42], [11, 42]], 'c');
+  poly(g, [[15, 15], [18, 15], [15, 42], [11, 42]], 'C');
+  for (let y = 22; y < 42; y += 4) line(g, 22, y, 23, y + 3, 'C');
+  line(g, 11, 42, 29, 42, 'C');
+  // cordón en la cintura
+  rect(g, 14, 25, 26, 25, 'n'); line(g, 22, 26, 23, 33, 'n'); put(g, 23, 34, 'y');
+  // brazo trasero
+  poly(g, [[15, 17], [17, 18], [14, 27], [12, 27]], 'C');
+  // brazo delantero
+  poly(g, [[23, 17], [26, 17], [31, 23], [29, 26], [26, 25]], 'c');
+  oval(g, 31, 24, 1.8, 1.5, 's');
+  // capucha / tocado
+  const helm = look.helm;
+  const cara = () => { rect(g, 17, 10, 23, 14, 'd'); put(g, 18, 11, 'E'); put(g, 21, 11, 'E'); };
+  if (helm === 'penacho') {
+    // capirote: cono alto
+    poly(g, [[14, 16], [26, 16], [24, 8], [21, 0], [19, 0], [16, 8]], 'c');
+    poly(g, [[14, 16], [17, 16], [19, 0], [16, 8]], 'C');
+    rect(g, 17, 10, 23, 11, 'd'); put(g, 18, 10, 'E'); put(g, 21, 10, 'E');
+  } else if (helm === 'cuernos') {
+    // capucha rota
+    poly(g, [[13, 17], [14, 8], [17, 4], [23, 4], [26, 8], [27, 17]], 'c');
+    poly(g, [[13, 17], [14, 8], [17, 4], [16, 17]], 'C');
+    for (const x of [14, 17, 20, 23, 26]) put(g, x, 17, '.');
+    cara();
+  } else if (helm === 'corona') {
+    // capucha con corona de espinas
+    poly(g, [[13, 17], [14, 8], [17, 5], [23, 5], [26, 8], [27, 17]], 'c');
+    poly(g, [[13, 17], [14, 8], [17, 5], [16, 17]], 'C');
+    cara();
+    line(g, 14, 6, 26, 6, 'n');
+    for (const x of [14, 16, 18, 20, 22, 24, 26]) { put(g, x, 5, 'n'); put(g, x + 1, 4, 'n'); }
+    put(g, 19, 7, 'r'); put(g, 23, 8, 'r');
+  } else if (helm === 'alado') {
+    // velo de hierro sobre la cara
+    poly(g, [[13, 17], [14, 8], [17, 5], [23, 5], [26, 8], [27, 17]], 'c');
+    rect(g, 16, 9, 24, 15, 'l');
+    for (let x = 16; x <= 24; x += 2) line(g, x, 9, x, 15, 'g');
+    put(g, 18, 11, 'E'); put(g, 22, 11, 'E');
+  } else {
+    // yelmo de bronce redondo
+    oval(g, 20, 10, 6, 6, 'y');
+    rect(g, 15, 10, 25, 15, 'y');
+    rect(g, 16, 11, 24, 11, 'k'); put(g, 18, 11, 'E'); put(g, 22, 11, 'E');
+    line(g, 20, 4, 20, 15, 'n');
+  }
+  // lo que lleva en la mano
+  if (arma === 0) {
+    // incensario colgando de una cadena
+    for (let y = 25; y < 33; y++) put(g, 32, y, y % 2 ? 'l' : 'g');
+    oval(g, 32, 35, 3, 2.6, 'y'); rect(g, 30, 35, 34, 35, 'n');
+    put(g, 31, 31, 'w'); put(g, 33, 30, 'w'); put(g, 32, 29, 'w');
+  } else if (arma === 1) {
+    // lanza ígnea
+    line(g, 29, 34, 36, 6, 'n');
+    poly(g, [[36, 7], [37, 2], [38, 7]], 'l');
+    poly(g, [[35, 4], [37, -1], [39, 4], [37, 2]], 'o'); put(g, 37, 1, 'y');
+  } else if (arma === 2) {
+    // cadenas
+    for (let i = 0; i < 12; i++) put(g, 31 + Math.round(Math.sin(i / 2) * 2), 25 + i, i % 2 ? 'l' : 'g');
+    for (let i = 0; i < 8; i++) put(g, 29 - i, 26 + i, i % 2 ? 'l' : 'g');
+  } else {
+    // antorcha
+    line(g, 31, 27, 33, 12, 'n');
+    poly(g, [[31, 12], [35, 12], [36, 8], [33, 3], [30, 8]], 'o');
+    poly(g, [[32, 11], [34, 11], [33, 6]], 'y');
+  }
+  return g;
+}
+
 /** Matriz del héroe según su clase y apariencia */
 export function heroMatrix(look: HeroLook): string[] {
-  const g = look.clase === 'arcanista' ? mage(look) : knight(look);
+  const g = look.clase === 'arcanista' ? mage(look) : look.clase === 'penitente' ? penitent(look) : knight(look);
   outline(g);
   return g.map((r) => r.join(''));
 }

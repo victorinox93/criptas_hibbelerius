@@ -2,7 +2,11 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CARDS, CardInst, force, kinetic, statsOf, VMAX } from '../data/cards';
+import { CalcCtx, CARDS, CardInst, force, kinetic, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+
+/** Penitente: rapidez máxima y rapidez mínima para esquivar */
+const VMAX_PEN = 14;
+const ESQUIVA = 6;
 import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addEntropia, addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
@@ -77,6 +81,12 @@ export class CombatScene extends Phaser.Scene {
   private baseAcel = 0;
   // Acto II / nuevas mecánicas
   private isArc = false; // jugando con el Arcanista
+  private isPen = false; // jugando con el Penitente del Empuje (masa variable)
+  private vmax = VMAX; // rapidez máxima según la clase
+  private ve = VE_BASE; // Penitente: velocidad de escape de sus gases (m/s)
+  private critica = false; // Masa Crítica: ataques ×1.5 con poca masa
+  /** Clases que usan rapidez v en vez de aceleración */
+  private get usaVel() { return this.isArc || this.isPen; }
   private vel = 0; // rapidez del Arcanista (m/s)
   private jPerTurn = 0; // Batería de Resorte
   private velPerTurn = 0; // Impulso Constante
@@ -111,6 +121,12 @@ export class CombatScene extends Phaser.Scene {
   private entropia = 0; // Entropía (J por turno a cambio de vida)
   private extraDraw = 0; // Formulario
   private hpStart = 0; // vida al empezar (combate perfecto)
+  // legendarias
+  private penduloQ: { target: EnemyView; F: number }[] = []; // Péndulo: regresa al siguiente turno
+  private resorteQ: number | null = null; // Resorte Comprimido: daño guardado (null = inactivo)
+  private resorteMul = 1.5;
+  private fuegoAmigo = false; // los ataques enemigos se desvían
+  private hondaV = new Map<number, number>(); // Honda de David: rapidez por carta (uid)
 
   constructor() { super('Combat'); }
 
@@ -145,6 +161,10 @@ export class CombatScene extends Phaser.Scene {
     this.marco = 0;
     this.polonio = 0;
     this.famImg = null;
+    this.penduloQ = [];
+    this.resorteQ = null;
+    this.fuegoAmigo = false;
+    this.hondaV = new Map();
     this.aliadoImg = null;
     this.estela = false;
     this.noFric = false;
@@ -177,7 +197,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.kind === 'boss') addEntropia(ENTROPIA.jefe);
     else if (this.kind === 'elite') addEntropia(ENTROPIA.elite);
     if (this.prohibido('p_masaneg')) {
-      if (this.isArc) this.vel = Math.min(VMAX, this.vel + 3);
+      if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 3);
       else this.masa += 3;
     }
     if (this.prohibido('p_omega')) {
@@ -212,7 +232,7 @@ export class CombatScene extends Phaser.Scene {
     return Game.run!.effects.some((e) => e.id === id && e.left > 0);
   }
   private ctx(): CalcCtx {
-    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy };
+    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy, masa: Game.run!.hp, ve: this.ve };
   }
   private wait(ms: number) {
     return new Promise<void>((r) => this.time.delayedCall(ms, () => r()));
@@ -223,6 +243,10 @@ export class CombatScene extends Phaser.Scene {
     const run = Game.run!;
     this.acto = run.acto ?? 1;
     this.isArc = run.clase === 'arcanista';
+    this.isPen = run.clase === 'penitente';
+    this.vmax = this.isPen ? VMAX_PEN : VMAX;
+    this.ve = VE_BASE;
+    this.critica = false;
     this.grav = gravityOf(run.gravity);
     if (this.acto >= 3) {
       audio.play(this.kind === 'boss' ? 'jefe3' : 'combate4');
@@ -323,16 +347,16 @@ export class CombatScene extends Phaser.Scene {
     this.abismoInicio();
     // ── condición del piso (azar) ──
     if (this.kind !== 'boss' && Math.random() < CONDITION_CHANCE) this.applyCondition(Phaser.Utils.Array.GetRandom(CONDITIONS));
-    if (this.isArc) {
+    if (this.usaVel) {
       // el Arcanista convierte sus bonos de aceleración en rapidez inicial
       // (la mitad de los bonos, para que no se dispare K = ½mv²)
-      this.vel = Math.min(VMAX, 3 + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
+      this.vel = Math.min(this.vmax, (this.isPen ? 0 : 3) + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
       this.baseAcel = 0;
     }
     // Coriolis · El ½ de ½mv²
     const cm = boonLevel('co_medio');
     if (cm) {
-      if (this.isArc) this.vel = Math.min(VMAX, this.vel + cm);
+      if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + cm);
       else this.masa += cm;
     }
     this.showFamiliar();
@@ -421,7 +445,7 @@ export class CombatScene extends Phaser.Scene {
       const t = i.hits && i.hits > 1 ? `${i.dmg}×${i.hits}` : `${i.dmg}`;
       r = { ic: 'i_combat', t, d: `Atacará con una fuerza de ${i.dmg} N${i.hits && i.hits > 1 ? `, ${i.hits} veces` : ''}.` };
     }
-    if (i.friccion) r.d += `\nTe cubrirá de lodo: +${i.friccion} Fricción (${this.isArc ? `pierdes ${i.friccion} m/s de rapidez cada turno` : `−${i.friccion} m/s² a tus ataques`}).`;
+    if (i.friccion) r.d += `\nTe cubrirá de lodo: +${i.friccion} Fricción (${this.usaVel ? `pierdes ${i.friccion} m/s de rapidez cada turno` : `−${i.friccion} m/s² a tus ataques`}).`;
     if (i.calor) r.d += `\nTe transferirá ${i.calor} de Calor (pierdes vida cada turno).`;
     if (i.summon) r.d += `\nInvocará: ${ENEMIES[i.summon]?.name ?? i.summon} (si hay lugar).`;
     if (i.shieldAll) r.d += `\nDará ${i.shieldAll} de Bloqueo a todos sus aliados.`;
@@ -519,6 +543,11 @@ export class CombatScene extends Phaser.Scene {
     if (this.friccion) items.push(['i_mud', `${this.friccion}`, 'Fricción', `El lodo resta ${this.friccion} m/s² a la aceleración de tus ataques. Baja 1 por turno.`]);
     if (this.reflect) items.push(['i_reflect', '', 'Acción-Reacción', 'Este turno, cada golpe que recibas regresa con la misma fuerza al atacante (3ª ley).']);
     if (this.keepBlock) items.push(['i_crystal', '', 'Inercia Defensiva', 'Tu Bloqueo no se perderá al iniciar tu siguiente turno (1ª ley).']);
+    if (this.isPen) {
+      items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus golpes hacen p = m·v. Si v ≥ ${ESQUIVA} m/s ESQUIVAS el siguiente golpe (y pierdes 3 m/s). El aire te frena 2 m/s cada turno.`]);
+      items.push(['i_fire', `${this.ve}`, `vₑ = ${this.ve} m/s`, `Velocidad de escape de tus gases. Al quemar masa: Δv = vₑ·ln(m₀/m₁). Mientras MENOS masa tengas, más rápido aceleras.`]);
+      if (this.critica) items.push(['i_mass', '×1.5', 'Masa Crítica', 'Con menos de la mitad de tu masa máxima, tus ataques hacen ×1.5.']);
+    }
     if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
     if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
     if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
@@ -620,6 +649,7 @@ export class CombatScene extends Phaser.Scene {
     }
     const def = CARDS[v.inst.id];
     if (def.id === 'tajo') return this.chooseAngle(v);
+    if (def.id === 'tiroParabolico') return this.chooseParabola(v);
     if (def.target === 'enemy' && this.alive().length > 1) return this.enterTargeting(v);
     this.playOn(v, this.alive()[0]);
   }
@@ -754,6 +784,45 @@ export class CombatScene extends Phaser.Scene {
     layer.add(button(this, W / 2 + 200, 168, 36, 30, '×', close, { size: 20 }));
   }
 
+  /** Distancia (m) a cada enemigo según su lugar en la fila: 6, 10, 14, 18 m */
+  private distancias() {
+    return this.alive().sort((a, b) => a.baseX - b.baseX).map((e, i) => ({ e, d: 6 + 4 * i }));
+  }
+
+  /** ¿Sobre quién cae un proyectil con alcance R? (tolerancia ±2.5 m) */
+  private parabolaTarget(R0: number): EnemyView | null {
+    let best: EnemyView | null = null, bd = 2.5;
+    for (const { e, d } of this.distancias()) if (Math.abs(d - R0) <= bd) { bd = Math.abs(d - R0); best = e; }
+    return best;
+  }
+
+  /** Tiro Parabólico: elige el ángulo θ */
+  private chooseParabola(v: CardView) {
+    this.busy = true;
+    const st = statsOf(v.inst);
+    const v0 = st.block ?? 11, g0 = this.grav.g;
+    const layer = this.add.container(0, 0).setDepth(850);
+    const g = this.add.graphics();
+    frame(g, W / 2 - 300, 110, 600, 300, 0x0f0c13, UI.gold);
+    const dist = this.distancias().map(({ e, d }) => `${e.st.def.name}: ${d} m`).join(' · ');
+    layer.add([g,
+      txt(this, W / 2, 134, 'Tiro Parabólico: elige el ángulo θ', 26, CSS.gold).setOrigin(0.5),
+      txt(this, W / 2, 164, `R = v₀²·sen2θ / g = ${v0}²·sen2θ / ${g0}`, 19, CSS.bone).setOrigin(0.5),
+      txt(this, W / 2, 190, dist, 16, CSS.dim, { align: 'center', wordWrap: { width: 560 } }).setOrigin(0.5)]);
+    const close = () => { layer.destroy(); this.busy = false; };
+    [15, 30, 45, 60, 75].forEach((th, i) => {
+      const R0 = (v0 * v0 * Math.sin((2 * th * Math.PI) / 180)) / g0;
+      const t = this.parabolaTarget(R0);
+      layer.add(button(this, W / 2 - 236 + i * 118, 270, 110, 92, `θ = ${th}°\nR = ${r1(R0)} m\n${t ? `→ ${t.st.def.name.split(' ')[0]}` : '→ nadie'}`, () => {
+        close();
+        (v as any).theta = th;
+        this.playOn(v, t ?? this.alive()[0]);
+      }, { size: 16, color: t ? UI.gold : UI.border }));
+    });
+    layer.add(txt(this, W / 2, 344, 'Pista: 30° y 60° llegan igual de lejos.', 16, CSS.dim).setOrigin(0.5));
+    layer.add(button(this, W / 2 + 270, 128, 36, 30, '×', close, { size: 20 }));
+  }
+
   // ───────────────────────── JUGAR CARTA ─────────────────────────
   private async playOn(v: CardView, target: EnemyView | undefined) {
     if (this.busy) return;
@@ -780,7 +849,7 @@ export class CombatScene extends Phaser.Scene {
     let plano = 0;
     let planoV = 0;
     if (def.type === 'Ataque' && !this.firstAttack && boonLevel('g_plano')) {
-      if (this.isArc) {
+      if (this.usaVel) {
         planoV = Math.max(0, Math.min(boonLevel('g_plano'), VMAX - this.vel));
         this.vel += planoV;
         this.calc(`Plano Inclinado (Galileo): +${planoV} m/s para este primer ataque`);
@@ -827,6 +896,168 @@ export class CombatScene extends Phaser.Scene {
     }
     const c = this.ctx();
     switch (def.id) {
+      // ── Penitente del Empuje ──
+      case 'empuje':
+      case 'etapa': {
+        this.quemar(st.extra ?? 4, def.name);
+        if (def.id === 'etapa') this.drawCards(st.block ?? 1);
+        break;
+      }
+      case 'llamarada': {
+        this.quemar(2, def.name);
+        for (const e of this.alive()) { e.st.calor += st.extra ?? 4; this.burst(e.baseX, 260, 0xc87533, 10); this.refreshEnemy(e); }
+        this.calc(`Llamarada de Escape: +${st.extra} de Calor a todos`);
+        break;
+      }
+      case 'reabastecer': {
+        const run = Game.run!;
+        const n = Math.min(st.extra ?? 7, run.maxHp - run.hp);
+        run.hp += n;
+        this.floatText(this.heroX, 200, `+${n} kg`, CSS.green);
+        this.calc(`Reabastecer: +${n} kg de masa (más masa, acelerar cuesta más)`);
+        break;
+      }
+      case 'embestidaArd':
+      case 'absorcion':
+      case 'ignicion':
+      case 'reentrada': {
+        if (def.id === 'ignicion') this.quemar(st.extra ?? 6, def.name);
+        if (def.id === 'reentrada') {
+          const run = Game.run!;
+          run.hp = Math.max(1, run.hp - 3);
+          this.calc('Reentrada: el roce con el aire te quema 3 kg');
+        }
+        const r = pmv(st, this.ctx());
+        let dmg = r.p + (def.id === 'embestidaArd' ? st.extra ?? 2 : 0);
+        dmg = this.critico(dmg);
+        this.calc(`${def.name}: p = m·v = ${r.m} kg × ${r.v} m/s = ${r.p}${def.id === 'embestidaArd' ? ` + ${st.extra}` : ''} → ${dmg}`);
+        await this.heroLunge();
+        if (target) {
+          if (def.id === 'reentrada') { target.st.calor += st.extra ?? 5; this.refreshEnemy(target); }
+          await this.hitEnemy(target, dmg);
+          if (def.id === 'absorcion' && target.dead) {
+            const run = Game.run!;
+            const n = Math.min(st.extra ?? 6, run.maxHp - run.hp);
+            run.hp += n;
+            this.calc(`Absorción: su masa se vuelve tuya (+${n} kg)`);
+          }
+        }
+        break;
+      }
+      case 'estelaPlasma': {
+        const r = pmv(st, this.ctx());
+        const dmg = this.critico(r.p);
+        this.calc(`Estela de Plasma: p = ${r.m}·${r.v} = ${dmg} a todos`);
+        await this.heroLunge();
+        for (const e of [...this.alive()]) await this.hitEnemy(e, dmg);
+        break;
+      }
+      case 'asistencia':
+        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 3));
+        this.calc(`Asistencia Gravitatoria: +${st.extra} m/s sin gastar masa (v = ${this.vel})`);
+        this.drawCards(1);
+        break;
+      case 'retro': {
+        const dv = Math.min(4, this.vel);
+        this.vel = Math.round((this.vel - dv) * 10) / 10;
+        const b = Math.round((st.extra ?? 3) * dv);
+        this.gainBlock(b);
+        this.calc(`Retrocohete: Δv = ${dv} m/s → Bloqueo = ${st.extra}·${dv} = ${b}`);
+        break;
+      }
+      case 'tobera':
+        this.ve += st.extra ?? 20;
+        this.calc(`Tobera Variable: vₑ = ${this.ve} m/s`);
+        break;
+      case 'masaCritica':
+        this.critica = true;
+        this.calc('Masa Crítica: con menos de la mitad de tu masa, tus ataques hacen ×1.5');
+        break;
+      // ── Legendarias ──
+      case 'newtonV': {
+        const f = force(st, c);
+        const fila = this.alive().sort((a, b) => a.baseX - b.baseX);
+        const ult = fila[fila.length - 1];
+        const F = Math.round(f.F * 1.5);
+        this.calc(`Venganza de Newton: F = ${f.F} N atraviesa ${fila.length - 1} enemigo(s) → el último recibe ×1.5 = ${F}`);
+        await this.heroLunge();
+        for (const e of fila.slice(0, -1)) { this.floatText(e.baseX, 170, 'p →', '#9ad8f0'); await this.wait(120); }
+        if (ult) {
+          this.beam(ult, 0x9ad8f0);
+          await this.hitEnemy(ult, F);
+        }
+        break;
+      }
+      case 'tiroParabolico': {
+        const th = ((v as any).theta as number) ?? 45;
+        const v0 = st.block ?? 11;
+        const g0 = this.grav.g;
+        const R0 = (v0 * v0 * Math.sin((2 * th * Math.PI) / 180)) / g0;
+        const t = this.parabolaTarget(R0);
+        this.calc(`Tiro Parabólico: R = ${v0}²·sen(${2 * th}°)/${g0} = ${r1(R0)} m`);
+        await this.heroLunge();
+        if (t) {
+          this.beam(t, 0xe8c15a);
+          this.calc(`Cae sobre ${t.st.def.name}: ${st.extra} de daño (ignora el Bloqueo)`);
+          await this.hitEnemy(t, st.extra ?? 16, true, 'res');
+        } else {
+          this.calc('El proyectil no cae sobre nadie: ¡revisa el alcance!');
+          this.floatText(this.heroX + 200, 220, 'Fallo', CSS.dim);
+        }
+        break;
+      }
+      case 'pendulo': {
+        const f = force(st, c);
+        this.calc(`Péndulo: F = ${f.F} N. Regresará el siguiente turno con la misma energía`);
+        await this.heroLunge();
+        if (target) {
+          await this.hitEnemy(target, f.F);
+          this.penduloQ.push({ target, F: f.F });
+        }
+        break;
+      }
+      case 'patinadora': {
+        const f = force(st, c);
+        const n = Math.min(6, this.played + 1);
+        this.calc(`Patinadora: cierra los brazos → ${n} giros de F = ${f.F} N`);
+        for (let i = 0; i < n && target && !target.dead; i++) {
+          await this.heroLunge();
+          await this.hitEnemy(target, f.F);
+        }
+        break;
+      }
+      case 'resorte':
+        this.gainBlock(st.block ?? 8);
+        this.resorteQ = 0;
+        this.resorteMul = st.extra ?? 1.5;
+        this.calc(`Resorte Comprimido: +${st.block} de Bloqueo; guardará el daño que recibas`);
+        break;
+      case 'dolorResonante': {
+        if (target) target.st.resonancia += 2;
+        this.calc(`Dolor Resonante: el ritmo justo… todos detonan su Resonancia (${st.extra} por carga)`);
+        this.cameras.main.shake(400, 0.01);
+        for (const e of [...this.alive()]) {
+          const n = e.st.resonancia;
+          if (!n) continue;
+          e.st.resonancia = 0;
+          this.floatText(e.baseX, 150, `¡${n} cargas!`, '#9ad8f0');
+          await this.hitEnemy(e, n * (st.extra ?? 7), true, 'res');
+        }
+        break;
+      }
+      case 'honda': {
+        const vv = this.hondaV.get(inst.uid) ?? (st.extra ?? 4);
+        const K = Math.round(0.5 * (st.m ?? 2) * vv * vv);
+        this.hondaV.delete(inst.uid);
+        this.calc(`Honda de David: K = ½·${st.m}·${vv}² = ${K}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, K);
+        break;
+      }
+      case 'fuegoAmigo':
+        this.fuegoAmigo = true;
+        this.calc('Fuego Amigo: precesión → los golpes enemigos se desvían hacia otro enemigo este turno');
+        break;
       case 'trinity': {
         // Oppenheimer: se consume PARA SIEMPRE
         const run = Game.run!;
@@ -1040,7 +1271,7 @@ export class CombatScene extends Phaser.Scene {
       case 'acelerar': {
         const vv = boonLevel('c_visviva');
         const before = this.vel;
-        this.vel = Math.min(VMAX, this.vel + st.extra! + vv);
+        this.vel = Math.min(this.vmax, this.vel + st.extra! + vv);
         this.calc(`Acelerar: v ${before} → ${this.vel} m/s (K crece ×${before ? r1((this.vel * this.vel) / (before * before)) : '∞'})`);
         this.drawCards(1);
         break;
@@ -1066,7 +1297,7 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Onda de Calor: +${st.extra} de Calor a todos`);
         break;
       case 'visVivaA':
-        this.vel = Math.min(VMAX, this.vel * 2);
+        this.vel = Math.min(this.vmax, this.vel * 2);
         this.calc(`Vis Viva: duplicas v → ${this.vel} m/s, ¡K se cuadruplica!`);
         break;
       case 'barrera': {
@@ -1081,14 +1312,14 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Chispa: K = ½·${r1(k.m)}·${k.v}² = ${k.K} J, luego +1 m/s`);
         await this.heroLunge();
         if (target) await this.hitEnemy(target, k.K);
-        this.vel = Math.min(VMAX, this.vel + 1);
+        this.vel = Math.min(this.vmax, this.vel + 1);
         break;
       }
       case 'picada': {
         const h = st.extra ?? 0.5;
         const dv = Math.floor(Math.sqrt(2 * this.grav.g * h));
         const before = this.vel;
-        this.vel = Math.min(VMAX, this.vel + dv);
+        this.vel = Math.min(this.vmax, this.vel + dv);
         this.calc(`Picada: v = √(2·${this.grav.g}·${h}) ≈ ${dv} m/s → v ${before} → ${this.vel}`);
         break;
       }
@@ -1116,7 +1347,7 @@ export class CombatScene extends Phaser.Scene {
       case 'sinFriccion':
         this.noFric = true;
         this.friccion = 0;
-        this.vel = Math.min(VMAX, this.vel + (st.extra ?? 1));
+        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 1));
         this.calc(`Superficie Sin Fricción: μ = 0, +${st.extra} m/s`);
         break;
 
@@ -1213,7 +1444,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       case 'sobreimpulso':
         Game.run!.hp -= 3;
-        this.vel = Math.min(VMAX, this.vel + (st.extra ?? 3));
+        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 3));
         this.floatText(this.heroX, 200, '-3', '#d08080');
         this.calc(`Postcombustión: −3 de vida → v = ${this.vel} m/s`);
         break;
@@ -1282,7 +1513,7 @@ export class CombatScene extends Phaser.Scene {
       this.drawCards(1);
     }
     if (this.estela && def.type === 'Ataque') {
-      this.vel = Math.min(VMAX, this.vel + 1);
+      this.vel = Math.min(this.vmax, this.vel + 1);
       this.calc(`Estela Cinética: +1 m/s (v = ${this.vel})`);
     }
     this.polonio = 0;
@@ -1457,6 +1688,11 @@ export class CombatScene extends Phaser.Scene {
       this.tweens.add({ targets: t, y: 90, alpha: 0, duration: 1100, onComplete: () => t.destroy() });
       this.hud.refresh();
     }
+    if (this.isPen) {
+      const run = Game.run!;
+      const gain = Math.min(2, run.maxHp - run.hp);
+      if (gain > 0) { run.hp += gain; this.floatText(this.heroX, 190, `+${gain} kg`, CSS.green); }
+    }
     const split = ev.st.def.split;
     if (split) {
       this.calc(`${ev.st.def.name} se divide: m·v = m₁v₁ + m₂v₂ (se conserva p)`);
@@ -1499,6 +1735,28 @@ export class CombatScene extends Phaser.Scene {
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
     if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
+    // la Parca del Tomo lanza hoces giratorias
+    if (from && from.st.def.id === 'hibbelerius' && dmg > 0) await this.hoces(from);
+    // Fuego Amigo: el golpe se desvía hacia otro enemigo
+    if (from && dmg > 0 && this.fuegoAmigo) {
+      const otros = this.alive().filter((e) => e !== from);
+      const t = otros.length ? Phaser.Utils.Array.GetRandom(otros) : from;
+      this.calc(`Fuego Amigo: el golpe de ${from.st.def.name} se desvía hacia ${t === from ? 'sí mismo' : t.st.def.name} (${dmg})`);
+      this.beamFrom(from.baseX, t, 0xff9a5a);
+      await this.hitEnemy(t, dmg, false, 'res');
+      return;
+    }
+    // Penitente: esquiva si va suficientemente rápido
+    if (from && dmg > 0 && this.isPen && this.vel >= ESQUIVA) {
+      this.vel = Math.max(0, Math.round((this.vel - 3) * 10) / 10);
+      this.calc(`¡Esquiva! v ≥ ${ESQUIVA} m/s: el golpe de ${from.st.def.name} no te alcanza (v → ${this.vel})`);
+      this.floatText(this.heroX, 200, 'Esquiva', '#9ad8f0');
+      this.tweens.add({ targets: this.hero, y: this.hero.y - 30, duration: 120, yoyo: true });
+      audio.sfx('block');
+      this.refreshPlayer();
+      return;
+    }
+    if (from && dmg > 0 && this.resorteQ !== null) this.resorteQ += dmg; // Resorte Comprimido
     if (from && this.marco > 0 && dmg > 0) {
       this.marco--;
       this.calc('Marco de Referencia (Einstein): en tu marco, ese golpe nunca llegó');
@@ -1601,6 +1859,28 @@ export class CombatScene extends Phaser.Scene {
       await this.rayoTodos(4);
       if (await this.checkEnd()) return;
     }
+    this.fuegoAmigo = false;
+    if (this.resorteQ !== null) {
+      const q = Math.round(this.resorteQ * this.resorteMul);
+      this.resorteQ = null;
+      if (q > 0 && this.alive().length) {
+        this.calc(`Resorte Comprimido: suelta ½·k·x² → ${q} a todos`);
+        for (const t of [...this.alive()]) await this.hitEnemy(t, q, false, 'res');
+        if (await this.checkEnd()) return;
+      }
+    }
+    if (this.penduloQ.length) {
+      const q = this.penduloQ;
+      this.penduloQ = [];
+      for (const p of q) {
+        const t = p.target.dead ? this.alive()[0] : p.target;
+        if (!t) break;
+        this.calc(`Péndulo: regresa con la misma energía (${p.F})`);
+        this.beam(t, 0xc8a050);
+        await this.hitEnemy(t, p.F);
+      }
+      if (await this.checkEnd()) return;
+    }
     let draw = 5 + this.extraDraw;
     if (this.has('agujero')) draw += 1;
     if (this.prohibido('p_infinito')) draw += 1;
@@ -1641,8 +1921,13 @@ export class CombatScene extends Phaser.Scene {
     }
     const fam = Game.run!.familiar;
     if (fam?.id === 'lechuza') draw += 1;
-    if (this.isArc) {
-      if (this.velPerTurn) this.vel = Math.min(VMAX, this.vel + this.velPerTurn);
+    if (this.isPen && this.turn > 1 && this.vel > 0) {
+      const v0 = this.vel;
+      this.vel = Math.max(0, Math.round((this.vel - 2) * 10) / 10);
+      this.calc(`Resistencia del aire: v ${v0} → ${this.vel} m/s`);
+    }
+    if (this.usaVel) {
+      if (this.velPerTurn) this.vel = Math.min(this.vmax, this.vel + this.velPerTurn);
       if (this.friccion && !this.noFric) {
         this.vel = Math.max(0, this.vel - this.friccion);
         this.calc(`Fricción: la rapidez baja ${this.friccion} m/s (v = ${this.vel})`);
@@ -1724,12 +2009,20 @@ export class CombatScene extends Phaser.Scene {
       this.floatText(this.heroX, 200, `-${3 * tareas} tarea`, '#e08a8a');
       if (Game.run!.hp <= 0 && (await this.dies('la tarea pendiente'))) return;
     }
-    // descartar mano
+    // descartar mano (la Honda de David se queda y gana rapidez)
+    const hondas = this.hand.filter((c) => c.inst.id === 'honda');
+    for (const h of hondas) {
+      const st0 = statsOf(h.inst);
+      const vv = Math.min(12, (this.hondaV.get(h.inst.uid) ?? (st0.extra ?? 4)) + 2);
+      this.hondaV.set(h.inst.uid, vv);
+      this.calc(`Honda de David: sigue girando → v = ${vv} m/s`);
+    }
+    this.hand = this.hand.filter((c) => c.inst.id !== 'honda');
     for (const c of this.hand) {
       this.discard.push(c.inst);
       this.tweens.add({ targets: c, x: W - 62, y: 510, scale: 0.1, alpha: 0, duration: 220, onComplete: () => c.destroy() });
     }
-    this.hand = [];
+    this.hand = hondas;
     this.friccion = Math.max(0, this.friccion - 1);
     this.acel = this.baseAcel;
     this.refreshPlayer();
@@ -1983,7 +2276,7 @@ export class CombatScene extends Phaser.Scene {
   /** Condición del piso: cambia un poco las reglas de este combate */
   private applyCondition(c: ConditionDef) {
     this.cond = c;
-    if (c.id === 'viento' && !this.isArc) this.baseAcel += 1;
+    if (c.id === 'viento' && !this.usaVel) this.baseAcel += 1;
     if (c.id === 'lodo' && !this.has('botas')) this.friccion += 2;
     if (c.id === 'gravedad') this.grav = { ...this.grav, g: Math.round(this.grav.g * 200) / 100 };
     if (c.id === 'refuerzo') this.enemies.forEach((e) => { e.st.block += 8; this.refreshEnemy(e); });
@@ -2069,6 +2362,29 @@ export class CombatScene extends Phaser.Scene {
     img.setInteractive();
     this.tip.attach(img, `${def.name} (quedan ${fam.left} combate${fam.left > 1 ? 's' : ''})`, `${def.text}\n${def.lore}`);
     this.famImg = img;
+  }
+
+  /** Penitente: quema kg de su masa (vida) y gana Δv = vₑ·ln(m₀/m₁) */
+  private quemar(kg: number, fuente: string) {
+    const run = Game.run!;
+    const r = rocket(kg, this.ctx());
+    run.hp = r.m1;
+    const v0 = this.vel;
+    this.vel = Math.min(this.vmax, Math.round((this.vel + r.dv) * 10) / 10);
+    this.calc(`${fuente}: Δv = ${r.ve}·ln(${r.m0}/${r.m1}) = ${r.dv} m/s → v ${v0} → ${this.vel}`);
+    this.floatText(this.heroX - 30, 210, `−${kg} kg`, '#e8a060');
+    this.burst(this.heroX - 50, 300, 0xff9a3a, 18);
+    this.hud.refresh();
+  }
+
+  /** Masa Crítica: ×1.5 si la masa es menor que la mitad de la máxima */
+  private critico(dmg: number) {
+    const run = Game.run!;
+    if (this.critica && run.hp < run.maxHp / 2) {
+      this.calc('Masa Crítica: ×1.5');
+      return Math.round(dmg * 1.5);
+    }
+    return dmg;
   }
 
   /** Rayo eléctrico a todos los enemigos vivos (Tesla) */
@@ -2196,12 +2512,12 @@ export class CombatScene extends Phaser.Scene {
       case 'energia': this.energy += 2; break;
       case 'bloqueo': this.gainBlock(12); break;
       case 'masa':
-        if (this.isArc) this.vel = Math.min(VMAX, this.vel + 2);
+        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 2);
         else this.masa += 2;
         break;
       case 'aceite':
         this.friccion = 0;
-        if (this.isArc) this.vel = Math.min(VMAX, this.vel + 2);
+        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 2);
         else this.acel += 3;
         break;
       case 'tinta': this.drawCards(3); break;
@@ -2223,7 +2539,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   // ───────────────────────── HIBBELERIUS ─────────────────────────
-  /** Aura del Archimago: resplandor, fórmulas que orbitan y ojos que parpadean */
+  /** Aura de la Parca del Tomo: resplandor, fórmulas que orbitan y almas que suben */
   private hibAura(sprite: Phaser.GameObjects.Image, x: number) {
     const glow = this.add.ellipse(x, 230, 260, 300, 0x6a3f8a, 0.12).setBlendMode(Phaser.BlendModes.ADD).setDepth(-2);
     this.tweens.add({ targets: glow, alpha: 0.05, scaleX: 1.08, duration: 1600, yoyo: true, repeat: -1 });
@@ -2241,6 +2557,21 @@ export class CombatScene extends Phaser.Scene {
       x: { min: -90, max: 90 }, speedY: { min: -50, max: -20 }, lifespan: 2400, frequency: 120,
       scale: { start: 1.6, end: 0 }, alpha: { start: 0.6, end: 0 }, tint: [0x8e5bb0, 0xc8a050, 0x7fd8ff], blendMode: 'ADD',
     }).setDepth(-1);
+  }
+
+  /** Hoces giratorias que vuelan de Hibbelerius hacia el héroe */
+  private hoces(from: EnemyView) {
+    return new Promise<void>((res) => {
+      const n = 3;
+      for (let i = 0; i < n; i++) {
+        const h = this.add.image(from.baseX - 60, 170 + i * 40, 'i_hoz').setScale(4).setDepth(650);
+        this.tweens.add({ targets: h, angle: -720, duration: 520, delay: i * 90 });
+        this.tweens.add({
+          targets: h, x: this.heroX + 10, y: 250 + (i - 1) * 24, duration: 520, delay: i * 90, ease: 'Quad.in',
+          onComplete: () => { h.destroy(); if (i === n - 1) res(); },
+        });
+      }
+    });
   }
 
   private hibPhase(ev: EnemyView, cap: string, quote: string) {

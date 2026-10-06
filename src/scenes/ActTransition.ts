@@ -2,10 +2,12 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { arcanistaUnlocked, codexFlag, Game, generateMap, logEvent, saveLocal, syncRun } from '../state';
+import { addCard, arcanistaUnlocked, codexFlag, Game, generateMap, logEvent, saveLocal, syncRun } from '../state';
 import { T } from '../textos';
 import { button, embers, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { BOSS_RELICS, RELICS } from '../data/relics';
+import { CARDS, legendariasDisponibles } from '../data/cards';
+import { cardView } from '../ui/card';
 import { grantRelic } from './Reward';
 
 /** Entre actos: descanso, aviso de desbloqueo y paso al siguiente acto (to = 2 o 3) */
@@ -74,7 +76,36 @@ export class ActTransitionScene extends Phaser.Scene {
       audio.sfx('heal');
       fadeTo(this, 'Map');
     };
-    button(this, W / 2, 500, 340, 50, tx.descender, () => this.reliquiaJefe(to, seguir), { color: UI.gold, size: 24 });
+    button(this, W / 2, 500, 340, 50, tx.descender, () => this.reliquiaJefe(to, () => this.legendaria(to, seguir)), { color: UI.gold, size: 24 });
+  }
+
+  /** Carta legendaria tras vencer al jefe: elige 1 de 3 */
+  private legendaria(to: number, seguir: () => void) {
+    const run = Game.run!;
+    const key = `legendaria_${to}`;
+    const opts = legendariasDisponibles(run.deck, 3);
+    if ((run.seen ??= []).includes(key) || !opts.length) return seguir();
+    const layer = this.add.container(0, 0).setDepth(900);
+    layer.add(this.add.rectangle(0, 0, W, H, 0x030304, 0.97).setOrigin(0).setInteractive());
+    layer.add(title(this, W / 2, 50, 'Carta Legendaria', 40));
+    layer.add(txt(this, W / 2, 84, 'Entre los restos del jefe brillan tres cartas. Sólo puedes llevar una.', 19, CSS.dim).setOrigin(0.5));
+    const tip = new Tooltip(this);
+    opts.forEach((id, i) => {
+      const v = cardView(this, W / 2 + (i - (opts.length - 1) / 2) * 210, 260, { uid: -1, id, up: false });
+      v.setInteractive({ useHandCursor: true });
+      v.on('pointerover', () => { v.setScale(1.08); tip.show(v.x + 90, 420, CARDS[id].concept, CARDS[id].lore); });
+      v.on('pointerout', () => { v.setScale(1); tip.hide(); });
+      v.on('pointerdown', () => {
+        run.seen!.push(key);
+        addCard(id);
+        logEvent('legendaria', '', '', { id });
+        audio.sfx('victory');
+        seguir();
+      });
+      layer.add(v);
+    });
+    layer.add(button(this, W / 2, 492, 200, 40, 'No tomar ninguna', () => { run.seen!.push(key); seguir(); }, { size: 19 }));
+    void tip;
   }
 
   /** Reliquia de jefe: elige 1 de 3 (poderosas, con una desventaja) */
@@ -107,10 +138,11 @@ export class ActTransitionScene extends Phaser.Scene {
         grantRelic(id);
         logEvent('reliquia', '', '', { id, jefe: true });
         audio.sfx('victory');
+        layer.destroy();
         seguir();
       });
       layer.add(z);
     });
-    layer.add(button(this, W / 2, 480, 200, 40, 'No tomar ninguna', () => { run.seen!.push(key); seguir(); }, { size: 19 }));
+    layer.add(button(this, W / 2, 480, 200, 40, 'No tomar ninguna', () => { run.seen!.push(key); layer.destroy(); seguir(); }, { size: 19 }));
   }
 }

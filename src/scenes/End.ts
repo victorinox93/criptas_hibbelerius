@@ -68,6 +68,10 @@ export class EndScene extends Phaser.Scene {
 
     if (data.victory) {
       title(this, W / 2, 70, T.final.victoria, 54);
+      if (Game.codex.victorias === 1 && !run.debug) {
+        const u = txt(this, W / 2, 30, '¡Desbloqueaste al Penitente del Empuje! (elígelo en tu avatar)', 20, CSS.green).setOrigin(0.5).setAlpha(0);
+        this.tweens.add({ targets: u, alpha: 1, duration: 800, delay: 1200 });
+      }
       txt(this, W / 2, 112, T.final.victoriaTexto, 22, CSS.bone).setOrigin(0.5);
       const wz = this.add.image(W - 170, 300, 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
       this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : 0.9, duration: 2500, delay: 800 });

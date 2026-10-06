@@ -1,7 +1,7 @@
 import { G } from '../config';
 
 export type CardType = 'Ataque' | 'Defensa' | 'Habilidad' | 'Poder' | 'Estado';
-export type CardClass = 'caballero' | 'arcanista' | 'neutral' | 'estado';
+export type CardClass = 'caballero' | 'arcanista' | 'penitente' | 'neutral' | 'estado';
 
 export interface CardInst {
   uid: number;
@@ -19,6 +19,8 @@ export interface CalcCtx {
   vel?: number; // rapidez del Arcanista (m/s)
   block?: number; // tu Bloqueo actual
   energy?: number; // Joules disponibles
+  masa?: number; // masa actual del Penitente (= su vida, kg)
+  ve?: number; // velocidad de escape de sus gases (m/s)
 }
 
 export interface CardStats {
@@ -35,7 +37,7 @@ export interface CardDef {
   type: CardType;
   icon: string;
   concept: string; // concepto físico
-  rarity: 'inicial' | 'común' | 'rara' | 'estado';
+  rarity: 'inicial' | 'común' | 'rara' | 'legendaria' | 'estado';
   cls?: CardClass; // sin valor = caballero
   unplayable?: boolean;
   target: 'enemy' | 'all' | 'self';
@@ -70,6 +72,25 @@ export function kinetic(s: CardStats, c: CalcCtx) {
   const v = Math.max(0, c.vel ?? 0);
   return { m, v, K: Math.round(0.5 * m * v * v) };
 }
+/** Penitente del Empuje: ecuación del cohete Δv = vₑ·ln(m₀/m₁) al quemar kg de su propia masa */
+export const VE_BASE = 65;
+export function rocket(kg: number, c: CalcCtx) {
+  const m0 = Math.max(1, c.masa ?? 80);
+  const m1 = Math.max(1, m0 - kg);
+  const ve = c.ve ?? VE_BASE;
+  return { m0, m1, ve, dv: Math.round(ve * Math.log(m0 / m1) * 10) / 10 };
+}
+function rText(kg: number, c: CalcCtx) {
+  const r = rocket(kg, c);
+  return `Quema ${kg} kg: Δv = ${r.ve}·ln(${r.m0}/${r.m1})\n= ${r.dv} m/s`;
+}
+/** Golpe del Penitente: p = m·v */
+export function pmv(s: CardStats, c: CalcCtx) {
+  const m = (s.m ?? 0) + c.masaBonus * 0.5;
+  const v = Math.max(0, c.vel ?? 0);
+  return { m, v, p: Math.round(m * v) };
+}
+
 function kText(s: CardStats, c: CalcCtx) {
   const { m, v, K } = kinetic(s, c);
   return `K = ½·${r1(m)}·${r1(v)}²\n= ${K} J`;
@@ -487,6 +508,135 @@ export const CARDS: Record<string, CardDef> = {
     text: () => `Injugable.\nAl robarla pierdes 1 J.`,
     lore: 'Un signo mal puesto en el diagrama arruina todo el análisis.',
   },
+  // ════════ PENITENTE DEL EMPUJE (masa variable: su vida es su combustible) ════════
+  embestidaArd: {
+    id: 'embestidaArd', name: 'Embestida Ardiente', type: 'Ataque', icon: 'i_fire', concept: 'Cantidad de movimiento', rarity: 'inicial', target: 'enemy', cls: 'penitente',
+    stats: (up) => ({ cost: 1, m: up ? 4 : 3, extra: 2 }),
+    text: (s, c) => { const r = pmv(s, c); return `p = m·v = ${r.m}·${r.v}\nInflige p + ${s.extra} = ${r.p + (s.extra ?? 0)}.`; },
+    lore: 'Mientras más rápido vas, más cantidad de movimiento llevas: p = m·v.',
+  },
+  empuje: {
+    id: 'empuje', name: 'Empuje', type: 'Habilidad', icon: 'i_momentum', concept: 'Masa variable', rarity: 'inicial', target: 'self', cls: 'penitente',
+    stats: (up) => ({ cost: up ? 0 : 1, extra: 4 }),
+    text: (s, c) => rText(s.extra ?? 4, c),
+    lore: 'Ecuación del cohete: lo que expulsas hacia atrás te empuja hacia adelante. Mientras menos masa te quede, más rápido aceleras.',
+  },
+  llamarada: {
+    id: 'llamarada', name: 'Llamarada de Escape', type: 'Ataque', icon: 'i_fire', concept: 'Masa variable', rarity: 'inicial', target: 'all', cls: 'penitente',
+    stats: (up) => ({ cost: 1, extra: up ? 6 : 4 }),
+    text: (s, c) => `${rText(2, c)}\nTus gases: ${s.extra} de Calor\na todos.`,
+    lore: 'Los gases de escape salen a miles de grados. Lo que te impulsa a ti, quema a los demás.',
+  },
+  reabastecer: {
+    id: 'reabastecer', name: 'Reabastecer', type: 'Habilidad', icon: 'i_heart', concept: 'Masa variable', rarity: 'inicial', target: 'self', cls: 'penitente', exhaust: true,
+    stats: (up) => ({ cost: 1, extra: up ? 10 : 7 }),
+    text: (s) => `Recupera ${s.extra} kg de masa\n(vida).\nSe agota.`,
+    lore: 'Más combustible = más masa = acelerar cuesta más. Todo cohete vive con ese dilema.',
+  },
+  etapa: {
+    id: 'etapa', name: 'Separación de Etapa', type: 'Habilidad', icon: 'i_rad', concept: 'Masa variable', rarity: 'rara', target: 'self', cls: 'penitente', exhaust: true,
+    stats: (up) => ({ cost: 0, extra: up ? 10 : 12, block: up ? 2 : 1 }),
+    text: (s, c) => `${rText(s.extra ?? 12, c)}\nRoba ${s.block}. Se agota.`,
+    lore: 'Los cohetes sueltan sus tanques vacíos: menos masa muerta, más Δv.',
+  },
+  ignicion: {
+    id: 'ignicion', name: 'Ignición Total', type: 'Ataque', icon: 'i_fire', concept: 'Masa variable', rarity: 'rara', target: 'enemy', cls: 'penitente',
+    stats: (up) => ({ cost: 2, m: up ? 5 : 4, extra: 6 }),
+    text: (s, c) => `${rText(s.extra ?? 6, c)}\nLuego golpea con p = ${s.m}·v.`,
+    lore: 'Todo el combustible de golpe: un impulso enorme en muy poco tiempo.',
+  },
+  asistencia: {
+    id: 'asistencia', name: 'Asistencia Gravitatoria', type: 'Habilidad', icon: 'i_pend', concept: 'Conservación de la energía', rarity: 'común', target: 'self', cls: 'penitente',
+    stats: (up) => ({ cost: 1, extra: up ? 4 : 3 }),
+    text: (s) => `+${s.extra} m/s SIN quemar masa.\nRoba 1 carta.`,
+    lore: 'Las sondas Voyager robaron rapidez a Júpiter y Saturno al pasar cerca: honda gravitatoria.',
+  },
+  retro: {
+    id: 'retro', name: 'Retrocohete', type: 'Defensa', icon: 'i_shield', concept: 'Impulso', rarity: 'común', target: 'self', cls: 'penitente',
+    stats: (up) => ({ cost: 1, extra: up ? 4 : 3 }),
+    text: (s, c) => { const dv = Math.min(4, c.vel ?? 0); return `Frena hasta 4 m/s y gana\nBloqueo = ${s.extra}·Δv = ${Math.round((s.extra ?? 3) * dv)}.`; },
+    lore: 'Impulso = cambio de cantidad de movimiento: F·Δt = m·Δv. Frenar también es una fuerza.',
+  },
+  estelaPlasma: {
+    id: 'estelaPlasma', name: 'Estela de Plasma', type: 'Ataque', icon: 'i_wind', concept: 'Cantidad de movimiento', rarity: 'común', target: 'all', cls: 'penitente',
+    stats: (up) => ({ cost: 1, m: up ? 2 : 1.5 }),
+    text: (s, c) => { const r = pmv(s, c); return `p = ${r.m}·${r.v} = ${r.p}\na TODOS los enemigos.`; },
+    lore: 'Pasas tan rápido que tu estela golpea a todos los que dejaste atrás.',
+  },
+  absorcion: {
+    id: 'absorcion', name: 'Absorción', type: 'Ataque', icon: 'i_skull', concept: 'Masa variable', rarity: 'común', target: 'enemy', cls: 'penitente',
+    stats: (up) => ({ cost: 1, m: up ? 3 : 2, extra: up ? 8 : 6 }),
+    text: (s, c) => { const r = pmv(s, c); return `p = ${r.m}·${r.v} = ${r.p}.\nSi lo derrotas, ganas\n${s.extra} kg de masa.`; },
+    lore: 'Un sistema de masa variable también puede GANAR masa: como una gota que crece en la nube.',
+  },
+  tobera: {
+    id: 'tobera', name: 'Tobera Variable', type: 'Poder', icon: 'i_crystal', concept: 'Masa variable', rarity: 'común', target: 'self', cls: 'penitente', exhaust: true,
+    stats: (up) => ({ cost: 1, extra: up ? 30 : 20 }),
+    text: (s) => `vₑ +${s.extra} m/s este combate:\ncada kg quemado empuja más.`,
+    lore: 'Mientras más rápido salen los gases, más Δv obtienes por cada kilo.',
+  },
+  masaCritica: {
+    id: 'masaCritica', name: 'Masa Crítica', type: 'Poder', icon: 'i_mass', concept: 'Masa variable', rarity: 'rara', target: 'self', cls: 'penitente', exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `Mientras tu masa sea MENOR\nque la mitad de tu máxima,\ntus ataques hacen ×1.5.`,
+    lore: 'a = F/m: con muy poca masa, cualquier fuerza te vuelve un proyectil.',
+  },
+  reentrada: {
+    id: 'reentrada', name: 'Reentrada', type: 'Ataque', icon: 'i_fire', concept: 'Fricción y calor', rarity: 'rara', target: 'enemy', cls: 'penitente', act: 2,
+    stats: (up) => ({ cost: 2, m: 6, extra: up ? 7 : 5 }),
+    text: (s, c) => { const r = pmv(s, c); return `p = ${r.m}·${r.v} = ${r.p} y ${s.extra}\nde Calor. El roce te quema\n3 kg (sin ganar rapidez).`; },
+    lore: 'Al volver a la atmósfera, la fricción con el aire convierte la energía cinética en calor.',
+  },
+  // ════════ LEGENDARIAS: una copia por expedición. Salen tras vencer a un jefe
+  //          (elige 1 de 3) o, a veces, en el botín de una élite. ════════
+  newtonV: {
+    id: 'newtonV', name: 'Venganza de Newton', type: 'Ataque', icon: 'i_momentum', concept: 'Cantidad de movimiento', rarity: 'legendaria', target: 'all', cls: 'neutral',
+    stats: (up) => ({ cost: 2, m: 4, a: up ? 4 : 3 }),
+    text: (s, c) => `${fText(s, c)}\nAtraviesa la fila: el ÚLTIMO\nenemigo recibe F × 1.5.`,
+    lore: 'Cuna de Newton: las esferas de en medio no se mueven; la cantidad de movimiento pasa completa a la última.',
+  },
+  tiroParabolico: {
+    id: 'tiroParabolico', name: 'Tiro Parabólico', type: 'Ataque', icon: 'i_angle', concept: 'Movimiento de proyectiles', rarity: 'legendaria', target: 'enemy', cls: 'neutral',
+    stats: (up) => ({ cost: 1, extra: up ? 22 : 16, block: up ? 13 : 11 }),
+    text: (s) => `v₀ = ${s.block} m/s. Elige θ:\nR = v₀²·sen2θ / g.\nDonde cae: ${s.extra} de daño\n(ignora el Bloqueo).`,
+    lore: '30° y 60° llegan igual de lejos: son ángulos complementarios. El máximo alcance es con 45°.',
+  },
+  pendulo: {
+    id: 'pendulo', name: 'Péndulo', type: 'Ataque', icon: 'i_pend', concept: 'Conservación de la energía', rarity: 'legendaria', target: 'enemy', cls: 'neutral',
+    stats: (up) => ({ cost: 1, m: 3, a: up ? 4 : 3 }),
+    text: (s, c) => `${fText(s, c)}\nAl inicio de tu siguiente\nturno REGRESA y vuelve\na golpear igual.`,
+    lore: 'Sin fricción, el péndulo vuelve a la misma altura: la energía se conserva.',
+  },
+  patinadora: {
+    id: 'patinadora', name: 'Patinadora', type: 'Ataque', icon: 'i_wind', concept: 'Cantidad de movimiento angular', rarity: 'legendaria', target: 'enemy', cls: 'neutral',
+    stats: (up) => ({ cost: 1, m: 2, a: up ? 4 : 3 }),
+    text: (s, c) => `${fText(s, c)}\nGolpea 1 vez por cada carta\njugada este turno (máx. 6).`,
+    lore: 'I·ω = constante: al cerrar los brazos, I baja y ω sube. Gira más rápido sin que nadie la empuje.',
+  },
+  resorte: {
+    id: 'resorte', name: 'Resorte Comprimido', type: 'Defensa', icon: 'i_shield', concept: 'Energía elástica', rarity: 'legendaria', target: 'self', cls: 'neutral',
+    stats: (up) => ({ cost: 1, block: up ? 12 : 8, extra: 1.5 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nGuarda el daño que recibas\neste turno y al siguiente lo\nsuelta ×${s.extra} a todos.`,
+    lore: 'Ley de Hooke: F = −k·x. Lo que comprimes se guarda como ½·k·x² y regresa.',
+  },
+  dolorResonante: {
+    id: 'dolorResonante', name: 'Dolor Resonante', type: 'Ataque', icon: 'i_crystal', concept: 'Resonancia', rarity: 'legendaria', target: 'enemy', cls: 'neutral', exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2, extra: 7 }),
+    text: (s) => `+2 de Resonancia al objetivo.\nLuego TODOS detonan su\nResonancia: ${s.extra} por carga.\nSe agota.`,
+    lore: 'El puente de Tacoma (1940) no cayó por un viento fuerte, sino por uno que empujaba al ritmo justo.',
+  },
+  honda: {
+    id: 'honda', name: 'Honda de David', type: 'Ataque', icon: 'i_momentum', concept: 'Movimiento circular', rarity: 'legendaria', target: 'enemy', cls: 'neutral',
+    stats: (up) => ({ cost: 0, m: up ? 2.5 : 2, extra: 4 }),
+    text: (s) => `K = ½·${s.m}·v². Empieza con\nv = ${s.extra} m/s y gana +2 m/s por\ncada turno que la guardes\nen la mano (máx. 12).`,
+    lore: 'Mientras gira, a = v²/r la mantiene en círculo. Al soltarla, sale en línea recta: 1ª ley.',
+  },
+  fuegoAmigo: {
+    id: 'fuegoAmigo', name: 'Fuego Amigo', type: 'Habilidad', icon: 'i_reflect', concept: 'Giróscopo', rarity: 'legendaria', target: 'self', cls: 'neutral', exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `Este turno, los ataques\nenemigos se desvían y le\npegan a OTRO enemigo.\nSe agota.`,
+    lore: 'Precesión: un giróscopo no cae hacia donde lo empujas, sino 90° de lado.',
+  },
   // especial: la da Oppenheimer (Trinity). Se usa UNA vez y desaparece de tu mazo.
   trinity: {
     id: 'trinity', name: 'Trinity', type: 'Habilidad', icon: 'i_rad', concept: 'E = mc²', rarity: 'estado', target: 'all', cls: 'neutral', exhaust: true,
@@ -505,17 +655,28 @@ export const CARDS: Record<string, CardDef> = {
 export const STARTER_DECK = ['golpe', 'golpe', 'golpe', 'golpe', 'normal', 'normal', 'normal', 'normal', 'embestida', 'carrera'];
 export const STARTER_ARCANISTA = ['proyectil', 'proyectil', 'proyectil', 'proyectil', 'escudoE', 'escudoE', 'escudoE', 'chispa', 'acelerar', 'frenado'];
 
+export const STARTER_PENITENTE = ['embestidaArd', 'embestidaArd', 'embestidaArd', 'embestidaArd', 'empuje', 'empuje', 'empuje', 'llamarada', 'reabastecer', 'reabastecer'];
+
 export function starterDeck(clase: string) {
-  return clase === 'arcanista' ? STARTER_ARCANISTA : STARTER_DECK;
+  return clase === 'arcanista' ? STARTER_ARCANISTA : clase === 'penitente' ? STARTER_PENITENTE : STARTER_DECK;
 }
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */
 export function rewardPool(clase: string, acto = 1, nivel = 99): string[] {
   const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel;
   const own = Object.values(CARDS).filter((c) => ok(c) &&
-    c.rarity !== 'estado' && (clase === 'arcanista' ? c.cls === 'arcanista' : (c.cls ?? 'caballero') === 'caballero'));
-  const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && c.rarity !== 'estado' && ok(c));
-  return [...own, ...neutral].filter((c) => c.rarity !== 'inicial' || ['embestida', 'carrera', 'acelerar', 'frenado'].includes(c.id)).map((c) => c.id);
+    c.rarity !== 'estado' && c.rarity !== 'legendaria' && (c.cls ?? 'caballero') === (clase || 'caballero'));
+  const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && c.rarity !== 'estado' && c.rarity !== 'legendaria' && ok(c));
+  return [...own, ...neutral].filter((c) => c.rarity !== 'inicial' || ['embestida', 'carrera', 'acelerar', 'frenado', 'empuje'].includes(c.id)).map((c) => c.id);
+}
+
+/** Cartas legendarias */
+export const LEGENDARIAS = Object.values(CARDS).filter((c) => c.rarity === 'legendaria').map((c) => c.id);
+
+/** Legendarias que aún no tienes en el mazo (una copia por expedición) */
+export function legendariasDisponibles(deck: CardInst[], n = 3) {
+  const own = new Set(deck.map((c) => c.id));
+  return LEGENDARIAS.filter((id) => !own.has(id)).sort(() => Math.random() - 0.5).slice(0, n);
 }
 
 /** Compatibilidad: pool del caballero */

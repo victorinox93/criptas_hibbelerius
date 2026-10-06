@@ -9,7 +9,7 @@ import { starterDeck } from '../data/cards';
 import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
 import { siguienteNivel } from '../data/progreso';
-import { arcanistaUnlocked, clearSession, Game, isAdmin, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { claseJugable, clearSession, Game, isAdmin, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -112,7 +112,7 @@ export class MenuScene extends Phaser.Scene {
         console.warn(e);
       }
     }
-    const clase = av.clase === 'arcanista' && arcanistaUnlocked() ? 'arcanista' : 'caballero';
+    const clase = claseJugable(av.clase);
     Game.run = newRun(runId, gravity, clase);
     starterDeck(clase).forEach((id) => unlock('cards', id));
     saveLocal();

@@ -29,7 +29,12 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   c.inst = inst;
   const g = s.add.graphics();
   const col = TYPE_COLOR[def.type];
-  frame(g, -CW / 2, -CH / 2, CW, CH, 0x1a151f, col);
+  frame(g, -CW / 2, -CH / 2, CW, CH, def.rarity === 'legendaria' ? 0x201a10 : 0x1a151f, col);
+  if (def.rarity === 'legendaria') {
+    // marco dorado de las legendarias
+    g.lineStyle(3, 0xe8c15a, 1).strokeRect(-CW / 2 + 3, -CH / 2 + 3, CW - 6, CH - 6);
+    g.lineStyle(1, 0xfff2b0, 0.6).strokeRect(-CW / 2 + 6, -CH / 2 + 6, CW - 12, CH - 12);
+  }
   // caja de arte
   g.fillStyle(0x0d0b10, 1).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
   g.lineStyle(2, col, 0.6).strokeRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);

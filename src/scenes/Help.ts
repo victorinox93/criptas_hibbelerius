@@ -9,6 +9,8 @@ import { Game } from '../state';
 
 const ARC_ROW: [string, string, string] = ['i_momentum', 'K = ½ · m · v²', 'Tus hechizos dañan con energía cinética. Sube tu rapidez v con Acelerar; cada Proyectil te frena 1 m/s y la fricción también.'];
 
+const PEN_ROW: [string, string, string] = ['i_fire', 'Δv = vₑ·ln(m₀/m)', 'Tu vida es tu masa: Empuje quema kilos y te acelera. Golpeas con p = m·v; con v ≥ 6 m/s esquivas.'];
+
 export class HelpScene extends Phaser.Scene {
   constructor() { super('Help'); }
 
@@ -18,7 +20,7 @@ export class HelpScene extends Phaser.Scene {
     dungeonBackground(this, 3, 0x18141e);
     title(this, W / 2, 44, data.first ? T.ayuda.tituloPrimera : T.ayuda.titulo, 44);
     panel(this, 60, 82, W - 120, 380);
-    const ROWS = T.ayuda.filas.map((r, i) => (i === 1 && Game.run?.clase === 'arcanista' ? ARC_ROW : r));
+    const ROWS = T.ayuda.filas.map((r, i) => (i === 1 && Game.run?.clase === 'arcanista' ? ARC_ROW : i === 1 && Game.run?.clase === 'penitente' ? PEN_ROW : r));
     ROWS.forEach(([ic, head, body], i) => {
       const y = 112 + i * 58;
       icon(this, 104, y + 14, ic, 4);

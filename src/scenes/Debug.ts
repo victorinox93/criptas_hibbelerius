@@ -69,7 +69,8 @@ export class DebugScene extends Phaser.Scene {
 
     // ── ajustes de la partida de prueba ──
     label(50, 104, 'Partida de prueba');
-    btn(150, 148, 180, `Clase: ${OPTS.clase === 'caballero' ? 'Caballero' : 'Arcanista'}`, () => { OPTS.clase = OPTS.clase === 'caballero' ? 'arcanista' : 'caballero'; this.draw(); });
+    const CLS = ['caballero', 'arcanista', 'penitente'];
+    btn(150, 148, 180, `Clase: ${{ caballero: 'Caballero', arcanista: 'Arcanista', penitente: 'Penitente' }[OPTS.clase]}`, () => { OPTS.clase = CLS[(CLS.indexOf(OPTS.clase) + 1) % CLS.length]; this.draw(); });
     btn(340, 148, 180, `Gravedad: ${['Tierra', 'Neptuno', 'Júpiter'][OPTS.gravedad - 1]}`, () => { OPTS.gravedad = (OPTS.gravedad % 3) + 1; this.draw(); });
     btn(530, 148, 180, `Mazo: ${OPTS.mazo}`, () => { OPTS.mazo = OPTS.mazo === 'inicial' ? 'fuerte' : 'inicial'; this.draw(); }, OPTS.mazo === 'fuerte');
     btn(720, 148, 180, `Vida: ${OPTS.vida === 'normal' ? 'normal' : '×10'}`, () => { OPTS.vida = OPTS.vida === 'normal' ? 'tanque' : 'normal'; this.draw(); }, OPTS.vida === 'tanque');
@@ -119,9 +120,10 @@ export class DebugScene extends Phaser.Scene {
       Object.keys(EFFECTS).forEach((k) => unlock('effects', k));
       codexFlag('acto1');
       Game.codex.gravedadMax = Math.max(Game.codex.gravedadMax, 3);
+      Game.codex.victorias = Math.max(Game.codex.victorias, 1); // desbloquea al Penitente
       Game.codex.xp = Math.max(Game.codex.xp ?? 0, 1000);
       saveLocal();
-      this.say('Grimorio, Arcanista, gravedades y nivel 10 de Conocimiento desbloqueados.');
+      this.say('Grimorio, Arcanista, Penitente, gravedades y nivel 10 de Conocimiento desbloqueados.');
     });
     btn(570, 430, 220, 'Reiniciar mi Grimorio', () => {
       Game.codex = emptyCodex();

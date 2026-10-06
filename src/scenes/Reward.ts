@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { legendariasDisponibles } from '../data/cards';
 import { CSS, UI } from '../art/palette';
 import { W } from '../config';
 import { audio } from '../audio';
@@ -92,6 +93,11 @@ export class RewardScene extends Phaser.Scene {
     const weighted = Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
     const pool = Phaser.Utils.Array.Shuffle(weighted.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);
+    // a veces una élite suelta una carta LEGENDARIA (una copia por expedición)
+    if (data.kind === 'elite' && Math.random() < 0.15) {
+      const [leg] = legendariasDisponibles(Game.run!.deck, 1);
+      if (leg) picks[1] = leg;
+    }
     picks.forEach((id, i) => {
       const up = Math.random() < (data.kind === 'elite' ? 0.35 : 0.1);
       const v = cardView(this, W / 2 + (i - 1) * 190, y0 + 150, { uid: -1, id, up });

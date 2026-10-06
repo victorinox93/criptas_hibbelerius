@@ -128,7 +128,7 @@ export const T = {
     titulo2: 'Acto II · Las Galerías de la Fricción',
     jefe2: ['La Bruja de la Fricción', 'La guardiana del Acto II.'] as [string, string],
     titulo3: 'Acto III · La Torre del Tomo',
-    jefe3: ['Hibbelerius, el Archimago del Tomo', 'El autor de todos los problemas. Te espera en la cima.'] as [string, string],
+    jefe3: ['Hibbelerius, la Parca del Tomo', 'El autor de todos los problemas. Te espera en la cima.'] as [string, string],
     pisos: 'Pisos',
     clicAvanzar: '▶ Clic para avanzar',
     nodos: {

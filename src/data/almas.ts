@@ -12,7 +12,7 @@ export interface AlmaDef {
   id: string;
   name: string;
   /** apariencia de su fantasma (usa el generador de héroes) */
-  look: { clase: 'caballero' | 'arcanista'; helm: string; arma: number; extra: number };
+  look: { clase: 'caballero' | 'arcanista' | 'penitente'; helm: string; arma: number; extra: number };
   pal: Record<string, string>; // colores apagados del sprite
   intro: string; // su historia, en sus palabras
   pregunta: string; // pregunta filosófica

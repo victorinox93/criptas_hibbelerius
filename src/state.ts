@@ -57,7 +57,7 @@ export interface Run {
   score: number;
   stats: { combates: number; elites: number; runasOk: number; runasTotal: number; ergiosTotal?: number; kills?: number; racha?: number; rachaMax?: number; perfectos?: number };
   gravity: number; // nivel de gravedad (1 = Tierra)
-  clase: string; // 'caballero' | 'arcanista'
+  clase: string; // 'caballero' | 'arcanista' | 'penitente'
   ergios: number;
   effects: Effect[];
   shop?: ShopState;
@@ -180,6 +180,18 @@ export const ROMAN = ['I', 'II', 'III'];
 /** ¿El Arcanista está desbloqueado? (al vencer al Coloso al menos una vez) */
 export function arcanistaUnlocked() {
   return (Game.codex.flags ?? []).includes('acto1') || Game.codex.victorias > 0;
+}
+
+/** ¿El Penitente del Empuje está desbloqueado? (al vencer a Hibbelerius al menos una vez) */
+export function penitenteUnlocked() {
+  return Game.codex.victorias > 0;
+}
+
+/** Clase con la que se puede jugar (si la elegida aún está bloqueada, Caballero) */
+export function claseJugable(clase?: string) {
+  if (clase === 'arcanista' && arcanistaUnlocked()) return 'arcanista';
+  if (clase === 'penitente' && penitenteUnlocked()) return 'penitente';
+  return 'caballero';
 }
 
 export function codexWin(gravedad: number) {
