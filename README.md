@@ -214,3 +214,10 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Familiar nuevo:** Dragón de Carnot (3 de Calor a todos cada turno).
 - **7 cartas:** Reacción Normal, Perdigones, (F = m·a)², Descarga Total, Fractura Frágil, Golpe de Gracia y la Palanca de Arquímedes ahora es para todas las clases.
 - **Grimorio:** los perfiles de Einstein, Curie y Oppenheimer ya no se enciman; el jefe de cada acto aparece en el Bestiario en cuanto lo ves en el mapa.
+
+## Novedades de la v0.17 (reseña de un jugador de Slay the Spire)
+
+- **Opciones explicadas antes de elegir:** en dilemas y encuentros, las opciones con ⓘ muestran al pasar el cursor qué es cada carta, efecto, reliquia o familiar que puede salir (p. ej. «Ruido Blanco: carta basura, injugable»).
+- **Arcanista más amable al inicio:** empieza cada combate a 4 m/s (antes 3) y su mazo inicial trae 2 Acelerar (antes 1).
+- **Consejos para principiantes:** nueva pestaña «Consejos» en el Glosario y un consejo al azar al empezar cada acto. En la **primera expedición** de cada alumno, los combates fáciles de los primeros pisos tienen 30 % menos vida.
+- **Jefes que se adaptan:** cada vez que detienes a un jefe (1ª ley), su umbral sube ×1.5 (`UMBRAL_JEFE_MUL` en `src/scenes/Combat.ts`), para que no se pueda dejarlo sin turno todo el combate.

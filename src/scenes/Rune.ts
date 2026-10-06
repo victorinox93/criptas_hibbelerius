@@ -63,8 +63,8 @@ export function describeOutcome(o: Outcome): string {
     const e = EFFECTS[o.effect];
     return `${e.name}: ${e.text} (${o.combats ?? 1} combate${(o.combats ?? 1) > 1 ? 's' : ''})`;
   }
-  if (o.ergios) return `${o.ergios > 0 ? '+' : ''}${o.ergios} ${T.moneda}`;
   if (o.ergios && o.heal) return `+${o.ergios} ${T.moneda} y +${o.heal} de vida`;
+  if (o.ergios) return `${o.ergios > 0 ? '+' : ''}${o.ergios} ${T.moneda}`;
   if (o.junk) return `${o.junk.n} «${CARDS[o.junk.id].name}» a tu mazo`;
   if (o.heal) return `+${o.heal} de vida`;
   return '';

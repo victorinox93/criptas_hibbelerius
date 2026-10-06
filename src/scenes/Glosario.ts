@@ -17,7 +17,7 @@ export class GlosarioScene extends Phaser.Scene {
     audio.play('menu');
     dungeonBackground(this, 57, 0x16121c);
     title(this, W / 2, 38, 'Glosario', 44);
-    this.tabs = GLOSARIO.map((t, i) => button(this, W / 2 + (i - (GLOSARIO.length - 1) / 2) * 170, 88, 160, 34, t.tab, () => this.show(i), { size: 20 }));
+    this.tabs = GLOSARIO.map((t, i) => button(this, W / 2 + (i - (GLOSARIO.length - 1) / 2) * 162, 88, 152, 34, t.tab, () => this.show(i), { size: 20 }));
     this.layer = this.add.container(0, 0);
     button(this, W / 2, 516, 200, 36, 'Volver', () => fadeTo(this, 'Menu'), { size: 22 });
     this.show(0);

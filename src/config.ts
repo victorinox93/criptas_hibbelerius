@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.16.1 · Portada nueva y Grimorio por páginas';
+export const VERSION = '0.17.0 · Mejoras de la reseña de Erick';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.

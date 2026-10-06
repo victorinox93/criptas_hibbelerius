@@ -690,7 +690,8 @@ export const CARDS: Record<string, CardDef> = {
 };
 
 export const STARTER_DECK = ['golpe', 'golpe', 'golpe', 'golpe', 'normal', 'normal', 'normal', 'normal', 'embestida', 'carrera'];
-export const STARTER_ARCANISTA = ['proyectil', 'proyectil', 'proyectil', 'proyectil', 'escudoE', 'escudoE', 'escudoE', 'chispa', 'acelerar', 'frenado'];
+// v0.17: 2 Acelerar en el mazo inicial (antes 1) para que el Arcanista no se quede sin rapidez en su primer combate
+export const STARTER_ARCANISTA = ['proyectil', 'proyectil', 'proyectil', 'proyectil', 'escudoE', 'escudoE', 'chispa', 'acelerar', 'acelerar', 'frenado'];
 
 export const STARTER_PENITENTE = ['embestidaArd', 'embestidaArd', 'embestidaArd', 'embestidaArd', 'empuje', 'empuje', 'empuje', 'llamarada', 'reabastecer', 'reabastecer'];
 

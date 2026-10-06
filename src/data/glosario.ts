@@ -6,7 +6,20 @@
 
 export type Entrada = [string, string, string];
 
+/** Consejos para quien nunca ha jugado un «roguelike» de cartas (también salen al empezar cada acto) */
+export const CONSEJOS: Entrada[] = [
+  ['i_heart', 'Cuida tu vida', 'No sabes cuándo encontrarás una fogata. Un poco de Bloqueo a tiempo vale más que un golpe extra.'],
+  ['i_skull', 'Si tu vida llega a 0…', '…la expedición termina y empiezas desde el principio. Pero conservas lo que aprendiste: Conocimiento, Grimorio y desbloqueos.'],
+  ['i_crystal', 'Busca sinergias', 'Elige cartas que se ayuden entre sí: masa con aceleración, Calor con golpes a todos, rapidez con ½mv².'],
+  ['i_book', 'Puedes saltarte una carta', 'Si ninguna de las tres le sirve a tu estrategia, «Omitir» es una buena decisión: un mazo grande roba menos tus mejores cartas.'],
+  ['i_coin', 'Quitar cartas también suma', 'Olvidar cartas débiles con el Mercader hace que tus cartas fuertes salgan más seguido.'],
+  ['i_event', 'Planea tu camino', 'Mira el mapa antes de avanzar: ¿necesitas una fogata? ¿te sientes fuerte para una élite? Cada ruta tiene otro riesgo.'],
+  ['i_rune', 'Las runas te hacen fuerte', 'Cada respuesta correcta da recompensas y racha. Si dudas, la pista cuesta Ergios pero te acerca a la respuesta.'],
+  ['i_momentum', 'Pasa el cursor sobre todo', 'Cartas, enemigos, estados y opciones muestran qué hacen y la física detrás. Leer con calma es tu mejor arma.'],
+];
+
 export const GLOSARIO: { tab: string; items: Entrada[] }[] = [
+  { tab: 'Consejos', items: CONSEJOS },
   {
     tab: 'Ataques',
     items: [

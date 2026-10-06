@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { addConocimiento, FLOORS, Game, logEvent, nivelActual, saveLocal, TOTAL_PISOS } from '../state';
+import { addConocimiento, codexFlag, FLOORS, Game, logEvent, nivelActual, saveLocal, TOTAL_PISOS } from '../state';
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
 import { ALMAS } from '../data/almas';
@@ -41,6 +41,7 @@ export class EndScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500);
     audio.play('menu');
     const run = Game.run!;
+    codexFlag('primera'); // ya terminó (o perdió) su primera expedición
     this.add.rectangle(0, 0, W, H, 0x07060a).setOrigin(0);
     embers(this);
     vignette(this);

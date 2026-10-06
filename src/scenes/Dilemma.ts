@@ -12,6 +12,7 @@ import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
+import { explicar } from '../ui/explicar';
 import { PUNTOS, sumar } from '../data/puntaje';
 
 /** Situaciones de riesgo: el jugador elige cuánto arriesgar */
@@ -60,7 +61,18 @@ export class DilemmaScene extends Phaser.Scene {
         this.resolve(d.id, ch, data.floor);
       }, { size: 22, enabled: ok, color: i === d.choices.length - 1 ? UI.border : UI.gold });
       b.label.setText(ch.label).setY(-12);
-      b.add(txt(this, 0, 14, ok ? ch.risk : `${ch.risk} (no te alcanza)`, 17, ok ? CSS.dim : '#7a5a5a').setOrigin(0.5));
+      // qué es cada carta, efecto o reliquia que puede salir (antes de elegir)
+      const rs = ch.outcomes.map((o) => o.r);
+      const info = explicar({
+        cards: rs.flatMap((r) => [r.junk?.id, r.card]),
+        effects: rs.flatMap((r) => [r.effect, ...(r.effects ?? []).map((e) => e[0])]),
+        relics: rs.map((r) => r.relic),
+        familiars: rs.map((r) => r.familiar),
+      });
+      const risk = txt(this, 0, 14, `${ok ? ch.risk : `${ch.risk} (no te alcanza)`}${info ? '  ⓘ' : ''}`, 17, ok ? CSS.dim : '#7a5a5a').setOrigin(0.5);
+      if (risk.width > 466) risk.setScale(466 / risk.width, 1);
+      b.add(risk);
+      if (info) tip.attach(b, ch.label, info);
       btns.push(b);
     });
   }

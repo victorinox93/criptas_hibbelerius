@@ -5,7 +5,8 @@ import { T } from '../textos';
 import { W, H } from '../config';
 import { FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
 import { topBar } from '../ui/hud';
-import { embers, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { embers, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { CONSEJOS } from '../data/glosario';
 
 const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   combate: { icon: 'i_combat', color: 0x8a8296 },
@@ -147,6 +148,25 @@ export class MapScene extends Phaser.Scene {
       const lt = txt(this, x + 16, H - 33, t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
       if (lt.width > 96) lt.setScale(96 / lt.width, 1);
     });
+
+    // al empezar cada acto: un consejo para quien no ha jugado este tipo de juegos
+    if (run.pos === -1) this.consejo();
+  }
+
+  /** Ventanita con un consejo al azar (src/data/glosario.ts → CONSEJOS); clic para cerrarla */
+  private consejo() {
+    const [ic, h, b] = Phaser.Utils.Array.GetRandom(CONSEJOS);
+    const c = this.add.container(W / 2, H - 92).setDepth(800).setAlpha(0);
+    const g = this.add.graphics();
+    frame(g, -300, -38, 600, 76, 0x0b090e, UI.gold, 0.96);
+    const t = txt(this, -238, -28, `Consejo · ${h}`, 19, CSS.gold);
+    const d = txt(this, -238, -4, b, 16, CSS.bone, { wordWrap: { width: 520 } });
+    if (d.height > 40) d.setFontSize(14);
+    c.add([g, icon(this, -268, 0, ic, 4), t, d]);
+    this.tweens.add({ targets: c, alpha: 1, duration: 500, delay: 600 });
+    const cerrar = () => this.tweens.add({ targets: c, alpha: 0, duration: 400, onComplete: () => c.destroy() });
+    this.time.delayedCall(12000, cerrar);
+    g.setInteractive(new Phaser.Geom.Rectangle(-300, -38, 600, 76), Phaser.Geom.Rectangle.Contains).on('pointerdown', cerrar);
   }
 
   enter(n: MapNode) {

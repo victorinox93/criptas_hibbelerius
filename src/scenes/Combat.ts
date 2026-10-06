@@ -6,6 +6,14 @@ import { CalcCtx, CARDS, CardInst, force, kinetic, pmv, rocket, statsOf, VE_BASE
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
 const VMAX_PEN = 14;
+/** Cada vez que detienes a un jefe, su umbral se multiplica por esto */
+const UMBRAL_JEFE_MUL = 1.5;
+
+/** Fuerza necesaria (en un solo golpe) para detener a un enemigo */
+function umbralDe(st: EnemyState) {
+  if (!st.def.umbral) return 0;
+  return Math.round((st.def.umbral + (st.phase2 ? 3 : 0)) * (st.umbralMul ?? 1));
+}
 const ESQUIVA = 6;
 import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addEntropia, addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
@@ -196,6 +204,11 @@ export class CombatScene extends Phaser.Scene {
   /** Horror cósmico al iniciar el combate (src/data/abismo.ts) */
   private abismoInicio() {
     const run = Game.run!;
+    // primera expedición de la vida: los dos primeros combates son más suaves (−30 % de vida enemiga)
+    if (!(Game.codex.flags ?? []).includes('primera') && this.kind === 'easy' && (run.acto ?? 1) === 1) {
+      for (const e of this.alive()) { e.st.hp = e.st.maxHp = Math.max(1, Math.round(e.st.maxHp * 0.7)); this.refreshEnemy(e); }
+      this.calc('Primera expedición: los enemigos de los primeros pisos vienen más débiles');
+    }
     if (this.kind === 'boss') addEntropia(ENTROPIA.jefe);
     else if (this.kind === 'elite') addEntropia(ENTROPIA.elite);
     if (this.prohibido('p_masaneg')) {
@@ -356,7 +369,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.usaVel) {
       // el Arcanista convierte sus bonos de aceleración en rapidez inicial
       // (la mitad de los bonos, para que no se dispare K = ½mv²)
-      this.vel = Math.min(this.vmax, (this.isPen ? 0 : 3) + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
+      this.vel = Math.min(this.vmax, (this.isPen ? 0 : 4) + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
       this.baseAcel = 0;
     }
     // Coriolis · El ½ de ½mv²
@@ -422,7 +435,7 @@ export class CombatScene extends Phaser.Scene {
       if (this.selected) sprite.setTint(0xffaaaa);
       const d = st.def;
       let body = `Masa: ${d.mass} kg · Peso en ${this.grav.name}: ${Math.round(d.mass * this.grav.g)} N\n${d.desc}`;
-      if (d.umbral) body += `\n\nUmbral para detenerlo: F ≥ ${st.phase2 ? d.umbral + 3 : d.umbral} N en un solo golpe (1ª ley).`;
+      if (d.umbral) body += `\n\nUmbral para detenerlo: F ≥ ${umbralDe(st)} N en un solo golpe (1ª ley).${(st.umbralMul ?? 1) > 1 ? ' Se adapta: cada vez que lo detienes, sube ×1.5.' : ''}`;
       this.tip.show(p.worldX + 16, p.worldY - 120, d.name, body);
     });
     sprite.on('pointerout', () => {
@@ -491,7 +504,7 @@ export class CombatScene extends Phaser.Scene {
       const ic = icon(this, sx + 8, 0, 'i_momentum', 2.4);
       const t = txt(this, sx + 20, -11, `${st.inercia}`, 20, '#e0a070');
       this.tip.attach(ic, `Inercia ×${st.inercia}`,
-        `1ª ley: mientras nadie lo detenga, sigue avanzando y su golpe crece cada turno.\nDetenlo con un golpe de F ≥ ${st.phase2 ? st.def.umbral! + 3 : st.def.umbral} N.`);
+        `1ª ley: mientras nadie lo detenga, sigue avanzando y su golpe crece cada turno.\nDetenlo con un golpe de F ≥ ${umbralDe(st)} N.`);
       ev.statusC.add([ic, t]);
       sx += 44;
     }
@@ -1673,7 +1686,7 @@ export class CombatScene extends Phaser.Scene {
     this.tweens.add({ targets: t, y: 170, alpha: 0, duration: 900, onComplete: () => t.destroy() });
 
     let stopped = false;
-    const umbral = st.def.umbral ? st.def.umbral + (st.phase2 ? 3 : 0) : 0;
+    const umbral = umbralDe(st);
     if (umbral && !st.detenido && st.hp > 0 && kind !== 'calor' && kind !== 'res') {
       if (F >= umbral) {
         stopped = true;
@@ -1687,6 +1700,11 @@ export class CombatScene extends Phaser.Scene {
         this.floatText(ev.baseX, 140, T.combate.detenido, CSS.gold);
         audio.sfx('stop');
         logEvent('detener', '1a ley', true, { enemigo: st.def.id, F, umbral });
+        // los jefes aprenden: la próxima vez necesitarás más fuerza para detenerlos
+        if (JEFES.includes(st.def.id)) {
+          st.umbralMul = (st.umbralMul ?? 1) * UMBRAL_JEFE_MUL;
+          this.calc(`${st.def.name} se adapta: la próxima vez necesitarás F ≥ ${umbralDe(st)} N`);
+        }
       } else if (F >= umbral * 0.6) {
         this.hint(`Necesitas F ≥ ${umbral} N en un solo golpe para detenerlo (tienes ${F} N).`);
       }

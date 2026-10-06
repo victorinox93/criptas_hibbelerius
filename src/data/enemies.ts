@@ -29,6 +29,7 @@ export interface EnemyState {
   turn: number;
   inercia: number; // acumulación de inercia (élite y jefe)
   stunned: number; // turnos aturdido
+  umbralMul?: number; // jefes: el umbral sube cada vez que los detienes
   detenido: boolean; // recibe x1.5 mientras está detenido
   intent: Intent;
   phase2?: boolean;

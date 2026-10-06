@@ -14,6 +14,7 @@ import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, embers, fadeTo, frame, icon, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { describeOutcome } from './Rune';
+import { explicar } from '../ui/explicar';
 
 export class EventScene extends Phaser.Scene {
   constructor() { super('Event'); }
@@ -110,9 +111,13 @@ export class EventScene extends Phaser.Scene {
     frame(g, 520, 120, 410, 300, 0x0b090e, UI.border, 0.95);
     txt(this, 540, 136, ev.intro, 21, CSS.bone, { wordWrap: { width: 370 }, lineSpacing: 2 });
     txt(this, 540, 300, `${T.evento.siAciertas}:`, 19, CSS.green);
-    txt(this, 540, 320, describeOutcome(ev.bless), 19, CSS.bone, { wordWrap: { width: 370 } });
+    const outInfo = (o: typeof ev.bless) => explicar({ cards: [o.junk?.id], effects: [o.effect], relics: [o.relic] });
+    const bi = outInfo(ev.bless), ci = outInfo(ev.curse);
+    const bt = txt(this, 540, 320, `${describeOutcome(ev.bless)}${bi ? '  ⓘ' : ''}`, 19, CSS.bone, { wordWrap: { width: 370 } });
+    if (bi) tip.attach(bt.setInteractive(), T.evento.siAciertas, bi);
     txt(this, 540, 360, `${T.evento.siFallas}:`, 19, '#e08a8a');
-    txt(this, 540, 380, describeOutcome(ev.curse), 19, CSS.bone, { wordWrap: { width: 370 } });
+    const ct = txt(this, 540, 380, `${describeOutcome(ev.curse)}${ci ? '  ⓘ' : ''}`, 19, CSS.bone, { wordWrap: { width: 370 } });
+    if (ci) tip.attach(ct.setInteractive(), T.evento.siFallas, ci);
 
     button(this, 625, 470, 200, 50, T.evento.aceptar, () => {
       fadeTo(this, 'Rune', { floor: data.floor, source: 'evento', eventId: ev.id });
