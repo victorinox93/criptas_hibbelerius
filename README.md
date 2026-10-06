@@ -230,3 +230,8 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
   - **Tira y Afloja de Newton** (estilo Gwent, reglas en `src/data/tira.ts`): apuestas 10/25/50 Ergios y juegas al mejor de 3 rondas con 10 cartas de fuerza en tres filas (Jalón F, Rampa F·cosθ, Polea F×2) y especiales (Lodo, Acción-Reacción, Cuerda Rota, Masa Inamovible). Si ganas, recibes el doble.
 - **Tablón de encargos** (`src/data/encargos.ts`): al empezar cada acto eliges un contrato opcional (p. ej. «vence una élite sin perder vida», «gana un duelo en la taberna»). Si lo cumples, te pagan; se ve arriba a la derecha.
 - **Modo profesor:** saltos directos a Taberna, Tiro al blanco, Tira y Afloja, Mercader ambulante, Tablón y Vender cartas. Todo se registra en «Eventos» (`minijuego`, `minijuego_fin`, `venta`, `encargo`).
+
+## v0.18.1 · «¿Más o menos?» reemplaza al Tira y Afloja
+
+- En la Taberna, el **Tira y Afloja** (difícil de entender) se cambió por **«¿Más o menos?»** (`src/data/masmenos.ts`): aparecen dos cosas con su masa y rapidez (una bala, un elefante, Usain Bolt…) y eliges cuál tiene más **energía cinética** (K = ½mv²) o más **cantidad de movimiento** (p = m·v). Cada acierto duplica la apuesta (hasta 5 rondas); puedes retirarte cuando quieras. 4 de cada 10 pares son «tramposos»: uno gana en K y el otro en p. Al responder se muestran las cuentas.
+- El Tira y Afloja sigue disponible sólo en el Modo profesor. El encargo «Rey de la taberna» cambió a «Acierta 4 seguidas en ¿Más o menos?».

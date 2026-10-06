@@ -17,7 +17,7 @@ export const ENCARGOS: EncargoDef[] = [
   { id: 'detener', nombre: 'Primera ley', texto: 'Detén a un enemigo con un solo golpe (F ≥ umbral).', premio: 45 },
   { id: 'racha3', nombre: 'Racha de sabio', texto: 'Responde bien 3 runas seguidas.', premio: 60 },
   { id: 'jefeRapido', nombre: 'Golpe decisivo', texto: 'Vence al jefe del acto en 6 turnos o menos.', premio: 90 },
-  { id: 'duelo', nombre: 'Rey de la taberna', texto: 'Gana un duelo de Tira y Afloja.', premio: 50 },
+  { id: 'magnitudes', nombre: 'Ojo para las magnitudes', texto: 'Acierta 4 seguidas en «¿Más o menos?» (Taberna).', premio: 50 },
   { id: 'diana', nombre: 'Ojo de halcón', texto: 'Da en el centro de la diana en el Tiro al Blanco.', premio: 40 },
 ];
 

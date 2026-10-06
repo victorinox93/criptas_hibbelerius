@@ -51,7 +51,7 @@ export class TabernaScene extends Phaser.Scene {
       }, { size: 20, enabled: !hecho, color: UI.gold });
     };
     opcion(200, 'Tiro al Blanco', 'Elige ángulo y rapidez: R = v₀²·sen2θ/g. Gratis; hasta 75 Ergios si das en la diana.', 'tiro', 'TiroBlanco');
-    opcion(310, 'Tira y Afloja de Newton', 'Duelo de cartas de fuerza al mejor de 3. Apuesta y gana el doble.', 'tira', 'TiraAfloja');
+    opcion(310, '¿Más o menos?', '¿Qué tiene más energía o más cantidad de movimiento? Cada acierto duplica tu apuesta.', 'masmenos', 'MasMenos');
 
     button(this, 640, 470, 220, 44, 'Seguir mi camino', () => {
       run.floor = data.floor + 1;

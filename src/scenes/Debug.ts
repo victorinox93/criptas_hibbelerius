@@ -91,16 +91,15 @@ export class DebugScene extends Phaser.Scene {
       ['AM', () => this.go(acto(), 'AM', { floor: 3 })],
       ['Necronomicón', () => this.go(Math.max(2, acto()), 'Dilemma', { floor: 2, id: 'atril' })],
       ['Alma en pena', () => this.go(acto(), 'Alma', { floor: 2, id: Phaser.Utils.Array.GetRandom(ALMA_IDS) })],
-      ['Mercader', () => this.go(acto(), 'Shop', { floor: 4 })],
+      ['Mercader', () => { this.go(acto(), 'Shop', { floor: 4 }); Game.run!.ergios = Math.max(Game.run!.ergios, 200); }],
       ['Altar', () => this.go(acto(), 'Rune', { floor: 3, source: 'altar' })],
       ['Fogata', () => this.go(acto(), 'Campfire', { floor: 7 })],
       ['Final', () => this.go(acto(), 'End', { victory: true })],
       ['Taberna', () => this.go(acto(), 'Taberna', { floor: 3 })],
       ['Tiro al blanco', () => this.go(acto(), 'TiroBlanco', { floor: 3, volver: 'Debug' })],
       ['Tira y Afloja', () => { this.go(acto(), 'TiraAfloja', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
+      ['¿Más o menos?', () => { this.go(acto(), 'MasMenos', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
       ['M. ambulante', () => this.go(acto(), 'Shop', { floor: 4, ambulante: true })],
-      ['Tablón (mapa)', () => this.go(acto(), 'Map')],
-      ['Vender cartas', () => { this.go(acto(), 'Shop', { floor: 4 }); Game.run!.ergios = 200; }],
     ];
     jumps.forEach(([s, fn], i) => btn(106 + (i % 6) * 150, 282 + Math.floor(i / 6) * 36, 142, s, fn));
     const fig = FIGURES[OPTS.figura];
