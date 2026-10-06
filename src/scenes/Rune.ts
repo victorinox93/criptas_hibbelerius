@@ -10,6 +10,7 @@ import { checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/r
 import { multRacha, PUNTOS, sumar } from '../data/puntaje';
 import { ENTROPIA } from '../data/abismo';
 import { AM_ENTROPIA, PACTO_AM } from '../data/am';
+import { completarEncargo } from '../data/encargos';
 import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
@@ -233,6 +234,10 @@ export class RuneScene extends Phaser.Scene {
       run.stats.rachaMax = Math.max(run.stats.rachaMax ?? 0, run.stats.racha);
       const pts = sumar(run, 'Preguntas correctas', PUNTOS.runa * multRacha(run.stats.racha));
       if (run.stats.racha > 1) this.flash(`Racha ×${run.stats.racha}: +${pts} puntos`, CSS.gold);
+      if (run.stats.racha >= 3) {
+        const e = completarEncargo('racha3');
+        if (e) this.flash(`¡Encargo cumplido! +${e} ${T.moneda}`, '#e8b070', 156);
+      }
       const tr = boonLevel('c_traductora');
       if (tr && this.d.source !== 'regateo') addErgios(15 * tr);
     } else if (!this.amUsado) run.stats.racha = 0;

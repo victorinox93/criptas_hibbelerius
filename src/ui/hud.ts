@@ -1,5 +1,6 @@
 import { fmtPuntos } from '../data/puntaje';
 import { ENTROPIA, nivelEntropia } from '../data/abismo';
+import { ENCARGOS } from '../data/encargos';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
@@ -139,6 +140,19 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         tip.attach(im, `Familiar: ${fam.name}`, `${fam.text}\nSe queda ${r.familiar.left} combate(s) más.\n${fam.lore}`, 20);
         effRow.add([bg, im, n]);
         off = 1;
+      }
+      if (r.encargo?.id && r.encargo.acto === (r.acto ?? 1)) {
+        const def = ENCARGOS.find((e) => e.id === r.encargo!.id);
+        if (def) {
+          const x = -off * 52;
+          const bg = s.add.graphics();
+          frame(bg, x - 22, -14, 46, 28, 0x1a120c, r.encargo.hecho ? UI.green : 0xd89a4a, 0.9);
+          const im = icon(s, x - 8, 0, 'i_book', 2.2);
+          const n = txt(s, x + 6, -10, r.encargo.hecho ? '✓' : '…', 18, r.encargo.hecho ? CSS.green : '#e8b070');
+          tip.attach(im, `Encargo: ${def.nombre}${r.encargo.hecho ? ' (cumplido)' : ''}`, `${def.texto}\nPremio: ${def.premio} ${T.moneda} (sólo en este acto).`, 20);
+          effRow.add([bg, im, n]);
+          off++;
+        }
       }
       if ((r.entropia ?? 0) > 0) {
         const ent = r.entropia ?? 0;

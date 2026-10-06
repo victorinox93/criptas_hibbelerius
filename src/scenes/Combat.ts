@@ -21,6 +21,7 @@ import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
+import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
 import { bonosFinales, JEFES, PUNTOS, sumar } from '../data/puntaje';
 import { POCIONES } from '../data/pociones';
@@ -1700,6 +1701,7 @@ export class CombatScene extends Phaser.Scene {
         this.floatText(ev.baseX, 140, T.combate.detenido, CSS.gold);
         audio.sfx('stop');
         logEvent('detener', '1a ley', true, { enemigo: st.def.id, F, umbral });
+        this.encargo(completarEncargo('detener'));
         // los jefes aprenden: la próxima vez necesitarás más fuerza para detenerlos
         if (JEFES.includes(st.def.id)) {
           st.umbralMul = (st.umbralMul ?? 1) * UMBRAL_JEFE_MUL;
@@ -2258,7 +2260,9 @@ export class CombatScene extends Phaser.Scene {
       run.stats.perfectos = (run.stats.perfectos ?? 0) + 1;
       sumar(run, 'Combates perfectos', this.kind === 'elite' || this.kind === 'boss' ? PUNTOS.elitePerfecta : PUNTOS.combatePerfecto);
       this.floatText(W / 2, 170, '¡Perfecto!', CSS.gold);
+      if (this.kind === 'elite') this.encargo(completarEncargo('elitePerfecta'));
     }
+    if (this.kind === 'boss' && this.turn <= 6) this.encargo(completarEncargo('jefeRapido'));
     if (this.kind === 'boss') sumar(run, 'Actos superados', PUNTOS.acto * this.acto);
     if (this.kind === 'boss' && this.acto >= 3) sumar(run, 'Victoria', PUNTOS.victoria);
     if (this.kind === 'elite') run.stats.elites++;
@@ -2458,6 +2462,15 @@ export class CombatScene extends Phaser.Scene {
     img.setInteractive();
     this.tip.attach(img, `${def.name} (quedan ${fam.left} combate${fam.left > 1 ? 's' : ''})`, `${def.text}\n${def.lore}`);
     this.famImg = img;
+  }
+
+  /** Aviso de encargo cumplido */
+  private encargo(premio: number) {
+    if (!premio) return;
+    this.calc(`¡Encargo cumplido! +${premio} ${T.moneda}`);
+    this.floatText(W / 2, 140, `Encargo cumplido +${premio}`, '#e8b070');
+    audio.sfx('coin');
+    this.hud.refresh();
   }
 
   /** Penitente: quema kg de su masa (vida) y gana Δv = vₑ·ln(m₀/m₁) */

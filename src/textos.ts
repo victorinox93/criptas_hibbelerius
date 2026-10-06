@@ -138,6 +138,7 @@ export const T = {
       runa: ['Altar rúnico', 'Un problema de dinámica. Resuélvelo y obtén una reliquia.'],
       evento: ['Encuentro', 'Lo desconocido: alguien que pregunta, un dilema arriesgado… o quizá el profe.'],
       mercader: ['Mercader', 'Compra cartas y reliquias con tus Ergios.'],
+      taberna: ['Taberna', 'Minijuegos: Tiro al blanco y Tira y Afloja. Apuesta tus Ergios.'],
       santuario: ['Eco del Pasado', 'Una figura histórica de la física te espera. Te ofrecerá un don para toda la expedición.'],
       jefe: ['Coloso Inerte', 'El guardián del Acto I.'],
     } as Record<string, [string, string]>,

@@ -27,7 +27,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'jefe';
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe';
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -61,6 +61,7 @@ export interface Run {
   ergios: number;
   effects: Effect[];
   shop?: ShopState;
+  encargo?: { id: string; acto: number; hecho: boolean }; // contrato del tablón (src/data/encargos.ts)
   boons: { id: string; epic: boolean }[]; // dones de figuras históricas
   met: string[]; // figuras ya encontradas en esta expedición
   seen?: string[]; // encuentros y dilemas ya vistos en esta expedición
@@ -93,6 +94,8 @@ export interface ShopState {
   remove: ShopItem;
   discount: boolean;
   haggled: boolean;
+  vendidas?: number; // cartas que le vendiste en esta visita (máx. 2)
+  ambulante?: boolean; // mercader ambulante (encuentro)
 }
 
 export const FLOORS = 12; // pisos antes del jefe (cada acto tiene FLOORS + 1 nodos de profundidad)
@@ -281,13 +284,14 @@ export function generateMap(acto = 1): MapNode[] {
   for (const n of list) for (const c of n.next) if (byId.has(c)) (parents.get(c) ?? parents.set(c, []).get(c)!).push(n);
   const vecinos = (n: MapNode) => [...(parents.get(n.id) ?? []), ...n.next.map((c) => byId.get(c)).filter((x): x is MapNode => !!x)];
   // «descanso»: ecos, fogatas y mercaderes. Nunca dos seguidos en un camino.
-  const DESCANSO: NodeType[] = ['santuario', 'fogata', 'mercader'];
+  const DESCANSO: NodeType[] = ['santuario', 'fogata']; // (el mercader y la taberna ya pueden quedar junto a ellos)
   const choca = (n: MapNode, t: NodeType) => DESCANSO.includes(t) && vecinos(n).some((v) => DESCANSO.includes(v.type));
   // topes por mapa (un poco al azar para que cada mapa sea distinto)
   const tope: Partial<Record<NodeType, number>> = {
     santuario: 2 + (Math.random() < 0.35 ? 1 : 0),
     fogata: 2 + (Math.random() < 0.5 ? 1 : 0), // sin contar la fila de fogatas antes del jefe
-    mercader: 2 + (Math.random() < 0.3 ? 1 : 0),
+    mercader: 3,
+    taberna: 2,
     elite: acto >= 2 ? 5 : 4,
   };
   const cuenta = (t: NodeType) => list.filter((n) => n.type === t && !(t === 'fogata' && n.floor === FLOORS - 1)).length;
@@ -298,7 +302,7 @@ export function generateMap(acto = 1): MapNode[] {
     const r = Math.random();
     let t: NodeType;
     if (n.floor <= 3) t = r < 0.52 ? 'combate' : r < 0.72 ? 'evento' : r < 0.8 ? 'santuario' : r < 0.92 ? 'runa' : 'fogata';
-    else t = r < 0.38 ? 'combate' : r < 0.54 ? 'elite' : r < 0.7 ? 'evento' : r < 0.79 ? 'runa' : r < 0.86 ? 'mercader' : r < 0.93 ? 'santuario' : 'fogata';
+    else t = r < 0.36 ? 'combate' : r < 0.52 ? 'elite' : r < 0.66 ? 'evento' : r < 0.74 ? 'runa' : r < 0.82 ? 'mercader' : r < 0.86 ? 'taberna' : r < 0.93 ? 'santuario' : 'fogata';
     if (t === 'fogata' && n.floor < 3) t = 'evento';
     if (t === 'fogata' && n.floor === FLOORS - 2) t = 'combate'; // ya hay fogatas justo antes del jefe
     if ((tope[t] !== undefined && cuenta(t) >= tope[t]!) || choca(n, t)) t = Math.random() < 0.6 ? 'combate' : 'evento';
@@ -315,7 +319,9 @@ export function generateMap(acto = 1): MapNode[] {
   ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);
   ensure('runa', 2, [1, FLOORS - 3]);
   ensure('evento', 3, [1, FLOORS - 2]);
-  ensure('mercader', 1, [4, FLOORS - 2]);
+  ensure('mercader', 1, [3, 6]); // una tienda a mitad del camino…
+  ensure('mercader', 2, [7, FLOORS - 2]); // …y otra cerca del jefe
+  ensure('taberna', 1, [2, FLOORS - 3]); // la Taberna de los minijuegos
   ensure('santuario', 1, [2, FLOORS - 3]);
   ensure('fogata', 1, [5, FLOORS - 3]);
   return [...list, boss];

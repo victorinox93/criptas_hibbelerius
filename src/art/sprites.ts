@@ -737,6 +737,17 @@ export const SPRITES: Record<string, string[]> = {
     '.n..ll...',
     'n........',
   ],
+  i_jarra: [
+    '.wwwww...',
+    'wwwwwww..',
+    'yyyyyyykk',
+    'yoyyyyy.k',
+    'yyyoyyy.k',
+    'yoyyyyy.k',
+    'yyyyoyykk',
+    'yyyyyyy..',
+    '.kkkkk...',
+  ],
   i_paw: [
     '.w.....w.',
     '.ww...ww.',

@@ -5,8 +5,9 @@ import { T } from '../textos';
 import { W, H } from '../config';
 import { FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
 import { topBar } from '../ui/hud';
-import { embers, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { button, embers, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { CONSEJOS } from '../data/glosario';
+import { ENCARGOS } from '../data/encargos';
 
 const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   combate: { icon: 'i_combat', color: 0x8a8296 },
@@ -16,6 +17,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   evento: { icon: 'i_event', color: 0x6a8fc4 },
   mercader: { icon: 'i_bag', color: 0xe8c15a },
   santuario: { icon: 'i_shrine', color: 0x7fd8ff },
+  taberna: { icon: 'i_jarra', color: 0xd89a4a },
   jefe: { icon: 'i_boss', color: 0xe8c15a },
 };
 const NODE_INFO = Object.fromEntries(
@@ -141,16 +143,46 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'fogata', 'jefe'];
+    const types: NodeType[] = ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
     types.forEach((t, i) => {
-      const x = 24 + i * 118;
+      const x = 22 + i * 105;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
       const lt = txt(this, x + 16, H - 33, t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
-      if (lt.width > 96) lt.setScale(96 / lt.width, 1);
+      if (lt.width > 84) lt.setScale(84 / lt.width, 1);
     });
 
     // al empezar cada acto: un consejo para quien no ha jugado este tipo de juegos
-    if (run.pos === -1) this.consejo();
+    if (run.pos === -1) {
+      if (!run.encargo || run.encargo.acto !== (run.acto ?? 1)) this.tablon(() => this.consejo());
+      else this.consejo();
+    }
+  }
+
+  /** Tablón de encargos: elige un contrato opcional para este acto (src/data/encargos.ts) */
+  private tablon(despues: () => void) {
+    const run = Game.run!;
+    const opts = Phaser.Utils.Array.Shuffle([...ENCARGOS]).slice(0, 2);
+    const c = this.add.container(0, 0).setDepth(900);
+    c.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.8).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, W / 2 - 300, 120, 600, 300, 0x120c08, 0xd89a4a, 0.98);
+    c.add([g, title(this, W / 2, 152, 'Tablón de Encargos', 32, '#e8b070'),
+      txt(this, W / 2, 184, 'Acepta un contrato opcional para este acto. Si lo cumples, te pagan.', 17, CSS.dim).setOrigin(0.5)]);
+    const cerrar = (id: string | null) => {
+      run.encargo = { id: id ?? '', acto: run.acto ?? 1, hecho: !id };
+      saveLocal();
+      c.destroy();
+      this.scene.restart(); // al reiniciar ya aparece el consejo y el encargo en la barra
+      void despues;
+    };
+    opts.forEach((e, i) => {
+      const y = 240 + i * 70;
+      const b = button(this, W / 2, y, 540, 60, '', () => cerrar(e.id), { size: 19, color: 0xd89a4a });
+      b.label.setText(`${e.nombre} · +${e.premio} ${T.moneda}`).setY(-11);
+      b.add(txt(this, 0, 13, e.texto, 16, CSS.dim).setOrigin(0.5));
+      c.add(b);
+    });
+    c.add(button(this, W / 2, 386, 200, 34, 'Ninguno', () => cerrar(null), { size: 18 }));
   }
 
   /** Ventanita con un consejo al azar (src/data/glosario.ts → CONSEJOS); clic para cerrarla */
@@ -187,6 +219,8 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Shop', { floor: n.floor });
       case 'santuario':
         return fadeTo(this, 'Sanctuary', { floor: n.floor });
+      case 'taberna':
+        return fadeTo(this, 'Taberna', { floor: n.floor });
     }
   }
 }

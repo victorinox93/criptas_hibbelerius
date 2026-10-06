@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { CARDS, rewardPool, cardName } from '../data/cards';
+import { CARDS, CardInst, rewardPool, cardName } from '../data/cards';
 import { RELICS } from '../data/relics';
 import { FAMILIAR_POOL, FAMILIARS } from '../data/familiars';
 import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
@@ -14,7 +14,14 @@ import { button, Btn, embers, fadeTo, frame, icon, mist, title, Tooltip, txt, vi
 import { randomRelics } from './Reward';
 import { grantRelic } from './Reward';
 
-function makeStock(node: number): ShopState {
+/** Cuánto paga el mercader por una carta de tu mazo */
+export function precioVenta(ci: CardInst) {
+  const r = CARDS[ci.id].rarity;
+  const base = r === 'legendaria' ? 45 : r === 'rara' ? 25 : r === 'inicial' ? 8 : 14;
+  return base + (ci.up ? 8 : 0) + 4 * (ci.evo ?? 0);
+}
+
+function makeStock(node: number, ambulante = false): ShopState {
   const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase, Game.run!.acto, nivelActual()))]).slice(0, 3);
   const [rel] = randomRelics(1);
   return {
@@ -29,8 +36,9 @@ function makeStock(node: number): ShopState {
     pociones: Phaser.Utils.Array.Shuffle(pocionesDisponibles(nivelActual())).slice(0, 2).map((id) => ({ id, price: Phaser.Math.Between(22, 34), sold: false })),
     heal: { price: 30, sold: false },
     remove: { price: 55, sold: false },
-    discount: false,
-    haggled: false,
+    discount: ambulante, // el ambulante ya trae precios rebajados
+    haggled: ambulante,
+    ambulante,
   };
 }
 
@@ -43,14 +51,20 @@ export class ShopScene extends Phaser.Scene {
 
   constructor() { super('Shop'); }
 
-  create(data: { floor: number }) {
+  create(data: { floor: number; ambulante?: boolean }) {
     this.floor = data.floor;
     this.cameras.main.fadeIn(300);
     audio.play('calma');
     const run = Game.run!;
     unlock('npcs', 'mercader');
-    if (!run.shop || run.shop.node !== run.pos) {
-      run.shop = makeStock(run.pos);
+    if (!run.shop || run.shop.node !== run.pos || !!run.shop.ambulante !== !!data.ambulante) {
+      run.shop = makeStock(run.pos, !!data.ambulante);
+      // oferta del día: una carta a −30 %
+      if (!data.ambulante && run.shop.cards.length) {
+        const o = Phaser.Utils.Array.GetRandom(run.shop.cards);
+        o.price = Math.round(o.price * 0.7);
+        (o as { oferta?: boolean }).oferta = true;
+      }
       saveLocal();
     }
 
@@ -71,8 +85,8 @@ export class ShopScene extends Phaser.Scene {
     this.add.image(200, 360, 'i_bag').setScale(4);
     this.add.image(60, 150, 'i_lantern').setScale(4);
 
-    title(this, 600, 70, T.mercader.titulo, 38);
-    txt(this, 600, 104, T.mercader.saludo, 20, CSS.dim).setOrigin(0.5);
+    title(this, 600, 70, data.ambulante ? 'Mercader Ambulante' : T.mercader.titulo, 38);
+    txt(this, 600, 104, data.ambulante ? '«Ando de paso. Todo con descuento, pero sólo hoy.»' : T.mercader.saludo, 20, CSS.dim).setOrigin(0.5);
     this.msg = txt(this, 600, 128, '', 21, CSS.blood, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5).setDepth(50);
     this.layer = this.add.container(0, 0);
     this.draw();
@@ -150,6 +164,7 @@ export class ShopScene extends Phaser.Scene {
         v.on('pointerdown', () => this.buy(it, `carta ${it.id}`, () => addCard(it.id, it.up)));
       }
       L(v);
+      if ((it as { oferta?: boolean }).oferta && !it.sold) L(txt(this, x, 130, '¡Oferta −30 %!', 17, CSS.green).setOrigin(0.5).setStroke('#000', 4));
       this.tag(x, 334, it);
     });
 
@@ -192,7 +207,7 @@ export class ShopScene extends Phaser.Scene {
     // servicios
     L(txt(this, 300, 372, T.mercader.servicios, 22, CSS.gold));
     const svc = (y: number, label: string, it: ShopItem | null, fn: () => void, enabled = true) => {
-      const b: Btn = button(this, 455, y, 320, 40, label, fn, { size: 20, enabled: enabled && !(it?.sold), silent: true });
+      const b: Btn = button(this, 455, y, 320, 34, label, fn, { size: 20, enabled: enabled && !(it?.sold), silent: true });
       L(b);
       if (it) this.tag(650, y, it);
     };
@@ -216,18 +231,35 @@ export class ShopScene extends Phaser.Scene {
       this.tag(724, y + 30, it);
     });
     const r = Game.run!;
-    svc(412, T.mercader.olvidar, s.remove, () => {
+    svc(404, T.mercader.olvidar, s.remove, () => {
       if (this.price(s.remove) > r.ergios) return this.buy(s.remove, '', () => undefined);
       deckOverlay(this, T.mercader.olvidarElige, r.deck, (i) => {
         const card = r.deck[i];
         this.buy(s.remove, `olvidar ${cardName(card)}`, () => r.deck.splice(i, 1));
       });
     }, r.deck.length > 5);
-    svc(458, T.mercader.curar, s.heal, () => this.buy(s.heal, 'curar', () => {
+    svc(442, T.mercader.curar, s.heal, () => this.buy(s.heal, 'curar', () => {
       r.hp = Math.min(r.maxHp, r.hp + 20);
       audio.sfx('heal');
     }), r.hp < r.maxHp);
-    svc(504, s.discount ? `✔ ${T.mercader.regateado}` : T.mercader.regatear, null, () => {
+    // vender cartas (máx. 2 por visita)
+    const vend = s.vendidas ?? 0;
+    svc(480, `Vender una carta (${2 - vend} más)`, null, () => {
+      deckOverlay(this, 'Vender: común 14 · rara 25 · legendaria 45 (+8 si está mejorada)', r.deck, (i) => {
+        const c = r.deck[i];
+        const p = precioVenta(c);
+        r.deck.splice(i, 1);
+        addErgios(p);
+        s.vendidas = vend + 1;
+        audio.sfx('coin');
+        logEvent('venta', '', '', { carta: c.id, precio: p });
+        this.say(`Vendiste ${cardName(c)} por ${p} ${T.moneda}`, CSS.gold);
+        saveLocal();
+        this.hud.refresh();
+        this.draw();
+      });
+    }, vend < 2 && r.deck.length > 5);
+    svc(518, s.discount ? `✔ ${T.mercader.regateado}` : T.mercader.regatear, null, () => {
       fadeTo(this, 'Rune', { floor: this.floor, source: 'regateo' });
     }, !s.haggled);
   }

@@ -36,6 +36,12 @@ export class EventScene extends Phaser.Scene {
         saveLocal();
         this.scene.start('Dilemma', { floor: data.floor, id: 'atril' });
         return;
+      } else if (!seen.includes('ambulante') && data.floor >= 2 && Math.random() < 0.1) {
+        // mercader ambulante: tienda pequeña con descuento
+        seen.push('ambulante');
+        saveLocal();
+        this.scene.start('Shop', { floor: data.floor, ambulante: true });
+        return;
       } else if (!seen.includes('am') && data.floor >= 3 && Math.random() < AM_CHANCE) {
         // AM, la inteligencia artificial de las criptas (src/data/am.ts)
         seen.push('am');

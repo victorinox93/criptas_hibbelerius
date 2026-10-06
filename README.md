@@ -221,3 +221,12 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Arcanista más amable al inicio:** empieza cada combate a 4 m/s (antes 3) y su mazo inicial trae 2 Acelerar (antes 1).
 - **Consejos para principiantes:** nueva pestaña «Consejos» en el Glosario y un consejo al azar al empezar cada acto. En la **primera expedición** de cada alumno, los combates fáciles de los primeros pisos tienen 30 % menos vida.
 - **Jefes que se adaptan:** cada vez que detienes a un jefe (1ª ley), su umbral sube ×1.5 (`UMBRAL_JEFE_MUL` en `src/scenes/Combat.ts`), para que no se pueda dejarlo sin turno todo el combate.
+
+## Novedades de la v0.18 · Economía y minijuegos
+
+- **Tienda más presente:** cada acto garantiza 2 mercaderes (uno a mitad del camino y otro cerca del jefe), y el mercader ya puede quedar junto a fogatas o ecos. Siempre hay una **oferta del día** (−30 %) y puedes **vender hasta 2 cartas** por visita (común 14 · rara 25 · legendaria 45, +8 si está mejorada). A veces aparece un **Mercader Ambulante** en un encuentro, con precios rebajados.
+- **La Taberna del Abismo** (nodo nuevo, 1–2 por acto) con dos minijuegos (`src/scenes/TiroBlanco.ts`, `src/scenes/TiraAfloja.ts`):
+  - **Tiro al Blanco:** eliges θ y v₀; el proyectil cae en R = v₀²·sen2θ/g con la gravedad del astro. 3 tiros; hasta 25 Ergios por tiro.
+  - **Tira y Afloja de Newton** (estilo Gwent, reglas en `src/data/tira.ts`): apuestas 10/25/50 Ergios y juegas al mejor de 3 rondas con 10 cartas de fuerza en tres filas (Jalón F, Rampa F·cosθ, Polea F×2) y especiales (Lodo, Acción-Reacción, Cuerda Rota, Masa Inamovible). Si ganas, recibes el doble.
+- **Tablón de encargos** (`src/data/encargos.ts`): al empezar cada acto eliges un contrato opcional (p. ej. «vence una élite sin perder vida», «gana un duelo en la taberna»). Si lo cumples, te pagan; se ve arriba a la derecha.
+- **Modo profesor:** saltos directos a Taberna, Tiro al blanco, Tira y Afloja, Mercader ambulante, Tablón y Vender cartas. Todo se registra en «Eventos» (`minijuego`, `minijuego_fin`, `venta`, `encargo`).

@@ -80,7 +80,7 @@ export class DebugScene extends Phaser.Scene {
     [1, 2, 3].forEach((a, i) => btn(200 + i * 200, 222, 180, `Acto ${['I', 'II', 'III'][i]}`, () => this.go(a, 'Map')));
 
     // ── saltos directos ──
-    label(50, 252, 'Ir directo a (en el acto de la partida actual, o Acto III si no hay)');
+    label(50, 246, 'Ir directo a (en el acto de la partida actual, o Acto III si no hay)');
     const acto = () => (Game.run && !Game.run.done ? Game.run.acto : 3);
     const jumps: [string, () => void][] = [
       ['Combate', () => this.go(acto(), 'Combat', { kind: 'normal', floor: 3 })],
@@ -95,19 +95,25 @@ export class DebugScene extends Phaser.Scene {
       ['Altar', () => this.go(acto(), 'Rune', { floor: 3, source: 'altar' })],
       ['Fogata', () => this.go(acto(), 'Campfire', { floor: 7 })],
       ['Final', () => this.go(acto(), 'End', { victory: true })],
+      ['Taberna', () => this.go(acto(), 'Taberna', { floor: 3 })],
+      ['Tiro al blanco', () => this.go(acto(), 'TiroBlanco', { floor: 3, volver: 'Debug' })],
+      ['Tira y Afloja', () => { this.go(acto(), 'TiraAfloja', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
+      ['M. ambulante', () => this.go(acto(), 'Shop', { floor: 4, ambulante: true })],
+      ['Tablón (mapa)', () => this.go(acto(), 'Map')],
+      ['Vender cartas', () => { this.go(acto(), 'Shop', { floor: 4 }); Game.run!.ergios = 200; }],
     ];
-    jumps.forEach(([s, fn], i) => btn(106 + (i % 6) * 150, 294 + Math.floor(i / 6) * 42, 142, s, fn));
+    jumps.forEach(([s, fn], i) => btn(106 + (i % 6) * 150, 282 + Math.floor(i / 6) * 36, 142, s, fn));
     const fig = FIGURES[OPTS.figura];
-    btn(150, 386, 240, `Eco: ${fig.name}`, () => this.go(acto(), 'Sanctuary', { floor: 2, figureId: fig.id }));
-    btn(300, 386, 50, '▸', () => { OPTS.figura = (OPTS.figura + 1) % FIGURES.length; this.draw(); });
+    btn(150, 396, 240, `Eco: ${fig.name}`, () => this.go(acto(), 'Sanctuary', { floor: 2, figureId: fig.id }));
+    btn(300, 396, 50, '▸', () => { OPTS.figura = (OPTS.figura + 1) % FIGURES.length; this.draw(); });
     const dil = DILEMMAS[OPTS.dilema];
-    btn(520, 386, 260, `Dilema: ${dil.name}`, () => this.go(acto(), 'Dilemma', { floor: 2, id: dil.id }));
-    btn(685, 386, 50, '▸', () => { OPTS.dilema = (OPTS.dilema + 1) % DILEMMAS.length; this.draw(); });
-    btn(830, 386, 180, 'Transición II→III', () => this.go(2, 'ActTransition', { to: 3 }));
+    btn(520, 396, 260, `Dilema: ${dil.name}`, () => this.go(acto(), 'Dilemma', { floor: 2, id: dil.id }));
+    btn(685, 396, 50, '▸', () => { OPTS.dilema = (OPTS.dilema + 1) % DILEMMAS.length; this.draw(); });
+    btn(830, 396, 180, 'Transición II→III', () => this.go(2, 'ActTransition', { to: 3 }));
 
     // ── grimorio ──
-    label(50, 414, 'Grimorio');
-    btn(330, 430, 220, 'Desbloquear todo', () => {
+    label(50, 418, 'Grimorio');
+    btn(330, 438, 220, 'Desbloquear todo', () => {
       Object.keys(ENEMIES).forEach((k) => unlock('enemies', k));
       EVENTS.forEach((e) => unlock('npcs', e.id));
       unlock('npcs', 'mercader');
@@ -127,7 +133,7 @@ export class DebugScene extends Phaser.Scene {
       saveLocal();
       this.say('Grimorio, Arcanista, Penitente, gravedades y nivel 10 de Conocimiento desbloqueados.');
     });
-    btn(570, 430, 220, 'Reiniciar mi Grimorio', () => {
+    btn(570, 438, 220, 'Reiniciar mi Grimorio', () => {
       Game.codex = emptyCodex();
       saveLocal();
       this.say('Grimorio vacío (como alumno nuevo).');
