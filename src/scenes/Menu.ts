@@ -16,6 +16,7 @@ export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create() {
+    this.iniciando = false;
     this.cameras.main.fadeIn(300);
     audio.play('menu');
     dungeonBackground(this, 5, 0x1a1622);
@@ -107,7 +108,15 @@ export class MenuScene extends Phaser.Scene {
     layer.add(button(this, W / 2, 458, 160, 34, T.menu.cancelar, () => layer.destroy(), { size: 20 }));
   }
 
+  private iniciando = false;
+
   private async start(gravity: number) {
+    // evita que un doble clic (o la espera del servidor) cree varias expediciones
+    if (this.iniciando) return;
+    this.iniciando = true;
+    const espera = this.add.container(0, 0).setDepth(950);
+    espera.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.75).setOrigin(0).setInteractive());
+    espera.add(txt(this, W / 2, H / 2, 'Abriendo las criptas…', 28, CSS.gold).setOrigin(0.5));
     const p = Game.profile!;
     const av = p.avatar!;
     if (Game.run && !Game.run.done) syncRun('abandonada', 'nueva expedición');

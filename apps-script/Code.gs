@@ -243,7 +243,13 @@ var ACTIONS = {
     var u = auth_(r.token);
     var sh = sheet_('Partidas');
     var row = findRow_(sh, 1, String(r.runId));
-    if (!row) return { ok: true, ignored: true };
+    if (!row) {
+      // la partida no se registró al iniciar (servidor lento o sin conexión en ese momento): se crea ahora
+      if (!/^[LR]-/.test(String(r.runId))) return { ok: true, ignored: true };
+      sh.appendRow([String(r.runId), u.mat, u.grupo, u.alias, clean_(r.clase, 20), new Date(), new Date(),
+        1, 0, '', 0, 'en curso', '', 0, 0, 0, 0, 10, num_(r.gravedad) || 1, 0]);
+      row = sh.getLastRow();
+    }
     var cur = sh.getRange(row, 1, 1, HEAD.Partidas.length).getValues()[0];
     if (cur[1] !== u.mat) throw new Error('Partida ajena.');
     cur[6] = new Date();

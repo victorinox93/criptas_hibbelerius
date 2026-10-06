@@ -235,3 +235,9 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 
 - En la Taberna, el **Tira y Afloja** (difícil de entender) se cambió por **«¿Más o menos?»** (`src/data/masmenos.ts`): aparecen dos cosas con su masa y rapidez (una bala, un elefante, Usain Bolt…) y eliges cuál tiene más **energía cinética** (K = ½mv²) o más **cantidad de movimiento** (p = m·v). Cada acierto duplica la apuesta (hasta 5 rondas); puedes retirarte cuando quieras. 4 de cada 10 pares son «tramposos»: uno gana en K y el otro en p. Al responder se muestran las cuentas.
 - El Tira y Afloja sigue disponible sólo en el Modo profesor. El encargo «Rey de la taberna» cambió a «Acierta 4 seguidas en ¿Más o menos?».
+
+## v0.18.2 · Arreglos a partir de la hoja y la reseña
+
+- **Partidas duplicadas:** al elegir la gravedad, el juego esperaba al servidor sin avisar y cada clic extra creaba otra expedición. Ahora aparece «Abriendo las criptas…» y se ignoran los clics repetidos.
+- **Partidas que no quedaban en la hoja:** si el servidor tardaba al iniciar, la partida se jugaba con un id local (`L-…`) y sus avances se perdían. Ahora `updateRun` **crea la fila** si no existe. ⚠️ Requiere pegar el `Code.gs` nuevo y crear una **nueva versión** de la implementación.
+- **Penitente:** si tu Bloqueo alcanza para el golpe, se usa el Bloqueo y **no** pierdes rapidez esquivando. La primera vez que lo juegas aparece una explicación corta de cómo acelerar y esquivar.

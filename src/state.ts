@@ -394,6 +394,7 @@ export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abando
     mazo: r.deck.length,
     gravedad: r.gravity,
     minutos: Math.round((r.tiempo ?? 0) / 6) / 10,
+    clase: r.clase, // por si la partida no se registró al iniciar (el servidor la crea)
   });
 }
 

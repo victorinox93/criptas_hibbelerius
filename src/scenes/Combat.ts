@@ -212,6 +212,14 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.kind === 'boss') addEntropia(ENTROPIA.jefe);
     else if (this.kind === 'elite') addEntropia(ENTROPIA.elite);
+    // primera vez con el Penitente: cómo se juega
+    if (this.isPen && !(Game.codex.flags ?? []).includes('pen_tuto')) {
+      codexFlag('pen_tuto');
+      this.time.delayedCall(2200, () => {
+        const t = txt(this, W / 2, 150, 'Penitente: juega EMPUJE para acelerar (quema masa = vida).\nTus golpes valen p = m·v. Con v ≥ 6 m/s esquivas golpes.', 20, CSS.gold, { align: 'center' }).setOrigin(0.5).setDepth(700).setStroke('#000', 4);
+        this.tweens.add({ targets: t, alpha: 0, delay: 7000, duration: 600, onComplete: () => t.destroy() });
+      });
+    }
     if (this.prohibido('p_masaneg')) {
       if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 3);
       else this.masa += 3;
@@ -1835,7 +1843,8 @@ export class CombatScene extends Phaser.Scene {
       return;
     }
     // Penitente: esquiva si va suficientemente rápido
-    if (from && dmg > 0 && this.isPen && this.vel >= ESQUIVA) {
+    // (si tu Bloqueo alcanza para el golpe, primero se usa el Bloqueo y no pierdes rapidez)
+    if (from && dmg > 0 && this.isPen && this.vel >= ESQUIVA && this.block < dmg) {
       this.vel = Math.max(0, Math.round((this.vel - 3) * 10) / 10);
       this.calc(`¡Esquiva! v ≥ ${ESQUIVA} m/s: el golpe de ${from.st.def.name} no te alcanza (v → ${this.vel})`);
       this.floatText(this.heroX, 200, 'Esquiva', '#9ad8f0');
