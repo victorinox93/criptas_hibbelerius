@@ -174,3 +174,11 @@ En el menú **Criptas** del Google Sheet (pega el `Code.gs` nuevo y recarga la h
 | Borrar TODO y empezar de cero… | Deja Alumnos, Partidas y Eventos vacías (los grupos se conservan). Pide escribir BORRAR. |
 
 Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Drive («Respaldo Criptas fecha»). Recomendación: da a tus amigos una clave aparte, por ejemplo `BETA`, y bórrala con «Borrar datos de un grupo…» antes de empezar con alumnos.
+
+## Novedades de la v0.12
+
+- **Ecos nuevos:** **Nikola Tesla** (rayos que dañan a todos los enemigos), **J. Robert Oppenheimer** (la carta «Trinity», que se usa una sola vez: destruye a todos los enemigos y a los jefes les quita 30–40 % de vida; reacción en cadena; todo con radiación) y **Charles Darwin** (una carta EVOLUCIONA 3 niveles —+2 kg o +3 de Bloqueo por nivel, se marca con ✦— y más vida máxima).
+- **Reliquias de jefe:** al vencer al jefe del Acto I y del Acto II eliges 1 de 3: Reactor de Fisión, Agujero Negro de Bolsillo, Tomo Prohibido de Hibbeler, Corazón del Coloso o Volante de Inercia. Son muy fuertes, pero cada una tiene un costo (`src/data/relics.ts`).
+- **Almas en pena nuevas:** **Sir Radián, el Mal Configurado** (su calculadora está en RAD: a veces pega fuerte, a veces te da Bloqueo, a veces «Math ERROR») y **el Doctorando Eterno** (pone Fatiga a todos los enemigos).
+- **Enemigos con 20 % más de vida** (`VIDA_ENEMIGOS` en `src/data/enemies.ts`).
+- **Mapas más variados:** nunca hay dos lugares de descanso seguidos (ecos, fogatas o mercaderes) y cada mapa tiene un tope al azar de cada uno (2–3).

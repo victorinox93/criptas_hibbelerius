@@ -30,8 +30,9 @@ export class CampfireScene extends Phaser.Scene {
     const hero = this.add.image(W / 2 - 150, 340, 'hero').setScale(2.5);
     this.tweens.add({ targets: hero, y: 336, duration: 1100, yoyo: true, repeat: -1 });
 
-    const heal = Math.round(run.maxHp * gravityOf(run.gravity).heal);
-    button(this, W / 2 - 170, 470, 300, 64, `${T.fogata.descansar}\n+${Math.min(heal, run.maxHp - run.hp)} de vida`, () => {
+    const sinCura = run.relics.includes('agujero');
+    const heal = sinCura ? 0 : Math.round(run.maxHp * gravityOf(run.gravity).heal);
+    button(this, W / 2 - 170, 470, 300, 64, sinCura ? 'El Agujero Negro\nse traga el descanso' : `${T.fogata.descansar}\n+${Math.min(heal, run.maxHp - run.hp)} de vida`, () => {
       audio.sfx('heal');
       run.hp = Math.min(run.maxHp, run.hp + heal);
       run.floor = data.floor + 1;

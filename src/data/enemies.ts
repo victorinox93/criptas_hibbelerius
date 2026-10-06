@@ -351,9 +351,12 @@ export function encounters(acto: number) {
   return acto >= 3 ? ENCOUNTERS_3 : acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
 }
 
+/** Multiplicador global de la vida de los enemigos (v0.12: +20 %) */
+export const VIDA_ENEMIGOS = 1.2;
+
 export function spawn(id: string): EnemyState {
   const def = ENEMIES[id];
-  const hp = rnd(def.hp[0], def.hp[1]);
+  const hp = Math.round(rnd(def.hp[0], def.hp[1]) * VIDA_ENEMIGOS);
   const e: EnemyState = { def, hp, maxHp: hp, block: 0, turn: 0, inercia: 0, stunned: 0, detenido: false, intent: { kind: 'attack', dmg: 0 }, carga: 0, calor: 0, resonancia: 0, fatiga: 0, impulso: 0, impulsoLeft: 0 };
   e.intent = def.next(e);
   return e;

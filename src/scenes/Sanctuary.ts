@@ -3,9 +3,10 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { BOONS, FIGURES, FigureDef } from '../data/figures';
-import { addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { addCard, addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { CardInst, cardName, evolucionable } from '../data/cards';
 import { T } from '../textos';
-import { topBar } from '../ui/hud';
+import { deckOverlay, topBar } from '../ui/hud';
 import { button, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
 
 export interface SanctuaryData {
@@ -85,6 +86,36 @@ export class SanctuaryScene extends Phaser.Scene {
     }, { size: 21 });
   }
 
+  /** Dones que hacen algo en el momento (Oppenheimer, Darwin) */
+  private donInmediato(id: string, epic: boolean, done: (extra?: string) => void) {
+    const run = Game.run!;
+    const vida = (n: number) => { run.maxHp += n; run.hp = Math.min(run.maxHp, run.hp + n); };
+    if (id === 'o_trinity') {
+      addCard('trinity', epic);
+      return done('La carta «Trinity» está en tu mazo. Úsala con cuidado: sólo hay una.');
+    }
+    if (id === 'd_adaptacion') {
+      vida(epic ? 20 : 12);
+      return done(`+${epic ? 20 : 12} de Vida máxima.`);
+    }
+    if (id === 'd_seleccion') {
+      vida(epic ? 10 : 5);
+      const cands = run.deck.filter(evolucionable);
+      if (!cands.length) return done(`+${epic ? 10 : 5} de Vida máxima.`);
+      const evo = (ci: CardInst) => {
+        ci.evo = (ci.evo ?? 0) + 3;
+        if (epic) ci.up = true;
+        saveLocal();
+        audio.sfx('victory');
+        done(`«${cardName(ci)}» evolucionó 3 niveles. +${epic ? 10 : 5} de Vida máxima.`);
+      };
+      deckOverlay(this, 'Selección Natural: elige la carta que evolucionará', cands, (i) => evo(cands[i]),
+        () => evo(Phaser.Utils.Array.GetRandom(cands)));
+      return;
+    }
+    done();
+  }
+
   private choose(fig: FigureDef, data: SanctuaryData, epic: boolean) {
     const run = Game.run!;
     title(this, 600, 76, `${T.santuario.elige} · ${epic ? T.santuario.epico : T.santuario.comun}`, 36, epic ? CSS.gold : CSS.bone);
@@ -138,7 +169,9 @@ export class SanctuaryScene extends Phaser.Scene {
           unlock('boons', id);
           audio.sfx('heal');
           logEvent('don', fig.id, epic, { don: id, epico: epic });
-          finish(`${T.santuario.don}: ${b.name} (${epic ? T.santuario.epico : T.santuario.comun})`);
+          const msg = `${T.santuario.don}: ${b.name} (${epic ? T.santuario.epico : T.santuario.comun})`;
+          this.tip.hide();
+          this.donInmediato(id, epic, (extra) => finish(extra ? `${msg}\n${extra}` : msg));
         });
         c.add(z);
       }

@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.11.0 · Almas en pena, puntaje arcade y el profe de mal humor';
+export const VERSION = '0.12.0 · Tesla, Oppenheimer, Darwin y reliquias de jefe';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CARDS, CardInst, force, kinetic, VMAX } from '../data/cards';
+import { CalcCtx, CARDS, CardInst, force, kinetic, statsOf, VMAX } from '../data/cards';
 import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
@@ -120,6 +120,7 @@ export class CombatScene extends Phaser.Scene {
     this.hand = [];
     this.discard = [];
     this.exhaust = [];
+    this.maxEnergy = 3 + (this.has('reactor') ? 1 : 0) + (this.has('tomo') ? 1 : 0);
     this.energy = this.maxEnergy;
     this.block = 0;
     this.acel = 0;
@@ -492,7 +493,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private cost(c: CardView) {
-    return CARDS[c.inst.id].stats(c.inst.up).cost;
+    return statsOf(c.inst).cost;
   }
 
   private drawCards(n: number) {
@@ -685,7 +686,7 @@ export class CombatScene extends Phaser.Scene {
     const layer = this.add.container(0, 0).setDepth(850);
     const g = this.add.graphics();
     frame(g, W / 2 - 230, 150, 460, 170, 0x0f0c13, UI.gold);
-    const { F } = force(CARDS.tajo.stats(v.inst.up), this.ctx());
+    const { F } = force(statsOf(v.inst), this.ctx());
     layer.add([
       g,
       txt(this, W / 2, 176, 'Tajo Angulado: elige el ángulo θ', 26, CSS.gold).setOrigin(0.5),
@@ -718,7 +719,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.busy) return;
     const inst = v.inst;
     const def = CARDS[inst.id];
-    const st = def.stats(inst.up);
+    const st = statsOf(inst);
     if (st.cost > this.energy) return;
     this.busy = true;
     this.selected = null;
@@ -776,6 +777,29 @@ export class CombatScene extends Phaser.Scene {
     }
     const c = this.ctx();
     switch (def.id) {
+      case 'trinity': {
+        // Oppenheimer: se consume PARA SIEMPRE
+        const run = Game.run!;
+        run.deck = run.deck.filter((x) => x.uid !== inst.uid);
+        this.exhaust = this.exhaust.filter((x) => x !== inst);
+        this.calc('Trinity: E = mc² → una fracción de gramo se vuelve energía');
+        this.cameras.main.flash(900, 255, 250, 230);
+        this.cameras.main.shake(900, 0.025);
+        audio.sfx('defeat');
+        const fl = this.add.circle(W / 2 + 120, 260, 30, 0xfff2c0, 0.9).setDepth(800).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: fl, scale: 18, alpha: 0, duration: 1400, onComplete: () => fl.destroy() });
+        await this.wait(700);
+        for (const t of [...this.alive()]) {
+          if (JEFES.includes(t.st.def.id)) {
+            const dmg = Math.ceil(t.st.hp * (st.extra ?? 30) / 100);
+            this.calc(`${t.st.def.name} resiste la onda: −${dmg}`);
+            await this.hitEnemy(t, dmg, true, 'res');
+          } else await this.killEnemy(t);
+        }
+        logEvent('trinity', '', true, { piso: this.floor });
+        if (!(await this.radiate(10, 'Trinity'))) return;
+        break;
+      }
       case 'golpe':
       case 'embestida':
       case 'fuerzaNeta': {
@@ -1227,6 +1251,12 @@ export class CombatScene extends Phaser.Scene {
       await this.hitEnemy(t, dmg, true, 'res');
       if (!(await this.radiate(1, 'fotón'))) return;
     }
+    const tb = boonLevel('t_bobina');
+    if (tb && def.type === 'Ataque' && this.alive().length) {
+      const dmg = tb === 2 ? 4 : 2;
+      this.calc(`Bobina de Tesla: un arco eléctrico salta a todos (${dmg})`);
+      await this.rayoTodos(dmg);
+    }
     if (Game.run!.hp <= 0 && (await this.dies('tu propio esfuerzo'))) return;
     if (pol && def.type === 'Ataque' && !(await this.radiate(1, 'polonio'))) return;
     this.refreshPlayer();
@@ -1395,6 +1425,17 @@ export class CombatScene extends Phaser.Scene {
     }
     ev.st.hp = 0;
     ev.hp.set(0, ev.st.maxHp);
+    const oc = boonLevel('o_cadena');
+    if (oc && this.alive().length) {
+      const n = oc === 2 ? 9 : 5;
+      this.burst(ev.baseX, 260, 0xffe080, 30);
+      this.calc(`Reacción en Cadena (Oppenheimer): ${n} a los demás`);
+      for (const t of this.alive()) {
+        this.beamFrom(ev.baseX, t, 0xffb040);
+        await this.hitEnemy(t, n, true, 'res');
+      }
+      await this.radiate(1, 'reacción en cadena');
+    }
     ev.intentC.removeAll(true);
     ev.statusC.removeAll(true);
     ev.blockT.setText('');
@@ -1503,7 +1544,24 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Ut tensio, sic vis (Hooke): +${2 * kres} de Bloqueo`);
     }
 
+    const ta = boonLevel('t_alterna');
+    if (ta && (ta === 2 || this.turn % 2 === 1) && this.alive().length) {
+      this.calc('Corriente Alterna (Tesla): un rayo cae sobre todos (4)');
+      await this.rayoTodos(4);
+      if (await this.checkEnd()) return;
+    }
     let draw = 5 + this.extraDraw;
+    if (this.has('agujero')) draw += 1;
+    if (this.turn === 1) {
+      const om = boonLevel('o_manhattan');
+      if (om) {
+        this.energy += om;
+        draw += 1;
+        this.calc(`Proyecto Manhattan (Oppenheimer): +${om} J y +1 carta`);
+      }
+      if (this.has('coloso')) { this.energy = Math.max(0, this.energy - 1); this.calc('Corazón del Coloso: −1 J en tu primer turno'); }
+      if (this.has('volante')) draw -= 1;
+    }
     const hr = boonLevel('h_reloj');
     if ((hr === 1 && this.turn % 2 === 0) || (hr === 2 && this.turn >= 2)) {
       draw += 1;
@@ -1604,6 +1662,7 @@ export class CombatScene extends Phaser.Scene {
     this.endBtn.setEnabled(false);
     const yt = boonLevel('y_tiempo');
     this.carry = yt ? Math.min(this.energy, yt) : 0;
+    if (this.has('volante')) this.carry = Math.max(this.carry, Math.min(this.energy, 3));
     this.desvioUsed = false;
     // tareas pendientes: si siguen en la mano, cuestan vida
     const tareas = this.hand.filter((c) => c.inst.id === 'tarea').length;
@@ -1770,6 +1829,11 @@ export class CombatScene extends Phaser.Scene {
       run.maxHp += vm === 2 ? 3 : 2;
       run.hp += vm === 2 ? 3 : 2;
     }
+    const da = boonLevel('d_apto');
+    if (da && run.hp < run.maxHp / 2) {
+      run.maxHp += da === 2 ? 5 : 3;
+      this.calc(`El Más Apto (Darwin): sobreviviste → +${da === 2 ? 5 : 3} Vida máxima`);
+    }
     let extra = 0;
     if (this.cond?.id === 'ecos') extra += 15;
     if (run.familiar) {
@@ -1909,6 +1973,19 @@ export class CombatScene extends Phaser.Scene {
     const vm = boonLevel('m_vidamedia');
     if (vm && !(await this.radiate(vm === 2 ? 2 : 3, 'Vida Media'))) return false;
     if (this.hasFx('radiacion') && !(await this.radiate(4, 'Radiación'))) return false;
+    const tt = boonLevel('t_torre');
+    if (tt && this.alive().length) {
+      const n = tt === 2 ? 14 : 8;
+      this.calc(`Torre Wardenclyffe (Tesla): energía sin cables, ${n} a todos`);
+      await this.rayoTodos(n);
+    }
+    const om = boonLevel('o_manhattan');
+    if (om && !(await this.radiate(om === 2 ? 2 : 3, 'Proyecto Manhattan'))) return false;
+    if (this.has('reactor') && !(await this.radiate(2, 'Reactor de Fisión'))) return false;
+    if (this.has('tomo')) {
+      for (const e of this.alive()) { e.st.block += 6; this.refreshEnemy(e); }
+      this.calc('Tomo Prohibido: los enemigos empiezan con 6 de Bloqueo');
+    }
     return true;
   }
 
@@ -1940,6 +2017,29 @@ export class CombatScene extends Phaser.Scene {
     img.setInteractive();
     this.tip.attach(img, `${def.name} (quedan ${fam.left} combate${fam.left > 1 ? 's' : ''})`, `${def.text}\n${def.lore}`);
     this.famImg = img;
+  }
+
+  /** Rayo eléctrico a todos los enemigos vivos (Tesla) */
+  private async rayoTodos(n: number) {
+    const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+    for (const t of this.alive()) {
+      g.lineStyle(3, 0x9ad8ff, 0.95);
+      let x = this.heroX + 30, y = 240;
+      for (let i = 1; i <= 6; i++) {
+        const nx = this.heroX + 30 + ((t.baseX - this.heroX - 30) * i) / 6;
+        const ny = 240 + ((260 - 240) * i) / 6 + (i < 6 ? Phaser.Math.Between(-22, 22) : 0);
+        g.lineBetween(x, y, nx, ny);
+        x = nx; y = ny;
+      }
+    }
+    this.tweens.add({ targets: g, alpha: 0, duration: 380, onComplete: () => g.destroy() });
+    for (const t of [...this.alive()]) await this.hitEnemy(t, n, false, 'res');
+  }
+
+  private beamFrom(x: number, to: EnemyView, color: number) {
+    const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+    g.lineStyle(4, color, 0.9).lineBetween(x, 260, to.baseX, 260);
+    this.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
   }
 
   // ───────────────────────── ALIADO (alma en pena) ─────────────────────────
@@ -1982,6 +2082,34 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`${a.name}: +6 de Bloqueo y +2 de vida`);
       this.refreshPlayer();
       this.hud.refresh();
+      await this.wait(300);
+    } else if (a.id === 'radian') {
+      // sin(θ) con θ en grados… interpretado como radianes
+      const th = Phaser.Utils.Array.GetRandom([30, 45, 60, 90, 120, 180, 270]);
+      const v = Math.sin(th); // ¡en radianes!
+      const r2 = Math.round(v * 100) / 100;
+      this.floatText(img.x, 190, `sin(${th}) = ${r2}`, '#ff9a7a');
+      if (v > 0.3) {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        const dmg = Math.round(18 * v);
+        rayo(t);
+        this.calc(`${a.name}: sin(${th}) = ${r2} (en RAD) → ${dmg} de daño`);
+        await this.hitEnemy(t, dmg, false, 'res');
+      } else if (v < -0.3) {
+        const b = Math.round(10 * -v);
+        this.gainBlock(b);
+        this.calc(`${a.name}: sin(${th}) = ${r2}, salió negativo… lo usa como escudo: +${b} de Bloqueo`);
+      } else {
+        this.calc(`${a.name}: sin(${th}) = ${r2}. «Math ERROR». No hace nada.`);
+        await this.wait(300);
+      }
+    } else if (a.id === 'doctorando') {
+      this.calc(`${a.name}: «según la literatura…» 2 de Fatiga a todos`);
+      for (const t of this.alive()) {
+        t.st.fatiga += 2;
+        rayo(t);
+        this.refreshEnemy(t);
+      }
       await this.wait(300);
     } else if (a.id === 'bernoulli') {
       this.calc(`${a.name}: ¡la energía se conserva! 5 a todos`);

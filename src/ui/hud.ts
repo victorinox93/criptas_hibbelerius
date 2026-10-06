@@ -169,7 +169,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
   return hud;
 }
 
-export function deckOverlay(s: Phaser.Scene, title = 'Tu mazo', cards = Game.run!.deck, onPick?: (i: number) => void) {
+export function deckOverlay(s: Phaser.Scene, title = 'Tu mazo', cards = Game.run!.deck, onPick?: (i: number) => void, onCancel?: () => void) {
   const layer = s.add.container(0, 0).setDepth(900);
   const bg = s.add.rectangle(0, 0, W, H, 0x000000, 0.88).setOrigin(0).setInteractive();
   layer.add(bg);
@@ -204,6 +204,6 @@ export function deckOverlay(s: Phaser.Scene, title = 'Tu mazo', cards = Game.run
   const g = s.add.graphics();
   frame(g, W / 2 - 80, H - 52, 160, 40, UI.panel, UI.border);
   layer.add(g);
-  layer.add(button(s, W / 2, H - 32, 160, 40, onPick ? 'Cancelar' : 'Cerrar', () => layer.destroy(), { size: 22 }));
+  layer.add(button(s, W / 2, H - 32, 160, 40, onPick ? (onCancel ? 'Al azar' : 'Cancelar') : 'Cerrar', () => { layer.destroy(); onCancel?.(); }, { size: 22 }));
   return layer;
 }

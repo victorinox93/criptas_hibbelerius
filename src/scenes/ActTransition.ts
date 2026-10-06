@@ -4,7 +4,9 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { arcanistaUnlocked, codexFlag, Game, generateMap, logEvent, saveLocal, syncRun } from '../state';
 import { T } from '../textos';
-import { button, embers, fadeTo, title, txt, vignette } from '../ui/widgets';
+import { button, embers, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { BOSS_RELICS, RELICS } from '../data/relics';
+import { grantRelic } from './Reward';
 
 /** Entre actos: descanso, aviso de desbloqueo y paso al siguiente acto (to = 2 o 3) */
 export class ActTransitionScene extends Phaser.Scene {
@@ -58,7 +60,7 @@ export class ActTransitionScene extends Phaser.Scene {
     }
     codexFlag(to === 3 ? 'acto2-visto' : 'acto1-visto');
 
-    button(this, W / 2, 500, 340, 50, tx.descender, () => {
+    const seguir = () => {
       run.hp = Math.min(run.maxHp, run.hp + heal);
       run.acto = to;
       run.map = generateMap(to);
@@ -71,6 +73,44 @@ export class ActTransitionScene extends Phaser.Scene {
       syncRun('en curso');
       audio.sfx('heal');
       fadeTo(this, 'Map');
-    }, { color: UI.gold, size: 24 });
+    };
+    button(this, W / 2, 500, 340, 50, tx.descender, () => this.reliquiaJefe(to, seguir), { color: UI.gold, size: 24 });
+  }
+
+  /** Reliquia de jefe: elige 1 de 3 (poderosas, con una desventaja) */
+  private reliquiaJefe(to: number, seguir: () => void) {
+    const run = Game.run!;
+    const key = `reliquia_jefe_${to}`;
+    const opts = Phaser.Utils.Array.Shuffle(BOSS_RELICS.filter((id) => !run.relics.includes(id))).slice(0, 3);
+    if ((run.seen ??= []).includes(key) || !opts.length) return seguir();
+    const layer = this.add.container(0, 0).setDepth(900);
+    layer.add(this.add.rectangle(0, 0, W, H, 0x030304, 0.97).setOrigin(0).setInteractive());
+    layer.add(title(this, W / 2, 56, 'Reliquia del Jefe', 40));
+    layer.add(txt(this, W / 2, 92, 'Del cuerpo del jefe cae un tesoro. Elige uno: todos tienen un precio.', 19, CSS.dim).setOrigin(0.5));
+    const tip = new Tooltip(this);
+    opts.forEach((id, i) => {
+      const r = RELICS[id];
+      const x = W / 2 + (i - (opts.length - 1) / 2) * 290;
+      const g = this.add.graphics();
+      const draw = (hi: boolean) => { g.clear(); frame(g, x - 130, 130, 260, 300, 0x0e0b12, hi ? UI.gold : UI.border, 0.97); };
+      draw(false);
+      const [bueno, costo] = r.text.split('\nCosto:');
+      layer.add([g, icon(this, x, 190, r.icon, 6),
+        txt(this, x, 238, r.name, 21, CSS.gold, { align: 'center', wordWrap: { width: 230 } }).setOrigin(0.5, 0),
+        txt(this, x, 296, bueno, 18, CSS.bone, { align: 'center', wordWrap: { width: 230 } }).setOrigin(0.5, 0),
+        txt(this, x, 362, `Costo:${costo ?? ''}`, 17, '#e08a8a', { align: 'center', wordWrap: { width: 230 } }).setOrigin(0.5, 0)]);
+      const z = this.add.zone(x - 130, 130, 260, 300).setOrigin(0).setInteractive({ useHandCursor: true });
+      z.on('pointerover', (p: Phaser.Input.Pointer) => { draw(true); tip.show(p.worldX + 16, 440, r.name, r.lore); });
+      z.on('pointerout', () => { draw(false); tip.hide(); });
+      z.on('pointerdown', () => {
+        run.seen!.push(key);
+        grantRelic(id);
+        logEvent('reliquia', '', '', { id, jefe: true });
+        audio.sfx('victory');
+        seguir();
+      });
+      layer.add(z);
+    });
+    layer.add(button(this, W / 2, 480, 200, 40, 'No tomar ninguna', () => { run.seen!.push(key); seguir(); }, { size: 19 }));
   }
 }

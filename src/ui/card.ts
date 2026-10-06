@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
-import { CalcCtx, CARDS, CardInst } from '../data/cards';
+import { CalcCtx, CARDS, CardInst, statsOf } from '../data/cards';
 import { frame, txt } from './widgets';
 
 export const CW = 172;
@@ -32,7 +32,7 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   g.fillStyle(0x0d0b10, 1).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
   g.lineStyle(2, col, 0.6).strokeRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
   const art = s.add.image(0, -CH / 2 + 62, def.icon).setScale(4.6);
-  const name = txt(s, 6, -CH / 2 + 18, def.name + (inst.up ? '+' : ''), 21, inst.up ? CSS.green : CSS.bone).setOrigin(0.5);
+  const name = txt(s, 6, -CH / 2 + 18, def.name + (inst.up ? '+' : '') + (inst.evo ? ` ✦${inst.evo}` : ''), 21, inst.evo ? CSS.gold : inst.up ? CSS.green : CSS.bone).setOrigin(0.5);
   if (name.width > CW - 44) name.setScale((CW - 44) / name.width, 1);
   const type = txt(s, 0, -CH / 2 + 100, `${def.type} · ${def.concept}`, 16, CSS.dim).setOrigin(0.5);
   if (type.width > CW - 16) type.setScale((CW - 16) / type.width, 1);
@@ -48,7 +48,7 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   c.setSize(CW, CH);
 
   c.refresh = (cx: CalcCtx, playable = true) => {
-    const st = def.stats(inst.up);
+    const st = statsOf(inst);
     body.setText(def.text(st, cx));
     // el texto se ajusta bajando el tamaño de letra (no aplastándolo)
     const maxH = CH / 2 - 8 - (-CH / 2 + 114), maxW = CW - 14;

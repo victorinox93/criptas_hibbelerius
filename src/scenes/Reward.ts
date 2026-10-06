@@ -21,6 +21,10 @@ export function grantRelic(id: string) {
     r.maxHp += 10;
     r.hp = Math.min(r.maxHp, r.hp + 10);
   }
+  if (id === 'coloso') {
+    r.maxHp += 30;
+    r.hp = Math.min(r.maxHp, r.hp + 30);
+  }
 }
 
 export function randomRelics(n: number) {

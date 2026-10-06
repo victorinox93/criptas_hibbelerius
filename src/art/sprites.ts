@@ -870,6 +870,27 @@ const FIG: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     ]),
     ov: { h: '#2a1e18', s: '#e0bea0', q: '#b08e78', c: '#16161e', W: '#ece8e0' },
   },
+  fig_tesla: {
+    rows: mirrorHalf([
+      '........', '....hhhh', '...hhhh.', '..hhhhss', '..hsssss', '..hskkss', '..hsssss', '..hssssq',
+      '...sbbbb', '...sssss', '....ssss', '...cWWWk', '..ccWWWk', '.cccccWW', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#1a1414', b: '#2a1e1a', s: '#e4c8b0', q: '#b8987e', c: '#14141c', W: '#ece8e0', k: '#3a3a8a' },
+  },
+  fig_oppenheimer: {
+    rows: mirrorHalf([
+      '........', '....HHHH', '...HHHHH', '.HHHHHHH', '...bssss', '...sssss', '...skkss', '...sssss',
+      '...ssssq', '....ssqq', '.....sss', '...ccWWk', '..cccWWk', '.ccccWWW', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { H: '#6a6458', b: '#2a221c', s: '#dcc0a8', q: '#a88a74', c: '#3a3a40', W: '#e8e4dc', k: '#1a1a20' },
+  },
+  fig_darwin: {
+    rows: mirrorHalf([
+      '........', '........', '....ssss', '...sssss', '..wsssss', '..wskkss', '..wsssss', '..wwssss',
+      '..wwwwww', '...wwwww', '...wwwww', '...wwwww', '..ccwwww', '.cccccww', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { w: '#e8e4dc', s: '#e0bea0', q: '#b08e78', c: '#2a2a22' },
+  },
   fig_joule: {
     rows: mirrorHalf([
       '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hskkss', '..bsssss', '..bssssq', '..bbssss',

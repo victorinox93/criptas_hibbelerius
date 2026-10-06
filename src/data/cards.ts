@@ -7,6 +7,7 @@ export interface CardInst {
   uid: number;
   id: string;
   up: boolean; // mejorada
+  evo?: number; // niveles de evolución extra (Darwin): +2 kg (Arcanista +0.5 kg) y +3 de Bloqueo por nivel
 }
 
 /** Contexto de combate necesario para calcular números en vivo */
@@ -486,6 +487,13 @@ export const CARDS: Record<string, CardDef> = {
     text: () => `Injugable.\nAl robarla pierdes 1 J.`,
     lore: 'Un signo mal puesto en el diagrama arruina todo el análisis.',
   },
+  // especial: la da Oppenheimer (Trinity). Se usa UNA vez y desaparece de tu mazo.
+  trinity: {
+    id: 'trinity', name: 'Trinity', type: 'Habilidad', icon: 'i_rad', concept: 'E = mc²', rarity: 'estado', target: 'all', cls: 'neutral', exhaust: true,
+    stats: (up) => ({ cost: 0, extra: up ? 40 : 30 }),
+    text: (s) => `Destruye a todos los enemigos\n(a los jefes: ${s.extra} % de su vida).\nRadiación: 10 de daño.\nSe consume para siempre.`,
+    lore: '16 de julio de 1945: una fracción de gramo de masa se volvió la energía de 21,000 toneladas de TNT.',
+  },
   tarea: {
     id: 'tarea', name: 'Tarea Pendiente', type: 'Estado', icon: 'i_book', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
     stats: () => ({ cost: 1 }),
@@ -506,7 +514,7 @@ export function rewardPool(clase: string, acto = 1, nivel = 99): string[] {
   const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel;
   const own = Object.values(CARDS).filter((c) => ok(c) &&
     c.rarity !== 'estado' && (clase === 'arcanista' ? c.cls === 'arcanista' : (c.cls ?? 'caballero') === 'caballero'));
-  const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && ok(c));
+  const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && c.rarity !== 'estado' && ok(c));
   return [...own, ...neutral].filter((c) => c.rarity !== 'inicial' || ['embestida', 'carrera', 'acelerar', 'frenado'].includes(c.id)).map((c) => c.id);
 }
 
@@ -514,5 +522,20 @@ export function rewardPool(clase: string, acto = 1, nivel = 99): string[] {
 export const REWARD_POOL = rewardPool('caballero');
 
 export function cardName(ci: CardInst) {
-  return CARDS[ci.id].name + (ci.up ? '+' : '');
+  return CARDS[ci.id].name + (ci.up ? '+' : '') + (ci.evo ? ` ✦${ci.evo}` : '');
+}
+
+/** Estadísticas de una carta concreta (mejora + evolución de Darwin) */
+export function statsOf(ci: CardInst): CardStats {
+  const s = CARDS[ci.id].stats(ci.up);
+  const n = ci.evo ?? 0;
+  if (!n) return s;
+  const dm = CARDS[ci.id].cls === 'arcanista' ? 0.5 : 2; // en ½mv² la masa pesa mucho más
+  return { ...s, m: s.m !== undefined ? s.m + dm * n : s.m, block: s.block !== undefined ? s.block + 3 * n : s.block };
+}
+
+/** ¿Se puede evolucionar? (tiene masa o Bloqueo) */
+export function evolucionable(ci: CardInst) {
+  const s = CARDS[ci.id].stats(ci.up);
+  return CARDS[ci.id].rarity !== 'estado' && (s.m !== undefined || s.block !== undefined);
 }

@@ -188,6 +188,54 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['El primer golpe enemigo de cada turno se desvía: recibes 3 menos.', 'Recibes 5 menos.'],
     lore: 'En un marco que gira, lo que se mueve parece desviarse. Los golpes, también.',
   },
+  // ── Nikola Tesla: electricidad que salta a TODOS los enemigos ──
+  t_bobina: {
+    id: 't_bobina', figure: 'tesla', name: 'Bobina de Tesla', icon: 'i_bolt',
+    text: ['Cada carta de Ataque suelta un arco eléctrico: 2 de daño a todos los enemigos.', 'Cada arco hace 4 de daño a todos los enemigos.'],
+    lore: 'Un transformador resonante: millones de volts saltando por el aire.',
+  },
+  t_alterna: {
+    id: 't_alterna', figure: 'tesla', name: 'Corriente Alterna', icon: 'i_pend',
+    text: ['Al inicio de tus turnos impares, un rayo hace 4 de daño a todos los enemigos.', 'Al inicio de CADA turno, un rayo hace 4 de daño a todos los enemigos.'],
+    lore: 'La corriente cambia de sentido 60 veces por segundo.',
+  },
+  t_torre: {
+    id: 't_torre', figure: 'tesla', name: 'Torre Wardenclyffe', icon: 'i_crystal',
+    text: ['Al iniciar cada combate, 8 de daño a todos los enemigos.', 'Al iniciar cada combate, 14 de daño a todos los enemigos.'],
+    lore: 'Iba a transmitir energía sin cables. Nunca se terminó.',
+  },
+  // ── J. Robert Oppenheimer (dones enormes con RADIACIÓN) ──
+  o_trinity: {
+    id: 'o_trinity', figure: 'oppenheimer', name: 'Trinity', icon: 'i_rad',
+    text: ['Recibes la carta «Trinity»: destruye a todos los enemigos (jefes: −30 %). Un solo uso.\nRadiación: 10 al usarla.', 'Recibes «Trinity+» (jefes: −40 %). Un solo uso.\nRadiación: 10 al usarla.'],
+    lore: '«Ahora me he convertido en la Muerte, el destructor de mundos.» Él mismo citó el Bhagavad Gita al recordar la prueba.',
+  },
+  o_cadena: {
+    id: 'o_cadena', figure: 'oppenheimer', name: 'Reacción en Cadena', icon: 'i_fire',
+    text: ['Cuando un enemigo muere, libera energía: 5 de daño a los demás.\nRadiación: pierdes 1 de vida por cada explosión.', 'Cada muerte hace 9 de daño a los demás.\nRadiación: pierdes 1 de vida por cada explosión.'],
+    lore: 'Cada fisión libera neutrones que provocan más fisiones: la masa crítica.',
+  },
+  o_manhattan: {
+    id: 'o_manhattan', figure: 'oppenheimer', name: 'Proyecto Manhattan', icon: 'i_bolt',
+    text: ['+1 J y +1 carta en tu primer turno de cada combate.\nRadiación: pierdes 3 de vida al iniciar cada combate.', '+2 J y +1 carta en tu primer turno.\nRadiación: pierdes 2 de vida al iniciar cada combate.'],
+    lore: 'Miles de científicos en Los Álamos, trabajando contra reloj en secreto.',
+  },
+  // ── Charles Darwin: adaptarse para sobrevivir ──
+  d_seleccion: {
+    id: 'd_seleccion', figure: 'darwin', name: 'Selección Natural', icon: 'i_heart',
+    text: ['Una carta de ataque o defensa EVOLUCIONA 3 niveles. +5 Vida máxima.', 'Evoluciona 3 niveles y además se mejora. +10 Vida máxima.'],
+    lore: 'Sobrevive el que mejor se adapta, no el más fuerte.',
+  },
+  d_adaptacion: {
+    id: 'd_adaptacion', figure: 'darwin', name: 'Adaptación', icon: 'i_shield',
+    text: ['+12 Vida máxima (y te cura 12).', '+20 Vida máxima (y te cura 20).'],
+    lore: 'Pinzones de Galápagos: un pico distinto para cada comida.',
+  },
+  d_apto: {
+    id: 'd_apto', figure: 'darwin', name: 'El Más Apto', icon: 'i_apple',
+    text: ['Si ganas un combate con menos de la mitad de tu vida, +3 Vida máxima.', 'Si ganas con menos de la mitad de tu vida, +5 Vida máxima.'],
+    lore: 'Lo que no te elimina te deja mejor adaptado.',
+  },
 };
 
 /** Dones con efecto secundario de radiación (se marcan en verde en el santuario) */
@@ -263,5 +311,26 @@ export const FIGURES: FigureDef[] = [
     farewell: '«W = ΔK. No lo olvides en el examen.»',
     concepts: ['Trabajo', 'Trabajo-energia', 'Energia cinetica'],
     boons: ['co_travail', 'co_medio', 'co_desvio'],
+  },
+  {
+    id: 'tesla', name: 'Nikola Tesla', years: '1856–1943', epithet: 'El Señor del Rayo', sprite: 'fig_tesla',
+    intro: '«Si quieres entender el universo, piensa en energía, frecuencia y vibración.\nResponde bien y mis rayos caerán sobre todos tus enemigos a la vez.»',
+    farewell: '«El presente es de ellos; el futuro, por el que tanto trabajé, es mío.»',
+    concepts: ['Potencia', 'Trabajo', 'Energia cinetica'],
+    boons: ['t_bobina', 't_alterna', 't_torre'],
+  },
+  {
+    id: 'oppenheimer', name: 'J. Robert Oppenheimer', years: '1904–1967', epithet: 'El Destructor de Mundos', sprite: 'fig_oppenheimer',
+    intro: '«Dirigí a los que liberaron la energía del núcleo. Funcionó… y desde entonces cargo con ello.\nTe daré ese poder, viajero. Úsalo una vez, y úsalo bien.»',
+    farewell: '«Los físicos conocimos el pecado. Que tú conozcas también la responsabilidad.»',
+    concepts: ['Conservacion', 'Energia cinetica', 'Trabajo-energia'],
+    boons: ['o_trinity', 'o_cadena', 'o_manhattan'],
+  },
+  {
+    id: 'darwin', name: 'Charles Darwin', years: '1809–1882', epithet: 'El Naturalista del Beagle', sprite: 'fig_darwin',
+    intro: '«No soy físico, viajero, pero cinco años en el Beagle me enseñaron que todo cambia… poco a poco.\nResponde, y tus cartas evolucionarán.»',
+    farewell: '«Hay grandeza en esta visión de la vida. Sigue adaptándote.»',
+    concepts: ['Energia potencial', 'Peso', '2a ley'],
+    boons: ['d_seleccion', 'd_adaptacion', 'd_apto'],
   },
 ];

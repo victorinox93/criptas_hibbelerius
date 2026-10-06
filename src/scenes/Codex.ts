@@ -5,7 +5,7 @@ import { audio } from '../audio';
 import { G, W, H } from '../config';
 import { CARDS } from '../data/cards';
 import { EFFECTS } from '../data/effects';
-import { ENEMIES } from '../data/enemies';
+import { ENEMIES, VIDA_ENEMIGOS } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { DILEMMAS } from '../data/dilemmas';
 import { FAMILIARS } from '../data/familiars';
@@ -76,7 +76,7 @@ export class CodexScene extends Phaser.Scene {
         return Object.values(ENEMIES).map((e) => ({
           kind: 'enemies', id: e.id, tex: e.sprite, name: e.name,
           detail: (c) => {
-            head(c, e.sprite, e.name, `${T.grimorio.masa}: ${e.mass} kg\n${T.grimorio.peso}: ${Math.round(e.mass * G)} N\n${T.grimorio.vida}: ${e.hp[0]}–${e.hp[1]}`, 5);
+            head(c, e.sprite, e.name, `${T.grimorio.masa}: ${e.mass} kg\n${T.grimorio.peso}: ${Math.round(e.mass * G)} N\n${T.grimorio.vida}: ${Math.round(e.hp[0] * VIDA_ENEMIGOS)}–${Math.round(e.hp[1] * VIDA_ENEMIGOS)}`, 5);
             body(c, 290, e.desc);
             if (e.umbral) body(c, 380, `${T.grimorio.umbral}: F ≥ ${e.umbral} N en un solo golpe (1ª ley).`, CSS.gold);
           },
