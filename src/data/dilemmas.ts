@@ -35,6 +35,7 @@ export interface Result {
   famCombats?: number;
   removeRandom?: boolean;
   score?: number;
+  entropia?: number; // Entropía mental (src/data/abismo.ts)
 }
 
 export interface Choice {
@@ -51,6 +52,7 @@ export interface DilemmaDef {
   tint?: number;
   intro: string;
   choices: Choice[];
+  special?: boolean; // no sale en el sorteo normal (lo llama src/scenes/Event.ts)
 }
 
 const LEAVE: Choice = { label: 'Seguir mi camino', risk: 'No pasa nada.', outcomes: [{ p: 1, r: { text: 'Te alejas en silencio.' } }] };
@@ -179,6 +181,28 @@ export const DILEMMAS: DilemmaDef[] = [
       {
         label: 'Dar la vuelta', risk: 'Fatiga (1 combate)',
         outcomes: [{ p: 1, r: { text: 'El rodeo es largo y te cansa.', effect: 'fatiga', combats: 1 } }],
+      },
+    ],
+  },
+  // ── Horror cósmico: el Necronomicón (Actos II y III, rara vez) ──
+  {
+    id: 'atril', name: 'El Atril sin Lector', sprite: 'd_atril', special: true,
+    intro: 'Un libro abierto respira sobre un atril. Sus páginas tienen ejercicios que no deberían existir: «Problema 13-∞», «Problema Ω».\nUn ojo dibujado en el margen te sigue con la mirada.',
+    choices: [
+      {
+        label: 'Tomar el libro', risk: 'Obtienes el Necronomicón. +15 de Entropía mental.',
+        outcomes: [{ p: 1, r: { text: 'El libro se cierra solo en tus manos. Está tibio. Pesa más de lo que debería.', relic: 'necronomicon', entropia: 15 } }],
+      },
+      {
+        label: 'Leer sólo una página', risk: '50 %: +60 Ergios · 50 %: −8 de vida. Siempre +10 de Entropía.',
+        outcomes: [
+          { p: 0.5, r: { text: 'La página explica cómo se transmuta la energía en oro. Funciona.', ergios: 60, entropia: 10 } },
+          { p: 0.5, r: { text: 'La página te lee a ti. Sangras por la nariz.', hp: -8, entropia: 10 } },
+        ],
+      },
+      {
+        label: 'Cerrarlo y rezar a Newton', risk: '−10 de Entropía mental.',
+        outcomes: [{ p: 1, r: { text: 'Cierras el libro. El ojo del margen parpadea… y se queda quieto.', entropia: -10 } }],
       },
     ],
   },

@@ -8,7 +8,8 @@ import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
 import { checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
 import { multRacha, PUNTOS, sumar } from '../data/puntaje';
-import { addCard, addEffect, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
+import { ENTROPIA } from '../data/abismo';
+import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
 import { T } from '../textos';
@@ -208,6 +209,7 @@ export class RuneScene extends Phaser.Scene {
     if (ok) tm.ok++;
     if (ok) {
       run.stats.runasOk++;
+      addEntropia(ENTROPIA.runa);
       run.stats.racha = (run.stats.racha ?? 0) + 1;
       run.stats.rachaMax = Math.max(run.stats.rachaMax ?? 0, run.stats.racha);
       const pts = sumar(run, 'Preguntas correctas', PUNTOS.runa * multRacha(run.stats.racha));

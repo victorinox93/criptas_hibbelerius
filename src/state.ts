@@ -70,6 +70,8 @@ export interface Run {
   debug?: boolean; // partida de prueba del Modo profesor: no se registra
   pociones?: string[]; // frascos (máx. 3)
   temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
+  entropia?: number; // Entropía mental 0–100 (src/data/abismo.ts)
+  prohibidos?: string[]; // Problemas Prohibidos leídos del Necronomicón
   aliado?: string; // alma en pena que te acompaña (src/data/almas.ts); sólo una por expedición
   finalizado?: boolean; // ya se sumaron los bonos finales
   desglose?: Record<string, number>; // de dónde salió el puntaje (src/data/puntaje.ts)
@@ -371,6 +373,15 @@ export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abando
     gravedad: r.gravity,
     minutos: Math.round((r.tiempo ?? 0) / 6) / 10,
   });
+}
+
+/** Sube o baja la Entropía mental (0–100). Devuelve el cambio real. */
+export function addEntropia(n: number) {
+  const r = Game.run;
+  if (!r) return 0;
+  const antes = r.entropia ?? 0;
+  r.entropia = Math.max(0, Math.min(100, antes + n));
+  return r.entropia - antes;
 }
 
 export function addErgios(n: number) {

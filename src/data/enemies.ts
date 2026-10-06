@@ -60,6 +60,12 @@ export interface EnemyDef {
 const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
 
 export const ENEMIES: Record<string, EnemyDef> = {
+  // Alucinación: aparece cuando tu Entropía mental llega a 100 (src/data/abismo.ts)
+  sombra: {
+    id: 'sombra', name: 'Sombra del Abismo', sprite: 'sombra', scale: 5, hp: [22, 26], mass: 0,
+    desc: 'Nadie más la ve. No tiene masa: ΣF = m·a no aplica… ¿o sí? Te llena la mano de ruido.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 7, add: { id: 'ruido', n: 1, to: 'discard' }, label: 'Susurro' } : { kind: 'attack', dmg: 9 }),
+  },
   skeleton: {
     id: 'skeleton', name: 'Esqueleto Errante', sprite: 'skeleton', scale: 5, hp: [20, 24], mass: 2,
     desc: 'Huesos huecos, poca masa. Golpea con una espada oxidada.',

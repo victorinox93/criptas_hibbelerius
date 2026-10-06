@@ -4,6 +4,9 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { EVENTS, EventDef, PROFE_CHANCE, PROFE_ENOJADO_CHANCE } from '../data/events';
 import { ALMA_CHANCE, ALMA_IDS } from '../data/almas';
+
+/** Probabilidad de encontrar el Necronomicón en un encuentro (Actos II y III, una vez) */
+const NECRO_CHANCE = 0.15;
 import { DILEMMA_CHANCE, DILEMMAS } from '../data/dilemmas';
 import { Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { T } from '../textos';
@@ -26,6 +29,11 @@ export class EventScene extends Phaser.Scene {
         ev = EVENTS.find((e) => e.id === 'profe_enojado')!;
       } else if (!profeVisto && Math.random() < PROFE_CHANCE) {
         ev = EVENTS.find((e) => e.id === 'victorino')!;
+      } else if ((run.acto ?? 1) >= 2 && !seen.includes('atril') && !run.relics.includes('necronomicon') && Math.random() < NECRO_CHANCE) {
+        seen.push('atril');
+        saveLocal();
+        this.scene.start('Dilemma', { floor: data.floor, id: 'atril' });
+        return;
       } else if (almas.length && Math.random() < ALMA_CHANCE) {
         // un alma en pena (rara): escena propia
         const id = Phaser.Utils.Array.GetRandom(almas);
@@ -34,7 +42,7 @@ export class EventScene extends Phaser.Scene {
         this.scene.start('Alma', { floor: data.floor, id });
         return;
       } else {
-        const dil = DILEMMAS.filter((d) => !seen.includes(d.id));
+        const dil = DILEMMAS.filter((d) => !d.special && !seen.includes(d.id));
         if (dil.length && Math.random() < DILEMMA_CHANCE) {
           const d = Phaser.Utils.Array.GetRandom(dil);
           seen.push(d.id);

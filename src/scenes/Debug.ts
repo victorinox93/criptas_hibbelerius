@@ -87,13 +87,14 @@ export class DebugScene extends Phaser.Scene {
       ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: FLOORS })],
       ['Profesor', () => this.go(acto(), 'Event', { floor: 2, eventId: 'victorino' })],
       ['Profe enojado', () => this.go(acto(), 'Event', { floor: 2, eventId: 'profe_enojado' })],
+      ['Necronomicón', () => this.go(Math.max(2, acto()), 'Dilemma', { floor: 2, id: 'atril' })],
       ['Alma en pena', () => this.go(acto(), 'Alma', { floor: 2, id: Phaser.Utils.Array.GetRandom(ALMA_IDS) })],
       ['Mercader', () => this.go(acto(), 'Shop', { floor: 4 })],
       ['Altar', () => this.go(acto(), 'Rune', { floor: 3, source: 'altar' })],
       ['Fogata', () => this.go(acto(), 'Campfire', { floor: 7 })],
       ['Final', () => this.go(acto(), 'End', { victory: true })],
     ];
-    jumps.forEach(([s, fn], i) => btn(122 + (i % 5) * 179, 294 + Math.floor(i / 5) * 42, 170, s, fn));
+    jumps.forEach(([s, fn], i) => btn(106 + (i % 6) * 150, 294 + Math.floor(i / 6) * 42, 142, s, fn));
     const fig = FIGURES[OPTS.figura];
     btn(150, 386, 240, `Eco: ${fig.name}`, () => this.go(acto(), 'Sanctuary', { floor: 2, figureId: fig.id }));
     btn(300, 386, 50, '▸', () => { OPTS.figura = (OPTS.figura + 1) % FIGURES.length; this.draw(); });
@@ -146,7 +147,8 @@ export class DebugScene extends Phaser.Scene {
     }
     if (OPTS.extras) {
       r.ergios = 500;
-      r.relics = [...RELIC_POOL, 'vidaExtra'];
+      r.relics = [...RELIC_POOL, 'vidaExtra', 'necronomicon'];
+      r.entropia = 75;
       const fam = Phaser.Utils.Array.GetRandom(FAMILIAR_POOL);
       r.familiar = { id: fam, left: FAMILIARS[fam].combats };
     }

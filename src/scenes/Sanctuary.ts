@@ -3,8 +3,9 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { BOONS, FIGURES, FigureDef } from '../data/figures';
-import { addCard, addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { addCard, addEntropia, addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CardInst, cardName, evolucionable } from '../data/cards';
+import { ENTROPIA } from '../data/abismo';
 import { T } from '../textos';
 import { deckOverlay, topBar } from '../ui/hud';
 import { button, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
@@ -121,6 +122,7 @@ export class SanctuaryScene extends Phaser.Scene {
     title(this, 600, 76, `${T.santuario.elige} · ${epic ? T.santuario.epico : T.santuario.comun}`, 36, epic ? CSS.gold : CSS.bone);
     const finish = (msg: string) => {
       if (!run.met.includes(fig.id)) run.met.push(fig.id);
+      addEntropia(ENTROPIA.eco); // una mente lúcida calma la tuya
       run.floor = data.floor + 1;
       saveLocal();
       syncRun('en curso');

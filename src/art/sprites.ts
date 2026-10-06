@@ -704,6 +704,28 @@ export const SPRITES: Record<string, string[]> = {
     '.yyyyyyyy',
     '..kkkkkkk',
   ],
+  i_necro: [
+    '.ppppppp.',
+    '.pGGGGGkp',
+    '.pGwwwGkp',
+    '.pwwLwwkp',
+    '.pGwwwGkp',
+    '.pGGLGGkp',
+    '.pGLGLGkp',
+    '.pppppppp',
+    '..kkkkkkk',
+  ],
+  i_ojo: [
+    '.........',
+    '...www...',
+    '.wwwwwww.',
+    'wwwLLLwww',
+    'wwLLkLLww',
+    'wwwLLLwww',
+    '.wwwwwww.',
+    '...www...',
+    '.........',
+  ],
   i_paw: [
     '.w.....w.',
     '.ww...ww.',
@@ -950,6 +972,10 @@ const DIL: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     rows: mirrorHalf(['.....y', 'yyyyyy', 'y....y', 'y....y', 'y....y', 'yyy..y', '.y...y', '.....y', '.....y', '....yy', '..yyyy']),
     ov: { y: '#c8a050' },
   },
+  d_atril: {
+    rows: mirrorHalf(['......', '.pppp.', 'pGGGGp', 'pGwwwG', 'pGwLkw', 'pGwwwG', 'pppppp', '....nn', '....nn', '....nn', '...nnn', '.nnnnn']),
+    ov: { p: '#2a1a3a', G: '#3d4a22', w: '#c8d0a0', L: '#9bf07a', k: '#0d0b10', n: '#3a2a1e' },
+  },
   d_puente: {
     rows: mirrorHalf(['k.....', 'k.....', 'kl....', 'k.l...', 'k..lll', 'knnnnn', 'k.....', 'k.....']),
     ov: { l: '#a89a7a' },
@@ -981,6 +1007,8 @@ export function generateAllTextures(scene: Phaser.Scene) {
   makeTexture(scene, 'npc_victorino', PROFE, {
     h: '#2a2420', s: '#d8b08a', q: '#a8806a', g: '#1a1a1a', G: '#9ad8f0', W: '#e8e4dc', t: '#8a2030', T: '#8a2030', c: '#2a3a5a',
   });
+  // la Sombra del Abismo (alucinación): figura encapuchada casi transparente, ojos verdes
+  makeTexture(scene, 'sombra', NPC, { c: '#141a14', C: '#070a07', E: '#9bf07a', s: '#1e2a1e', k: '#000000' });
   makeTexture(scene, 'npc_profe_enojado', PROFE_ENOJADO, {
     h: '#2a2420', s: '#e0907a', q: '#b06a5a', g: '#1a1a1a', G: '#ff5a3a', K: '#3a1210', W: '#e8e4dc', t: '#8a2030', T: '#8a2030', c: '#2a3a5a',
   });

@@ -1,4 +1,5 @@
 import { fmtPuntos } from '../data/puntaje';
+import { ENTROPIA, nivelEntropia } from '../data/abismo';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
@@ -138,6 +139,19 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         tip.attach(im, `Familiar: ${fam.name}`, `${fam.text}\nSe queda ${r.familiar.left} combate(s) más.\n${fam.lore}`, 20);
         effRow.add([bg, im, n]);
         off = 1;
+      }
+      if ((r.entropia ?? 0) > 0) {
+        const ent = r.entropia ?? 0;
+        const nv = nivelEntropia(ent);
+        const x = -off * 52;
+        const bg = s.add.graphics();
+        frame(bg, x - 22, -14, 46, 28, 0x0a140a, ent >= ENTROPIA.delirante ? 0x9bf07a : 0x3d4a22, 0.9);
+        const im = icon(s, x - 8, 0, 'i_ojo', 2.2);
+        const n = txt(s, x + 4, -10, `${ent}`, 18, nv.color);
+        tip.attach(im, `Entropía mental: ${ent}/100 · ${nv.nombre}`,
+          `40+: las fórmulas de tus cartas se borran.\n70+: Visión del Abismo, tus ataques hacen +${ENTROPIA.vision}.\n100: Quiebre, una Sombra aparece en el siguiente combate.\nBaja al descansar, con los Ecos y al resolver runas.`, 20);
+        effRow.add([bg, im, n]);
+        off++;
       }
       r.effects.forEach((e, i0) => {
         const def = EFFECTS[e.id];

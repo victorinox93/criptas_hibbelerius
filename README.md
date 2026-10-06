@@ -182,3 +182,12 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Almas en pena nuevas:** **Sir Radián, el Mal Configurado** (su calculadora está en RAD: a veces pega fuerte, a veces te da Bloqueo, a veces «Math ERROR») y **el Doctorando Eterno** (pone Fatiga a todos los enemigos).
 - **Enemigos con 20 % más de vida** (`VIDA_ENEMIGOS` en `src/data/enemies.ts`).
 - **Mapas más variados:** nunca hay dos lugares de descanso seguidos (ecos, fogatas o mercaderes) y cada mapa tiene un tope al azar de cada uno (2–3).
+
+## Novedades de la v0.13 · Horror cósmico
+
+- **Entropía mental** (0–100, el ojo verde arriba a la derecha): sube al empezar combates contra jefes (+8) y élites (+3) y al leer el Necronomicón (+20). Baja al descansar en la fogata (−20), al hablar con los Ecos (−10) y con cada runa bien resuelta (−3).
+  - **40+ Inquieto:** las fórmulas de tus cartas se van tapando con símbolos. Nunca se muestran fórmulas incorrectas, sólo borrosas.
+  - **70+ Delirante:** «Visión del Abismo», tus ataques hacen +2.
+  - **100 Quiebre:** en el siguiente combate aparece una **Sombra del Abismo** que mete Ruido Blanco a tu mazo; después la Entropía baja a 60.
+- **El Necronomicón de Hibbeler:** dilema raro en los Actos II y III («El Atril sin Lector»). Con él, en cada fogata puedes **leer un Problema Prohibido** en vez de descansar: 13-∞ (más cartas, menos vida máxima), 14-0 (más energía, Errores de Signo), 15-(−1) Masa Negativa, Ω Universo Cerrado y Mirar de Vuelta. Todos los valores están en `src/data/abismo.ts`.
+- **Code.gs:** no cambió en esta versión; las lecturas del Necronomicón y los Quiebres se registran en la hoja «Eventos» como `prohibido` y `quiebre`.

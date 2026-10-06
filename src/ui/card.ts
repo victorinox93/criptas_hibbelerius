@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { CalcCtx, CARDS, CardInst, statsOf } from '../data/cards';
+import { borrarTexto } from '../data/abismo';
 import { frame, txt } from './widgets';
+import { Game } from '../state';
 
 export const CW = 172;
 export const CH = 240;
@@ -49,7 +51,7 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
 
   c.refresh = (cx: CalcCtx, playable = true) => {
     const st = statsOf(inst);
-    body.setText(def.text(st, cx));
+    body.setText(borrarTexto(def.text(st, cx), Game.run?.entropia ?? 0, inst.uid));
     // el texto se ajusta bajando el tamaño de letra (no aplastándolo)
     const maxH = CH / 2 - 8 - (-CH / 2 + 114), maxW = CW - 14;
     let fs = 20;

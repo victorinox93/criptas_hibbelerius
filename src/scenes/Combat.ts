@@ -4,10 +4,11 @@ import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
 import { CalcCtx, CARDS, CardInst, force, kinetic, statsOf, VMAX } from '../data/cards';
 import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { addEntropia, addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
+import { ENTROPIA, SUSURROS } from '../data/abismo';
 import { RELICS } from '../data/relics';
 import { bonosFinales, JEFES, PUNTOS, sumar } from '../data/puntaje';
 import { POCIONES } from '../data/pociones';
@@ -120,7 +121,7 @@ export class CombatScene extends Phaser.Scene {
     this.hand = [];
     this.discard = [];
     this.exhaust = [];
-    this.maxEnergy = 3 + (this.has('reactor') ? 1 : 0) + (this.has('tomo') ? 1 : 0);
+    this.maxEnergy = 3 + (this.has('reactor') ? 1 : 0) + (this.has('tomo') ? 1 : 0) + (this.prohibido('p_energia') ? 1 : 0);
     this.energy = this.maxEnergy;
     this.block = 0;
     this.acel = 0;
@@ -164,6 +165,44 @@ export class CombatScene extends Phaser.Scene {
     this.entropia = 0;
     this.extraDraw = 0;
     this.hpStart = Game.run?.hp ?? 0;
+  }
+
+  private prohibido(id: string) {
+    return (Game.run!.prohibidos ?? []).includes(id);
+  }
+
+  /** Horror cósmico al iniciar el combate (src/data/abismo.ts) */
+  private abismoInicio() {
+    const run = Game.run!;
+    if (this.kind === 'boss') addEntropia(ENTROPIA.jefe);
+    else if (this.kind === 'elite') addEntropia(ENTROPIA.elite);
+    if (this.prohibido('p_masaneg')) {
+      if (this.isArc) this.vel = Math.min(VMAX, this.vel + 3);
+      else this.masa += 3;
+    }
+    if (this.prohibido('p_omega')) {
+      for (const e of this.alive()) { e.st.hp = Math.max(1, Math.round(e.st.hp * 0.85)); this.refreshEnemy(e); }
+      this.calc('Problema Ω: el universo se contrae → los enemigos empiezan con 15 % menos vida');
+    }
+    const e = run.entropia ?? 0;
+    if (e >= ENTROPIA.max) {
+      // Quiebre: aparece una Sombra que sólo tú ves
+      const x = this.freeX(560);
+      if (x !== null) {
+        this.addEnemy(spawn('sombra'), x);
+        run.entropia = ENTROPIA.trasQuiebre;
+        this.calc('¡QUIEBRE! Tu Entropía mental llegó a 100: algo salió de entre las ecuaciones…');
+        this.cameras.main.flash(600, 40, 120, 40);
+        logEvent('quiebre', '', '', { piso: this.floor });
+      }
+    }
+    if (e >= ENTROPIA.inquieto) {
+      this.time.delayedCall(2500, () => {
+        const t = txt(this, W / 2 + 60, 140, Phaser.Utils.Array.GetRandom(SUSURROS), 19, '#9bf07a').setOrigin(0.5).setAlpha(0).setDepth(700);
+        this.tweens.add({ targets: t, alpha: 0.85, duration: 1200, yoyo: true, hold: 1800, onComplete: () => t.destroy() });
+      });
+    }
+    this.hud.refresh();
   }
 
   private has(relic: string) {
@@ -281,6 +320,7 @@ export class CombatScene extends Phaser.Scene {
     this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
     this.marco = boonLevel('e_marco');
+    this.abismoInicio();
     // ── condición del piso (azar) ──
     if (this.kind !== 'boss' && Math.random() < CONDITION_CHANCE) this.applyCondition(Phaser.Utils.Array.GetRandom(CONDITIONS));
     if (this.isArc) {
@@ -755,6 +795,16 @@ export class CombatScene extends Phaser.Scene {
     const pol = boonLevel('m_polonio');
     this.polonio = def.type === 'Ataque' && pol ? (pol === 2 ? 5 : 3) : 0;
     if (def.type === 'Ataque') {
+      // Horror cósmico: Visión del Abismo y Problema del Abismo
+      const ent = Game.run!.entropia ?? 0;
+      if (ent >= ENTROPIA.delirante) {
+        this.polonio += ENTROPIA.vision;
+        this.calc(`Visión del Abismo: +${ENTROPIA.vision} (Entropía ${ent})`);
+      }
+      if (this.prohibido('p_abismo')) {
+        const ab = Math.min(5, Math.floor(ent / 20));
+        if (ab) { this.polonio += ab; this.calc(`Mirar de Vuelta: +${ab} (Entropía ${ent})`); }
+      }
       // Huygens · Fuerza Centrípeta: el primer ataque del combate
       const hc = boonLevel('h_centripeta');
       if (hc && !this.centriUsed) {
@@ -1448,6 +1498,7 @@ export class CombatScene extends Phaser.Scene {
 
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
+    if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
     if (from && this.marco > 0 && dmg > 0) {
       this.marco--;
       this.calc('Marco de Referencia (Einstein): en tu marco, ese golpe nunca llegó');
@@ -1552,6 +1603,7 @@ export class CombatScene extends Phaser.Scene {
     }
     let draw = 5 + this.extraDraw;
     if (this.has('agujero')) draw += 1;
+    if (this.prohibido('p_infinito')) draw += 1;
     if (this.turn === 1) {
       const om = boonLevel('o_manhattan');
       if (om) {

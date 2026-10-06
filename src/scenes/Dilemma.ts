@@ -7,7 +7,7 @@ import { Choice, DILEMMAS, Result } from '../data/dilemmas';
 import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { RELICS } from '../data/relics';
-import { addCard, addEffect, addErgios, addFamiliar, Game, logEvent, saveLocal, syncRun, unlock, nivelActual } from '../state';
+import { addCard, addEntropia, addEffect, addErgios, addFamiliar, Game, logEvent, saveLocal, syncRun, unlock, nivelActual } from '../state';
 import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
@@ -80,7 +80,7 @@ export class DilemmaScene extends Phaser.Scene {
     syncRun('en curso');
     this.hud.refresh();
     logEvent('dilema', '', '', { id, opcion: ch.label, resultado: res.text });
-    const bad = (res.hp ?? 0) < 0 || (res.maxHp ?? 0) < 0 || !!res.junk || res.effect === 'radiacion' || ((res.ergios ?? 0) < 0 && !res.familiar && !res.score);
+    const bad = (res.entropia ?? 0) > 0 || (res.hp ?? 0) < 0 || (res.maxHp ?? 0) < 0 || !!res.junk || res.effect === 'radiacion' || ((res.ergios ?? 0) < 0 && !res.familiar && !res.score);
     audio.sfx(bad ? 'wrong' : 'correct');
 
     const g = this.add.graphics();
@@ -108,6 +108,10 @@ export class DilemmaScene extends Phaser.Scene {
       const n = r.ergios < 0 ? -Math.min(run.ergios, -r.ergios) : r.ergios;
       addErgios(n);
       out.push(`${n >= 0 ? '+' : ''}${n} ${T.moneda}`);
+    }
+    if (r.entropia) {
+      const n = addEntropia(r.entropia);
+      if (n) out.push(`${n > 0 ? '+' : ''}${n} de Entropía mental`);
     }
     if (r.score) {
       sumar(run, 'Dilemas', r.score * PUNTOS.dilema);
