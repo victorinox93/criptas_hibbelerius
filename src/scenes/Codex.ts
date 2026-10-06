@@ -35,6 +35,7 @@ export class CodexScene extends Phaser.Scene {
   private detail!: Phaser.GameObjects.Container;
   private tabs: Btn[] = [];
   private countT!: Phaser.GameObjects.Text;
+  private pag = 0; // página de la cuadrícula
 
   constructor() { super('Codex'); }
 
@@ -250,7 +251,8 @@ export class CodexScene extends Phaser.Scene {
     this.countT.setText(`Nivel ${lv}`);
   }
 
-  private show(tab: number) {
+  private show(tab: number, mismaPestana = false) {
+    if (!mismaPestana) this.pag = 0;
     this.tab = tab;
     audio.sfx('click');
     this.tabs.forEach((b, i) => b.label.setColor(i === tab ? CSS.gold : CSS.dim));
@@ -261,10 +263,21 @@ export class CodexScene extends Phaser.Scene {
     const known = list.filter((e) => this.has(e.kind, e.id)).length;
     this.countT.setText(`${T.grimorio.descubiertos}: ${known} / ${list.length}`);
 
-    const many = list.length > 30, lots = list.length > 48;
-    const cols = lots ? 10 : many ? 8 : 6, size = lots ? 38 : many ? 48 : 62, gap = lots ? 5 : many ? 6 : 8, x0 = 40, y0 = 136;
+    // cuadrícula: si hay muchas entradas se divide en páginas (◀ ▶)
+    const many = list.length > 30;
+    const cols = many ? 8 : 6, size = many ? 44 : 62, gap = many ? 6 : 8, x0 = 40, y0 = 136;
+    const porPag = many ? cols * 6 : 30;
+    const pags = Math.max(1, Math.ceil(list.length / porPag));
+    this.pag = Math.min(this.pag, pags - 1);
+    if (pags > 1) {
+      const pt = txt(this, 248, 470, `${this.pag + 1} / ${pags}`, 18, CSS.dim).setOrigin(0.5);
+      const prev = button(this, 190, 470, 40, 26, '◀', () => { this.pag = (this.pag + pags - 1) % pags; this.show(tab, true); }, { size: 16 });
+      const next = button(this, 306, 470, 40, 26, '▶', () => { this.pag = (this.pag + 1) % pags; this.show(tab, true); }, { size: 16 });
+      this.grid.add([pt, prev, next]);
+    }
+    const desde = this.pag * porPag;
     let selected: Phaser.GameObjects.Graphics | null = null;
-    list.forEach((e, i) => {
+    list.slice(desde, desde + porPag).forEach((e, i) => {
       const x = x0 + (i % cols) * (size + gap), y = y0 + Math.floor(i / cols) * (size + gap);
       const unlocked = this.has(e.kind, e.id);
       const g = this.add.graphics();

@@ -12,6 +12,10 @@ export class TitleScene extends Phaser.Scene {
     this.cameras.main.fadeIn(900);
     this.add.rectangle(0, 0, W, H, 0x0a0908).setOrigin(0);
     if (this.textures.exists('portada')) {
+      // fondo: la misma portada, ampliada y oscura, para llenar los lados si la imagen es vertical
+      const bg = this.add.image(W / 2, H / 2, 'portada');
+      bg.setScale(Math.max(W / bg.width, H / bg.height)).setTint(0x3a3038).setAlpha(0.55);
+      bg.postFX?.addBlur(2, 2, 2, 1.2);
       const img = this.add.image(W / 2, H / 2, 'portada');
       img.setScale(Math.min(H / img.height, W / img.width));
       // la portada «respira» muy despacio

@@ -4,7 +4,7 @@ import { generateAllTextures } from '../art/sprites';
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
-    this.load.image('portada', 'portada.jpg');
+    this.load.image('portada', `portada.jpg?v=${__BUILD__}`); // ?v= evita que el navegador use una portada vieja
   }
   async create() {
     generateAllTextures(this);
