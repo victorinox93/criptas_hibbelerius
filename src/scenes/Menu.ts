@@ -61,7 +61,13 @@ export class MenuScene extends Phaser.Scene {
       [T.menu.grimorio, () => fadeTo(this, 'Codex')],
       [T.menu.ranking, () => fadeTo(this, 'Ranking')],
       [T.menu.ayuda, () => fadeTo(this, 'Help', { next: 'Menu' })],
+      ['Glosario', () => fadeTo(this, 'Glosario')],
       [T.menu.editar, () => fadeTo(this, 'Avatar')],
+      [Game.codex.victorias > 0 ? '♪ Soundtrack' : '🔒 Soundtrack', () => {
+        if (Game.codex.victorias > 0) return fadeTo(this, 'Musica');
+        const t = txt(this, 690, 112, 'Vence a Hibbelerius para desbloquear el soundtrack.', 18, CSS.dim).setOrigin(0.5);
+        this.tweens.add({ targets: t, alpha: 0, delay: 1800, duration: 500, onComplete: () => t.destroy() });
+      }],
       [T.menu.creditos, () => fadeTo(this, 'Credits')],
       ...(FORM_URL ? [['✎ Tu opinión', () => window.open(FORM_URL, '_blank')] as [string, () => void]] : []),
       [T.menu.salir, () => {

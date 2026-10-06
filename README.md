@@ -204,3 +204,13 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Pergamino de cálculos:** las líneas largas se ajustan al cuadro (letra más chica o «…»). Pasa el cursor por el pergamino para leer los últimos 8 cálculos completos.
 - **Cuarto personaje «¿?»:** queda como *Próximamente* para que lo propongan los alumnos.
 - **Botón de retroalimentación:** pega la liga de tu formulario en `FORM_URL` (`src/config.ts`) y aparece «✎ Tu opinión» en el menú y «✎ Danos tu opinión» al terminar cada expedición.
+
+## Novedades de la v0.16
+
+- **AM** (`src/data/am.ts`): una inteligencia artificial atrapada en las criptas (homenaje al cuento de Harlan Ellison; diálogos originales). Aparece rara vez desde el piso 4, **recuerda entre expediciones** (visitas, tu última respuesta, pactos) y te hace una pregunta filosófica sin respuesta correcta (se registra en «Eventos» como `am`). Luego ofrece un **pacto**: resolver por ti tus próximas 3 runas. Si aceptas, aparece el botón «Que AM lo resuelva»: aciertas, pero sin puntos, racha ni Conocimiento, y sube tu Entropía mental (las runas resueltas por AM se registran como `am_runa` y NO cuentan como aciertos del alumno). Si lo rechazas, mejora una carta.
+- **Glosario** en el menú (`src/data/glosario.ts`): tipos de ataque, estados (Calor, Resonancia, Fatiga…), efectos y el abismo (Entropía, Necronomicón).
+- **Soundtrack** en el menú: se desbloquea al vencer a Hibbelerius; las 13 pistas con su nombre.
+- **3 almas en pena nuevas:** Sir Mañana el Procrastinador, la Dama de los Decimales y el Encadenado de la Duda. Las opciones de las almas ahora salen en orden al azar.
+- **Familiar nuevo:** Dragón de Carnot (3 de Calor a todos cada turno).
+- **7 cartas:** Reacción Normal, Perdigones, (F = m·a)², Descarga Total, Fractura Frágil, Golpe de Gracia y la Palanca de Arquímedes ahora es para todas las clases.
+- **Grimorio:** los perfiles de Einstein, Curie y Oppenheimer ya no se enciman; el jefe de cada acto aparece en el Bestiario en cuanto lo ves en el mapa.

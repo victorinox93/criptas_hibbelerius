@@ -72,6 +72,7 @@ export interface Run {
   temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
   entropia?: number; // Entropía mental 0–100 (src/data/abismo.ts)
   prohibidos?: string[]; // Problemas Prohibidos leídos del Necronomicón
+  amPacto?: number; // runas que AM puede resolver por ti
   aliado?: string; // alma en pena que te acompaña (src/data/almas.ts); sólo una por expedición
   finalizado?: boolean; // ya se sumaron los bonos finales
   desglose?: Record<string, number>; // de dónde salió el puntaje (src/data/puntaje.ts)
@@ -111,6 +112,7 @@ export interface Codex {
   flags?: string[]; // logros: 'acto1' (venció al Coloso), 'acto2'
   xp?: number; // Conocimiento acumulado (desbloqueos entre expediciones)
   tiempo?: number; // segundos de juego activo en total (se muestra en el menú)
+  am?: { visitas: number; pactos: number; rechazos: number; ultima?: string; vistas?: number[] }; // lo que AM recuerda de ti
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -128,6 +130,8 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.flags = [...new Set([...(a?.flags ?? []), ...(b?.flags ?? [])])];
   c.xp = Math.max(a?.xp ?? 0, b?.xp ?? 0);
   c.tiempo = Math.max(a?.tiempo ?? 0, b?.tiempo ?? 0);
+  const am = (a?.am?.visitas ?? 0) >= (b?.am?.visitas ?? 0) ? a?.am : b?.am;
+  if (am) c.am = am;
   return c;
 }
 

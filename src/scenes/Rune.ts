@@ -9,6 +9,7 @@ import { RELICS } from '../data/relics';
 import { checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
 import { multRacha, PUNTOS, sumar } from '../data/puntaje';
 import { ENTROPIA } from '../data/abismo';
+import { AM_ENTROPIA, PACTO_AM } from '../data/am';
 import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
@@ -78,12 +79,14 @@ export class RuneScene extends Phaser.Scene {
   private tip!: Tooltip;
   private answerUi: Phaser.GameObjects.GameObject[] = [];
   private field: TextField | null = null;
+  private amUsado = false; // la resolvió AM (src/data/am.ts)
 
   constructor() { super('Rune'); }
 
   create(data: RuneData) {
     this.d = data;
     this.attempts = 0;
+    this.amUsado = false;
     this.answerUi = [];
     this.field = null;
     this.cameras.main.fadeIn(300);
@@ -152,8 +155,18 @@ export class RuneScene extends Phaser.Scene {
       this.time.delayedCall(400, () => f.focus());
     }
 
-    // ── Pista a cambio de Ergios ──
+    // ── Pacto con AM: puede resolver la runa por ti (sin puntos ni aprendizaje) ──
     const run = Game.run;
+    if (run && (run.amPacto ?? 0) > 0) {
+      const amb: Btn = button(this, W - 72, 420, 124, 52, `Que AM lo\nresuelva (${run.amPacto})`, () => {
+        run.amPacto = Math.max(0, (run.amPacto ?? 1) - 1);
+        this.amUsado = true;
+        amb.destroy();
+        this.answer(p.choices ? p.correct! : p.answer!);
+      }, { size: 16, color: 0x9a2a1a, silent: true });
+      this.answerUi.push(amb);
+    }
+    // ── Pista a cambio de Ergios ──
     if (run) {
       const hint: Btn = button(this, W - 72, 360, 124, 48, `Pista\n−${PISTA_COSTO} ${T.moneda}`, () => {
         if (run.ergios < PISTA_COSTO) {
@@ -189,7 +202,7 @@ export class RuneScene extends Phaser.Scene {
     this.attempts++;
     const ok = checkAnswer(p, v);
     const run = Game.run!;
-    logEvent('runa', p.concept, ok, {
+    if (!this.amUsado) logEvent('runa', p.concept, ok, {
       titulo: p.title, intento: this.attempts, respuesta: v, esperado: p.answer ?? p.choices?.[p.correct!], fuente: this.d.source,
       evento: this.d.eventId ?? '',
     });
@@ -203,11 +216,17 @@ export class RuneScene extends Phaser.Scene {
     audio.sfx(ok ? 'correct' : 'wrong');
     this.field?.blur();
     this.answerUi.forEach((o) => o.destroy());
-    run.stats.runasTotal++;
+    if (!this.amUsado) run.stats.runasTotal++;
+    if (this.amUsado) {
+      // AM pensó por ti: aciertas, pero sin puntos, racha, Conocimiento ni repaso
+      addEntropia(AM_ENTROPIA);
+      this.flash(PACTO_AM.usar, '#ff5a4a', 156);
+      logEvent('am_runa', p.concept, true, { titulo: p.title, fuente: this.d.source });
+    }
     const tm = ((run.temas ??= {})[p.concept] ??= { ok: 0, total: 0 });
-    tm.total++;
-    if (ok) tm.ok++;
-    if (ok) {
+    if (!this.amUsado) tm.total++;
+    if (ok && !this.amUsado) tm.ok++;
+    if (ok && !this.amUsado) {
       run.stats.runasOk++;
       addEntropia(ENTROPIA.runa);
       run.stats.racha = (run.stats.racha ?? 0) + 1;
@@ -216,15 +235,15 @@ export class RuneScene extends Phaser.Scene {
       if (run.stats.racha > 1) this.flash(`Racha ×${run.stats.racha}: +${pts} puntos`, CSS.gold);
       const tr = boonLevel('c_traductora');
       if (tr && this.d.source !== 'regateo') addErgios(15 * tr);
-    } else run.stats.racha = 0;
+    } else if (!this.amUsado) run.stats.racha = 0;
     if (this.d.source !== 'regateo') run.floor = this.d.floor + 1;
     saveLocal();
     syncRun('en curso');
     this.showResult(ok);
   }
 
-  private flash(s: string, color: string) {
-    const t = txt(this, W / 2, 440, s, 21, color).setOrigin(0.5);
+  private flash(s: string, color: string, y = 440) {
+    const t = txt(this, W / 2, y, s, 21, color).setOrigin(0.5).setDepth(20).setStroke('#000', 4);
     this.tweens.add({ targets: t, alpha: 0, delay: 2200, duration: 400, onComplete: () => t.destroy() });
   }
 

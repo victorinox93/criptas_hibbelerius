@@ -415,7 +415,7 @@ export const CARDS: Record<string, CardDef> = {
     lore: 'Giras con todo lo que tienes: cada joule invertido es un golpe más.',
   },
   palanca: {
-    id: 'palanca', name: 'Palanca de Arquímedes', type: 'Habilidad', icon: 'i_angle', concept: 'Momento de una fuerza', rarity: 'común', target: 'self', lock: 4,
+    id: 'palanca', name: 'Palanca de Arquímedes', type: 'Habilidad', icon: 'i_angle', concept: 'Momento de una fuerza', rarity: 'común', target: 'self', cls: 'neutral', lock: 2,
     stats: (up) => ({ cost: up ? 0 : 1 }),
     text: () => `Tu siguiente ataque\neste turno inflige\nel DOBLE (M = F·d).`,
     lore: '«Dadme un punto de apoyo y moveré el mundo.» Duplicar el brazo de palanca duplica el momento.',
@@ -507,6 +507,43 @@ export const CARDS: Record<string, CardDef> = {
     stats: () => ({ cost: 0 }),
     text: () => `Injugable.\nAl robarla pierdes 1 J.`,
     lore: 'Un signo mal puesto en el diagrama arruina todo el análisis.',
+  },
+  // ════════ v0.16: cartas sugeridas por el profe ════════
+  normalRobo: {
+    id: 'normalRobo', name: 'Reacción Normal', type: 'Defensa', icon: 'i_shield', concept: 'Fuerza normal', rarity: 'común', target: 'self', cls: 'neutral',
+    stats: (up) => ({ cost: 1, block: up ? 9 : 6 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nRoba 1 carta.`,
+    lore: 'El suelo empuja hacia arriba con la misma fuerza con que lo empujas: N = m·g en una superficie horizontal.',
+  },
+  perdigones: {
+    id: 'perdigones', name: 'Perdigones', type: 'Ataque', icon: 'i_momentum', concept: 'Impulso', rarity: 'común', target: 'all', cls: 'neutral',
+    stats: (up) => ({ cost: 1, extra: up ? 4 : 3 }),
+    text: (s) => `3 golpes de ${s.extra}\na enemigos al azar.`,
+    lore: 'Muchos impulsos pequeños: J = F·Δt, uno tras otro. La suma también cuenta.',
+  },
+  fmaCuadrado: {
+    id: 'fmaCuadrado', name: '(F = m·a)²', type: 'Ataque', icon: 'i_gaunt', concept: 'Análisis dimensional', rarity: 'rara', target: 'enemy',
+    stats: (up) => ({ cost: up ? 1 : 2, m: 2, a: 2 }),
+    text: (s, c) => { const { F } = force(s, c); return `F = ${F} N\nInflige F²/5 = ${Math.round((F * F) / 5)}.\n(¡Crece con TUS bonos!)`; },
+    lore: 'Dimensionalmente no tiene sentido: N² no es una fuerza. Pero a los monstruos nadie les revisa las unidades.',
+  },
+  descarga: {
+    id: 'descarga', name: 'Descarga Total', type: 'Ataque', icon: 'i_bolt', concept: 'Trabajo y energía', rarity: 'rara', target: 'all', cls: 'neutral',
+    stats: (up) => ({ cost: 0, extra: up ? 7 : 5 }),
+    text: (s, c) => `Gasta TODOS tus J:\n${s.extra}·J a todos\n= ${(s.extra ?? 5) * (c.energy ?? 0)}.`,
+    lore: 'Todo el trabajo disponible, liberado de golpe. Después, a esperar a que vuelva la energía.',
+  },
+  fractura: {
+    id: 'fractura', name: 'Fractura Frágil', type: 'Ataque', icon: 'i_crystal', concept: 'Mecánica de materiales', rarity: 'común', target: 'enemy', cls: 'neutral',
+    stats: (up) => ({ cost: 1, extra: up ? 10 : 7 }),
+    text: (s) => `Rompe TODO el Bloqueo\ndel enemigo y le hace ${s.extra}.`,
+    lore: 'Un material frágil no se deforma: se rompe de golpe cuando el esfuerzo supera su resistencia.',
+  },
+  golpeGracia: {
+    id: 'golpeGracia', name: 'Golpe de Gracia', type: 'Ataque', icon: 'i_combat', concept: 'Conservación de la energía', rarity: 'común', target: 'enemy', cls: 'neutral',
+    stats: (up) => ({ cost: 1, extra: up ? 12 : 9 }),
+    text: (s) => `Inflige ${s.extra}.\nSi lo derrotas, recuperas 2 J.`,
+    lore: 'La energía no se pierde: la que le quitas al enemigo vuelve a ti.',
   },
   // ════════ PENITENTE DEL EMPUJE (masa variable: su vida es su combustible) ════════
   embestidaArd: {

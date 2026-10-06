@@ -963,6 +963,10 @@ const FAMS: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     rows: mirrorHalf(['....ss', '....sk', '.s.ggg', 'ssgGgg', '..gggG', '..gGgg', '..gggG', 'ssgGgg', '.s.ggg', '.....s']),
     ov: { s: '#7a9a5a', k: '#0d0b10', g: '#5a4a2a', G: '#8a7a4a' },
   },
+  fam_dragon: {
+    rows: mirrorHalf(['R.....', 'RR..hh', 'RRR.kk', 'RRRkkk', 'RRkkEk', '.RRkkk', '..Rkkk', '...kkm', '...kkk', '..kGkk', '..kkkk', '.k...k']),
+    ov: { R: '#c8542a', k: '#7a2418', E: '#ffe080', h: '#d8d0c0', m: '#ff9a3a', G: '#e8a060' },
+  },
   fam_cuervo: {
     rows: mirrorHalf(['...kk', '..kkk', '.kkEk', '.kkkk', '..kkY', '..kkY', '.kkkk', 'kkkkk', 'kKkkk', 'kKkkk', '.kkkk', '..y.y']),
     ov: { k: '#1a1822', K: '#3a3650', E: '#e04a4a', Y: '#8a8a90', y: '#6a6a70' },
@@ -986,6 +990,10 @@ const DIL: Record<string, { rows: string[]; ov: Record<string, string> }> = {
   d_atril: {
     rows: mirrorHalf(['......', '.pppp.', 'pGGGGp', 'pGwwwG', 'pGwLkw', 'pGwwwG', 'pppppp', '....nn', '....nn', '....nn', '...nnn', '.nnnnn']),
     ov: { p: '#2a1a3a', G: '#3d4a22', w: '#c8d0a0', L: '#9bf07a', k: '#0d0b10', n: '#3a2a1e' },
+  },
+  npc_am: {
+    rows: mirrorHalf(['..kkkk', '.kgggg', '.kgddd', '.kgddd', '.kgdRF', '.kgdFF', '.kgddd', '.kgddd', '.kgdLd', '.kgddd', '.kgdLL', '.kgddd', '.kgddd', '.kgddd', 'kkgggg', 'kggggg']),
+    ov: { k: '#050505', g: '#2a2a30', d: '#101014', F: '#ff2a1a', R: '#ff9a7a', L: '#3aff6a' },
   },
   d_puente: {
     rows: mirrorHalf(['k.....', 'k.....', 'kl....', 'k.l...', 'k..lll', 'knnnnn', 'k.....', 'k.....']),

@@ -99,6 +99,7 @@ export class CombatScene extends Phaser.Scene {
   private polonio = 0; // daño extra de la carta de ataque en curso (Curie)
   private famImg: Phaser.GameObjects.Image | null = null;
   private aliadoImg: Phaser.GameObjects.Image | null = null; // alma en pena aliada (élites y jefes)
+  private aliadoN = 0; // turnos del aliado (Sir Mañana)
   // v0.7: Acto III y cartas nuevas
   private estela = false; // Estela Cinética: cada ataque da +1 m/s
   private noFric = false; // Superficie Sin Fricción
@@ -166,6 +167,7 @@ export class CombatScene extends Phaser.Scene {
     this.fuegoAmigo = false;
     this.hondaV = new Map();
     this.aliadoImg = null;
+    this.aliadoN = 0;
     this.estela = false;
     this.noFric = false;
     this.restE = 0;
@@ -912,6 +914,56 @@ export class CombatScene extends Phaser.Scene {
     }
     const c = this.ctx();
     switch (def.id) {
+      // ── v0.16 ──
+      case 'normalRobo':
+        this.gainBlock(st.block ?? 6);
+        this.calc(`Reacción Normal: N = m·g → +${st.block} de Bloqueo y robas 1`);
+        this.drawCards(1);
+        break;
+      case 'perdigones':
+        this.calc(`Perdigones: 3 impulsos de ${st.extra}`);
+        for (let i = 0; i < 3 && this.alive().length; i++) {
+          const t = Phaser.Utils.Array.GetRandom(this.alive());
+          this.beam(t, 0xc8c8c8);
+          await this.hitEnemy(t, st.extra ?? 3);
+        }
+        break;
+      case 'fmaCuadrado': {
+        const f = force(st, c);
+        const dmg = Math.round((f.F * f.F) / 5);
+        this.calc(`(F = m·a)²: F = ${f.F} N → F²/5 = ${dmg} (¡unidades: N²!)`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, dmg);
+        break;
+      }
+      case 'descarga': {
+        const J = this.energy;
+        this.energy = 0;
+        const dmg = (st.extra ?? 5) * J;
+        this.calc(`Descarga Total: ${st.extra}·${J} J = ${dmg} a todos`);
+        this.cameras.main.flash(250, 160, 220, 255);
+        for (const t of [...this.alive()]) await this.hitEnemy(t, dmg);
+        break;
+      }
+      case 'fractura':
+        if (target) {
+          if (target.st.block) this.calc(`Fractura Frágil: el Bloqueo de ${target.st.def.name} (${target.st.block}) se rompe`);
+          target.st.block = 0;
+          this.refreshEnemy(target);
+          await this.heroLunge();
+          await this.hitEnemy(target, st.extra ?? 7);
+        }
+        break;
+      case 'golpeGracia':
+        await this.heroLunge();
+        if (target) {
+          await this.hitEnemy(target, st.extra ?? 9);
+          if (target.dead) {
+            this.energy += 2;
+            this.calc('Golpe de Gracia: la energía vuelve a ti (+2 J)');
+          }
+        }
+        break;
       // ── Penitente del Empuje ──
       case 'empuje':
       case 'etapa': {
@@ -1900,6 +1952,7 @@ export class CombatScene extends Phaser.Scene {
     let draw = 5 + this.extraDraw;
     if (this.has('agujero')) draw += 1;
     if (this.prohibido('p_infinito')) draw += 1;
+    if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
     if (this.turn === 1) {
       const om = boonLevel('o_manhattan');
       if (om) {
@@ -2046,7 +2099,16 @@ export class CombatScene extends Phaser.Scene {
     // familiares que actúan al final de tu turno
     const fam = Game.run!.familiar;
     if (fam && this.alive().length) {
-      if (fam.id === 'salamandra') {
+      if (fam.id === 'dragon') {
+        this.famHop();
+        for (const t of this.alive()) {
+          t.st.calor += 3;
+          this.beamFrom(this.heroX - 100, t, 0xff7a2a);
+          this.refreshEnemy(t);
+        }
+        this.calc('Dragón de Carnot: ¡fuego! +3 de Calor a todos');
+        await this.wait(300);
+      } else if (fam.id === 'salamandra') {
         const t = Phaser.Utils.Array.GetRandom(this.alive());
         this.famHop();
         t.st.calor += 3;
@@ -2495,6 +2557,28 @@ export class CombatScene extends Phaser.Scene {
         this.refreshEnemy(t);
       }
       await this.wait(300);
+    } else if (a.id === 'procrastinador') {
+      this.aliadoN++;
+      if (this.aliadoN % 2 === 1) {
+        this.calc(`${a.name}: «Mañana lo hago…» (no hace nada este turno)`);
+        this.floatText(img.x, 190, 'zzz…', CSS.dim);
+        await this.wait(300);
+      } else {
+        this.calc(`${a.name}: ¡suelta todo lo acumulado! 10 a todos`);
+        for (const t of [...this.alive()]) { rayo(t); await this.hitEnemy(t, 10, false, 'res'); }
+      }
+    } else if (a.id === 'decimales') {
+      const t = this.alive().reduce((x, y) => (y.st.hp < x.st.hp ? y : x));
+      const exacto = t.st.hp <= 12;
+      const dmg = exacto ? t.st.hp : 6;
+      rayo(t);
+      this.calc(`${a.name}: ${exacto ? `remate exacto: ${dmg} (ni uno más)` : 'golpe preciso: 6'}`);
+      await this.hitEnemy(t, dmg, exacto, 'res');
+    } else if (a.id === 'duda') {
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      rayo(t);
+      this.calc(`${a.name}: lanza su cadena (4)`);
+      await this.hitEnemy(t, 4, false, 'res');
     } else if (a.id === 'bernoulli') {
       this.calc(`${a.name}: ¡la energía se conserva! 5 a todos`);
       for (const t of this.alive()) {

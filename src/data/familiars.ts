@@ -40,6 +40,11 @@ export const FAMILIARS: Record<string, FamiliarDef> = {
     text: 'Al final de tu turno picotea al enemigo con menos vida (4 de daño). Al ganar, trae +6 Ergios.',
     lore: 'Junta todo lo que brilla, incluso los joules que se te caen.',
   },
+  dragon: {
+    id: 'dragon', name: 'Dragón de Carnot', sprite: 'fam_dragon', combats: 4,
+    text: 'Al final de tu turno escupe fuego: 3 de Calor a TODOS los enemigos.',
+    lore: 'Una máquina térmica con alas: toma calor de su vientre y lo convierte en trabajo… y en enemigos chamuscados.',
+  },
 };
 
 export const FAMILIAR_POOL = Object.keys(FAMILIARS);

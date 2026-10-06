@@ -4,6 +4,7 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { EVENTS, EventDef, PROFE_CHANCE, PROFE_ENOJADO_CHANCE } from '../data/events';
 import { ALMA_CHANCE, ALMA_IDS } from '../data/almas';
+import { AM_CHANCE } from '../data/am';
 
 /** Probabilidad de encontrar el Necronomicón en un encuentro (Actos II y III, una vez) */
 const NECRO_CHANCE = 0.15;
@@ -33,6 +34,12 @@ export class EventScene extends Phaser.Scene {
         seen.push('atril');
         saveLocal();
         this.scene.start('Dilemma', { floor: data.floor, id: 'atril' });
+        return;
+      } else if (!seen.includes('am') && data.floor >= 3 && Math.random() < AM_CHANCE) {
+        // AM, la inteligencia artificial de las criptas (src/data/am.ts)
+        seen.push('am');
+        saveLocal();
+        this.scene.start('AM', { floor: data.floor });
         return;
       } else if (almas.length && Math.random() < ALMA_CHANCE) {
         // un alma en pena (rara): escena propia

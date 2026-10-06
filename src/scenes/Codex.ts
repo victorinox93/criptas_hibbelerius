@@ -128,6 +128,15 @@ export class CodexScene extends Phaser.Scene {
             },
           });
         }
+        list.push({
+          kind: 'npcs', id: 'am', tex: 'npc_am', name: 'AM',
+          detail: (c) => {
+            head(c, 'npc_am', 'AM', 'Inteligencia artificial · recuerda cada visita', 6);
+            body(c, 290, 'Lo construyeron para resolver todos los problemas del libro. Los resolvió. Ahora sólo piensa… y te hace preguntas. Si aceptas su pacto, resolverá runas por ti: acertarás, pero no aprenderás nada.', CSS.bone, 18);
+            const m = Game.codex.am;
+            if (m) body(c, 430, `Visitas: ${m.visitas} · Pactos aceptados: ${m.pactos} · Rechazados: ${m.rechazos}`, '#ff8a7a', 17);
+          },
+        });
         return list;
       }
       case 2:
@@ -135,12 +144,28 @@ export class CodexScene extends Phaser.Scene {
           kind: 'figures', id: f.id, tex: f.sprite, name: f.name,
           detail: (c) => {
             head(c, f.sprite, f.name, `${f.years}\n${f.epithet}`, 6);
-            body(c, 290, f.intro, CSS.bone, 19);
-            f.boons.forEach((bid, i) => {
-              const b = BOONS[bid];
-              const known = this.has('boons', bid);
-              body(c, 380 + i * 36, known ? `◆ ${b.name}: ${b.text[0]}` : '◆ ???', known ? CSS.gold : CSS.dim, 17);
-            });
+            // todo se acomoda hacia abajo según lo que mida cada texto (los dones con radiación son largos)
+            const draw = (fs: number) => {
+              const objs: Phaser.GameObjects.Text[] = [];
+              const put = (y: number, s: string, color: string, size: number) => {
+                const t = txt(this, DX + 8, y, s, size, color, { wordWrap: { width: DW - 16 }, lineSpacing: 1 });
+                objs.push(t);
+                return y + t.height + 4;
+              };
+              let y = put(272, f.intro.replace(/\n/g, ' '), CSS.bone, fs);
+              y += 4;
+              for (const bid of f.boons) {
+                const b = BOONS[bid];
+                if (!this.has('boons', bid)) { y = put(y, '◆ ???', CSS.dim, fs - 2); continue; }
+                const [good, rad] = b.text[0].split('\nRadiación:');
+                y = put(y, `◆ ${b.name}: ${good}`, CSS.gold, fs - 2);
+                if (rad) y = put(y - 2, `   Radiación:${rad}`, '#9bf07a', fs - 3);
+              }
+              return { objs, y };
+            };
+            let fs = 18, r = draw(fs);
+            while (r.y > 496 && fs > 13) { r.objs.forEach((o) => o.destroy()); r = draw(--fs); }
+            r.objs.forEach((o) => L(c, o));
           },
         }));
       case 3:

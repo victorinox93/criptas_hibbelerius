@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { FLOORS, Game, MapNode, NodeType, saveLocal } from '../state';
+import { FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
 import { topBar } from '../ui/hud';
 import { embers, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
@@ -100,6 +100,8 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
+    // el jefe del acto se ve en el mapa: ya cuenta para el Bestiario
+    unlock('enemies', act3 ? 'hibbelerius' : act2 ? 'bruja' : 'colossus');
     // nodos
     for (const n of run.map) {
       const { x, y } = nodeXY(n);

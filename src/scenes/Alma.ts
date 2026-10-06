@@ -59,9 +59,13 @@ export class AlmaScene extends Phaser.Scene {
       q.setAlpha(0.5);
       this.resolve(a.id, ok, via, data.floor);
     };
-    a.opciones.forEach((op, i) => {
-      const b = button(this, 690, 334 + i * 48, 480, 42, '', () => done(i === a.correcta, `respuesta ${i + 1}`), { size: 17 });
+    // las opciones salen en orden al azar
+    const orden = Phaser.Utils.Array.Shuffle(a.opciones.map((_, i) => i));
+    orden.forEach((i, k) => {
+      const op = a.opciones[i];
+      const b = button(this, 690, 334 + k * 48, 480, 42, '', () => done(i === a.correcta, `respuesta ${i + 1}`), { size: 17 });
       b.label.setText(op).setWordWrapWidth(460).setAlign('center');
+      if (b.label.height > 40) b.label.setFontSize(15);
       btns.push(b);
     });
     const h = a.ayuda;

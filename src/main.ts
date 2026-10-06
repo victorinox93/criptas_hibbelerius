@@ -11,6 +11,9 @@ import { AvatarScene } from './scenes/Avatar';
 import { MenuScene } from './scenes/Menu';
 import { MapScene } from './scenes/MapScene';
 import { AlmaScene } from './scenes/Alma';
+import { GlosarioScene } from './scenes/Glosario';
+import { AMScene } from './scenes/AM';
+import { MusicaScene } from './scenes/Musica';
 import { CombatScene } from './scenes/Combat';
 import { RewardScene } from './scenes/Reward';
 import { RuneScene } from './scenes/Rune';
@@ -47,7 +50,7 @@ const game = new Phaser.Game({
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
   scene: [BootScene, TitleScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, DebugScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, MusicaScene, AMScene, DebugScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda

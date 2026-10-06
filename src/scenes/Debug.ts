@@ -88,6 +88,7 @@ export class DebugScene extends Phaser.Scene {
       ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: FLOORS })],
       ['Profesor', () => this.go(acto(), 'Event', { floor: 2, eventId: 'victorino' })],
       ['Profe enojado', () => this.go(acto(), 'Event', { floor: 2, eventId: 'profe_enojado' })],
+      ['AM', () => this.go(acto(), 'AM', { floor: 3 })],
       ['Necronomicón', () => this.go(Math.max(2, acto()), 'Dilemma', { floor: 2, id: 'atril' })],
       ['Alma en pena', () => this.go(acto(), 'Alma', { floor: 2, id: Phaser.Utils.Array.GetRandom(ALMA_IDS) })],
       ['Mercader', () => this.go(acto(), 'Shop', { floor: 4 })],
@@ -113,6 +114,7 @@ export class DebugScene extends Phaser.Scene {
       DILEMMAS.forEach((d) => unlock('npcs', `dil_${d.id}`));
       FAMILIAR_POOL.forEach((f) => unlock('npcs', `fam_${f}`));
       ALMA_IDS.forEach((a) => unlock('npcs', `alma_${a}`));
+      unlock('npcs', 'am');
       FIGURES.forEach((f) => unlock('figures', f.id));
       Object.keys(CARDS).forEach((k) => unlock('cards', k));
       Object.keys(RELICS).forEach((k) => unlock('relics', k));
