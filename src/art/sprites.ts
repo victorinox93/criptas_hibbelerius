@@ -2,7 +2,7 @@ import { ACT4_PAL, ACT4_SPRITES } from './act4';
 import Phaser from 'phaser';
 import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
-import { heroMatrix, SKINS } from './heroes';
+import { heroMatrix, SKINS, CABELLOS } from './heroes';
 import { ALMAS } from '../data/almas';
 import { POCIONES } from '../data/pociones';
 
@@ -824,13 +824,14 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   const vis = VISORS[av.visor ?? 0] ?? VISORS[0];
   const visor = vis.c;
   const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
-  const rows = heroMatrix({ clase: av.clase, helm: av.helm, arma: av.arma, extra: av.extra });
-  const ov = { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
+  const rows = heroMatrix({ clase: av.clase, helm: av.helm, arma: av.arma, extra: av.extra, figura: av.figura });
+  const ov: Record<string, string> = { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
+  if ((av.figura ?? 0) > 0) ov.h = CABELLOS[av.figura!] ?? CABELLOS[1];
   // cosméticos holográficos (premio de AM): el tono recorre el arcoíris por pixel y con el tiempo
-  const holo: Record<string, [number, number]> = {}; // letra → [desfase de tono, luminosidad]
-  if (cape.holo !== undefined) { holo.c = [cape.holo, 0.62]; holo.C = [cape.holo + 40, 0.42]; }
-  if (armor.holo !== undefined) { holo.l = [armor.holo, 0.75]; holo.g = [armor.holo + 40, 0.5]; }
-  if (vis.holo !== undefined) { holo.E = [vis.holo, 0.65]; holo.B = [vis.holo, 0.65]; }
+  const holo: Record<string, [number, number, number]> = {}; // letra → [tono inicial, luminosidad, rango de tono]
+  if (cape.holo !== undefined) { const r = cape.rango ?? 360; holo.c = [cape.holo, 0.62, r]; holo.C = [cape.holo + Math.min(40, r / 3), 0.42, r]; }
+  if (armor.holo !== undefined) { const r = armor.rango ?? 360; holo.l = [armor.holo, 0.75, r]; holo.g = [armor.holo + Math.min(40, r / 3), 0.5, r]; }
+  if (vis.holo !== undefined) { const r = vis.rango ?? 360; holo.E = [vis.holo, 0.65, r]; holo.B = [vis.holo, 0.65, r]; }
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
   if (!Object.keys(holo).length) return makeTexture(scene, key, rows, ov);
@@ -841,7 +842,7 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
 }
 
 /** Como makeTexture, pero las letras de `holo` cambian de tono según su posición y el tiempo (efecto holograma) */
-export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number]>, t: number) {
+export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number, number]>, t: number) {
   makeTexture(scene, key, rows, overrides);
   const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
   const ctx = tex.getContext();
@@ -849,14 +850,16 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
     for (let x = 0; x < row.length; x++) {
       const h = holo[row[x]];
       if (!h) continue;
-      const hue = (h[0] + t + y * 9 + x * 4) % 360;
+      // el tono va y viene dentro de su rango (rango 360 = arcoíris completo)
+      const R = h[2], ph = (t + y * 9 + x * 4) % (2 * R);
+      const hue = (h[0] + (R >= 360 ? ph : ph < R ? ph : 2 * R - ph) + 360) % 360;
       ctx.fillStyle = `hsl(${hue}, 95%, ${Math.round(h[1] * 100)}%)`;
       ctx.fillRect(x, y, 1, 1);
     }
   });
   tex.refresh();
 }
-export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number }
+export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number }
 
 const NPC = mirrorHalf([
   '.....kkk',

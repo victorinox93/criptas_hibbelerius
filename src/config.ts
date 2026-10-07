@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.22.0 · Sir Autocompleto, Asimov y Turing, cosméticos holográficos y curva de niveles más larga';
+export const VERSION = '0.23.0 · Guerrera, Vestidor con logros y cosméticos nuevos';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)

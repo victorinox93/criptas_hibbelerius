@@ -89,6 +89,12 @@ export class EndScene extends Phaser.Scene {
     if (!almaFin) popup();
     void nivelDe;
 
+    // ── logros (cosméticos del Vestidor) ──
+    if (!run.debug) {
+      if (run.stats.runasOk >= 15) codexFlag('logro_erudito');
+      if (data.victory && run.aliado) codexFlag('logro_alma');
+      if (data.victory && (run.entropiaMax ?? run.entropia ?? 0) < 40) codexFlag('logro_lucido');
+    }
     if (data.victory) {
       const nuc = data.nucleo;
       title(this, W / 2, 70, nuc === 'am' ? '¡AM ha caído!' : nuc === 'caido' ? 'Venciste a Hibbelerius…' : T.final.victoria, 54, nuc === 'caido' ? '#e0a070' : undefined);

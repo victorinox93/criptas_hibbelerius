@@ -295,3 +295,15 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Cosméticos de AM, ahora holográficos y animados:** capa «Holograma de AM», armadura «Cromo Holográfico» y ojos «Ojo Holográfico». El color recorre el arcoíris por pixel y con el tiempo (`makeTextureHolo` en `src/art/sprites.ts`). Quien ya tenía las versiones anteriores las conserva, ahora animadas.
 - **Curva de niveles el doble de larga** (`NIVELES` en `src/data/progreso.ts`: 2000 de Conocimiento para el nivel 10, ≈ 9 victorias). Nadie pierde lo que ya desbloqueó: el nivel que tenía con la curva anterior queda como piso (`Codex.nivelPiso`) y desde ahí sigue con la curva nueva.
 - **Menú:** la etiqueta «Vencedor de AM» aparece arriba del panel y ya no tapa «Conocimiento: nivel…».
+
+## v0.23.0 · Guerrera, Vestidor y logros
+
+- **Figura femenina** (editor del héroe → «Figura»): Masculina, o Femenina con cabello negro, castaño, rubio, rojizo o plateado. La caballera lleva yelmo de visera abierta (se le ve el rostro), trenza sobre el hombro y faldar largo; la arcanista, cabello largo (y sin barba); la penitente, cabello que asoma bajo el tocado.
+- **Vestidor** (nuevo botón en el menú): todas las capas, armaduras y ojos con una vista previa de TU héroe. Clic para equipar; los bloqueados dicen cómo conseguirlos.
+- **Logros** (`src/data/logros.ts`) que desbloquean cosméticos nuevos:
+  - Capas: *Piedra del Coloso* (vence al Coloso), *Bruma de la Bruja* (vence a la Bruja), *Tinta de Hibbeler* (15 runas bien en una expedición), *Velo de las Almas* ✦ (vence a Hibbelerius con un alma aliada), *Llama de Júpiter* ✦ (vence a la Bruja en Júpiter).
+  - Armaduras: *Pergamino Dorado* (vence a Hibbelerius), *Diamante* (vence a un jefe sin perder vida), *Cromo Dorado* ✦ (descubre el 75 % del Grimorio).
+  - Ojos: *Lucidez* ✦ (gana sin llegar a 40 de Locura), *Ánima Dorada* ✦ (encuentra a todas las almas), *Aurora de Neptuno* ✦ (vence a la Bruja en Neptuno).
+  - Los de AM (Holograma, Cromo Holográfico, Ojo Holográfico) pasan a ser el logro «Sin boca».
+  - ✦ = holográfico: el tono se mueve dentro de su propia gama (fuego, aurora, oro…), no sólo en arcoíris.
+- **Simulador de expediciones** (`tools/simular_expediciones.mjs`): un bot juega expediciones completas de un Caballero sin desbloqueos con los combates reales (los nodos sin combate se resuelven con reglas simples y 75 % de aciertos). Requiere el servidor de desarrollo en el puerto 5175 y Playwright; uso: `node tools/simular_expediciones.mjs base 10 2` (o `menos` para probar el mazo inicial sin una Fuerza Normal).

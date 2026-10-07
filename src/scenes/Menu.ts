@@ -11,7 +11,7 @@ import { GRAVITY } from '../data/gravity';
 import { siguienteNivel } from '../data/progreso';
 import { ALMA_IDS } from '../data/almas';
 import { progresoGrimorio } from './Codex';
-import { amVencido, claseJugable, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { amVencido, claseJugable, codexFlag, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -68,13 +68,14 @@ export class MenuScene extends Phaser.Scene {
       y += 58;
     }
     button(this, x, y, 330, 48, run ? T.menu.nueva : T.menu.comenzar, () => this.pickGravity(), { color: run ? UI.border : UI.blood, size: 26 });
-    y += 72;
+    y += 64;
     const grid: [string, () => void][] = [
       [T.menu.grimorio, () => fadeTo(this, 'Codex')],
       [T.menu.ranking, () => fadeTo(this, 'Ranking')],
       [T.menu.ayuda, () => fadeTo(this, 'Help', { next: 'Menu' })],
       ['Glosario', () => fadeTo(this, 'Glosario')],
       [T.menu.editar, () => fadeTo(this, 'Avatar')],
+      ['Vestidor', () => fadeTo(this, 'Vestidor')],
       [Game.codex.victorias > 0 ? '♪ Soundtrack' : '🔒 Soundtrack', () => {
         if (Game.codex.victorias > 0) return fadeTo(this, 'Musica');
         const t = txt(this, 690, 112, 'Vence a Hibbelerius para desbloquear el soundtrack.', 18, CSS.dim).setOrigin(0.5);
@@ -90,9 +91,9 @@ export class MenuScene extends Phaser.Scene {
       }],
     ];
     grid.forEach(([label, fn], i) => {
-      button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 52, 160, 44, label, fn, { size: 21 });
+      button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 46, 160, 40, label, fn, { size: 20 });
     });
-    if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 52, 330, 40, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
+    if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 46, 330, 38, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
   }
 
   /** Panel de progreso: Grimorio, jefes, almas, figuras y cartas */
@@ -101,6 +102,7 @@ export class MenuScene extends Phaser.Scene {
     frame(g, 60, 106, 380, 150, 0x0e0b12, UI.border, 0.88);
     txt(this, 76, 112, 'Tu avance', 18, CSS.gold);
     const pg = progresoGrimorio();
+    if (pg.known / Math.max(1, pg.total) >= 0.75) codexFlag('logro_grimorio');
     const flags = Game.codex.flags ?? [];
     const nucleo = nucleoDisponible() || flags.includes('acto4');
     const jefes = ['acto1', 'acto2', 'acto3', ...(nucleo ? ['acto4'] : [])];

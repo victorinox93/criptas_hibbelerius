@@ -30,11 +30,16 @@ export const SKINS: { name: string; s: string; q: string }[] = [
   { name: 'Oscura', s: '#5a3a28', q: '#3a2418' },
 ];
 
+/** Figura del héroe: 0 = masculina; 1–5 = femenina con este color de cabello */
+export const FIGURAS = ['Masculina', 'Fem. · negro', 'Fem. · castaño', 'Fem. · rubio', 'Fem. · rojizo', 'Fem. · plateado'];
+export const CABELLOS = ['#4a3a2e', '#1e1814', '#5a3a22', '#d8b060', '#a8401e', '#c8c8d0'];
+
 export interface HeroLook {
   clase?: string;
   helm: string;
   arma?: number;
   extra?: number;
+  figura?: number;
 }
 
 type Grid = string[][];
@@ -107,9 +112,15 @@ function knight(look: HeroLook): Grid {
   rect(g, 14, 40, 18, 42, 'd');
   rect(g, 20, 40, 25, 42, 'g');
   rect(g, 21, 40, 25, 40, 'l');
-  // faldar de placas
-  rect(g, 14, 28, 25, 32, 'g');
-  for (let x = 15; x <= 24; x += 3) rect(g, x, 29, x + 1, 32, 'l');
+  const fem = (look.figura ?? 0) > 0;
+  // faldar de placas (la guerrera lo lleva más largo, como falda de malla)
+  if (fem) {
+    poly(g, [[14, 28], [25, 28], [27, 35], [12, 35]], 'g');
+    for (let x = 14; x <= 25; x += 3) line(g, x, 29, x + (x - 19.5) * 0.2, 34, 'l');
+  } else {
+    rect(g, 14, 28, 25, 32, 'g');
+    for (let x = 15; x <= 24; x += 3) rect(g, x, 29, x + 1, 32, 'l');
+  }
   // torso (peto)
   oval(g, 19.5, 22, 6.5, 7, 'l');
   rect(g, 14, 22, 25, 28, 'l');
@@ -123,6 +134,13 @@ function knight(look: HeroLook): Grid {
   oval(g, 13.5, 18, 3.5, 2.6, 'l'); rect(g, 11, 19, 16, 20, 'g');
   oval(g, 25.5, 18, 3.5, 2.6, 'l'); rect(g, 23, 19, 28, 20, 'g');
   put(g, 12, 17, 'W'); put(g, 24, 17, 'W');
+  if (fem) {
+    // trenza larga que cae por delante del hombro
+    line(g, 16, 13, 16, 18, 'h', 2);
+    for (const [x, y] of [[16.5, 20], [16.5, 23], [17, 26]] as [number, number][]) oval(g, x, y, 1.6, 1.5, 'h');
+    rect(g, 16, 28, 18, 28, 'y');
+    rect(g, 16, 29, 17, 30, 'h');
+  }
   // brazo trasero y delantero
   rect(g, 11, 21, 13, 27, 'g');
   rect(g, 25, 21, 28, 26, 'l'); rect(g, 27, 21, 28, 26, 'g');
@@ -135,6 +153,15 @@ function knight(look: HeroLook): Grid {
   rect(g, 16, 11, 24, 11, 'k'); put(g, 21, 11, 'E'); put(g, 22, 11, 'E'); put(g, 24, 11, 'E');
   put(g, 22, 13, 'k'); put(g, 23, 13, 'k'); put(g, 22, 14, 'k');
   line(g, 19, 5, 19, 10, 'W');
+  if (fem) {
+    // yelmo de visera abierta: se ve el rostro, con mechones de cabello
+    rect(g, 17, 10, 23, 14, 's');
+    rect(g, 23, 10, 23, 14, 'q');
+    put(g, 21, 11, 'k'); put(g, 22, 11, 'E'); put(g, 22, 10, 'k');
+    put(g, 21, 13, 'q');
+    rect(g, 17, 10, 18, 11, 'h'); put(g, 17, 12, 'h');
+    rect(g, 16, 10, 16, 15, 'g');
+  }
   const helm = look.helm;
   if (helm === 'penacho') {
     poly(g, [[18, 5], [21, 3], [17, 1], [11, 2], [8, 6], [13, 5]], 'c');
@@ -218,11 +245,17 @@ function mage(look: HeroLook): Grid {
   put(g, 18, 12, 'E'); put(g, 21, 12, 'E');
   put(g, 18, 11, 'h'); put(g, 21, 11, 'h');
   put(g, 20, 14, 'q');
+  if ((look.figura ?? 0) > 0) {
+    // cabello largo que cae sobre los hombros
+    rect(g, 14, 9, 15, 21, 'h'); rect(g, 24, 9, 25, 19, 'h');
+    rect(g, 15, 8, 24, 8, 'h'); put(g, 16, 9, 'h'); put(g, 23, 9, 'h');
+    put(g, 18, 11, 'k'); put(g, 21, 11, 'k');
+  }
   // barba
-  if (barba === 1) {
+  if (barba === 1 && !(look.figura ?? 0)) {
     poly(g, [[16, 14], [23, 14], [22, 18], [19.5, 19], [17, 18]], 'h');
     put(g, 19, 15, 'q'); put(g, 20, 15, 'q');
-  } else if (barba === 2) {
+  } else if (barba === 2 && !(look.figura ?? 0)) {
     poly(g, [[16, 14], [23, 14], [23, 19], [20.5, 27], [18.5, 27], [16, 19]], 'W');
     line(g, 18, 17, 19, 25, 'w'); line(g, 21, 17, 21, 25, 'w');
     put(g, 19, 15, 'q'); put(g, 20, 15, 'q');
@@ -315,7 +348,7 @@ function penitent(look: HeroLook): Grid {
   oval(g, 31, 24, 1.8, 1.5, 's');
   // capucha / tocado
   const helm = look.helm;
-  const cara = () => { rect(g, 17, 10, 23, 14, 'd'); put(g, 18, 11, 'E'); put(g, 21, 11, 'E'); };
+  const cara = () => { rect(g, 17, 10, 23, 14, 'd'); put(g, 18, 11, 'E'); put(g, 21, 11, 'E'); if ((look.figura ?? 0) > 0) { rect(g, 16, 12, 16, 22, 'h'); rect(g, 23, 12, 23, 20, 'h'); rect(g, 17, 10, 22, 10, 'h'); } };
   if (helm === 'penacho') {
     // capirote: cono alto
     poly(g, [[14, 16], [26, 16], [24, 8], [21, 0], [19, 0], [16, 8]], 'c');
@@ -347,6 +380,11 @@ function penitent(look: HeroLook): Grid {
     rect(g, 15, 10, 25, 15, 'y');
     rect(g, 16, 11, 24, 11, 'k'); put(g, 18, 11, 'E'); put(g, 22, 11, 'E');
     line(g, 20, 4, 20, 15, 'n');
+  }
+  if ((look.figura ?? 0) > 0) {
+    // cabello largo que asoma bajo el tocado y cae sobre los hombros
+    rect(g, 15, 14, 16, 23, 'h'); rect(g, 23, 14, 24, 21, 'h');
+    put(g, 15, 24, 'h'); put(g, 24, 22, 'h');
   }
   // lo que lleva en la mano
   if (arma === 0) {

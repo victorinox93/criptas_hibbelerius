@@ -10,6 +10,7 @@ import { nivelDe, nivelDeV1 } from './data/progreso';
 export interface Avatar {
   alias: string;
   insignia?: string; // 'am' = venció a AM (se ve en el ranking y el menú)
+  figura?: number; // 0 = masculina; 1–5 = femenina (color de cabello)
   clase: string;
   helm: string;
   cape: number;
@@ -73,6 +74,7 @@ export interface Run {
   pociones?: string[]; // frascos (máx. 3)
   temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
   entropia?: number; // Entropía mental 0–100 (src/data/abismo.ts)
+  entropiaMax?: number; // la Locura más alta de la expedición (logros)
   prohibidos?: string[]; // Problemas Prohibidos leídos del Necronomicón
   amPacto?: number; // runas que AM puede resolver por ti
   aliado?: string; // alma en pena que te acompaña (src/data/almas.ts); sólo una por expedición
@@ -446,6 +448,7 @@ export function addEntropia(n: number) {
   if (!r) return 0;
   const antes = r.entropia ?? 0;
   r.entropia = Math.max(0, Math.min(100, antes + n));
+  r.entropiaMax = Math.max(r.entropiaMax ?? 0, r.entropia); // logro «Mente lúcida»
   return r.entropia - antes;
 }
 

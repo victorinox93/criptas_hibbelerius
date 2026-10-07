@@ -131,7 +131,7 @@ export class DebugScene extends Phaser.Scene {
       Object.keys(RELICS).forEach((k) => unlock('relics', k));
       Object.keys(BOONS).forEach((k) => unlock('boons', k));
       Object.keys(EFFECTS).forEach((k) => unlock('effects', k));
-      codexFlag('acto1');
+      ['acto1', 'acto2', 'acto3', 'logro_alma', 'logro_lucido', 'logro_erudito', 'logro_jefePerfecto', 'logro_grimorio'].forEach(codexFlag); // logros del Vestidor (AM aparte)
       Game.codex.gravedadMax = Math.max(Game.codex.gravedadMax, 3);
       Game.codex.victorias = Math.max(Game.codex.victorias, 1); // desbloquea al Penitente
       Game.codex.hib = Math.max(Game.codex.hib ?? 0, 2); // abre el Núcleo del Cálculo

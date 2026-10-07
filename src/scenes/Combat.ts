@@ -2349,6 +2349,7 @@ export class CombatScene extends Phaser.Scene {
     // puntaje: combate perfecto (sin perder vida)
     if (run.hp >= this.hpStart) {
       run.stats.perfectos = (run.stats.perfectos ?? 0) + 1;
+      if (this.kind === 'boss' && !run.debug) codexFlag('logro_jefePerfecto');
       sumar(run, 'Combates perfectos', this.kind === 'elite' || this.kind === 'boss' ? PUNTOS.elitePerfecta : PUNTOS.combatePerfecto);
       this.floatText(W / 2, 170, '¡Perfecto!', CSS.gold);
       if (this.kind === 'elite') this.encargo(completarEncargo('elitePerfecta'));

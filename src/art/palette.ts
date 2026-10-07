@@ -25,7 +25,9 @@ export const PAL: Record<string, string> = {
 
 // Colores de capa disponibles en el creador de avatar
 // lock = nivel de Conocimiento necesario para usarlo (src/data/progreso.ts)
-export const CAPES: { name: string; c: string; C: string; lock?: number; am?: boolean; holo?: number }[] = [
+/** Cosmético: lock = nivel de Conocimiento; logro = reto de src/data/logros.ts; holo = tono inicial animado (rango = amplitud del tono) */
+export interface Cosmetico { name: string; lock?: number; logro?: string; holo?: number; rango?: number }
+export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
   { name: 'Ceniza', c: '#6e6a78', C: '#403c48' },
   { name: 'Abismo', c: '#2f4f8a', C: '#1b2d52' },
@@ -39,10 +41,16 @@ export const CAPES: { name: string; c: string; C: string; lock?: number; am?: bo
   { name: 'Pergamino Antiguo', c: '#c8b890', C: '#8a7a5a', lock: 8 },
   { name: 'Capa del Archimago', c: '#4a1f5e', C: '#1e0c28', lock: 10 },
   // holo = desfase de tono: el color cambia como un holograma (animado en makeHeroFromAvatar)
-  { name: 'Holograma de AM', c: '#7fe8ff', C: '#3a6aff', am: true, holo: 0 },
+  { name: 'Holograma de AM', c: '#7fe8ff', C: '#3a6aff', logro: 'am', holo: 0 },
+  // v0.23 · capas por logros
+  { name: 'Piedra del Coloso', c: '#6e6c5c', C: '#3a3a30', logro: 'coloso' },
+  { name: 'Bruma de la Bruja', c: '#6a8a2a', C: '#34461a', logro: 'bruja' },
+  { name: 'Tinta de Hibbeler', c: '#24346a', C: '#101a38', logro: 'erudito' },
+  { name: 'Velo de las Almas', c: '#9ab8ff', C: '#5a4aa8', logro: 'alma', holo: 200, rango: 80 },
+  { name: 'Llama de Júpiter', c: '#ff8a3a', C: '#a83a1a', logro: 'jupiter', holo: 0, rango: 45 },
 ];
 
-export const ARMORS: { name: string; l: string; g: string; lock?: number; am?: boolean; holo?: number }[] = [
+export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Acero', l: '#9a93a8', g: '#5a5468' },
   { name: 'Bronce', l: '#a8834e', g: '#6b4e2b' },
   { name: 'Obsidiana', l: '#55506a', g: '#2e2a3a' },
@@ -51,9 +59,12 @@ export const ARMORS: { name: string; l: string; g: string; lock?: number; am?: b
   { name: 'Oro viejo', l: '#c8a050', g: '#7a5a28' },
   { name: 'Obsidiana Rúnica', l: '#4e3e6a', g: '#22182e', lock: 3 },
   { name: 'Ébano del Archimago', l: '#6a5a3a', g: '#2a1e10', lock: 9 },
-  { name: 'Cromo Holográfico', l: '#e0e8ff', g: '#8a90c8', am: true, holo: 120 },
+  { name: 'Cromo Holográfico', l: '#e0e8ff', g: '#8a90c8', logro: 'am', holo: 120 },
+  { name: 'Pergamino Dorado', l: '#e8d8a0', g: '#a89060', logro: 'hibbelerius' },
+  { name: 'Diamante', l: '#d0f4ff', g: '#7ab0c8', logro: 'intacto' },
+  { name: 'Cromo Dorado', l: '#f0d070', g: '#a8802a', logro: 'grimorio', holo: 28, rango: 30 },
 ];
-export const VISORS: { name: string; c: string; lock?: number; am?: boolean; holo?: number }[] = [
+export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
   { name: 'Cian', c: '#7fe8ff' },
   { name: 'Verde fatuo', c: '#9bf07a' },
@@ -61,7 +72,10 @@ export const VISORS: { name: string; c: string; lock?: number; am?: boolean; hol
   { name: 'Carmesí', c: '#ff5a4a' },
   { name: 'Blanco espectral', c: '#f0f4ff' },
   { name: 'Fuego de Hibbelerius', c: '#ff3a1a', lock: 7 },
-  { name: 'Ojo Holográfico', c: '#ff3aff', am: true, holo: 240 },
+  { name: 'Ojo Holográfico', c: '#ff3aff', logro: 'am', holo: 240 },
+  { name: 'Lucidez', c: '#7fffe8', logro: 'lucido', holo: 165, rango: 35 },
+  { name: 'Ánima Dorada', c: '#ffe07a', logro: 'almas', holo: 38, rango: 22 },
+  { name: 'Aurora de Neptuno', c: '#7affc8', logro: 'neptuno', holo: 140, rango: 120 },
 ];
 
 // UI
