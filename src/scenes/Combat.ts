@@ -124,6 +124,8 @@ export class CombatScene extends Phaser.Scene {
   // v0.10: cartas desbloqueables
   private palanca = false; // el siguiente ataque hace el doble
   private derivadaBono = 0; // Derivada: daño extra para el siguiente ataque
+  private ley3 = false; // Asimov: la Tercera Ley ya se activó en este combate
+  private jugadasIni = 0; // cartas jugadas al empezar el turno (Máquina de Turing)
   private danoTurno = 0; // daño total hecho en este turno (Integral)
   private mult = 1; // multiplicador del ataque en curso
   private pierce = false; // Efecto Túnel: ignorar Bloqueo este turno
@@ -1717,6 +1719,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
     const cardHit = kind === 'golpe' || typeof kind === 'number';
     if (cardHit && this.mult !== 1) F = Math.round(F * this.mult);
+    const ttest = boonLevel('tu_test');
+    if (cardHit && ttest && st.def.act === 4) F += ttest === 2 ? 6 : 3; // Test de Turing: contra autómatas y AM
     if (cardHit && this.pierce) ignoreBlock = true;
     if (st.def.thorns && (kind === 'golpe' || typeof kind === 'number')) {
       this.calc(`Púas: el golpe te regresa ${st.def.thorns} (3ª ley)`);
@@ -1934,7 +1938,14 @@ export class CombatScene extends Phaser.Scene {
     const absorbed = Math.min(this.block, dmg);
     this.block -= absorbed;
     const real = dmg - absorbed;
+    const antesHp = run.hp;
     run.hp -= real;
+    const l3 = boonLevel('as_ley3');
+    if (l3 && !this.ley3 && run.hp > 0 && run.hp < run.maxHp / 2 && antesHp >= run.maxHp / 2) {
+      this.ley3 = true;
+      this.gainBlock(l3 === 2 ? 20 : 12);
+      this.calc(`Tercera Ley (Asimov): proteges tu existencia, +${l3 === 2 ? 20 : 12} de Bloqueo`);
+    }
     this.hero.setTintFill(0xb0a0c0);
     if (real > 0) audio.sfx('hit');
     else audio.sfx('block');
@@ -1992,6 +2003,12 @@ export class CombatScene extends Phaser.Scene {
       this.block = 0;
     }
     this.energy = Math.max(0, this.maxEnergy + this.jPerTurn + this.carry - this.drainNext);
+    const tm = boonLevel('tu_maquina');
+    if (tm && this.turn > 1 && this.played - this.jugadasIni >= (tm === 2 ? 3 : 4)) {
+      this.energy += 1;
+      this.calc(`Máquina de Turing: jugaste ${this.played - this.jugadasIni} cartas → +1 J`);
+    }
+    this.jugadasIni = this.played;
     if (this.drainNext) this.calc(`Te robaron ${this.drainNext} J`);
     this.drainNext = 0;
     this.pierce = false;
@@ -2043,6 +2060,7 @@ export class CombatScene extends Phaser.Scene {
       if (await this.checkEnd()) return;
     }
     let draw = 5 + this.extraDraw;
+    if (this.turn === 1) draw += boonLevel('as_fundacion'); // Psicohistoria (Asimov)
     if (this.has('agujero')) draw += 1;
     if (this.prohibido('p_infinito')) draw += 1;
     if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
@@ -2520,6 +2538,19 @@ export class CombatScene extends Phaser.Scene {
     const vm = boonLevel('m_vidamedia');
     if (vm && !(await this.radiate(vm === 2 ? 2 : 3, 'Vida Media'))) return false;
     if (this.hasFx('radiacion') && !(await this.radiate(4, 'Radiación'))) return false;
+    // Asimov y Turing (ecos del Núcleo)
+    this.ley3 = false;
+    this.jugadasIni = this.played;
+    const l1 = boonLevel('as_ley1');
+    if (l1) {
+      this.gainBlock(l1 === 2 ? 14 : 8);
+      this.calc(`Primera Ley (Asimov): un robot guardián te protege, +${l1 === 2 ? 14 : 8} de Bloqueo`);
+    }
+    const en = boonLevel('tu_enigma');
+    if (en && this.alive().length) {
+      for (const e of this.alive()) { e.st.fatiga += en; this.refreshEnemy(e); }
+      this.calc(`Descifrar Enigma (Turing): conoces su plan → ${en} de Fatiga a todos`);
+    }
     const tt = boonLevel('t_torre');
     if (tt && this.alive().length) {
       const n = tt === 2 ? 14 : 8;
@@ -2635,6 +2666,14 @@ export class CombatScene extends Phaser.Scene {
     img.setInteractive();
     this.tip.attach(img, `${a.name} (aliado)`, `${a.habilidad}\nTe acompaña en élites y jefes durante toda la expedición.`);
     this.aliadoImg = img;
+    if (Game.run!.aliado === 'autocompleto') {
+      // la llama amarilla que sale de su yelmo
+      const fl = this.add.particles(x, img.y - img.displayHeight * 0.35, 'px', {
+        x: { min: -10, max: 10 }, speedY: { min: -70, max: -30 }, speedX: { min: -12, max: 12 }, lifespan: 750, frequency: 22,
+        scale: { start: 6, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: [0xffd21a, 0xffa01a, 0xfff07a], blendMode: 'ADD',
+      });
+      fl.setDepth(img.depth + 1);
+    }
     this.time.delayedCall(900, () => this.floatText(x, 190, 'Alma invocada', CSS.gold));
   }
 
@@ -2712,6 +2751,23 @@ export class CombatScene extends Phaser.Scene {
       rayo(t);
       this.calc(`${a.name}: lanza su cadena (4)`);
       await this.hitEnemy(t, 4, false, 'res');
+    } else if (a.id === 'autocompleto') {
+      // la llama propone… y a veces alucina
+      if (Math.random() < 0.25) {
+        this.floatText(img.x, 190, '¡Alucinación!', '#ffd21a');
+        this.calc(`${a.name}: la llama afirma que F = m/a… nadie recibe daño. +3 de Locura`);
+        addEntropia(3);
+        this.hud.refresh();
+        await this.wait(350);
+      } else {
+        this.calc(`${a.name}: la llama delirante arde sobre todos (7)`);
+        for (const t of [...this.alive()]) {
+          const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+          g.lineStyle(5, 0xffd21a, 0.9).lineBetween(img.x + 20, 230, t.baseX, 260);
+          this.tweens.add({ targets: g, alpha: 0, duration: 350, onComplete: () => g.destroy() });
+          await this.hitEnemy(t, 7, false, 'res');
+        }
+      }
     } else if (a.id === 'bernoulli') {
       this.calc(`${a.name}: ¡la energía se conserva! 5 a todos`);
       for (const t of this.alive()) {

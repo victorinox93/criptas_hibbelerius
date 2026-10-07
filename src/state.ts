@@ -5,7 +5,7 @@ import { enqueue, isOnline } from './api';
 import { gravityOf } from './data/gravity';
 import { FAMILIAR_POOL, FAMILIARS } from './data/familiars';
 import { ADMINS } from './config';
-import { nivelDe } from './data/progreso';
+import { nivelDe, nivelDeV1 } from './data/progreso';
 
 export interface Avatar {
   alias: string;
@@ -118,6 +118,8 @@ export interface Codex {
   tiempo?: number; // segundos de juego activo en total (se muestra en el menú)
   am?: { visitas: number; pactos: number; rechazos: number; ultima?: string; vistas?: number[] }; // lo que AM recuerda de ti
   hib?: number; // veces que ha vencido a Hibbelerius (con 2 se abre el Núcleo del Cálculo)
+  curva?: number; // versión de la curva de niveles con la que se guardó (2 = v0.22)
+  nivelPiso?: number; // nivel que ya tenía con la curva anterior (nunca se pierde)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -136,6 +138,11 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.xp = Math.max(a?.xp ?? 0, b?.xp ?? 0);
   c.tiempo = Math.max(a?.tiempo ?? 0, b?.tiempo ?? 0);
   const hib = Math.max(a?.hib ?? 0, b?.hib ?? 0);
+  // curva de niveles v0.22: quien ya tenía un nivel con la curva vieja lo conserva
+  const piso = (x: Partial<Codex> | null | undefined) => (!x ? 0 : Math.max(x.nivelPiso ?? 0, (x.curva ?? 1) < 2 ? nivelDeV1(x.xp ?? 0) : 0));
+  const np = Math.max(piso(a), piso(b));
+  if (np > 1) c.nivelPiso = np;
+  c.curva = 2;
   if (hib) c.hib = hib;
   const am = (a?.am?.visitas ?? 0) >= (b?.am?.visitas ?? 0) ? a?.am : b?.am;
   if (am) c.am = am;
@@ -169,7 +176,7 @@ export function codexFlag(flag: string) {
 
 /** Nivel de Conocimiento del alumno (desbloqueos) */
 export function nivelActual() {
-  return nivelDe(Game.codex.xp ?? 0);
+  return Math.max(nivelDe(Game.codex.xp ?? 0), Game.codex.nivelPiso ?? 0);
 }
 
 /** Suma Conocimiento y marca el Grimorio para sincronizar */

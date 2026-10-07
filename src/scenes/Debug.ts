@@ -12,7 +12,7 @@ import { EVENTS } from '../data/events';
 import { ALMA_IDS } from '../data/almas';
 
 /** Nombres cortos de las almas para el botón «Fin + alma» (cada clic pasa a la siguiente) */
-const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda' };
+const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda', autocompleto: 'Autocomp.' };
 import { RELIC_POOL, RELICS } from '../data/relics';
 import { codexFlag, emptyCodex, Game, pisosDe, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
@@ -135,7 +135,7 @@ export class DebugScene extends Phaser.Scene {
       Game.codex.gravedadMax = Math.max(Game.codex.gravedadMax, 3);
       Game.codex.victorias = Math.max(Game.codex.victorias, 1); // desbloquea al Penitente
       Game.codex.hib = Math.max(Game.codex.hib ?? 0, 2); // abre el Núcleo del Cálculo
-      Game.codex.xp = Math.max(Game.codex.xp ?? 0, 1000);
+      Game.codex.xp = Math.max(Game.codex.xp ?? 0, 2000);
       saveLocal();
       this.say('Grimorio, Arcanista, Penitente, gravedades y nivel 10 de Conocimiento desbloqueados.');
     });

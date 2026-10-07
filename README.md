@@ -285,3 +285,13 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
   - **Cosméticos de latón:** capa «Circuitos de AM», armadura «Latón del Núcleo» y ojos «Ojo de AM» (con 🔒 «Vence a AM» mientras no lo vences).
   - **Insignia «Vencedor de AM»:** un ojo rojo que late junto al nombre en el menú y en el Ranking. Viaja dentro del avatar, así que **no requiere cambiar `Code.gs`**. En el Ranking, quien llegó al Núcleo ve «39 +IV» en la columna de pisos.
 - **Panel «Tu avance» en el menú:** barras de Grimorio (%), jefes vencidos (3, o 4 cuando el Núcleo ya se abrió), almas encontradas (8), figuras y cartas descubiertas.
+
+## v0.22.0 · Sir Autocompleto, Asimov y Turing, cosméticos holográficos
+
+- **Nueva alma en pena: Sir Autocompleto, de la Llama Delirante.** Un guerrero que dejó que una llama amarilla en su yelmo pensara por él (la llama le dijo que K = m·v² y le creyó). Su pregunta: «si la llama ya sabe todas las respuestas, ¿para qué aprender yo?»; la respuesta compasiva es usarla si quieres, pero entender tú el problema para saber cuándo se equivoca. Como aliado, al final de tu turno su llama golpea a TODOS (7), pero 1 de cada 4 veces «alucina»: no le pega a nadie y te sube 3 de Locura. Epílogo: apaga la llama y escribe la solución a mano («Lo verifiqué yo»). En el modo profesor: «Fin + Autocomp.».
+- **Ecos del Núcleo** (sólo aparecen en el Acto IV, y ahí salen más seguido; sus preguntas son de cálculo):
+  - **Isaac Asimov**, el Padre de los Robots: *Primera Ley* (Bloqueo al iniciar cada combate), *Tercera Ley* (Bloqueo la primera vez que bajas de la mitad de vida) y *Psicohistoria* (robas más cartas en el primer turno).
+  - **Alan Turing**, el Descifrador: *Máquina de Turing* (si juegas 4 cartas en un turno, +1 J en el siguiente), *Descifrar Enigma* (los enemigos empiezan con Fatiga) y *Test de Turing* (+3/+6 de daño contra autómatas y AM).
+- **Cosméticos de AM, ahora holográficos y animados:** capa «Holograma de AM», armadura «Cromo Holográfico» y ojos «Ojo Holográfico». El color recorre el arcoíris por pixel y con el tiempo (`makeTextureHolo` en `src/art/sprites.ts`). Quien ya tenía las versiones anteriores las conserva, ahora animadas.
+- **Curva de niveles el doble de larga** (`NIVELES` en `src/data/progreso.ts`: 2000 de Conocimiento para el nivel 10, ≈ 9 victorias). Nadie pierde lo que ya desbloqueó: el nivel que tenía con la curva anterior queda como piso (`Codex.nivelPiso`) y desde ahí sigue con la curva nueva.
+- **Menú:** la etiqueta «Vencedor de AM» aparece arriba del panel y ya no tapa «Conocimiento: nivel…».

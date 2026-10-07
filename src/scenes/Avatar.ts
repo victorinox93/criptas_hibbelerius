@@ -96,6 +96,11 @@ export class AvatarScene extends Phaser.Scene {
         .rectangle(56 + i * 22.5, 504, 18, 26, Phaser.Display.Color.HexStringToColor(c.c).color)
         .setStrokeStyle(3, 0x0d0b10)
         .setInteractive({ useHandCursor: !locked });
+      if (c.holo !== undefined) {
+        // la muestra de la capa holográfica también cambia de color
+        let h = 0;
+        this.time.addEvent({ delay: 90, loop: true, callback: () => { h = (h + 12) % 360; r.setFillStyle(Phaser.Display.Color.HSLToColor(h / 360, 0.95, 0.6).color); } });
+      }
       if (locked) {
         r.setAlpha(0.35);
         txt(this, 56 + i * 22.5, 504, '🔒', 12, CSS.dim).setOrigin(0.5);

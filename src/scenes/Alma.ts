@@ -43,6 +43,16 @@ export class AlmaScene extends Phaser.Scene {
     const halo = this.add.image(250, 388, `alma_${a.id}`).setOrigin(0.5, 1).setScale(4.15).setTintFill(0xe8c15a).setAlpha(0.12).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({ targets: [ghost, halo], y: 380, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.tweens.add({ targets: ghost, alpha: 0.6, duration: 1300, yoyo: true, repeat: -1 });
+    if (a.id === 'autocompleto') {
+      // llama amarilla que sale por las rendijas del yelmo
+      const fy = 388 - ghost.displayHeight * 0.8;
+      const brillo = this.add.circle(250, fy, 34, 0xffd21a, 0.18).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: brillo, scale: 1.3, alpha: 0.08, duration: 160, yoyo: true, repeat: -1 });
+      this.add.particles(250, fy, 'px', {
+        x: { min: -14, max: 14 }, speedY: { min: -90, max: -40 }, speedX: { min: -16, max: 16 }, lifespan: 900, frequency: 18,
+        scale: { start: 8, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: [0xffd21a, 0xffa01a, 0xfff07a], blendMode: 'ADD',
+      });
+    }
     const hero = this.add.image(80, 390, 'hero').setOrigin(0.5, 1).setScale(2);
     this.tweens.add({ targets: hero, y: 387, duration: 1100, yoyo: true, repeat: -1 });
     txt(this, 250, 410, 'Alma en pena', 17, CSS.dim).setOrigin(0.5);

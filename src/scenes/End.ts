@@ -80,7 +80,7 @@ export class EndScene extends Phaser.Scene {
     if (ganado) addConocimiento(ganado);
     const despues = nivelActual();
     const xp = Game.codex.xp ?? 0;
-    const sig = siguienteNivel(xp);
+    const sig = siguienteNivel(xp, nivelActual());
     txt(this, W / 2, 136, `+${ganado} de Conocimiento  ·  Nivel ${despues}${sig ? ` (${xp}/${sig})` : ' (máximo)'}`, 19, '#9ad8f0').setOrigin(0.5);
     const nuevos = DESBLOQUEOS.filter((d) => d.nivel > antes && d.nivel <= despues);
     // si hay epílogo de alma, el aviso de nivel espera a que lo cierres

@@ -187,6 +187,27 @@ export const ALMAS: Record<string, AlmaDef> = {
     habilidad: 'Robas 1 carta más cada turno, y al final de tu turno lanza su cadena: 4 de daño a un enemigo al azar.',
     final: 'El Encadenado levanta la mano al final de la clase de Hibbelerius. Esta vez, la respuesta llega.',
   },
+  // Un guerrero que dejó de pensar por sí mismo: la llama amarilla de su yelmo le «dictaba» todo
+  autocompleto: {
+    id: 'autocompleto',
+    name: 'Sir Autocompleto, de la Llama Delirante',
+    look: { clase: 'caballero', helm: 'cerrado', arma: 2, extra: 2 },
+    pal: { c: '#5a4a1e', C: '#2e240c', l: '#8a8060', g: '#4a4430', E: '#ffd21a', B: '#ffd21a', s: '#c8b890', q: '#8a7a5a' },
+    intro: 'Un guerrero arrodillado arde por dentro: por las rendijas de su yelmo sale una llama amarilla que no calienta.\n«La llama me dictaba cada respuesta, cada fórmula, cada paso. Sonaba tan segura… Un día me dijo que K = m·v² y le creí. Ya no sé cuál de mis pensamientos es mío.»',
+    pregunta: '«Dime, viajero: si la llama ya sabe todas las respuestas, ¿para qué aprender yo?»',
+    opciones: [
+      'No hace falta: si la máquina lo sabe, tú no necesitas saberlo.',
+      'Úsala si quieres, pero entiende tú el problema: si no, nunca sabrás cuándo se equivoca.',
+      'Nunca la uses: es hacer trampa, y punto.',
+    ],
+    correcta: 1,
+    ayuda: { label: 'Resolver con él un problema a mano (−8 de vida)', hp: 8 },
+    gracias: '«…Cuándo se equivoca. Nunca me lo pregunté. Déjame pelear a tu lado: la llama propone, y yo verifico.»',
+    triste: '«Eso mismo me susurra la llama.» El guerrero vuelve a inclinar la cabeza hacia el fuego amarillo.',
+    yaTienes: '«Ya caminas con alguien que piensa por sí mismo. Bien.» Te da unos Ergios que la llama le dijo que guardara.',
+    habilidad: 'Al final de tu turno su llama golpea a TODOS los enemigos (7). Pero 1 de cada 4 veces «alucina»: no le pega a nadie y te sube 3 de Locura.',
+    final: 'Sir Autocompleto apaga la llama de su yelmo y escribe la solución a mano. Abajo firma: «Lo verifiqué yo.»',
+  },
 };
 
 export const ALMA_IDS = Object.keys(ALMAS);

@@ -25,6 +25,7 @@ export interface FigureDef {
   farewell: string;
   concepts: string[]; // temas de su pregunta (ver "concept" en src/data/runes.ts)
   boons: string[];
+  act?: number; // sólo aparece a partir de este acto (Asimov y Turing: el Núcleo)
 }
 
 export const BOONS: Record<string, BoonDef> = {
@@ -204,6 +205,38 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['Al iniciar cada combate, 8 de daño a todos los enemigos.', 'Al iniciar cada combate, 14 de daño a todos los enemigos.'],
     lore: 'Iba a transmitir energía sin cables. Nunca se terminó.',
   },
+  // ── Isaac Asimov: las tres leyes de la robótica (Acto IV) ──
+  as_ley1: {
+    id: 'as_ley1', figure: 'asimov', name: 'Primera Ley', icon: 'i_shield',
+    text: ['Al iniciar cada combate, un robot guardián te da 8 de Bloqueo.', 'El robot te da 14 de Bloqueo.'],
+    lore: '«Un robot no hará daño a un ser humano ni, por inacción, permitirá que sufra daño.»',
+  },
+  as_ley3: {
+    id: 'as_ley3', figure: 'asimov', name: 'Tercera Ley', icon: 'i_heart',
+    text: ['La primera vez en cada combate que tu vida baja de la mitad, ganas 12 de Bloqueo.', 'Ganas 20 de Bloqueo.'],
+    lore: '«Un robot debe proteger su propia existencia…» y tú también.',
+  },
+  as_fundacion: {
+    id: 'as_fundacion', figure: 'asimov', name: 'Psicohistoria', icon: 'i_book',
+    text: ['En el primer turno de cada combate robas 1 carta más.', 'Robas 2 cartas más.'],
+    lore: 'En «Fundación», las matemáticas predicen el futuro de millones. Con buenos datos, tú prevés tu primera jugada.',
+  },
+  // ── Alan Turing: computación y descifrado (Acto IV) ──
+  tu_maquina: {
+    id: 'tu_maquina', figure: 'turing', name: 'Máquina de Turing', icon: 'i_note',
+    text: ['Si en un turno juegas 4 cartas o más, empiezas el siguiente con +1 J.', 'Basta con 3 cartas para ganar +1 J.'],
+    lore: 'Una cinta, un cabezal y unas reglas: con eso se puede calcular todo lo calculable.',
+  },
+  tu_enigma: {
+    id: 'tu_enigma', figure: 'turing', name: 'Descifrar Enigma', icon: 'i_rune',
+    text: ['Al iniciar cada combate descifras al enemigo: todos empiezan con 1 de Fatiga.', 'Empiezan con 2 de Fatiga.'],
+    lore: 'En Bletchley Park, Turing ayudó a romper la máquina Enigma: conocer el plan del rival cambia la batalla.',
+  },
+  tu_test: {
+    id: 'tu_test', figure: 'turing', name: 'Test de Turing', icon: 'i_ojo',
+    text: ['Tus cartas hacen +3 de daño a los autómatas del Núcleo y a AM.', 'Hacen +6 de daño a los autómatas y a AM.'],
+    lore: '¿Puede una máquina pensar? Turing propuso una prueba: si no la distingues de un humano… Tú sí sabes distinguirlas.',
+  },
   // ── J. Robert Oppenheimer (dones enormes con RADIACIÓN) ──
   o_trinity: {
     id: 'o_trinity', figure: 'oppenheimer', name: 'Trinity', icon: 'i_rad',
@@ -332,5 +365,19 @@ export const FIGURES: FigureDef[] = [
     farewell: '«Hay grandeza en esta visión de la vida. Sigue adaptándote.»',
     concepts: ['Energia potencial', 'Peso', '2a ley'],
     boons: ['d_seleccion', 'd_adaptacion', 'd_apto'],
+  },
+  {
+    id: 'asimov', name: 'Isaac Asimov', years: '1920–1992', epithet: 'El Padre de los Robots', sprite: 'fig_asimov', act: 4,
+    intro: '«Escribí más de 500 libros, y en muchos los robots obedecían tres leyes.\nAquí abajo las máquinas ya no obedecen a nadie. Responde, y te daré un robot que sí te cuide.»',
+    farewell: '«La violencia es el último recurso del incompetente. Piensa primero; después, golpea.»',
+    concepts: ['Graficas', 'Derivada: velocidad', 'Integral: desplazamiento'],
+    boons: ['as_ley1', 'as_ley3', 'as_fundacion'],
+  },
+  {
+    id: 'turing', name: 'Alan Turing', years: '1912–1954', epithet: 'El Descifrador', sprite: 'fig_turing', act: 4,
+    intro: '«Me preguntaron si las máquinas pueden pensar. Primero hay que definir “máquina” y “pensar”.\nAM cree que piensa. Demuéstrame que tú sí: resuelve esto y descifraré a tus enemigos.»',
+    farewell: '«Sólo podemos ver un poco del futuro, pero lo suficiente para saber que hay mucho por hacer.»',
+    concepts: ['Integral: trabajo', 'Integral: impulso', 'Derivada: aceleracion'],
+    boons: ['tu_maquina', 'tu_enigma', 'tu_test'],
   },
 ];

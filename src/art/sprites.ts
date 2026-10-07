@@ -821,11 +821,40 @@ export function makeKnight(
 export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'hero') {
   const cape = CAPES[av.cape] ?? CAPES[0];
   const armor = ARMORS[av.armor ?? 0] ?? ARMORS[0];
-  const visor = (VISORS[av.visor ?? 0] ?? VISORS[0]).c;
+  const vis = VISORS[av.visor ?? 0] ?? VISORS[0];
+  const visor = vis.c;
   const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
-  makeTexture(scene, key, heroMatrix({ clase: av.clase, helm: av.helm, arma: av.arma, extra: av.extra }), {
-    c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q,
+  const rows = heroMatrix({ clase: av.clase, helm: av.helm, arma: av.arma, extra: av.extra });
+  const ov = { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
+  // cosméticos holográficos (premio de AM): el tono recorre el arcoíris por pixel y con el tiempo
+  const holo: Record<string, [number, number]> = {}; // letra → [desfase de tono, luminosidad]
+  if (cape.holo !== undefined) { holo.c = [cape.holo, 0.62]; holo.C = [cape.holo + 40, 0.42]; }
+  if (armor.holo !== undefined) { holo.l = [armor.holo, 0.75]; holo.g = [armor.holo + 40, 0.5]; }
+  if (vis.holo !== undefined) { holo.E = [vis.holo, 0.65]; holo.B = [vis.holo, 0.65]; }
+  const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
+  prev?.remove();
+  if (!Object.keys(holo).length) return makeTexture(scene, key, rows, ov);
+  const t0 = performance.now();
+  const draw = () => makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8);
+  draw();
+  (scene as unknown as Record<string, Phaser.Time.TimerEvent>)[`__holo_${key}`] = scene.time.addEvent({ delay: 90, loop: true, callback: draw });
+}
+
+/** Como makeTexture, pero las letras de `holo` cambian de tono según su posición y el tiempo (efecto holograma) */
+export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number]>, t: number) {
+  makeTexture(scene, key, rows, overrides);
+  const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
+  const ctx = tex.getContext();
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const h = holo[row[x]];
+      if (!h) continue;
+      const hue = (h[0] + t + y * 9 + x * 4) % 360;
+      ctx.fillStyle = `hsl(${hue}, 95%, ${Math.round(h[1] * 100)}%)`;
+      ctx.fillRect(x, y, 1, 1);
+    }
   });
+  tex.refresh();
 }
 export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number }
 
@@ -935,6 +964,22 @@ const FIG: Record<string, { rows: string[]; ov: Record<string, string> }> = {
       '..wwwwww', '...wwwww', '...wwwww', '...wwwww', '..ccwwww', '.cccccww', 'cccccccc', 'cccccccc', 'cccccccc',
     ]),
     ov: { w: '#e8e4dc', s: '#e0bea0', q: '#b08e78', c: '#2a2a22' },
+  },
+  fig_asimov: {
+    // patillas blancas enormes, lentes de armazón negro y corbata de bolo
+    rows: mirrorHalf([
+      '........', '....hhhh', '...hhhhh', '..hhhhss', '..wsssss', '..wgGGgs', '..wsssss', '..wwssss',
+      '..wwwsss', '...wwsss', '....ssss', '...cWWWt', '..ccWWWt', '.cccccWt', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#8a8478', w: '#d8d4cc', s: '#e0bea0', g: '#141414', G: '#6a7a8a', c: '#4a3a28', W: '#e8e4dc', t: '#c8a050' },
+  },
+  fig_turing: {
+    // joven, pelo oscuro ondulado, saco de tweed y corbata
+    rows: mirrorHalf([
+      '........', '....hhhh', '...hhhhh', '..hhhhhh', '..hhssss', '..hskkss', '..hsssss', '..hssssq',
+      '...sssss', '....ssss', '.....sss', '...cWWWt', '..ccWWWt', '.cccccWt', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#2a1e16', s: '#e4c8b0', q: '#b8987e', k: '#2a2a3a', c: '#5a4a36', W: '#e8e4dc', t: '#3a4a6a' },
   },
   fig_joule: {
     rows: mirrorHalf([

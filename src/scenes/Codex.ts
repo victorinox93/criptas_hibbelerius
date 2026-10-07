@@ -11,7 +11,7 @@ import { DILEMMAS } from '../data/dilemmas';
 import { FAMILIARS } from '../data/familiars';
 import { BOONS, FIGURES } from '../data/figures';
 import { RELICS } from '../data/relics';
-import { CodexKind, Game } from '../state';
+import { CodexKind, Game, nivelActual } from '../state';
 import { DESBLOQUEOS, NIVELES, nivelDe, siguienteNivel } from '../data/progreso';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
@@ -215,8 +215,8 @@ export class CodexScene extends Phaser.Scene {
   /** Pestaña «Progreso»: nivel de Conocimiento y lo que desbloquea cada nivel */
   private showProgress() {
     const xp = Game.codex.xp ?? 0;
-    const lv = nivelDe(xp);
-    const sig = siguienteNivel(xp);
+    const lv = nivelActual();
+    const sig = siguienteNivel(xp, nivelActual());
     const c = this.grid;
     const g = this.add.graphics();
     frame(g, 24, 120, W - 48, 380, 0x0e0b12, UI.border, 0.98);

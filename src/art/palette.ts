@@ -25,7 +25,7 @@ export const PAL: Record<string, string> = {
 
 // Colores de capa disponibles en el creador de avatar
 // lock = nivel de Conocimiento necesario para usarlo (src/data/progreso.ts)
-export const CAPES: { name: string; c: string; C: string; lock?: number; am?: boolean }[] = [
+export const CAPES: { name: string; c: string; C: string; lock?: number; am?: boolean; holo?: number }[] = [
   { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
   { name: 'Ceniza', c: '#6e6a78', C: '#403c48' },
   { name: 'Abismo', c: '#2f4f8a', C: '#1b2d52' },
@@ -38,10 +38,11 @@ export const CAPES: { name: string; c: string; C: string; lock?: number; am?: bo
   { name: 'Oro del Tomo', c: '#b8902a', C: '#6a4e14', lock: 5 },
   { name: 'Pergamino Antiguo', c: '#c8b890', C: '#8a7a5a', lock: 8 },
   { name: 'Capa del Archimago', c: '#4a1f5e', C: '#1e0c28', lock: 10 },
-  { name: 'Circuitos de AM', c: '#1e4a2e', C: '#0a1e12', am: true },
+  // holo = desfase de tono: el color cambia como un holograma (animado en makeHeroFromAvatar)
+  { name: 'Holograma de AM', c: '#7fe8ff', C: '#3a6aff', am: true, holo: 0 },
 ];
 
-export const ARMORS: { name: string; l: string; g: string; lock?: number; am?: boolean }[] = [
+export const ARMORS: { name: string; l: string; g: string; lock?: number; am?: boolean; holo?: number }[] = [
   { name: 'Acero', l: '#9a93a8', g: '#5a5468' },
   { name: 'Bronce', l: '#a8834e', g: '#6b4e2b' },
   { name: 'Obsidiana', l: '#55506a', g: '#2e2a3a' },
@@ -50,9 +51,9 @@ export const ARMORS: { name: string; l: string; g: string; lock?: number; am?: b
   { name: 'Oro viejo', l: '#c8a050', g: '#7a5a28' },
   { name: 'Obsidiana Rúnica', l: '#4e3e6a', g: '#22182e', lock: 3 },
   { name: 'Ébano del Archimago', l: '#6a5a3a', g: '#2a1e10', lock: 9 },
-  { name: 'Latón del Núcleo', l: '#e0b050', g: '#8a6424', am: true },
+  { name: 'Cromo Holográfico', l: '#e0e8ff', g: '#8a90c8', am: true, holo: 120 },
 ];
-export const VISORS: { name: string; c: string; lock?: number; am?: boolean }[] = [
+export const VISORS: { name: string; c: string; lock?: number; am?: boolean; holo?: number }[] = [
   { name: 'Ámbar', c: '#ffd27a' },
   { name: 'Cian', c: '#7fe8ff' },
   { name: 'Verde fatuo', c: '#9bf07a' },
@@ -60,7 +61,7 @@ export const VISORS: { name: string; c: string; lock?: number; am?: boolean }[] 
   { name: 'Carmesí', c: '#ff5a4a' },
   { name: 'Blanco espectral', c: '#f0f4ff' },
   { name: 'Fuego de Hibbelerius', c: '#ff3a1a', lock: 7 },
-  { name: 'Ojo de AM', c: '#ff1a3a', am: true },
+  { name: 'Ojo Holográfico', c: '#ff3aff', am: true, holo: 240 },
 ];
 
 // UI

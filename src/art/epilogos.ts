@@ -169,6 +169,30 @@ const DIBUJOS: Record<string, Dib> = {
     s.tweens.add({ targets: foco, y: y - 58, duration: 1000, delay: 4000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     c.add(txt(s, x, y - 112, '¡Ya entendí!', 16, '#9ad8f0').setOrigin(0.5));
   },
+  // Sir Autocompleto: apaga la llama y escribe a mano «Lo verifiqué yo»
+  autocompleto: (s, c, x, y) => {
+    const h = hoja(s, c, x, y - 44, 104, 110, 4);
+    const lineas = ['K = ½·m·v²', '= ½(2)(3)²', '= 9 J  ✓'];
+    lineas.forEach((l, i) => {
+      const t = txt(s, -42, -40 + i * 22, '', 15, '#2a2a3a');
+      h.add(t);
+      let k = 0;
+      s.time.addEvent({ delay: 90, startAt: 0, repeat: l.length - 1, callback: () => t.setText(l.slice(0, ++k)) });
+      t.setData('d', i);
+    });
+    const firma = txt(s, 46, 32, '— lo verifiqué yo', 12, '#3a5a8a').setOrigin(1, 0).setAlpha(0);
+    h.add(firma);
+    s.tweens.add({ targets: firma, alpha: 1, duration: 600, delay: 3600 });
+    // la llama amarilla se apaga y queda humo
+    const fl = s.add.ellipse(x - 130, y - 112, 16, 26, 0xffd21a, 0.9).setBlendMode(Phaser.BlendModes.ADD);
+    c.add(fl);
+    s.tweens.add({ targets: fl, scaleY: 0.2, scaleX: 0.4, alpha: 0, duration: 900, delay: 2600, ease: 'Quad.in' });
+    for (let i = 0; i < 6; i++) {
+      const humo = s.add.circle(x - 130, y - 112, 5, 0x8a8478, 0).setAlpha(0);
+      c.add(humo);
+      s.tweens.add({ targets: humo, y: y - 175, alpha: { from: 0.5, to: 0 }, scale: 2.5, duration: 1600, delay: 3300 + i * 260, repeat: -1, repeatDelay: 600 });
+    }
+  },
 };
 
 /**

@@ -43,11 +43,11 @@ export class MenuScene extends Phaser.Scene {
       // insignia de quien venció a AM
       const ojo = this.add.image(80 + aliasT.width + 18, 440, 'i_ojo').setScale(2).setTint(0xff3a3a).setInteractive();
       this.tweens.add({ targets: ojo, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
-      const lbl = txt(this, 80 + aliasT.width + 32, 432, 'Vencedor de AM', 15, '#ff8a7a').setAlpha(0);
+      const lbl = txt(this, 80 + aliasT.width + 18, 398, 'Vencedor de AM', 16, '#ff8a7a').setOrigin(0.5).setStroke('#000', 4).setAlpha(0);
       ojo.on('pointerover', () => lbl.setAlpha(1)).on('pointerout', () => lbl.setAlpha(0));
     }
     const xp = Game.codex.xp ?? 0;
-    const sig = siguienteNivel(xp);
+    const sig = siguienteNivel(xp, nivelActual());
     txt(this, 424, 428, `Conocimiento: nivel ${nivelActual()}`, 18, '#9ad8f0').setOrigin(1, 0);
     txt(this, 424, 478, sig ? `${xp} / ${sig}` : 'máximo', 16, CSS.dim).setOrigin(1, 0);
     txt(this, 80, 454, `${CLASSES.find((c) => c.id === av.clase)?.name ?? 'Caballero de la Masa'} · ${p.matricula}`, 20, CSS.bone);

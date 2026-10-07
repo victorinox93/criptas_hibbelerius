@@ -6,8 +6,21 @@
 //  - Igual para pociones (src/data/pociones.ts) y colores (src/art/palette.ts).
 // ════════════════════════════════════════════════════════════════
 
-/** Conocimiento acumulado necesario para cada nivel (índice 0 = nivel 1) */
-export const NIVELES = [0, 30, 80, 150, 240, 350, 480, 640, 820, 1000];
+/**
+ * Conocimiento acumulado necesario para cada nivel (índice 0 = nivel 1).
+ * v0.22: la curva es el doble de larga que la original (NIVELES_V1) para que los
+ * desbloqueos se repartan en más expediciones (≈ 9 victorias para el nivel 10).
+ * Quien ya tenía un nivel con la curva vieja lo conserva (Codex.nivelPiso).
+ */
+export const NIVELES = [0, 60, 160, 300, 480, 700, 960, 1280, 1640, 2000];
+/** Curva original (hasta v0.21), sólo para respetar el nivel que ya tenían los alumnos */
+export const NIVELES_V1 = [0, 30, 80, 150, 240, 350, 480, 640, 820, 1000];
+
+export function nivelDeV1(xp = 0): number {
+  let n = 1;
+  for (let i = 0; i < NIVELES_V1.length; i++) if (xp >= NIVELES_V1[i]) n = i + 1;
+  return n;
+}
 
 export function nivelDe(xp = 0): number {
   let n = 1;
@@ -15,9 +28,9 @@ export function nivelDe(xp = 0): number {
   return n;
 }
 
-/** Conocimiento para el siguiente nivel (o null si ya es el máximo) */
-export function siguienteNivel(xp = 0): number | null {
-  const n = nivelDe(xp);
+/** Conocimiento para el siguiente nivel (o null si ya es el máximo). `nivel` = nivel efectivo si ya se conoce. */
+export function siguienteNivel(xp = 0, nivel?: number): number | null {
+  const n = nivel ?? nivelDe(xp);
   return n < NIVELES.length ? NIVELES[n] : null;
 }
 

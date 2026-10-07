@@ -19,8 +19,13 @@ export interface SanctuaryData {
 
 function pickFigure(): FigureDef {
   const r = Game.run!;
-  const unmet = FIGURES.filter((f) => !r.met.includes(f.id));
-  const pool = unmet.length ? unmet : FIGURES;
+  const acto = r.acto ?? 1;
+  const posibles = FIGURES.filter((f) => !f.act || acto >= f.act);
+  // en el Núcleo, los ecos del Núcleo (Asimov y Turing) salen más seguido
+  const delActo = posibles.filter((f) => f.act === acto && !r.met.includes(f.id));
+  if (delActo.length && Math.random() < 0.6) return Phaser.Utils.Array.GetRandom(delActo);
+  const unmet = posibles.filter((f) => !r.met.includes(f.id));
+  const pool = unmet.length ? unmet : posibles;
   return Phaser.Utils.Array.GetRandom(pool);
 }
 
