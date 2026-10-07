@@ -62,10 +62,10 @@ export const GLOSARIO: { tab: string; items: Entrada[] }[] = [
   {
     tab: 'Abismo',
     items: [
-      ['i_ojo', 'Entropía mental', 'Tu cordura (0–100). Sube al ver jefes y leer el Necronomicón; baja al descansar, con los Ecos y al resolver runas.'],
+      ['i_ojo', 'Locura', 'Tu cordura perdida (0–100). Es la «entropía» de tu mente: siempre tiende a subir. Sube al ver jefes y leer el Necronomicón; baja al descansar, con los Ecos y al resolver runas.'],
       ['i_ojo', '40+ Inquieto', 'Las fórmulas de tus cartas se borran con símbolos (nunca muestran algo falso). Oyes susurros.'],
       ['i_ojo', '70+ Delirante', 'Visión del Abismo: tus ataques hacen +2.'],
-      ['i_skull', '100 Quiebre', 'En el siguiente combate aparece una Sombra del Abismo que sólo tú ves. Luego la Entropía baja a 60.'],
+      ['i_skull', '100 Quiebre', 'En el siguiente combate aparece una Sombra del Abismo que sólo tú ves. Luego la Locura baja a 60.'],
       ['i_necro', 'Necronomicón de Hibbeler', 'En cada fogata puedes leer un Problema Prohibido: un poder para siempre con un costo para siempre.'],
       ['i_bolt', 'Joules (J)', 'Tu energía por turno: cada carta cuesta trabajo. Empiezas cada turno con 3 J.'],
       ['i_rune', 'Racha y puntaje', 'Cada respuesta correcta seguida sube el multiplicador hasta ×2. Fallar lo reinicia; usar una pista resta puntos.'],

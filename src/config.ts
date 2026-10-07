@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.18.2 · Arreglos: inicio sin duplicados, partidas que no se registraban y esquiva del Penitente';
+export const VERSION = '0.19.0 · Locura, Hibbelerius el Autor Eterno, rutas en el mapa y epílogos ilustrados';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.

@@ -205,7 +205,7 @@ export class ShopScene extends Phaser.Scene {
     }
 
     // servicios
-    L(txt(this, 300, 372, T.mercader.servicios, 22, CSS.gold));
+    L(txt(this, 300, 358, T.mercader.servicios, 20, CSS.gold));
     const svc = (y: number, label: string, it: ShopItem | null, fn: () => void, enabled = true) => {
       const b: Btn = button(this, 455, y, 320, 34, label, fn, { size: 20, enabled: enabled && !(it?.sold), silent: true });
       L(b);

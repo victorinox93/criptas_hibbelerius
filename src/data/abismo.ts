@@ -60,7 +60,7 @@ export const PROHIBIDOS: Record<string, ProhibidoDef> = {
   },
   p_abismo: {
     id: 'p_abismo', name: 'Problema del Abismo: Mirar de Vuelta',
-    poder: 'Tus ataques hacen +1 por cada 20 de Entropía mental (máx. +5).', costo: 'Las fogatas ya no bajan tu Entropía.',
+    poder: 'Tus ataques hacen +1 por cada 20 de Locura (máx. +5).', costo: 'Las fogatas ya no bajan tu Locura.',
     lore: 'Cuando miras largo tiempo al abismo, el abismo resuelve el problema por ti.',
   },
 };

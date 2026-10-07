@@ -1,5 +1,5 @@
-// ════════ ACTO III · generados con tools/arte/hib2.py (Hibbelerius, la Parca del Tomo) y tools/arte/en3.py (python3) ════════
-/** Hibbelerius, la Parca del Tomo (48×64): encapuchado, guadaña y tomo encadenado */
+// ════════ ACTO III · generados con tools/arte/hib2.py (Hibbelerius, el Autor Eterno) y tools/arte/en3.py (python3) ════════
+/** Hibbelerius, el Autor Eterno (48×64): encapuchado, guadaña y tomo encadenado */
 export const HIBBELERIUS = [
   '................................................',
   '................................................',

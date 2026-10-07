@@ -190,18 +190,18 @@ export const DILEMMAS: DilemmaDef[] = [
     intro: 'Un libro abierto respira sobre un atril. Sus páginas tienen ejercicios que no deberían existir: «Problema 13-∞», «Problema Ω».\nUn ojo dibujado en el margen te sigue con la mirada.',
     choices: [
       {
-        label: 'Tomar el libro', risk: 'Obtienes el Necronomicón. +15 de Entropía mental.',
+        label: 'Tomar el libro', risk: 'Obtienes el Necronomicón. +15 de Locura.',
         outcomes: [{ p: 1, r: { text: 'El libro se cierra solo en tus manos. Está tibio. Pesa más de lo que debería.', relic: 'necronomicon', entropia: 15 } }],
       },
       {
-        label: 'Leer sólo una página', risk: '50 %: +60 Ergios · 50 %: −8 de vida. Siempre +10 de Entropía.',
+        label: 'Leer sólo una página', risk: '50 %: +60 Ergios · 50 %: −8 de vida. Siempre +10 de Locura.',
         outcomes: [
           { p: 0.5, r: { text: 'La página explica cómo se transmuta la energía en oro. Funciona.', ergios: 60, entropia: 10 } },
           { p: 0.5, r: { text: 'La página te lee a ti. Sangras por la nariz.', hp: -8, entropia: 10 } },
         ],
       },
       {
-        label: 'Cerrarlo y rezar a Newton', risk: '−10 de Entropía mental.',
+        label: 'Cerrarlo y rezar a Newton', risk: '−10 de Locura.',
         outcomes: [{ p: 1, r: { text: 'Cierras el libro. El ojo del margen parpadea… y se queda quieto.', entropia: -10 } }],
       },
     ],

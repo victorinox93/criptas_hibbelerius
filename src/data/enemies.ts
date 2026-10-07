@@ -214,7 +214,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
       : { kind: 'attack', dmg: 3 + e.inercia, hits: 3, label: 'Giro (L = I·ω)' }),
   },
   hibbelerius: {
-    id: 'hibbelerius', name: 'Hibbelerius, la Parca del Tomo', sprite: 'hibbelerius', scale: 3.6, hp: [330, 330], mass: 80, umbral: 20, act: 3,
+    id: 'hibbelerius', name: 'Hibbelerius, el Autor Eterno', sprite: 'hibbelerius', scale: 3.6, hp: [330, 330], mass: 80, umbral: 20, act: 3,
     desc: 'El autor de todos los problemas. Pelea capítulo por capítulo: Fuerza (13), Energía (14) e Impulso (15). En el último, DETENLO antes de su Impulso Final.',
     next: (e) => {
       if (e.phase3) {

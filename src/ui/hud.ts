@@ -55,14 +55,14 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
   tip.attach(hpIcon, T.hud.vida, T.hud.vidaInfo, 20);
   D(icon(s, 270, 20, 'i_skull', 2.6));
   const floorT = D(txt(s, 286, 6, '', 24, CSS.bone));
-  const scoreT = D(txt(s, 392, 6, '', 24, CSS.gold));
-  const coin = D(icon(s, 468, 20, 'i_coin', 2.6));
-  const ergT = D(txt(s, 484, 6, '', 24, CSS.gold));
+  const scoreT = D(txt(s, 384, 6, '', 24, CSS.gold));
+  const coin = D(icon(s, 486, 20, 'i_coin', 2.6));
+  const ergT = D(txt(s, 502, 6, '', 24, CSS.gold));
   tip.attach(coin, T.moneda, 'Moneda de las criptas (el ergio es una unidad de energía). Se gana en combates y runas; se gasta con el Mercader.', 20);
 
   const deckBtn = D(button(s, W - 182, 20, 96, 30, '', () => deckOverlay(s), { size: 19 }));
-  const potRow = s.add.container(552, 20).setDepth(401);
-  const relicRow = s.add.container(648, 20).setDepth(401);
+  const potRow = s.add.container(566, 20).setDepth(401);
+  const relicRow = s.add.container(654, 20).setDepth(401);
   let potMenu: Phaser.GameObjects.Container | null = null;
   const closeMenu = () => { potMenu?.destroy(); potMenu = null; };
   const openPotion = (i: number) => {
@@ -162,7 +162,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         frame(bg, x - 22, -14, 46, 28, 0x0a140a, ent >= ENTROPIA.delirante ? 0x9bf07a : 0x3d4a22, 0.9);
         const im = icon(s, x - 8, 0, 'i_ojo', 2.2);
         const n = txt(s, x + 4, -10, `${ent}`, 18, nv.color);
-        tip.attach(im, `Entropía mental: ${ent}/100 · ${nv.nombre}`,
+        tip.attach(im, `Locura: ${ent}/100 · ${nv.nombre}`,
           `40+: las fórmulas de tus cartas se borran.\n70+: Visión del Abismo, tus ataques hacen +${ENTROPIA.vision}.\n100: Quiebre, una Sombra aparece en el siguiente combate.\nBaja al descansar, con los Ecos y al resolver runas.`, 20);
         effRow.add([bg, im, n]);
         off++;

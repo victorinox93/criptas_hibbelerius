@@ -94,7 +94,7 @@ export class AMScene extends Phaser.Scene {
       this.hud.refresh();
       logEvent('am_pacto', '', false, { mejora: c?.id ?? '' });
       audio.sfx('correct');
-      this.escribir(`${PACTO_AM.rechaza}\n\n${c ? `Tu carta «${cardName(c)}» mejoró.` : ''} −10 de Entropía mental.`, () => this.salir(floor));
+      this.escribir(`${PACTO_AM.rechaza}\n\n${c ? `Tu carta «${cardName(c)}» mejoró.` : ''} −10 de Locura.`, () => this.salir(floor));
     }, { color: UI.green, size: 20 }));
   }
 

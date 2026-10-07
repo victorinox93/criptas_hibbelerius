@@ -235,7 +235,7 @@ export class CombatScene extends Phaser.Scene {
       if (x !== null) {
         this.addEnemy(spawn('sombra'), x);
         run.entropia = ENTROPIA.trasQuiebre;
-        this.calc('¡QUIEBRE! Tu Entropía mental llegó a 100: algo salió de entre las ecuaciones…');
+        this.calc('¡QUIEBRE! Tu Locura llegó a 100: algo salió de entre las ecuaciones…');
         this.cameras.main.flash(600, 40, 120, 40);
         logEvent('quiebre', '', '', { piso: this.floor });
       }
@@ -908,11 +908,11 @@ export class CombatScene extends Phaser.Scene {
       const ent = Game.run!.entropia ?? 0;
       if (ent >= ENTROPIA.delirante) {
         this.polonio += ENTROPIA.vision;
-        this.calc(`Visión del Abismo: +${ENTROPIA.vision} (Entropía ${ent})`);
+        this.calc(`Visión del Abismo: +${ENTROPIA.vision} (Locura ${ent})`);
       }
       if (this.prohibido('p_abismo')) {
         const ab = Math.min(5, Math.floor(ent / 20));
-        if (ab) { this.polonio += ab; this.calc(`Mirar de Vuelta: +${ab} (Entropía ${ent})`); }
+        if (ab) { this.polonio += ab; this.calc(`Mirar de Vuelta: +${ab} (Locura ${ent})`); }
       }
       // Huygens · Fuerza Centrípeta: el primer ataque del combate
       const hc = boonLevel('h_centripeta');
@@ -1831,7 +1831,7 @@ export class CombatScene extends Phaser.Scene {
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
     if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
-    // la Parca del Tomo lanza hoces giratorias
+    // el Autor Eterno lanza hoces giratorias
     if (from && from.st.def.id === 'hibbelerius' && dmg > 0) await this.hoces(from);
     // Fuego Amigo: el golpe se desvía hacia otro enemigo
     if (from && dmg > 0 && this.fuegoAmigo) {
@@ -2679,7 +2679,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   // ───────────────────────── HIBBELERIUS ─────────────────────────
-  /** Aura de la Parca del Tomo: resplandor, fórmulas que orbitan y almas que suben */
+  /** Aura de el Autor Eterno: resplandor, fórmulas que orbitan y almas que suben */
   private hibAura(sprite: Phaser.GameObjects.Image, x: number) {
     const glow = this.add.ellipse(x, 230, 260, 300, 0x6a3f8a, 0.12).setBlendMode(Phaser.BlendModes.ADD).setDepth(-2);
     this.tweens.add({ targets: glow, alpha: 0.05, scaleX: 1.08, duration: 1600, yoyo: true, repeat: -1 });

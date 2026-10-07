@@ -47,7 +47,7 @@ export class CampfireScene extends Phaser.Scene {
       syncRun('en curso');
       fadeTo(this, 'Map');
     };
-    const ent = (run.entropia ?? 0) > 0 && calma ? `, ${calma} Entropía` : '';
+    const ent = (run.entropia ?? 0) > 0 && calma ? `, ${calma} Locura` : '';
     button(this, xs[0], 470, bw, 64, sinCura ? `El Agujero Negro\nse traga el descanso${ent ? `\n(${ent.slice(2)})` : ''}` : `${T.fogata.descansar}\n+${Math.min(heal, run.maxHp - run.hp)} de vida${ent}`, () => {
       audio.sfx('heal');
       run.hp = Math.min(run.maxHp, run.hp + heal);
@@ -60,8 +60,8 @@ export class CampfireScene extends Phaser.Scene {
       fadeTo(this, 'Rune', { floor: data.floor, source: 'fogata' });
     }, { color: 0x8e5bb0, size: 22, enabled: canUp });
     if (libro) {
-      const b = button(this, xs[2], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Entropía`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });
-      tip.attach(b, RELICS.necronomicon.name, 'Eliges un Problema Prohibido: poder permanente con un costo. Tu Entropía mental sube.');
+      const b = button(this, xs[2], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Locura`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });
+      tip.attach(b, RELICS.necronomicon.name, 'Eliges un Problema Prohibido: poder permanente con un costo. Tu Locura sube.');
     }
   }
 

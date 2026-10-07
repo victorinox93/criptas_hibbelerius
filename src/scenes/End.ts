@@ -7,6 +7,7 @@ import { addConocimiento, codexFlag, FLOORS, Game, logEvent, nivelActual, saveLo
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
 import { ALMAS } from '../data/almas';
+import { epilogoAlma } from '../art/epilogos';
 import { button, embers, fadeTo, panel, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { gravityOf } from '../data/gravity';
 
@@ -74,10 +75,12 @@ export class EndScene extends Phaser.Scene {
         this.tweens.add({ targets: u, alpha: 1, duration: 800, delay: 1200 });
       }
       txt(this, W / 2, 112, T.final.victoriaTexto, 22, CSS.bone).setOrigin(0.5);
-      const wz = this.add.image(W - 170, 300, 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
-      this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : 0.9, duration: 2500, delay: 800 });
-      this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       const alma = run.aliado ? ALMAS[run.aliado] : null;
+      const wz = this.add.image(W - 170, 300, 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
+      this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : alma ? 0.22 : 0.9, duration: 2500, delay: 800 });
+      this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      // epílogo ilustrado del alma aliada
+      if (alma && !repaso) epilogoAlma(this, alma.id, W - 175, 412);
       if (!repaso && !alma) {
         const q = txt(this, W - 170, 470, T.final.cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: q, alpha: 1, duration: 1500, delay: 2600 });

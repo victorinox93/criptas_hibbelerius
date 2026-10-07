@@ -16,7 +16,7 @@ const PISTAS: [TrackId, string, string][] = [
   ['jefe2', 'La Bruja de la Fricción', 'Jefe · Acto II'],
   ['mapa3', 'La Torre del Tomo', 'Mapa · Acto III'],
   ['combate4', 'Impulso', 'Combate · Acto III'],
-  ['jefe3', 'La Parca del Tomo', 'Jefe final'],
+  ['jefe3', 'El Autor Eterno', 'Jefe final'],
   ['santuario', 'Ecos del Pasado', 'Santuario'],
   ['calma', 'Respiro', 'Fogata y encuentros'],
 ];

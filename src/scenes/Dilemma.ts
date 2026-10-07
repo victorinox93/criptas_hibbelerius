@@ -57,6 +57,7 @@ export class DilemmaScene extends Phaser.Scene {
       const ok = (ch.need?.ergios ?? 0) <= run.ergios && (ch.need?.hp ?? 0) <= run.hp;
       const y = 290 + i * 74;
       const b = button(this, 690, y, 480, 64, '', () => {
+        tip.hide();
         btns.forEach((x) => x.setVisible(false).disableInteractive());
         this.resolve(d.id, ch, data.floor);
       }, { size: 22, enabled: ok, color: i === d.choices.length - 1 ? UI.border : UI.gold });
@@ -123,7 +124,7 @@ export class DilemmaScene extends Phaser.Scene {
     }
     if (r.entropia) {
       const n = addEntropia(r.entropia);
-      if (n) out.push(`${n > 0 ? '+' : ''}${n} de Entropía mental`);
+      if (n) out.push(`${n > 0 ? '+' : ''}${n} de Locura`);
     }
     if (r.score) {
       sumar(run, 'Dilemas', r.score * PUNTOS.dilema);

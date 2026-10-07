@@ -196,7 +196,7 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 
 - **Tercer personaje: el Penitente del Empuje** (se desbloquea al vencer a Hibbelerius). Su vida es su **masa**: las cartas de Empuje queman kilos y lo aceleran con la ecuación del cohete, **Δv = vₑ·ln(m₀/m₁)** (con poca masa acelera muchísimo más). Golpea con **p = m·v**, no tiene Bloqueo y **esquiva** si va a 6 m/s o más (perdiendo 3 m/s). El aire lo frena 2 m/s por turno y recupera masa al derrotar enemigos. 13 cartas propias en `src/data/cards.ts` (busca «PENITENTE»).
 - **8 cartas legendarias** (marco dorado, una copia por expedición): Venganza de Newton, Tiro Parabólico (eliges el ángulo θ y ves el alcance R = v₀²·sen2θ/g), Péndulo, Patinadora, Resorte Comprimido, Dolor Resonante, Honda de David y Fuego Amigo. Se eligen tras vencer al jefe de los Actos I y II, y a veces salen tras una élite.
-- **Hibbelerius rediseñado como la Parca del Tomo**: encapuchado, esquelético, flotando, con guadaña y su tomo encadenado; lanza hoces giratorias al atacar (`tools/arte/hib2.py`).
+- **Hibbelerius rediseñado (antes «la Parca del Tomo», hoy «el Autor Eterno»)**: encapuchado, esquelético, flotando, con guadaña y su tomo encadenado; lanza hoces giratorias al atacar (`tools/arte/hib2.py`).
 
 ## Novedades de la v0.15
 
@@ -241,3 +241,11 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Partidas duplicadas:** al elegir la gravedad, el juego esperaba al servidor sin avisar y cada clic extra creaba otra expedición. Ahora aparece «Abriendo las criptas…» y se ignoran los clics repetidos.
 - **Partidas que no quedaban en la hoja:** si el servidor tardaba al iniciar, la partida se jugaba con un id local (`L-…`) y sus avances se perdían. Ahora `updateRun` **crea la fila** si no existe. ⚠️ Requiere pegar el `Code.gs` nuevo y crear una **nueva versión** de la implementación.
 - **Penitente:** si tu Bloqueo alcanza para el golpe, se usa el Bloqueo y **no** pierdes rapidez esquivando. La primera vez que lo juegas aparece una explicación corta de cómo acelerar y esquivar.
+
+## v0.19.0 · Locura, el Autor Eterno y epílogos ilustrados
+
+- **Mapa más claro:** el camino recorrido se dibuja con una línea dorada continua; los caminos que todavía puedes tomar se ven más brillantes que los cerrados. Al pasar el cursor sobre cualquier nodo alcanzable (aunque esté 2 o 3 pisos adelante) se ilumina en azul la ruta para llegar.
+- **Entropía mental → Locura** en todos los textos (barra superior, fogata, Necronomicón, dilemas, AM, glosario). El glosario explica que la Locura es «la entropía de tu mente: siempre tiende a subir». La carta **Entropía** (2ª ley de la termodinámica) conserva su nombre.
+- **Hibbelerius, el Autor Eterno** (antes «la Parca del Tomo»): mismo diseño, nuevo título en el combate, el mapa y el soundtrack.
+- **Epílogos ilustrados** (`src/art/epilogos.ts`): si vences a Hibbelerius con un alma aliada, la pantalla final muestra una escena animada distinta por alma: el examen de Ícaro con un 10, la calculadora de Sir Radián marcando 1, la tesis APROBADA del Doctorando, el pizarrón con g = 9.81 m/s² de la Dama, la máquina de Bernoulli girando, el reloj de Sir Mañana, la vela de la Ayudante y el foco del Encadenado.
+- **Arreglos visuales:** «Servicios» ya no queda tapado en el Mercader; en los Encuentros el recuadro de información se cierra al elegir la respuesta; el puntaje se separó de los Ergios en la barra superior.

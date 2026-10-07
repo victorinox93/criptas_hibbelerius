@@ -86,22 +86,61 @@ export class MapScene extends Phaser.Scene {
     if (current) visited.add(current.id);
 
     // caminos
+    // nodos alcanzables desde donde estás (todo lo que aún puedes recorrer)
+    const alcanzable = new Set<number>();
+    const pila = [...available];
+    while (pila.length) {
+      const id = pila.pop()!;
+      if (alcanzable.has(id)) continue;
+      alcanzable.add(id);
+      pila.push(...(byId.get(id)?.next ?? []));
+    }
     const lines = this.add.graphics();
+    const punteado = (g: Phaser.GameObjects.Graphics, a: { x: number; y: number }, b: { x: number; y: number }, color: number, sz = 4) => {
+      const d = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
+      const steps = Math.floor(d / 12);
+      g.fillStyle(color, 1);
+      for (let i = 2; i < steps - 1; i++) {
+        const t = i / steps;
+        g.fillRect(a.x + (b.x - a.x) * t - sz / 2, a.y + (b.y - a.y) * t - sz / 2, sz, sz);
+      }
+    };
     for (const n of run.map) {
       const a = nodeXY(n);
       for (const nid of n.next) {
         const b = nodeXY(byId.get(nid)!);
         const travelled = visited.has(n.id) && visited.has(nid);
         const from = current?.id === n.id && available.has(nid);
-        const d = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
-        const steps = Math.floor(d / 12);
-        for (let i = 2; i < steps - 1; i++) {
-          const t = i / steps;
-          lines.fillStyle(travelled ? UI.gold : from ? 0xb8a890 : 0x3a3244, 1);
-          lines.fillRect(a.x + (b.x - a.x) * t - 2, a.y + (b.y - a.y) * t - 2, 4, 4);
-        }
+        const futuro = alcanzable.has(n.id) && alcanzable.has(nid);
+        if (travelled) {
+          // el camino que ya recorriste: línea dorada continua
+          lines.lineStyle(4, UI.gold, 0.85).lineBetween(a.x, a.y, b.x, b.y);
+        } else punteado(lines, a, b, from ? 0xe8d8b0 : futuro ? 0x8a7a9a : 0x2a2433, from ? 5 : 4);
       }
     }
+    // al pasar el cursor sobre un nodo alcanzable, se ilumina el camino hasta él
+    const ruta = this.add.graphics();
+    const rutaHasta = (destino: number) => {
+      ruta.clear();
+      if (!alcanzable.has(destino)) return;
+      // búsqueda hacia atrás: de qué nodo (alcanzable o actual) se llega
+      const prev = new Map<number, number>();
+      const cola = current ? [current.id] : [];
+      const inicio = current ? [] : [...available];
+      for (const s0 of inicio) prev.set(s0, -1);
+      cola.push(...inicio);
+      while (cola.length) {
+        const id = cola.shift()!;
+        if (id === destino) break;
+        for (const nx of byId.get(id)?.next ?? []) if (!prev.has(nx)) { prev.set(nx, id); cola.push(nx); }
+      }
+      let k = destino;
+      while (prev.has(k) && prev.get(k)! >= 0) {
+        const p0 = prev.get(k)!;
+        ruta.lineStyle(5, 0x9ad8f0, 0.8).lineBetween(nodeXY(byId.get(p0)!).x, nodeXY(byId.get(p0)!).y, nodeXY(byId.get(k)!).x, nodeXY(byId.get(k)!).y);
+        k = p0;
+      }
+    };
 
     // el jefe del acto se ve en el mapa: ya cuenta para el Bestiario
     unlock('enemies', act3 ? 'hibbelerius' : act2 ? 'bruja' : 'colossus');
@@ -126,8 +165,8 @@ export class MapScene extends Phaser.Scene {
         this.tweens.add({ targets: im, scale: im.scale * 1.12, duration: 700, yoyo: true, repeat: -1 });
       }
       const z = this.add.zone(x, y, size, size).setInteractive({ useHandCursor: isAvail });
-      z.on('pointerover', () => tip.show(x + 30, y - 20, info.name, info.desc + (isAvail ? '\n' + T.mapa.clicAvanzar : '')));
-      z.on('pointerout', () => tip.hide());
+      z.on('pointerover', () => { rutaHasta(n.id); tip.show(x + 30, y - 20, info.name, info.desc + (isAvail ? '\n' + T.mapa.clicAvanzar : '')); });
+      z.on('pointerout', () => { ruta.clear(); tip.hide(); });
       z.on('pointerdown', () => {
         if (!isAvail) return;
         run.visited = [...(run.visited ?? []), n.id];
