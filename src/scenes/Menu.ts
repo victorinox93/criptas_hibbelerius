@@ -9,7 +9,9 @@ import { starterDeck } from '../data/cards';
 import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
 import { siguienteNivel } from '../data/progreso';
-import { claseJugable, clearSession, Game, isAdmin, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { ALMA_IDS } from '../data/almas';
+import { progresoGrimorio } from './Codex';
+import { amVencido, claseJugable, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -33,8 +35,17 @@ export class MenuScene extends Phaser.Scene {
     const hero = this.add.image(200, 330, 'hero').setScale(3);
     this.tweens.add({ targets: hero, y: 326, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
+    this.progreso();
+
     panel(this, 60, 412, 380, 108);
-    txt(this, 80, 422, av.alias, 30, CSS.gold);
+    const aliasT = txt(this, 80, 422, av.alias, 30, CSS.gold);
+    if (av.insignia === 'am' || amVencido()) {
+      // insignia de quien venció a AM
+      const ojo = this.add.image(80 + aliasT.width + 18, 440, 'i_ojo').setScale(2).setTint(0xff3a3a).setInteractive();
+      this.tweens.add({ targets: ojo, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+      const lbl = txt(this, 80 + aliasT.width + 32, 432, 'Vencedor de AM', 15, '#ff8a7a').setAlpha(0);
+      ojo.on('pointerover', () => lbl.setAlpha(1)).on('pointerout', () => lbl.setAlpha(0));
+    }
     const xp = Game.codex.xp ?? 0;
     const sig = siguienteNivel(xp);
     txt(this, 424, 428, `Conocimiento: nivel ${nivelActual()}`, 18, '#9ad8f0').setOrigin(1, 0);
@@ -82,6 +93,35 @@ export class MenuScene extends Phaser.Scene {
       button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 52, 160, 44, label, fn, { size: 21 });
     });
     if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 52, 330, 40, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
+  }
+
+  /** Panel de progreso: Grimorio, jefes, almas, figuras y cartas */
+  private progreso() {
+    const g = this.add.graphics();
+    frame(g, 60, 106, 380, 150, 0x0e0b12, UI.border, 0.88);
+    txt(this, 76, 112, 'Tu avance', 18, CSS.gold);
+    const pg = progresoGrimorio();
+    const flags = Game.codex.flags ?? [];
+    const nucleo = nucleoDisponible() || flags.includes('acto4');
+    const jefes = ['acto1', 'acto2', 'acto3', ...(nucleo ? ['acto4'] : [])];
+    const almas = ALMA_IDS.filter((id) => Game.codex.npcs.includes(`alma_${id}`)).length;
+    const filas: [string, number, number, number, string][] = [
+      ['Grimorio', pg.known, pg.total, 0xc8a050, `${Math.round((100 * pg.known) / Math.max(1, pg.total))} %`],
+      ['Jefes', jefes.filter((f) => flags.includes(f)).length, jefes.length, 0xc84a4a, ''],
+      ['Almas', almas, ALMA_IDS.length, 0x9ad8f0, ''],
+      ['Figuras', pg.tabs[2].known, pg.tabs[2].total, 0xb89ad0, ''],
+      ['Cartas', pg.tabs[3].known, pg.tabs[3].total, 0x7fc87a, ''],
+    ];
+    filas.forEach(([nombre, k, t, color, etiqueta], i) => {
+      const y = 140 + i * 22;
+      txt(this, 76, y - 9, nombre, 16, CSS.dim);
+      const x0 = 160, w = 190;
+      g.fillStyle(0x1e1a24, 1).fillRect(x0, y - 4, w, 9);
+      const frac = Math.min(1, k / Math.max(1, t));
+      if (frac > 0) g.fillStyle(color, 1).fillRect(x0, y - 4, Math.max(3, w * frac), 9);
+      g.lineStyle(1, 0x3a3444, 1).strokeRect(x0, y - 4, w, 9);
+      txt(this, 428, y - 9, etiqueta || `${k}/${t}`, 16, frac >= 1 ? CSS.gold : CSS.bone).setOrigin(1, 0);
+    });
   }
 
   /** Ventana para elegir el nivel de gravedad antes de una expedición */

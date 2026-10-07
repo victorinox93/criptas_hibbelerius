@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.20.2 · La portada sólo muestra el número de versión';
+export const VERSION = '0.21.0 · Premios por vencer a AM y panel de avance en el menú';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)

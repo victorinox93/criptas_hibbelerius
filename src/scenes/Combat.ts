@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CARDS, CardInst, force, kinetic, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+import { CalcCtx, CARDS, CardInst, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
 const VMAX_PEN = 14;
@@ -16,7 +16,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addEntropia, addErgios, boonLevel, codexFlag, codexWin, contarHib, Game, nucleoDisponible, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
@@ -123,6 +123,8 @@ export class CombatScene extends Phaser.Scene {
   private drainNext = 0; // J que te roban para tu siguiente turno (Sifón)
   // v0.10: cartas desbloqueables
   private palanca = false; // el siguiente ataque hace el doble
+  private derivadaBono = 0; // Derivada: daño extra para el siguiente ataque
+  private danoTurno = 0; // daño total hecho en este turno (Integral)
   private mult = 1; // multiplicador del ataque en curso
   private pierce = false; // Efecto Túnel: ignorar Bloqueo este turno
   private masaDef = false; // Masa Inamovible
@@ -938,6 +940,11 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Travail (Coriolis): +${tv * this.attacksTurn} por ${this.attacksTurn} ataque(s) previos`);
       }
       this.attacksTurn++;
+      if (this.derivadaBono) {
+        this.polonio += this.derivadaBono;
+        this.calc(`Derivada: +${this.derivadaBono} a este ataque`);
+        this.derivadaBono = 0;
+      }
       if (this.palanca) {
         this.palanca = false;
         this.mult = 2;
@@ -1530,6 +1537,38 @@ export class CombatScene extends Phaser.Scene {
         }
         break;
       }
+      // ── cartas de cálculo (tras vencer a AM) ──
+      case 'derivada': {
+        const ya = Math.max(0, this.attacksTurn);
+        this.derivadaBono = Math.max(st.extra! * 2, st.extra! * ya);
+        this.drawCards(1);
+        this.calc(`Derivada: ${ya} ataque(s) este turno → tu siguiente ataque gana +${this.derivadaBono}`);
+        break;
+      }
+      case 'integral':
+        await this.heroLunge();
+        if (target) {
+          const total = Math.min(st.extra!, this.danoTurno);
+          this.calc(`Integral: ∫ daño dt de este turno = ${this.danoTurno}${this.danoTurno > st.extra! ? ` (máx. ${st.extra})` : ''}`);
+          if (total > 0) await this.hitEnemy(target, total);
+          else this.calc('Integral: aún no has hecho daño este turno… el área bajo la curva es 0.');
+        }
+        break;
+      case 'limite':
+        await this.heroLunge();
+        if (target) {
+          const jefe = target.st.def.id === 'am' || target.st.def.id === 'hibbelerius' || this.kind === 'boss';
+          const umbral = jefe ? 10 : st.extra!;
+          if (target.st.hp <= target.st.maxHp * umbral / 100) {
+            this.calc(`Límite: vida ≤ ${umbral} % → lím vida = 0`);
+            await this.hitEnemy(target, target.st.hp + target.st.block, true, 'res');
+          } else {
+            await this.hitEnemy(target, limiteDano(st.extra!));
+            if (!target.dead) { target.st.fatiga += 1; this.refreshEnemy(target); }
+            this.calc(`Límite: aún le queda más de ${umbral} % de vida → ${limiteDano(st.extra!)} de daño y Fatiga 1`);
+          }
+        }
+        break;
       case 'palanca':
         this.palanca = true;
         this.calc('Palanca de Arquímedes: tu siguiente ataque hará el doble (M = F·d)');
@@ -1694,6 +1733,7 @@ export class CombatScene extends Phaser.Scene {
     }
     st.hp -= dmg;
     if (dmg > 0) st.recibido = (st.recibido ?? 0) + dmg;
+    if (dmg > 0) this.danoTurno += dmg;
     // efectos
     ev.sprite.setTintFill(0xffffff);
     this.time.delayedCall(80, () => ev.sprite.clearTint());
@@ -1942,6 +1982,8 @@ export class CombatScene extends Phaser.Scene {
   // ───────────────────────── TURNOS ─────────────────────────
   private async startTurn() {
     this.turn++;
+    this.danoTurno = 0;
+    this.derivadaBono = 0;
     if (this.keepBlock) {
       this.keepBlock = false;
     } else if (this.has('cristal')) {
@@ -2361,13 +2403,15 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.kind === 'boss' && this.acto >= 4) {
       run.done = true;
+      const primeraAM = !amVencido();
       codexFlag('acto4');
+      otorgarInsigniaAM();
       logEvent('acto', '', true, { acto: 4, vida: run.hp });
       bonosFinales(run);
       saveLocal();
       syncRun('victoria', 'AM derrotado');
       await this.banner('AM ha caído');
-      fadeTo(this, 'End', { victory: true, nucleo: 'am' });
+      fadeTo(this, 'End', { victory: true, nucleo: 'am', primeraAM });
       return true;
     }
     if (this.kind === 'boss') {

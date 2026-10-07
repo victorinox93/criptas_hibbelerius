@@ -94,7 +94,7 @@ export class RankingScene extends Phaser.Scene {
       const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
       R(txt(this, COLS[0], y + 8, `${p.lugar}`, 26, medal));
       // avatar dibujado con sus colores
-      let av: { helm?: string; cape?: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number } = {};
+      let av: { insignia?: string; helm?: string; cape?: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number } = {};
       try { av = p.avatar ? JSON.parse(p.avatar) : {}; } catch { av = {}; }
       const key = `rk_${this.scope}_${this.page}_${i}`;
       makeHeroFromAvatar(this, { ...av, helm: av.helm ?? 'penacho', cape: av.cape ?? 0 }, key);
@@ -102,9 +102,15 @@ export class RankingScene extends Phaser.Scene {
       const name = txt(this, COLS[2], y + 6, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);
+      // insignia de quien venció a AM: el ojo rojo junto al nombre
+      if (av.insignia === 'am') {
+        const ojo = this.add.image(COLS[2] + name.displayWidth + 18, y + 20, 'i_ojo').setScale(2).setTint(0xff3a3a);
+        R(ojo);
+        this.tweens.add({ targets: ojo, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+      }
       R(txt(this, COLS[3], y + 10, p.grupo, 20, CSS.dim));
       R(txt(this, COLS[4], y + 8, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
-      R(txt(this, COLS[5], y + 8, `${Math.min(p.piso, TOTAL_PISOS)}/${TOTAL_PISOS}`, 24, CSS.bone));
+      R(txt(this, COLS[5], y + 8, p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} +IV` : `${p.piso}/${TOTAL_PISOS}`, 24, p.piso > TOTAL_PISOS ? '#e0a860' : CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));
     });

@@ -6,7 +6,7 @@ import { CARDS, CardInst, rewardPool, cardName } from '../data/cards';
 import { RELICS } from '../data/relics';
 import { FAMILIAR_POOL, FAMILIARS } from '../data/familiars';
 import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
-import { addCard, addErgios, addFamiliar, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock, nivelActual } from '../state';
+import { addCard, addErgios, addFamiliar, Game, logEvent, saveLocal, ShopItem, ShopState, syncRun, unlock, nivelActual, amVencido } from '../state';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
 import { deckOverlay, topBar } from '../ui/hud';
@@ -22,7 +22,7 @@ export function precioVenta(ci: CardInst) {
 }
 
 function makeStock(node: number, ambulante = false): ShopState {
-  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase, Game.run!.acto, nivelActual()))]).slice(0, 3);
+  const ids = Phaser.Utils.Array.Shuffle([...new Set(rewardPool(Game.run!.clase, Game.run!.acto, nivelActual(), amVencido()))]).slice(0, 3);
   const [rel] = randomRelics(1);
   return {
     node,

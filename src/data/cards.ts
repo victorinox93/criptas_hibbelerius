@@ -44,6 +44,7 @@ export interface CardDef {
   exhaust?: boolean;
   act?: number; // sólo aparece como recompensa a partir de este acto
   lock?: number; // nivel de Conocimiento necesario para que aparezca (src/data/progreso.ts)
+  am?: boolean; // sólo aparece en las recompensas después de vencer a AM (cartas de cálculo)
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -414,6 +415,25 @@ export const CARDS: Record<string, CardDef> = {
     text: (s, c) => `Gasta TODA tu energía.\nPor cada J: F = ${r1((s.m ?? 2) + c.masaBonus)} kg × ${Math.max(0, 3 + c.acelBonus - c.friccion)} m/s²\na todos.`,
     lore: 'Giras con todo lo que tienes: cada joule invertido es un golpe más.',
   },
+  // ════════ Cartas de cálculo (se desbloquean al vencer a AM en el Núcleo) ════════
+  derivada: {
+    id: 'derivada', name: 'Derivada', type: 'Habilidad', icon: 'i_momentum', concept: 'Derivada', rarity: 'rara', target: 'self', cls: 'neutral', am: true,
+    stats: (up) => ({ cost: 1, extra: up ? 3 : 2 }),
+    text: (s) => `Roba 1 carta.\nTu siguiente ataque gana\n+${s.extra} por cada ataque que\nya jugaste este turno\n(mín. +${s.extra! * 2}).`,
+    lore: 'La derivada mide qué tan rápido cambia algo. Mientras más ataques encadenas, más rápido crece el siguiente.',
+  },
+  integral: {
+    id: 'integral', name: 'Integral', type: 'Ataque', icon: 'i_combat', concept: 'Integral', rarity: 'rara', target: 'enemy', cls: 'neutral', am: true,
+    stats: (up) => ({ cost: up ? 1 : 2, extra: 40 }),
+    text: (s) => `Inflige TODO el daño\nque ya hiciste este turno\n(∫ daño dt, máx. ${s.extra}).`,
+    lore: 'Integrar es sumar todo lo acumulado: el área bajo la curva de tu daño en este turno.',
+  },
+  limite: {
+    id: 'limite', name: 'Límite', type: 'Ataque', icon: 'i_skull', concept: 'Límite', rarity: 'rara', target: 'enemy', cls: 'neutral', exhaust: true, am: true,
+    stats: (up) => ({ cost: 1, extra: up ? 30 : 25 }),
+    text: (s) => `Si al enemigo le queda\n${s.extra} % de vida o menos,\nlo derrotas (jefes: 10 %).\nSi no: inflige ${limiteDano(s.extra!)} y\nFatiga 1. Se agota.`,
+    lore: 'lím (vida) cuando t → final = 0. Cuando algo ya casi llega a cero, el límite termina el trabajo.',
+  },
   palanca: {
     id: 'palanca', name: 'Palanca de Arquímedes', type: 'Habilidad', icon: 'i_angle', concept: 'Momento de una fuerza', rarity: 'común', target: 'self', cls: 'neutral', lock: 2,
     stats: (up) => ({ cost: up ? 0 : 1 }),
@@ -700,12 +720,17 @@ export function starterDeck(clase: string) {
 }
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */
-export function rewardPool(clase: string, acto = 1, nivel = 99): string[] {
-  const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel;
+export function rewardPool(clase: string, acto = 1, nivel = 99, am = false): string[] {
+  const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel && (!c.am || am);
   const own = Object.values(CARDS).filter((c) => ok(c) &&
     c.rarity !== 'estado' && c.rarity !== 'legendaria' && (c.cls ?? 'caballero') === (clase || 'caballero'));
   const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && c.rarity !== 'estado' && c.rarity !== 'legendaria' && ok(c));
   return [...own, ...neutral].filter((c) => c.rarity !== 'inicial' || ['embestida', 'carrera', 'acelerar', 'frenado', 'empuje'].includes(c.id)).map((c) => c.id);
+}
+
+/** Daño de Límite cuando no remata (6, o 9 mejorada) */
+export function limiteDano(umbral: number) {
+  return umbral >= 30 ? 9 : 6;
 }
 
 /** Cartas legendarias */

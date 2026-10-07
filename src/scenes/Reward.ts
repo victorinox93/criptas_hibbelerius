@@ -6,7 +6,7 @@ import { audio } from '../audio';
 import { T } from '../textos';
 import { CARDS, rewardPool } from '../data/cards';
 import { RELIC_POOL, RELICS } from '../data/relics';
-import { addCard, addFamiliar, Game, saveLocal, unlock, nivelActual } from '../state';
+import { addCard, addFamiliar, Game, saveLocal, unlock, nivelActual, amVencido } from '../state';
 import { FAMILIARS } from '../data/familiars';
 import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
 import { cardView } from '../ui/card';
@@ -89,7 +89,7 @@ export class RewardScene extends Phaser.Scene {
 
     txt(this, W / 2, y0, T.botin.elige, 26, CSS.bone).setOrigin(0.5);
     // en el Acto III, las cartas de impulso salen el doble
-    const base = rewardPool(Game.run!.clase, Game.run!.acto, nivelActual());
+    const base = rewardPool(Game.run!.clase, Game.run!.acto, nivelActual(), amVencido());
     const weighted = Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
     const pool = Phaser.Utils.Array.Shuffle(weighted.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);

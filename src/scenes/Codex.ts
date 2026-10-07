@@ -314,3 +314,16 @@ export class CodexScene extends Phaser.Scene {
     });
   }
 }
+
+/** Avance del Grimorio por pestaña (para el panel de progreso del menú) */
+export function progresoGrimorio() {
+  const sc = new CodexScene() as unknown as { entries: (t: number) => Entry[] };
+  const out: { known: number; total: number }[] = [];
+  for (let tab = 0; tab < 5; tab++) {
+    const list = sc.entries(tab);
+    out.push({ known: list.filter((e) => Game.codex[e.kind].includes(e.id)).length, total: list.length });
+  }
+  const known = out.reduce((a, b) => a + b.known, 0), total = out.reduce((a, b) => a + b.total, 0);
+  return { known, total, tabs: out };
+}
+

@@ -155,7 +155,7 @@ export class DebugScene extends Phaser.Scene {
     if (OPTS.vida === 'tanque') r.maxHp = r.hp = r.maxHp * 10;
     if (OPTS.mazo === 'fuerte' || acto > 1) {
       // un mazo razonable para el acto: mejoras y cartas de la clase
-      const pool = rewardPool(OPTS.clase, acto);
+      const pool = rewardPool(OPTS.clase, acto, 99, true);
       const n = OPTS.mazo === 'fuerte' ? 10 : acto * 3;
       for (let i = 0; i < n; i++) r.deck.push({ uid: r.nextUid++, id: Phaser.Utils.Array.GetRandom(pool), up: OPTS.mazo === 'fuerte' || Math.random() < 0.4 });
       if (OPTS.mazo === 'fuerte') r.deck.forEach((c) => (c.up = true));

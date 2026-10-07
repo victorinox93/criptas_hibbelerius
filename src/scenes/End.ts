@@ -56,7 +56,7 @@ export class EndScene extends Phaser.Scene {
     layer.add(button(this, W / 2, y0 + h - 28, 180, 36, '¡Genial!', () => layer.destroy(), { size: 21, color: UI.gold }));
   }
 
-  create(data: { victory: boolean; by?: string; nucleo?: 'am' | 'caido' }) {
+  create(data: { victory: boolean; by?: string; nucleo?: 'am' | 'caido'; primeraAM?: boolean }) {
     this.cameras.main.fadeIn(500);
     audio.play('menu');
     const run = Game.run!;
@@ -92,7 +92,10 @@ export class EndScene extends Phaser.Scene {
     if (data.victory) {
       const nuc = data.nucleo;
       title(this, W / 2, 70, nuc === 'am' ? '¡AM ha caído!' : nuc === 'caido' ? 'Venciste a Hibbelerius…' : T.final.victoria, 54, nuc === 'caido' ? '#e0a070' : undefined);
-      if (Game.codex.victorias === 1 && !run.debug) {
+      if (data.primeraAM) {
+        const u = txt(this, W / 2, 26, '¡Desbloqueaste: cartas de cálculo (Derivada, Integral, Límite), cosméticos de latón e insignia de AM!', 17, CSS.green, { align: 'center', wordWrap: { width: 900 } }).setOrigin(0.5).setAlpha(0);
+        this.tweens.add({ targets: u, alpha: 1, duration: 800, delay: 1200 });
+      } else if (Game.codex.victorias === 1 && !run.debug) {
         const u = txt(this, W / 2, 30, '¡Desbloqueaste al Penitente del Empuje! (elígelo en tu avatar)', 20, CSS.green).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: u, alpha: 1, duration: 800, delay: 1200 });
       }

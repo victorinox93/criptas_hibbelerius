@@ -274,3 +274,14 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 ## v0.20.2
 
 - La portada, el inicio de sesión y los créditos muestran sólo el número de versión (p. ej. «v0.20.2»). La descripción de cambios sigue en `VERSION` de `src/config.ts` y en este README.
+
+## v0.21.0 · Premios por vencer a AM y panel de avance
+
+- **Al vencer a AM** (bandera `acto4` del Grimorio; la pantalla final avisa la primera vez):
+  - **Cartas de cálculo** (neutrales, raras; desde entonces salen en recompensas, tienda y dilemas de cualquier clase):
+    - **Derivada** (1 J): roba 1 carta y tu siguiente ataque gana +2 por cada ataque que ya jugaste este turno (mín. +4; mejorada +3/+6).
+    - **Integral** (2 J, mejorada 1 J): inflige todo el daño que ya hiciste este turno (∫ daño dt, máx. 40).
+    - **Límite** (1 J, se agota): si al enemigo le queda 25 % de vida o menos (mejorada 30 %; jefes 10 %), lo derrota; si no, 6 de daño (9) y Fatiga 1.
+  - **Cosméticos de latón:** capa «Circuitos de AM», armadura «Latón del Núcleo» y ojos «Ojo de AM» (con 🔒 «Vence a AM» mientras no lo vences).
+  - **Insignia «Vencedor de AM»:** un ojo rojo que late junto al nombre en el menú y en el Ranking. Viaja dentro del avatar, así que **no requiere cambiar `Code.gs`**. En el Ranking, quien llegó al Núcleo ve «39 +IV» en la columna de pisos.
+- **Panel «Tu avance» en el menú:** barras de Grimorio (%), jefes vencidos (3, o 4 cuando el Núcleo ya se abrió), almas encontradas (8), figuras y cartas descubiertas.

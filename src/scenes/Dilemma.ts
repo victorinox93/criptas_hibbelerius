@@ -7,7 +7,7 @@ import { Choice, DILEMMAS, Result } from '../data/dilemmas';
 import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { RELICS } from '../data/relics';
-import { addCard, addEntropia, addEffect, addErgios, addFamiliar, Game, logEvent, saveLocal, syncRun, unlock, nivelActual } from '../state';
+import { addCard, addEntropia, addEffect, addErgios, addFamiliar, Game, logEvent, saveLocal, syncRun, unlock, nivelActual, amVencido } from '../state';
 import { T } from '../textos';
 import { topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
@@ -148,7 +148,7 @@ export class DilemmaScene extends Phaser.Scene {
       }
     }
     if (r.card) {
-      const pool = rewardPool(run.clase, run.acto, nivelActual()).filter((id) => r.card === 'random' || r.card !== 'rara' || CARDS[id].rarity === 'rara');
+      const pool = rewardPool(run.clase, run.acto, nivelActual(), amVencido()).filter((id) => r.card === 'random' || r.card !== 'rara' || CARDS[id].rarity === 'rara');
       const cid = r.card === 'rara' || r.card === 'random' ? Phaser.Utils.Array.GetRandom(pool) : r.card;
       addCard(cid, !!r.cardUp);
       out.push(`Carta: ${CARDS[cid].name}${r.cardUp ? '+' : ''}`);

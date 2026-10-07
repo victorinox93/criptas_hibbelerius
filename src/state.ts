@@ -9,6 +9,7 @@ import { nivelDe } from './data/progreso';
 
 export interface Avatar {
   alias: string;
+  insignia?: string; // 'am' = venció a AM (se ve en el ranking y el menú)
   clase: string;
   helm: string;
   cape: number;
@@ -199,6 +200,18 @@ export function pisosDe(acto = 1) {
 export function contarHib() {
   Game.codex.hib = (Game.codex.hib ?? ((Game.codex.flags ?? []).includes('acto3') ? 1 : 0)) + 1;
   codexDirty = true;
+}
+/** ¿Ya venció a AM? (desbloquea las cartas de cálculo, cosméticos de latón y la insignia) */
+export function amVencido() {
+  return (Game.codex.flags ?? []).includes('acto4');
+}
+/** Guarda la insignia de AM en el avatar (viaja al ranking con el avatar; no requiere cambiar Code.gs) */
+export function otorgarInsigniaAM() {
+  const p = Game.profile;
+  if (!p?.avatar || p.avatar.insignia === 'am') return;
+  p.avatar.insignia = 'am';
+  saveLocal();
+  if (!p.offline) enqueue('saveProfile', { token: p.token, alias: p.avatar.alias, avatar: JSON.stringify(p.avatar) });
 }
 /** ¿Ya puede entrar al Núcleo? (venció a Hibbelerius al menos NUCLEO_VICTORIAS veces) */
 export function nucleoDisponible() {
