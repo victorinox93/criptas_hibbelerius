@@ -264,3 +264,9 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Preguntas de cálculo** (sólo en el Núcleo, `CALCULO_CONCEPTS` en `src/data/runes.ts`): v = dx/dt, a = dv/dt = d²x/dt², altura máxima (dy/dt = 0), P = dW/dt, Δx = ∫v dt, Δv = ∫a dt, W = ∫F dx (resorte y fuerza lineal), I = ∫F dt → Δv, y 8 de opción múltiple sobre pendientes y áreas de gráficas. Con sus mini lecciones para el repaso final.
 - **Modo profesor:** botón «Acto IV (Núcleo)», salto «Grieta III→IV», «Jefe» en el Acto IV = AM, y «Desbloquear todo» abre el Núcleo.
 - **Arreglo:** si la partida se cerraba en el nodo del jefe, al continuar el mapa quedaba sin salida. Ahora retoma la pelea, o pasa al siguiente acto si el jefe ya había caído.
+
+## v0.20.1 · Música sci-fi del Núcleo y epílogo del alma
+
+- **Música del Acto IV, nueva:** más lenta y tétrica, estilo sci-fi. Cuatro voces nuevas en el sintetizador (`src/audio.ts`): pad analógico con filtro resonante que abre y cierra (`sweep`), sub grave que «respira» (`throb`), pings de sonar con eco (`sonar`) y chasquidos digitales (`glitch`). Mapa a 54 bpm, combate a 76 bpm con pulso claro (bombo, caja y bajo) y AM a 66 bpm, pesado, con campana y una melodía de notas largas.
+- **Epílogo del alma a pantalla completa:** al ganar con un alma aliada aparece primero su escena animada en grande y luego las estadísticas. Antes, si el alumno tenía temas para repasar, el panel de repaso ocupaba ese lugar y sólo se veía el texto.
+- **Modo profesor:** el botón «Fin + alma» abre el final con un alma aliada; cada clic pasa a la siguiente (Ícaro → Ayudante → … → Duda). Los saltos ahora van en 7 columnas.

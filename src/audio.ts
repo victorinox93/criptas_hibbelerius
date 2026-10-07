@@ -33,6 +33,11 @@ interface TrackDef {
   gritOct?: number;
   knell?: boolean; // campana fúnebre grave al inicio de cada compás (raíz + tritono)
   leadLen?: number; // duración de cada nota de la melodía, en pasos (3.5 por omisión)
+  // ── voces sci-fi (Acto IV) ──
+  sweep?: number; // pad analógico con filtro resonante que abre y cierra en cada compás (volumen)
+  throb?: number; // sub grave que «respira» con trémolo, como una máquina viva (volumen)
+  sonar?: string; // 16 pasos: 1 = ping de sonar con eco largo
+  glitch?: number; // probabilidad por paso de un chasquido digital (0–1)
 }
 
 // Notas MIDI: 36 = Do2, 48 = Do3, 60 = Do4. Acordes de una tríada por compás.
@@ -158,40 +163,45 @@ const TRACKS: Record<TrackId, TrackDef> = {
       65, null, null, null, null, null, null, null, 59, null, null, null, null, null, null, null,
     ],
   },
-  // ── Acto IV: el Núcleo del Cálculo (relojería: tic-tac, Do menor y tritonos) ──
+  // ── Acto IV: el Núcleo del Cálculo · sci-fi tétrico (v0.20.1) ──
+  // Lento, con pads analógicos que se abren y cierran, un sub que respira,
+  // pings de sonar y chasquidos digitales. Pulso claro y sin prisa.
   mapa4: {
-    bpm: 60,
-    chords: [[48, 51, 55], [44, 48, 51], [46, 50, 53], [43, 47, 50]],
-    drone: 0.07, pad: 0.04, padCut: 700,
-    bells: true,
+    bpm: 54,
+    chords: [[48, 51, 55], [47, 50, 54], [44, 48, 51], [43, 46, 50]],
+    drone: 0.05, sweep: 0.05, throb: 0.05,
+    sonar: '1.......1.......',
     hat: '1...1...1...1...',
-    arp: '1.1.1.1.1.1.1.1.', arpOct: 12,
+    glitch: 0.015,
   },
   combate5: {
-    bpm: 100,
-    chords: [[48, 51, 55], [49, 52, 56], [48, 51, 55], [47, 50, 53]],
-    drone: 0.06, pad: 0.04, padCut: 800,
-    arp: '1111111111111111', arpOct: 12,
-    bass: 'x.x.x.x.x.xox.x.', bassOct: -24,
-    hat: '1.1.1.1.1.1.1.1.',
-    tom: '2...1...2...1.1.',
+    bpm: 76,
+    chords: [[45, 48, 52], [41, 45, 48], [43, 46, 50], [44, 47, 50]],
+    drone: 0.04, sweep: 0.045, throb: 0.04,
+    kick: '1.....1...1.....',
+    snare: '....1.......1...',
+    hat: '..1...1...1...1.',
+    bass: 'x..x..x.x..x..x.', bassOct: -24,
+    sonar: '........1.......',
+    glitch: 0.03,
   },
   jefe4: {
-    // AM: frío, mecánico y lleno de odio. La disminuida y el tritono no resuelven nunca.
-    bpm: 84,
-    chords: [[45, 48, 51], [46, 49, 53], [45, 48, 51], [44, 47, 50]],
-    drone: 0.13, choir: 0.06, pad: 0.03, padCut: 600,
+    // AM: una máquina enorme que respira; el tritono nunca resuelve.
+    bpm: 66,
+    chords: [[45, 48, 51], [46, 49, 53], [44, 47, 50], [45, 48, 51]],
+    drone: 0.1, choir: 0.04, sweep: 0.06, throb: 0.08,
     knell: true,
-    grit: 'x.x.b.x.t.x.b.o.', gritOct: -24,
-    arp: '1.11.11.1.11.11.', arpOct: 12,
-    hat: '1111111111111111',
-    tom: '2..1..2.2..1.11.',
-    leadLen: 4,
+    kick: '1.......1..1....',
+    tom: '2.......2.....1.',
+    grit: 'x.......x..b....', gritOct: -24,
+    sonar: '1.......',
+    glitch: 0.07,
+    leadLen: 14,
     lead: [
-      57, null, null, null, 60, null, null, null, 63, null, null, null, 62, null, null, null,
-      58, null, null, null, 61, null, null, null, 65, null, null, null, 64, null, null, null,
-      57, null, null, null, 60, null, 63, null, 66, null, null, null, 65, null, 63, null,
-      62, null, null, null, null, null, null, null, 56, null, null, null, null, null, null, null,
+      69, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+      70, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+      68, null, null, null, null, null, null, null, 63, null, null, null, null, null, null, null,
+      69, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
     ],
   },
   // figuras históricas: coro etéreo en modo lidio
@@ -269,6 +279,10 @@ class Sequencer {
       if (off !== null) e.grit(this.out, root + off, t, dt * (d.grit[s16 + 1] === '.' ? 2.6 : 0.9));
     }
     if (d.knell && s16 === 0) e.knell(this.out, chord[0], t);
+    if (s16 === 0 && d.sweep) e.sweep(this.out, chord, t, dt * 16, d.sweep);
+    if (s16 === 0 && d.throb) e.throb(this.out, chord[0] - 24, t, dt * 16, d.throb, d.bpm);
+    if (d.sonar && d.sonar[step % d.sonar.length] === '1') e.sonar(this.out, chord[0] + 36, t);
+    if (d.glitch && Math.random() < d.glitch) e.glitch(this.out, t);
     if (d.arp && d.arp[s16] === '1') {
       const seq = [0, 1, 2, 1, 2, 0, 1, 2];
       const n = chord[seq[step % seq.length]] + (d.arpOct ?? 0) + (step % 32 >= 16 && d.bpm > 100 ? 12 : 0);
@@ -665,6 +679,95 @@ export class AudioEngine {
     lfo.start(t);
     o.stop(t + dur + 0.05);
     lfo.stop(t + dur + 0.05);
+  }
+
+  /** Pad analógico sci-fi: dos sierras desafinadas y un cuadrado, con filtro resonante que se abre y cierra */
+  sweep(out: AudioNode, notes: number[], t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = 9;
+    f.frequency.setValueAtTime(180, t);
+    f.frequency.exponentialRampToValueAtTime(1800, t + dur * 0.55);
+    f.frequency.exponentialRampToValueAtTime(180, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + dur * 0.35);
+    g.gain.setValueAtTime(vol, t + dur * 0.75);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur * 1.05);
+    f.connect(g);
+    g.connect(out);
+    g.connect(this.reverb!);
+    for (const n of notes) {
+      for (const [det, type] of [[-14, 'sawtooth'], [14, 'sawtooth'], [0, 'square']] as [number, OscillatorType][]) {
+        const o = ctx.createOscillator();
+        o.type = type;
+        o.frequency.value = mtof(n);
+        o.detune.value = det;
+        o.connect(f);
+        o.start(t);
+        o.stop(t + dur * 1.1);
+      }
+    }
+  }
+
+  /** Sub grave que respira (trémolo lento a la mitad del pulso) */
+  throb(out: AudioNode, n: number, t: number, dur: number, vol: number, bpm: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = mtof(n);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.4);
+    g.gain.setValueAtTime(vol, t + dur * 0.9);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur * 1.02);
+    const trem = ctx.createGain();
+    trem.gain.value = 0.5;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = bpm / 120; // una «respiración» cada dos tiempos
+    const depth = ctx.createGain();
+    depth.gain.value = 0.5;
+    lfo.connect(depth).connect(trem.gain);
+    o.connect(trem).connect(g).connect(out);
+    o.start(t); lfo.start(t);
+    o.stop(t + dur * 1.05); lfo.stop(t + dur * 1.05);
+  }
+
+  /** Ping de sonar: seno agudo que cae un poco de tono, con eco largo */
+  sonar(out: AudioNode, n: number, t: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(mtof(n), t);
+    o.frequency.exponentialRampToValueAtTime(mtof(n) * 0.94, t + 1.2);
+    const g = ctx.createGain();
+    this.env(g, t, 0.004, 0.045, 1.4);
+    o.connect(g);
+    g.connect(out);
+    g.connect(this.delay!);
+    g.connect(this.reverb!);
+    o.start(t);
+    o.stop(t + 1.6);
+  }
+
+  /** Chasquido digital: un pulso cuadrado agudísimo y cortito (la máquina «piensa») */
+  glitch(out: AudioNode, t: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    o.type = 'square';
+    o.frequency.setValueAtTime(800 + Math.random() * 2400, t);
+    o.frequency.setValueAtTime(400 + Math.random() * 1600, t + 0.02);
+    const g = ctx.createGain();
+    this.env(g, t, 0.001, 0.018, 0.05);
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 2000;
+    o.connect(f).connect(g);
+    g.connect(out);
+    g.connect(this.delay!);
+    o.start(t);
+    o.stop(t + 0.08);
   }
 
   bell(out: AudioNode, n: number, t: number) {

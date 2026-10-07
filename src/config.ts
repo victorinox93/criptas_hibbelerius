@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.20.0 · Acto IV secreto: el Núcleo del Cálculo (autómatas, derivadas e integrales y AM)';
+export const VERSION = '0.20.1 · Música sci-fi del Núcleo y epílogo del alma a pantalla completa';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.

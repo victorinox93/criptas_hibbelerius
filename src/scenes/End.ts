@@ -16,6 +16,24 @@ const TIPS = T.final.consejos;
 export class EndScene extends Phaser.Scene {
   constructor() { super('End'); }
 
+  /** Epílogo del alma aliada a pantalla completa (sale siempre que ganas con un alma, también con repaso) */
+  private epilogo(id: string, nombre: string, final: string, despues: () => void) {
+    const layer = this.add.container(0, 0).setDepth(850);
+    layer.add(this.add.rectangle(0, 0, W, H, 0x050407, 0.97).setOrigin(0).setInteractive());
+    layer.add(txt(this, W / 2, 46, 'Epílogo', 22, CSS.dim).setOrigin(0.5));
+    layer.add(title(this, W / 2, 86, nombre, 38));
+    const k = 1.5, x = W / 2, y = 330;
+    const c = epilogoAlma(this, id, x, y);
+    if (c) { c.setScale(k).setPosition(x - k * x, y - k * y + 10); layer.add(c); }
+    const t = txt(this, W / 2, 400, final, 22, CSS.gold, { align: 'center', wordWrap: { width: 720 } }).setOrigin(0.5, 0).setAlpha(0);
+    layer.add(t);
+    this.tweens.add({ targets: t, alpha: 1, duration: 1200, delay: 2600 });
+    const b = button(this, W / 2, 500, 220, 42, T.runa.continuar, () => { layer.destroy(); despues(); }, { size: 21, color: UI.gold });
+    b.setAlpha(0);
+    layer.add(b);
+    this.tweens.add({ targets: b, alpha: 1, duration: 600, delay: 3000 });
+  }
+
   /** Ventana de «¡Subiste de nivel!» con lo que se desbloqueó */
   private unlockPopup(nivel: number, all: typeof DESBLOQUEOS) {
     const items = all.slice(0, 10);
@@ -65,7 +83,10 @@ export class EndScene extends Phaser.Scene {
     const sig = siguienteNivel(xp);
     txt(this, W / 2, 136, `+${ganado} de Conocimiento  ·  Nivel ${despues}${sig ? ` (${xp}/${sig})` : ' (máximo)'}`, 19, '#9ad8f0').setOrigin(0.5);
     const nuevos = DESBLOQUEOS.filter((d) => d.nivel > antes && d.nivel <= despues);
-    if (nuevos.length) this.time.delayedCall(1600, () => this.unlockPopup(despues, nuevos));
+    // si hay epílogo de alma, el aviso de nivel espera a que lo cierres
+    const almaFin = data.victory && run.aliado ? ALMAS[run.aliado] : null;
+    const popup = () => { if (nuevos.length) this.time.delayedCall(almaFin ? 400 : 1600, () => this.unlockPopup(despues, nuevos)); };
+    if (!almaFin) popup();
     void nivelDe;
 
     if (data.victory) {
@@ -82,6 +103,7 @@ export class EndScene extends Phaser.Scene {
       this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : alma ? 0.22 : 0.9, duration: 2500, delay: 800 });
       this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       // epílogo ilustrado del alma aliada
+      if (alma) this.epilogo(alma.id, alma.name, alma.final, popup);
       if (alma && !repaso) epilogoAlma(this, alma.id, W - 175, 412);
       if (nuc === 'am') wz.setTint(0x6a5a5a);
       if (!repaso && !alma) {

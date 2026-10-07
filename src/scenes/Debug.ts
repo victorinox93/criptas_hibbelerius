@@ -10,6 +10,9 @@ import { EFFECTS } from '../data/effects';
 import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { ALMA_IDS } from '../data/almas';
+
+/** Nombres cortos de las almas para el botón «Fin + alma» (cada clic pasa a la siguiente) */
+const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda' };
 import { RELIC_POOL, RELICS } from '../data/relics';
 import { codexFlag, emptyCodex, Game, pisosDe, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
@@ -20,6 +23,7 @@ import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui
  * ni en el ranking, y en combate la tecla K gana al instante.
  */
 const OPTS = {
+  alma: 0, // siguiente alma para «Final + alma»
   clase: 'caballero',
   gravedad: 1,
   mazo: 'inicial' as 'inicial' | 'fuerte',
@@ -61,8 +65,8 @@ export class DebugScene extends Phaser.Scene {
     frame(g, 30, 92, W - 60, 360, 0x0e0b12, 0x6a3a3a, 0.92);
     L(g);
     const label = (x: number, y: number, s: string) => L(txt(this, x, y, s, 20, CSS.gold));
-    const btn = (x: number, y: number, w: number, s: string, fn: () => void, on = false): Btn => {
-      const b = button(this, x, y, w, 34, s, fn, { size: 18, color: on ? UI.gold : UI.border });
+    const btn = (x: number, y: number, w: number, s: string, fn: () => void, on = false, size = 18): Btn => {
+      const b = button(this, x, y, w, 34, s, fn, { size, color: on ? UI.gold : UI.border });
       L(b);
       return b;
     };
@@ -101,8 +105,9 @@ export class DebugScene extends Phaser.Scene {
       ['¿Más o menos?', () => { this.go(acto(), 'MasMenos', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
       ['M. ambulante', () => this.go(acto(), 'Shop', { floor: 4, ambulante: true })],
       ['Grieta III→IV', () => this.go(3, 'ActTransition', { to: 4 })],
+      [`Fin + ${CORTO[ALMA_IDS[OPTS.alma % ALMA_IDS.length]] ?? 'alma'}`, () => { const id = ALMA_IDS[OPTS.alma++ % ALMA_IDS.length]; this.go(acto(), 'End', { victory: true }); Game.run!.aliado = id; }],
     ];
-    jumps.forEach(([s, fn], i) => btn(106 + (i % 6) * 150, 282 + Math.floor(i / 6) * 36, 142, s, fn));
+    jumps.forEach(([s, fn], i) => btn(96 + (i % 7) * 128, 282 + Math.floor(i / 7) * 36, 124, s, fn, false, 16));
     const fig = FIGURES[OPTS.figura];
     btn(150, 396, 240, `Eco: ${fig.name}`, () => this.go(acto(), 'Sanctuary', { floor: 2, figureId: fig.id }));
     btn(300, 396, 50, '▸', () => { OPTS.figura = (OPTS.figura + 1) % FIGURES.length; this.draw(); });
