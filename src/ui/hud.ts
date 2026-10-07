@@ -8,7 +8,7 @@ import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { BOONS } from '../data/figures';
 import { RELICS } from '../data/relics';
-import { FLOORS, Game, ROMAN, saveLocal } from '../state';
+import { Game, pisosDe, ROMAN, saveLocal } from '../state';
 import { MAX_POCIONES, POCIONES } from '../data/pociones';
 import { audio } from '../audio';
 import { T } from '../textos';
@@ -106,7 +106,8 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
     refresh() {
       const r = Game.run!;
       hud.setHp(r.hp, r.maxHp);
-      floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, FLOORS + 1)}/${FLOORS + 1}`);
+      const pf = pisosDe(r.acto ?? 1);
+      floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, pf + 1)}/${pf + 1}`);
       scoreT.setText(`✦${fmtPuntos(r.score)}`);
       ergT.setText(`${r.ergios}`);
       deckBtn.label.setText(`${T.hud.mazo} ${r.deck.length}`);

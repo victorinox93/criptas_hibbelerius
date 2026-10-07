@@ -359,6 +359,165 @@ for (const q of PREGUNTAS) {
   }));
 }
 
+
+// ════════ Acto IV · El Núcleo del Cálculo: derivadas e integrales ════════
+const SUP = ['', '', '²', '³'];
+/** Escribe un polinomio en t sin «1t» ni «+ 0t²»: poly([3, 3], [-1, 1], [10, 0]) → «3t³ − t + 10» */
+function poly(...terms: [number, number][]) {
+  let out = '';
+  for (const [c, n] of terms) {
+    if (!c) continue;
+    const abs = Math.abs(c);
+    const body = n === 0 ? `${abs}` : `${abs === 1 ? '' : abs}t${SUP[n]}`;
+    out += out ? ` ${c < 0 ? '−' : '+'} ${body}` : `${c < 0 ? '−' : ''}${body}`;
+  }
+  return out || '0';
+}
+/** Temas del Acto IV: sólo salen en el Núcleo */
+export const CALCULO_CONCEPTS = ['Derivada: velocidad', 'Derivada: aceleracion', 'Integral: desplazamiento', 'Integral: trabajo', 'Integral: impulso', 'Graficas'];
+
+const CALCULO: (() => Problem)[] = [
+  // v = dx/dt
+  () => {
+    const a = ri(1, 3), b = ri(-4, 6), c = ri(1, 9), t = ri(1, 4);
+    const v = 3 * a * t * t + 2 * b * t + c;
+    return {
+      concept: 'Derivada: velocidad', title: 'Engrane de la Velocidad',
+      prompt: `Un autómata avanza por un riel según x(t) = ${poly([a, 3], [b, 2], [c, 1])}  (x en m, t en s).\n¿Cuál es su velocidad en t = ${t} s?`,
+      unit: 'm/s', answer: v, tol: 0.01,
+      solution: ['v(t) = dx/dt', `v(t) = ${poly([3 * a, 2], [2 * b, 1], [c, 0])}`, `v(${t}) = ${v} m/s`],
+    };
+  },
+  // a = dv/dt
+  () => {
+    const a = ri(1, 4), b = ri(-6, 8), c = ri(0, 10), t = ri(1, 5);
+    const ac = 2 * a * t + b;
+    return {
+      concept: 'Derivada: aceleracion', title: 'Engrane de la Aceleración',
+      prompt: `La velocidad de un engrane suelto es v(t) = ${poly([a, 2], [b, 1], [c, 0])}  (v en m/s, t en s).\n¿Cuál es su aceleración en t = ${t} s?`,
+      unit: 'm/s²', answer: ac, tol: 0.01,
+      solution: ['a(t) = dv/dt', `a(t) = ${poly([2 * a, 1], [b, 0])}`, `a(${t}) = ${ac} m/s²`],
+    };
+  },
+  // a = d²x/dt²
+  () => {
+    const a = ri(1, 2), b = ri(1, 5), t = ri(1, 3);
+    const ac = 6 * a * t + 2 * b;
+    return {
+      concept: 'Derivada: aceleracion', title: 'Engrane de la Segunda Derivada',
+      prompt: `Un pistón se mueve según x(t) = ${poly([a, 3], [b, 2])}  (x en m, t en s).\n¿Cuál es su aceleración en t = ${t} s?`,
+      unit: 'm/s²', answer: ac, tol: 0.01,
+      solution: ['v = dx/dt  y  a = dv/dt = d²x/dt²', `v(t) = ${poly([3 * a, 2], [2 * b, 1])}`, `a(t) = ${poly([6 * a, 1], [2 * b, 0])}`, `a(${t}) = ${ac} m/s²`],
+    };
+  },
+  // altura máxima: dy/dt = 0
+  () => {
+    const v0 = ri(8, 30);
+    const t = v0 / G;
+    return {
+      concept: 'Derivada: velocidad', title: 'Engrane de la Cima',
+      prompt: `Un autómata lanza un perno hacia arriba: y(t) = ${v0}t − 4.905t²  (y en m, t en s).\n¿En qué instante alcanza su altura máxima? (Pista: ahí dy/dt = 0)`,
+      unit: 's', answer: t, tol: 0.02,
+      solution: ['En la altura máxima la velocidad es cero: dy/dt = 0', `dy/dt = ${v0} − 9.81t = 0`, `t = ${v0} / 9.81 = ${f2(t)} s`],
+    };
+  },
+  // x = ∫v dt
+  () => {
+    const a = ri(1, 4), b = ri(1, 6), T = ri(2, 5);
+    const k = 3 * a; // v = k t² + b  (k múltiplo de 3 → resultado entero)
+    const x = a * T ** 3 + b * T;
+    return {
+      concept: 'Integral: desplazamiento', title: 'Engrane del Recorrido',
+      prompt: `Un carro de la fábrica tiene velocidad v(t) = ${poly([k, 2], [b, 0])}  (v en m/s, t en s).\n¿Cuánto se desplaza entre t = 0 y t = ${T} s?`,
+      unit: 'm', answer: x, tol: 0.01,
+      solution: ['Δx = ∫ v dt', `Δx = ∫₀^${T} (${poly([k, 2], [b, 0])}) dt = [${poly([a, 3], [b, 1])}]₀^${T}`, `Δx = ${a}(${T})³ + ${b}(${T}) = ${x} m`],
+    };
+  },
+  // v = ∫a dt
+  () => {
+    const k = 2 * ri(1, 4), v0 = ri(0, 6), T = ri(2, 5);
+    const v = v0 + (k / 2) * T * T;
+    return {
+      concept: 'Integral: desplazamiento', title: 'Engrane del Arranque',
+      prompt: `Un autómata arranca con v₀ = ${v0} m/s y su aceleración crece con el tiempo: a(t) = ${poly([k, 1])}  (m/s²).\n¿Qué velocidad tiene en t = ${T} s?`,
+      unit: 'm/s', answer: v, tol: 0.01,
+      solution: ['v = v₀ + ∫ a dt', `v = ${v0} + ∫₀^${T} ${poly([k, 1])} dt = ${v0} + [${poly([k / 2, 2])}]₀^${T}`, `v = ${v0} + ${k / 2}(${T})² = ${v} m/s`],
+    };
+  },
+  // W = ∫F dx (resorte)
+  () => {
+    const k = ri(2, 12) * 50, d = pick([0.1, 0.2, 0.25, 0.3, 0.4, 0.5]);
+    const W = 0.5 * k * d * d;
+    return {
+      concept: 'Integral: trabajo', title: 'Engrane del Resorte',
+      prompt: `El muelle de un reloj gigante tiene k = ${k} N/m (F = k·x).\n¿Cuánto trabajo cuesta comprimirlo ${d} m desde su longitud natural?`,
+      unit: 'J', answer: W, tol: 0.02,
+      solution: ['W = ∫ F dx = ∫₀^d k·x dx', 'W = ½·k·d²', `W = ½(${k})(${d})² = ${f2(W)} J`],
+    };
+  },
+  // W = ∫F dx (fuerza lineal)
+  () => {
+    const a = ri(5, 30), b = ri(1, 8) * 2, L = ri(2, 6);
+    const W = a * L + (b / 2) * L * L;
+    return {
+      concept: 'Integral: trabajo', title: 'Engrane de la Palanca',
+      prompt: `Un brazo mecánico empuja una caja con una fuerza que crece: F(x) = ${a} + ${b === 1 ? '' : b}x  (F en N, x en m).\n¿Qué trabajo hace entre x = 0 y x = ${L} m?`,
+      unit: 'J', answer: W, tol: 0.01,
+      solution: ['W = ∫ F dx', `W = ∫₀^${L} (${a} + ${b}x) dx = [${a}x + ${b / 2 === 1 ? '' : b / 2}x²]₀^${L}`, `W = ${a}(${L}) + ${b / 2}(${L})² = ${W} J`],
+    };
+  },
+  // I = ∫F dt → Δv
+  () => {
+    const c = ri(2, 10) * 3, T = ri(1, 4), m = ri(2, 12);
+    const I = (c / 2) * T * T;
+    const dv = I / m;
+    return {
+      concept: 'Integral: impulso', title: 'Engrane del Martillo',
+      prompt: `Un martillo mecánico empuja un bloque de ${m} kg (en reposo) con F(t) = ${poly([c, 1])}  (F en N, t en s) durante ${T} s.\n¿Qué velocidad tiene el bloque al final? (Ignora la fricción)`,
+      unit: 'm/s', answer: dv, tol: 0.02,
+      solution: ['I = ∫ F dt = Δp = m·Δv', `I = ∫₀^${T} ${poly([c, 1])} dt = ${f2(c / 2)}(${T})² = ${f2(I)} N·s`, `Δv = I/m = ${f2(I)} / ${m} = ${f2(dv)} m/s`],
+    };
+  },
+  // I = ∫F dt directo
+  () => {
+    const a = ri(1, 4) * 3, b = ri(2, 20), T = ri(1, 3);
+    const I = (a / 3) * T ** 3 + b * T;
+    return {
+      concept: 'Integral: impulso', title: 'Engrane del Golpe',
+      prompt: `Un pistón golpea con F(t) = ${poly([a, 2], [b, 0])}  (F en N, t en s).\n¿Qué impulso entrega entre t = 0 y t = ${T} s?`,
+      unit: 'N·s', answer: I, tol: 0.01,
+      solution: ['I = ∫ F dt', `I = [${poly([a / 3, 3], [b, 1])}]₀^${T}`, `I = ${a / 3 === 1 ? '' : a / 3}(${T})³ + ${b}(${T}) = ${f2(I)} N·s`],
+    };
+  },
+  // P = dW/dt
+  () => {
+    const a = ri(2, 15), t = ri(1, 6);
+    const P = 2 * a * t;
+    return {
+      concept: 'Derivada: velocidad', title: 'Engrane de la Potencia',
+      prompt: `El trabajo que hace un motor del Núcleo crece así: W(t) = ${poly([a, 2])}  (W en J, t en s).\n¿Qué potencia entrega en t = ${t} s? (P = dW/dt)`,
+      unit: 'W', answer: P, tol: 0.01,
+      solution: ['P = dW/dt', `P(t) = ${poly([2 * a, 1])}`, `P(${t}) = ${P} W`],
+    };
+  },
+];
+
+/** Preguntas de opción múltiple sobre gráficas, pendientes y áreas */
+const GRAFICAS: { prompt: string; correct: string; wrong: string[]; solution: string[] }[] = [
+  { prompt: 'En una gráfica velocidad–tiempo, ¿qué representa el ÁREA bajo la curva?', correct: 'El desplazamiento', wrong: ['La aceleración', 'La fuerza', 'La energía cinética'], solution: ['Δx = ∫ v dt: el área bajo v(t) es el desplazamiento.'] },
+  { prompt: 'En una gráfica velocidad–tiempo, ¿qué representa la PENDIENTE?', correct: 'La aceleración', wrong: ['El desplazamiento', 'La posición', 'El impulso'], solution: ['a = dv/dt: la pendiente de v(t) es la aceleración.'] },
+  { prompt: 'En una gráfica fuerza–tiempo, ¿qué representa el área bajo la curva?', correct: 'El impulso (Δp)', wrong: ['El trabajo', 'La potencia', 'La aceleración'], solution: ['I = ∫ F dt = Δp.'] },
+  { prompt: 'En una gráfica fuerza–posición, ¿qué representa el área bajo la curva?', correct: 'El trabajo', wrong: ['El impulso', 'La velocidad', 'La masa'], solution: ['W = ∫ F dx.'] },
+  { prompt: 'La gráfica x–t de un autómata es una recta inclinada. ¿Qué pasa con su velocidad?', correct: 'Es constante', wrong: ['Aumenta', 'Es cero', 'Disminuye'], solution: ['v = dx/dt es la pendiente; una recta tiene pendiente constante.'] },
+  { prompt: 'En el punto más alto de un tiro vertical, v = 0. ¿Cuánto vale la aceleración ahí?', correct: '−9.81 m/s² (no es cero)', wrong: ['0 m/s²', '+9.81 m/s²', 'Depende de la masa'], solution: ['v = 0 sólo dice que la pendiente de x(t) es cero.', 'La gravedad sigue actuando: a = dv/dt = −g.'] },
+  { prompt: 'Si x(t) = 5t², ¿cómo cambia la velocidad con el tiempo?', correct: 'Crece linealmente: v = 10t', wrong: ['Es constante: v = 5', 'Crece al cuadrado: v = 5t²', 'Es cero'], solution: ['v = dx/dt = 10t: crece de forma lineal; la aceleración es constante (10 m/s²).'] },
+  { prompt: 'La potencia es P = dW/dt. Si un motor hace el MISMO trabajo en la mitad del tiempo, su potencia…', correct: 'Se duplica', wrong: ['Se reduce a la mitad', 'No cambia', 'Se cuadruplica'], solution: ['P ≈ W/Δt: con la mitad de Δt, P es el doble.'] },
+];
+for (const q of GRAFICAS) {
+  CALCULO.push(() => ({ concept: 'Graficas', title: 'Engrane de las Gráficas', prompt: q.prompt, unit: '', ...shuffleChoices([q.correct, ...q.wrong], 0), solution: q.solution }));
+}
+GENERATORS.push(...CALCULO);
+
 /** Temas del Acto III: no salen en los altares de los actos anteriores */
 export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques', 'Impulso angular'];
 
@@ -367,7 +526,7 @@ export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques',
  * Con probabilidad MCQ_SHARE prefiere una pregunta de opción múltiple.
  */
 export function randomProblem(concepts?: string[]): Problem {
-  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept));
+  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept));
   const wantChoice = Math.random() < MCQ_SHARE;
   let fallback: Problem | null = null;
   for (let i = 0; i < 200; i++) {

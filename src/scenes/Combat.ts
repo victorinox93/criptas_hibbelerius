@@ -16,7 +16,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addEntropia, addErgios, boonLevel, codexFlag, codexWin, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { addEntropia, addErgios, boonLevel, codexFlag, codexWin, contarHib, Game, nucleoDisponible, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
@@ -30,7 +30,7 @@ import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
 import { deckOverlay, Hud, setPotionHandler, topBar } from '../ui/hud';
-import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, towerBackground, Tooltip, txt, wizardryBackground } from '../ui/widgets';
+import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, Tooltip, txt, wizardryBackground } from '../ui/widgets';
 
 type Kind = 'easy' | 'normal' | 'elite' | 'boss';
 
@@ -272,7 +272,10 @@ export class CombatScene extends Phaser.Scene {
     this.ve = VE_BASE;
     this.critica = false;
     this.grav = gravityOf(run.gravity);
-    if (this.acto >= 3) {
+    if (this.acto >= 4) {
+      audio.play(this.kind === 'boss' ? 'jefe4' : 'combate5');
+      nucleoBackground(this, 400 + this.floor * 7, this.kind === 'boss');
+    } else if (this.acto === 3) {
       audio.play(this.kind === 'boss' ? 'jefe3' : 'combate4');
       towerBackground(this, 300 + this.floor * 7, this.kind === 'boss');
     } else if (this.acto === 2) {
@@ -390,7 +393,7 @@ export class CombatScene extends Phaser.Scene {
     this.showFamiliar();
     this.showAliado();
     this.refreshPlayer();
-    this.banner(this.kind === 'boss' ? T.combate.bannerJefes[Math.min(2, this.acto - 1)] : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+    this.banner(this.kind === 'boss' ? T.combate.bannerJefes[Math.min(3, this.acto - 1)] : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
       if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
@@ -431,8 +434,15 @@ export class CombatScene extends Phaser.Scene {
     const hp = bar(this, x - 60, 344, 120, 14, 0x6a2a3a);
     const blockT = txt(this, x - 82, 351, '', 22, CSS.block).setOrigin(0.5);
     const top = 330 - sprite.displayHeight - (st.def.id === 'bat' ? 80 : 12);
-    const intentC = st.def.id === 'pendulo' ? this.add.container(x + 62, 170) : (st.def.id === 'hibbelerius' ? this.add.container(x - 120, 150) : this.add.container(x, Math.max(130, top)));
+    const intentC = st.def.id === 'pendulo' ? this.add.container(x + 62, 170) : (st.def.id === 'hibbelerius' || st.def.id === 'am' ? this.add.container(x - 120, 150) : this.add.container(x, Math.max(130, top)));
     if (st.def.id === 'hibbelerius') this.hibAura(sprite, x);
+    if (st.def.id === 'am') {
+      this.amAura(sprite, x);
+      if ((Game.codex.am?.pactos ?? 0) > 0) {
+        st.maxHp += 40; st.hp += 40;
+        this.time.delayedCall(1800, () => this.calc('AM: «Me diste tus respuestas a cambio de poder. Ahora son mías.» (+40 de vida por tus pactos)'));
+      }
+    }
     const statusC = this.add.container(x + 66, 351);
     const nameT = txt(this, x, 370, st.def.name, 19, CSS.dim).setOrigin(0.5);
     if (nameT.width > 180) nameT.setScale(180 / nameT.width, 1);
@@ -1683,6 +1693,7 @@ export class CombatScene extends Phaser.Scene {
       dmg -= absorbed;
     }
     st.hp -= dmg;
+    if (dmg > 0) st.recibido = (st.recibido ?? 0) + dmg;
     // efectos
     ev.sprite.setTintFill(0xffffff);
     this.time.delayedCall(80, () => ev.sprite.clearTint());
@@ -1738,6 +1749,16 @@ export class CombatScene extends Phaser.Scene {
         st.phase3 = true;
         st.carga = 0;
         this.hibPhase(ev, 'Capítulo 15 · Impulso', '«Último capítulo. DETENME antes de que suelte mi impulso.»');
+      }
+    }
+    if (st.def.id === 'am' && st.hp > 0) {
+      if (!st.phase2 && st.hp <= st.maxHp * 0.66) {
+        st.phase2 = true;
+        st.inercia = 0;
+        this.hibPhase(ev, 'Fase II · Derivada', '«Mi odio no es constante: crece. d(odio)/dt > 0. DETENME y vuelve a empezar.»', 'AM se reprograma');
+      } else if (st.phase2 && !st.phase3 && st.hp <= st.maxHp * 0.33) {
+        st.phase3 = true;
+        this.hibPhase(ev, 'Fase III · Integral', `«Llevo la cuenta de cada golpe: ${st.recibido ?? 0} de daño. Te lo voy a devolver, integrado.»`, 'AM se reprograma');
       }
     }
     const overkill = st.hp < 0 ? -st.hp : 0;
@@ -1833,6 +1854,7 @@ export class CombatScene extends Phaser.Scene {
     if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
     // el Autor Eterno lanza hoces giratorias
     if (from && from.st.def.id === 'hibbelerius' && dmg > 0) await this.hoces(from);
+    if (from && from.st.def.id === 'am' && dmg > 0) await this.amRayo(from);
     // Fuego Amigo: el golpe se desvía hacia otro enemigo
     if (from && dmg > 0 && this.fuegoAmigo) {
       const otros = this.alive().filter((e) => e !== from);
@@ -2273,7 +2295,8 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.kind === 'boss' && this.turn <= 6) this.encargo(completarEncargo('jefeRapido'));
     if (this.kind === 'boss') sumar(run, 'Actos superados', PUNTOS.acto * this.acto);
-    if (this.kind === 'boss' && this.acto >= 3) sumar(run, 'Victoria', PUNTOS.victoria);
+    if (this.kind === 'boss' && this.acto === 3) sumar(run, 'Victoria', PUNTOS.victoria);
+    if (this.kind === 'boss' && this.acto >= 4) sumar(run, 'AM derrotado', PUNTOS.victoria * 2);
     if (this.kind === 'elite') run.stats.elites++;
     // los efectos pasajeros se consumen al terminar el combate
     const cons = boonLevel('c_conserva');
@@ -2303,6 +2326,7 @@ export class CombatScene extends Phaser.Scene {
     audio.sfx('victory');
     logEvent('combate', '', true, { tipo: this.kind, piso: this.floor, turnos: this.turn, vida: run.hp });
     saveLocal();
+    if (this.kind === 'boss') (run.seen ??= []).push(`jefe_${this.acto}`);
     if (this.kind === 'boss' && this.acto === 1) {
       codexFlag('acto1');
       logEvent('acto', '', true, { acto: 1, vida: run.hp });
@@ -2320,6 +2344,30 @@ export class CombatScene extends Phaser.Scene {
       syncRun('en curso', 'Acto II superado');
       await this.banner(T.combate.victoria);
       fadeTo(this, 'ActTransition', { to: 3 });
+      return true;
+    }
+    if (this.kind === 'boss' && this.acto === 3) {
+      // ¿Se abre la grieta del Núcleo? (tras vencer a Hibbelerius 2 veces)
+      if (!run.debug) contarHib();
+      codexFlag('acto3');
+      if (nucleoDisponible() || run.debug) {
+        logEvent('acto', '', true, { acto: 3, vida: run.hp });
+        saveLocal();
+        syncRun('victoria', 'Hibbelerius derrotado');
+        await this.banner(T.combate.victoria);
+        fadeTo(this, 'ActTransition', { to: 4 });
+        return true;
+      }
+    }
+    if (this.kind === 'boss' && this.acto >= 4) {
+      run.done = true;
+      codexFlag('acto4');
+      logEvent('acto', '', true, { acto: 4, vida: run.hp });
+      bonosFinales(run);
+      saveLocal();
+      syncRun('victoria', 'AM derrotado');
+      await this.banner('AM ha caído');
+      fadeTo(this, 'End', { victory: true, nucleo: 'am' });
       return true;
     }
     if (this.kind === 'boss') {
@@ -2374,11 +2422,12 @@ export class CombatScene extends Phaser.Scene {
     bonosFinales(run);
     saveLocal();
     logEvent('derrota', '', false, { piso: this.floor, enemigo: by });
-    syncRun('derrota', by);
+    const nucleo = this.acto >= 4;
+    syncRun(nucleo ? 'victoria' : 'derrota', nucleo ? `Cayó en el Núcleo: ${by}` : by);
     audio.sfx('defeat');
     this.tweens.add({ targets: this.hero, alpha: 0.2, y: 290, duration: 900 });
     await this.banner(T.combate.derrota, '#b8a8c8');
-    fadeTo(this, 'End', { victory: false, by });
+    fadeTo(this, 'End', nucleo ? { victory: true, nucleo: 'caido', by } : { victory: false, by });
   }
 
   // ───────────────────────── v0.6: AZAR, RADIACIÓN Y FAMILIARES ─────────────────────────
@@ -2699,6 +2748,31 @@ export class CombatScene extends Phaser.Scene {
     }).setDepth(-1);
   }
 
+  /** Aura de AM: resplandor rojo, código verde que cae y el ojo que late */
+  private amAura(sprite: Phaser.GameObjects.Image, x: number) {
+    const glow = this.add.ellipse(x, 200, 240, 300, 0xa82a2a, 0.12).setBlendMode(Phaser.BlendModes.ADD).setDepth(-2);
+    this.tweens.add({ targets: glow, alpha: 0.04, scaleX: 1.1, duration: 1300, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: sprite, y: sprite.y - 6, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const ojo = this.add.circle(x, 330 - (64 - 22) * sprite.scaleX, 14, 0xff3a1a, 0.35).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: ojo, scale: 1.6, alpha: 0.1, duration: 700, yoyo: true, repeat: -1 });
+    const odio = ['ODIO', 'H A T E', '387.44 millones', 'dx/dt', '∫', 'ODIO'];
+    odio.forEach((w, i) => {
+      const t = txt(this, x - 130 + i * 52, 60, w, 14, '#3aff6a').setAlpha(0).setDepth(-1);
+      this.tweens.add({ targets: t, y: 330, alpha: { from: 0.5, to: 0 }, duration: 4200, delay: i * 700, repeat: -1 });
+    });
+  }
+
+  /** AM dispara un rayo rojo desde su ojo */
+  private amRayo(from: EnemyView) {
+    return new Promise<void>((res) => {
+      const y0 = 330 - (64 - 22) * from.sprite.scaleY;
+      const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+      g.lineStyle(10, 0xff3a1a, 0.5).lineBetween(from.baseX, y0, this.heroX + 10, 250);
+      g.lineStyle(3, 0xffd27a, 1).lineBetween(from.baseX, y0, this.heroX + 10, 250);
+      this.tweens.add({ targets: g, alpha: 0, duration: 380, onComplete: () => { g.destroy(); res(); } });
+    });
+  }
+
   /** Hoces giratorias que vuelan de Hibbelerius hacia el héroe */
   private hoces(from: EnemyView) {
     return new Promise<void>((res) => {
@@ -2714,13 +2788,14 @@ export class CombatScene extends Phaser.Scene {
     });
   }
 
-  private hibPhase(ev: EnemyView, cap: string, quote: string) {
-    this.cameras.main.flash(400, 120, 60, 160);
+  private hibPhase(ev: EnemyView, cap: string, quote: string, quien = 'Hibbelerius pasa la página') {
+    const am = ev.st.def.id === 'am';
+    this.cameras.main.flash(400, am ? 160 : 120, am ? 30 : 60, am ? 30 : 160);
     this.cameras.main.shake(300, 0.01);
-    this.floatText(ev.baseX, 110, cap, '#b89ad0');
-    this.calc(`Hibbelerius pasa la página: ${cap}`);
+    this.floatText(ev.baseX, 110, cap, am ? '#ff8a7a' : '#b89ad0');
+    this.calc(`${quien}: ${cap}`);
     this.calc(quote);
-    ev.sprite.setTint(ev.st.phase3 ? 0xffb0a0 : 0xd8c0ff);
+    ev.sprite.setTint(am ? (ev.st.phase3 ? 0xff9a8a : 0xffd0c0) : ev.st.phase3 ? 0xffb0a0 : 0xd8c0ff);
     this.burst(ev.baseX, 200, 0xd8ccb0, 40);
   }
 

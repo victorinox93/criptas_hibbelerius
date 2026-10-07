@@ -6,7 +6,7 @@ import { cardName, CARDS } from '../data/cards';
 import { EFFECTS } from '../data/effects';
 import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
-import { checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
+import { CALCULO_CONCEPTS, checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
 import { multRacha, PUNTOS, sumar } from '../data/puntaje';
 import { ENTROPIA } from '../data/abismo';
 import { AM_ENTROPIA, PACTO_AM } from '../data/am';
@@ -106,7 +106,8 @@ export class RuneScene extends Phaser.Scene {
     const acto = Game.run?.acto ?? 1;
     const actC = acto >= 3 ? [...IMPULSE_CONCEPTS, 'Conservacion']
       : acto === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion', 'Potencia'] : undefined;
-    this.p = randomProblem(ev?.concepts ?? fig?.concepts ?? actC);
+    // en el Núcleo (Acto IV) todas las preguntas son de derivadas e integrales
+    this.p = randomProblem(acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);

@@ -40,6 +40,7 @@ export interface EnemyState {
   phase3?: boolean;
   impulso: number; // daño de un Impulso Sostenido pendiente
   impulsoLeft: number; // turnos que le quedan a ese impulso
+  recibido?: number; // daño total que ha recibido (los autómatas integradores lo usan)
 }
 
 export interface EnemyDef {
@@ -320,6 +321,92 @@ export const ENEMIES: Record<string, EnemyDef> = {
       return { kind: 'attack', dmg: 6, summon: 'tomo', label: 'Llamar al tomo' };
     },
   },
+  // ════════ Acto IV · El Núcleo del Cálculo (autómatas) ════════
+  engrane: {
+    id: 'engrane', name: 'Engrane Dentado', sprite: 'engrane', scale: 4, hp: [22, 26], mass: 5, act: 4,
+    desc: 'Una pieza suelta del Núcleo que gira sola. Su rapidez angular es constante: ω = dθ/dt.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 7 } : { kind: 'attack', dmg: 4, hits: 2, label: 'Dientes' }),
+  },
+  oscilador: {
+    id: 'oscilador', name: 'Autómata Oscilante', sprite: 'oscilador', scale: 4, hp: [26, 30], mass: 8, act: 4,
+    desc: 'Su torso es un péndulo. Su golpe sigue x(t) = A·sen(ωt): sube, baja… y vuelve a subir. Mira su intención: a veces conviene atacar en el valle.',
+    next: (e) => ({ kind: 'attack', dmg: Math.round(9 + 6 * Math.sin((e.turn * Math.PI) / 2)), label: 'A·sen(ωt)' }),
+  },
+  derivador: {
+    id: 'derivador', name: 'Autómata Derivador', sprite: 'derivador', scale: 4, hp: [34, 38], mass: 20, act: 4,
+    desc: 'Su golpe crece 3 cada turno: la derivada de su fuerza es constante (dF/dt = 3). Mientras más tardes, peor.',
+    next: (e) => ({ kind: 'attack', dmg: 5 + 3 * e.turn, label: `dF/dt = 3` }),
+  },
+  integrador: {
+    id: 'integrador', name: 'Autómata Integrador', sprite: 'integrador', scale: 4, hp: [40, 44], mass: 25, act: 4,
+    desc: 'Integra todo el daño que le haces (∫ daño dt) y te lo regresa en partes: su golpe suma 1 por cada 4 de daño que ha recibido. Remátalo rápido.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'block', block: 8, dmg: 3, label: 'Acumular ∫' }
+      : { kind: 'attack', dmg: 5 + Math.floor((e.recibido ?? 0) / 4), label: '∫ daño dt' }),
+  },
+  reloj: {
+    id: 'reloj', name: 'Reloj Andante', sprite: 'reloj', scale: 4, hp: [20, 24], mass: 2, act: 4,
+    desc: 'Tic, tac. Cada tres turnos te roba tiempo… y con él, energía.',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'attack', dmg: 4, drain: 1, label: 'Tic-tac (−1 J)' } : { kind: 'attack', dmg: 4, hits: 2 }),
+  },
+  bobina: {
+    id: 'bobina', name: 'Bobina de Chispas', sprite: 'bobina', scale: 4, hp: [28, 32], mass: 15, act: 4,
+    desc: 'Una bobina de Tesla que cobró vida. Te calienta con chispas y protege a sus aliados con un campo.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6, calor: 3, label: 'Chispa' } : { kind: 'block', block: 6, shieldAll: 5, label: 'Campo' }),
+  },
+  babbage: {
+    id: 'babbage', name: 'Máquina Diferencial', sprite: 'babbage', scale: 3.6, hp: [108, 116], mass: 300, umbral: 20, act: 4,
+    desc: 'La máquina de Babbage calcula por diferencias: su golpe crece cada vez más rápido (la segunda diferencia es constante). DETENERLA reinicia la cuenta.',
+    next: (e) => (e.turn % 4 === 3
+      ? { kind: 'block', block: 12, add: { id: 'errorSigno', n: 1, to: 'draw' }, label: 'Error de redondeo' }
+      : { kind: 'attack', dmg: 6 + (e.inercia * (e.inercia + 1)) / 2, label: 'Δ²F constante' }),
+  },
+  telar: {
+    id: 'telar', name: 'Telar de Jacquard', sprite: 'telar', scale: 3.6, hp: [96, 104], mass: 250, umbral: 18, act: 4,
+    desc: 'La primera máquina programable: lee tarjetas perforadas. Mete Ruido a tu mazo y arma engranes nuevos.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'buff', summon: 'engrane', label: 'Tarjeta perforada' };
+      if (p === 1) return { kind: 'attack', dmg: 8 + e.inercia, add: { id: 'ruido', n: 2, to: 'draw' }, label: 'Programa' };
+      return { kind: 'attack', dmg: 5, hits: 3, label: 'Lanzadera' };
+    },
+  },
+  turco: {
+    id: 'turco', name: 'El Turco Mecánico', sprite: 'turco', scale: 3.6, hp: [100, 108], mass: 120, umbral: 19, act: 4,
+    desc: 'El autómata que jugaba ajedrez. Prepara la jugada (jaque) y la remata (jaque mate). DETENLO antes del mate.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 14, dmg: 4, label: 'Apertura' };
+      if (p === 1) return { kind: 'attack', dmg: 10 + 2 * e.inercia, label: 'Jaque' };
+      return { kind: 'attack', dmg: 22 + 2 * e.inercia, label: 'Jaque mate' };
+    },
+  },
+  am: {
+    id: 'am', name: 'AM', sprite: 'am_jefe', scale: 3.2, hp: [380, 380], mass: 0, umbral: 22, act: 4,
+    desc: 'La inteligencia que odia. Pelea en tres fases: Odio, Derivada (su furia crece cada turno; DETENERLO la reinicia) e Integral (te regresa todo el daño que le hiciste).',
+    next: (e) => {
+      if (e.phase3) {
+        // Fase 3 · Integral: te regresa lo acumulado
+        switch (e.turn % 3) {
+          case 0: return { kind: 'attack', dmg: 8 + Math.floor((e.recibido ?? 0) / 30), hits: 2, label: '∫ de todo tu daño' };
+          case 1: return { kind: 'buff', heal: 12, add: { id: 'errorSigno', n: 2, to: 'draw' }, label: 'Reescribir' };
+          default: return { kind: 'attack', dmg: 14, calor: 3, label: 'No tengo boca' };
+        }
+      }
+      if (e.phase2) {
+        // Fase 2 · Derivada: la furia crece con la inercia
+        return e.turn % 2 === 0
+          ? { kind: 'attack', dmg: 8 + 3 * e.inercia, label: 'd(odio)/dt' }
+          : { kind: 'block', block: 10, dmg: 4, summon: 'derivador', label: 'Engendrar' };
+      }
+      // Fase 1 · Odio
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 12, add: { id: 'ruido', n: 2, to: 'discard' }, label: 'ODIO' };
+        case 1: return { kind: 'attack', dmg: 5, hits: 3, drain: 1, label: 'Te conozco' };
+        default: return { kind: 'block', block: 15, dmg: 6, label: 'Recalcular' };
+      }
+    },
+  },
   colossus: {
     id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
@@ -354,8 +441,16 @@ export const ENCOUNTERS_3 = {
   boss: [['hibbelerius']],
 };
 
+export const ENCOUNTERS_4 = {
+  easy: [['engrane', 'engrane'], ['oscilador'], ['reloj', 'engrane'], ['derivador']],
+  normal: [['derivador', 'engrane'], ['integrador'], ['oscilador', 'reloj'], ['bobina', 'engrane'], ['bobina', 'oscilador'],
+    ['integrador', 'reloj'], ['derivador', 'oscilador'], ['engrane', 'engrane', 'reloj'], ['bobina', 'derivador']],
+  elite: [['babbage'], ['telar'], ['turco']],
+  boss: [['am']],
+};
+
 export function encounters(acto: number) {
-  return acto >= 3 ? ENCOUNTERS_3 : acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
+  return acto >= 4 ? ENCOUNTERS_4 : acto === 3 ? ENCOUNTERS_3 : acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
 }
 
 /** Multiplicador global de la vida de los enemigos (v0.12: +20 %) */
@@ -364,7 +459,7 @@ export const VIDA_ENEMIGOS = 1.2;
 export function spawn(id: string): EnemyState {
   const def = ENEMIES[id];
   const hp = Math.round(rnd(def.hp[0], def.hp[1]) * VIDA_ENEMIGOS);
-  const e: EnemyState = { def, hp, maxHp: hp, block: 0, turn: 0, inercia: 0, stunned: 0, detenido: false, intent: { kind: 'attack', dmg: 0 }, carga: 0, calor: 0, resonancia: 0, fatiga: 0, impulso: 0, impulsoLeft: 0 };
+  const e: EnemyState = { def, hp, maxHp: hp, block: 0, turn: 0, inercia: 0, stunned: 0, detenido: false, intent: { kind: 'attack', dmg: 0 }, carga: 0, calor: 0, resonancia: 0, fatiga: 0, impulso: 0, impulsoLeft: 0, recibido: 0 };
   e.intent = def.next(e);
   return e;
 }

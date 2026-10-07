@@ -1,3 +1,4 @@
+import { ACT4_PAL, ACT4_SPRITES } from './act4';
 import Phaser from 'phaser';
 import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
@@ -1056,6 +1057,8 @@ export function generateAllTextures(scene: Phaser.Scene) {
   for (const [k, rows] of Object.entries(ACT3_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
   // v0.9: enemigos más duros (casi todos son variantes de color de otros)
   for (const [k, rows] of Object.entries(EXTRA_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
+  // Acto IV: el Núcleo del Cálculo (autómatas y AM)
+  for (const [k, rows] of Object.entries(ACT4_SPRITES)) makeTexture(scene, k === 'am' ? 'am_jefe' : k, rows, ACT4_PAL);
   makeTexture(scene, 'babosaMadre', SPRITES.slime, { L: '#8a6a3a', G: '#4a3418', w: '#c8a070', F: '#ff8a3a' });
   makeTexture(scene, 'nigromante', NPC, { c: '#1e2a1e', C: '#0e160e', E: '#9bf07a', s: '#8a9a7a' });
   makeTexture(scene, 'armaduraPuas', knightMatrix('cuernos'), { l: '#6a3a2a', g: '#3a1e16', c: '#2a1210', C: '#160806', E: '#ff8a3a', w: '#c8b8a0', y: '#a83a1e' }, true);

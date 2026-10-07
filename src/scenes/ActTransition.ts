@@ -4,25 +4,37 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { addCard, arcanistaUnlocked, codexFlag, Game, generateMap, logEvent, saveLocal, syncRun } from '../state';
 import { T } from '../textos';
-import { button, embers, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { bonosFinales } from '../data/puntaje';
+import { button, embers, engraneGfx, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { BOSS_RELICS, RELICS } from '../data/relics';
 import { CARDS, legendariasDisponibles } from '../data/cards';
 import { cardView } from '../ui/card';
 import { grantRelic } from './Reward';
 
-/** Entre actos: descanso, aviso de desbloqueo y paso al siguiente acto (to = 2 o 3) */
+/** Entre actos: descanso, aviso de desbloqueo y paso al siguiente acto (to = 2, 3 o 4 · el Núcleo secreto) */
 export class ActTransitionScene extends Phaser.Scene {
   constructor() { super('ActTransition'); }
 
   create(data: { to?: number } = {}) {
     const to = data.to ?? 2;
-    const tx = to === 3 ? { ...T.transicion, ...T.transicion2 } : T.transicion;
+    const tx = to === 4 ? { ...T.transicion, ...T.transicion3 } : to === 3 ? { ...T.transicion, ...T.transicion2 } : T.transicion;
     this.cameras.main.fadeIn(600);
-    audio.play('santuario');
+    audio.play(to === 4 ? 'mapa4' : 'santuario');
     const run = Game.run!;
     this.add.rectangle(0, 0, W, H, 0x030304).setOrigin(0);
     const g = this.add.graphics();
-    if (to === 3) {
+    if (to === 4) {
+      // la grieta: engranes que giran dentro de una rajadura roja
+      const crack = this.add.graphics();
+      crack.fillStyle(0x2a0806, 1);
+      crack.fillPoints([{ x: W / 2 - 20, y: 150 }, { x: W / 2 + 40, y: 230 }, { x: W / 2 + 10, y: 300 }, { x: W / 2 + 70, y: 420 }, { x: W / 2 - 40, y: 470 }, { x: W / 2 - 10, y: 360 }, { x: W / 2 - 70, y: 260 }], true);
+      const glow = this.add.ellipse(W / 2, 320, 260, 340, 0xff3a1a, 0.08).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: glow, alpha: 0.03, duration: 1100, yoyo: true, repeat: -1 });
+      [[W / 2, 250, 44], [W / 2 + 20, 360, 56], [W / 2 - 24, 430, 30]].forEach(([x, y, r], i) => {
+        const e = engraneGfx(this, x, y, r, 0x8a6424, 0.9, Math.round(r / 6));
+        this.tweens.add({ targets: e, angle: i % 2 ? -360 : 360, duration: 5000 + r * 60, repeat: -1 });
+      });
+    } else if (to === 3) {
       // escalera de caracol que SUBE hacia la torre
       for (let i = 0; i < 14; i++) {
         const a = i * 0.55, rx = 150 - i * 6, y = 470 - i * 22;
@@ -42,8 +54,9 @@ export class ActTransitionScene extends Phaser.Scene {
     }
     embers(this);
     vignette(this);
-    const boss = this.add.image(W - 170, 230, to === 3 ? 'bruja' : 'colossus').setScale(4).setAlpha(0.5).setTint(0x6a6a7a);
-    this.tweens.add({ targets: boss, alpha: 0.1, y: 260, duration: 3000 });
+    const boss = this.add.image(W - 170, 230, to === 4 ? 'am_jefe' : to === 3 ? 'bruja' : 'colossus').setScale(to === 4 ? 2.6 : 4).setAlpha(to === 4 ? 0 : 0.5).setTint(to === 4 ? 0xffffff : 0x6a6a7a);
+    if (to === 4) this.tweens.add({ targets: boss, alpha: 0.75, y: 250, duration: 3000, delay: 1200 });
+    else this.tweens.add({ targets: boss, alpha: 0.1, y: 260, duration: 3000 });
 
     title(this, W / 2, 60, tx.titulo, 50);
     txt(this, W / 2, 104, tx.texto, 21, CSS.bone, { align: 'center', wordWrap: { width: 760 } }).setOrigin(0.5, 0);
@@ -60,12 +73,13 @@ export class ActTransitionScene extends Phaser.Scene {
     if (to === 2 && arcanistaUnlocked() && wasLocked && run.clase !== 'arcanista') {
       txt(this, W / 2, 226, T.transicion.desbloqueo, 22, CSS.gold).setOrigin(0.5);
     }
-    codexFlag(to === 3 ? 'acto2-visto' : 'acto1-visto');
+    codexFlag(to === 4 ? 'nucleo-visto' : to === 3 ? 'acto2-visto' : 'acto1-visto');
 
     const seguir = () => {
       run.hp = Math.min(run.maxHp, run.hp + heal);
       run.acto = to;
       run.map = generateMap(to);
+      run.done = false;
       run.pos = -1;
       run.visited = [];
       run.floor = 0;
@@ -76,6 +90,19 @@ export class ActTransitionScene extends Phaser.Scene {
       audio.sfx('heal');
       fadeTo(this, 'Map');
     };
+    if (to === 4) {
+      // la grieta es opcional: puedes cerrar la expedición con tu victoria sobre Hibbelerius
+      button(this, W / 2 - 190, 500, 340, 50, tx.descender, () => this.reliquiaJefe(to, () => this.legendaria(to, seguir)), { color: 0xc8643a, size: 22 });
+      button(this, W / 2 + 190, 500, 340, 50, T.transicion3.terminar, () => {
+        run.done = true;
+        bonosFinales(run);
+        saveLocal();
+        logEvent('nucleo', '', false, { decision: 'terminar' });
+        syncRun('victoria', 'Hibbelerius derrotado');
+        fadeTo(this, 'End', { victory: true });
+      }, { size: 20 });
+      return;
+    }
     button(this, W / 2, 500, 340, 50, tx.descender, () => this.reliquiaJefe(to, () => this.legendaria(to, seguir)), { color: UI.gold, size: 24 });
   }
 

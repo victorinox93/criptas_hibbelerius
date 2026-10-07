@@ -249,3 +249,18 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Hibbelerius, el Autor Eterno** (antes «la Parca del Tomo»): mismo diseño, nuevo título en el combate, el mapa y el soundtrack.
 - **Epílogos ilustrados** (`src/art/epilogos.ts`): si vences a Hibbelerius con un alma aliada, la pantalla final muestra una escena animada distinta por alma: el examen de Ícaro con un 10, la calculadora de Sir Radián marcando 1, la tesis APROBADA del Doctorando, el pizarrón con g = 9.81 m/s² de la Dama, la máquina de Bernoulli girando, el reloj de Sir Mañana, la vela de la Ayudante y el foco del Encadenado.
 - **Arreglos visuales:** «Servicios» ya no queda tapado en el Mercader; en los Encuentros el recuadro de información se cierra al elegir la respuesta; el puntaje se separó de los Ergios en la barra superior.
+
+## v0.20.0 · Acto IV secreto: el Núcleo del Cálculo
+
+- **Cómo se abre:** al vencer a Hibbelerius por **segunda vez** (contador `hib` en el Grimorio; quien ya lo había vencido antes de esta versión cuenta con 1), su tomo se abre y aparece una grieta. Puedes **entrar al Núcleo** (reliquia de jefe + legendaria + 75 % de curación) o **terminar la expedición** ahí. La partida ya queda como «victoria» en la hoja desde que vences a Hibbelerius; si caes en el Núcleo, se registra como «Cayó en el Núcleo: …». Tras la primera victoria, la cita final deja una pista: «Detrás del tomo, algo hace tic-tac…».
+- **Mapa corto y difícil:** 8 pisos + AM, con fondo de engranes que giran y fórmulas de cálculo. Música nueva en vivo: «El Núcleo del Cálculo», «Relojería» y «No tengo boca» (aparecen en el Soundtrack cuando se abre el Núcleo).
+- **Autómatas** (`src/data/enemies.ts`, arte en `tools/arte/en4.py` → `src/art/act4.ts`):
+  - Engrane Dentado, Reloj Andante (roba 1 J), Bobina de Chispas (Calor y escudo).
+  - **Autómata Oscilante:** su golpe sigue A·sen(ωt): sube y baja.
+  - **Autómata Derivador:** su golpe crece 3 cada turno (dF/dt = 3).
+  - **Autómata Integrador:** golpea con 1 extra por cada 4 de daño que ha recibido (∫ daño dt).
+  - Élites: **Máquina Diferencial** de Babbage (crecimiento cuadrático; detenerla lo reinicia), **Telar de Jacquard** (mete Ruido y arma engranes) y **El Turco Mecánico** (Jaque → Jaque mate).
+- **AM, jefe final** (456 de vida; +40 si alguna vez hiciste un pacto con él), tres fases: **Odio** (Ruido y robo de energía), **Derivada** (su furia crece cada turno; DETENERLO la reinicia; invoca Derivadores) e **Integral** (te regresa el daño acumulado que le hiciste). Dispara un rayo rojo desde su ojo. Final propio: «¡AM ha caído!» (+20,000 puntos).
+- **Preguntas de cálculo** (sólo en el Núcleo, `CALCULO_CONCEPTS` en `src/data/runes.ts`): v = dx/dt, a = dv/dt = d²x/dt², altura máxima (dy/dt = 0), P = dW/dt, Δx = ∫v dt, Δv = ∫a dt, W = ∫F dx (resorte y fuerza lineal), I = ∫F dt → Δv, y 8 de opción múltiple sobre pendientes y áreas de gráficas. Con sus mini lecciones para el repaso final.
+- **Modo profesor:** botón «Acto IV (Núcleo)», salto «Grieta III→IV», «Jefe» en el Acto IV = AM, y «Desbloquear todo» abre el Núcleo.
+- **Arreglo:** si la partida se cerraba en el nodo del jefe, al continuar el mapa quedaba sin salida. Ahora retoma la pelea, o pasa al siguiente acto si el jefe ya había caído.

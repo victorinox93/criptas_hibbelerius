@@ -129,6 +129,8 @@ export const T = {
     jefe2: ['La Bruja de la Fricción', 'La guardiana del Acto II.'] as [string, string],
     titulo3: 'Acto III · La Torre del Tomo',
     jefe3: ['Hibbelerius, el Autor Eterno', 'El autor de todos los problemas. Te espera en la cima.'] as [string, string],
+    titulo4: 'Acto IV · El Núcleo del Cálculo',
+    jefe4: ['AM', 'La inteligencia que odia. Te espera en el corazón de la máquina.'] as [string, string],
     pisos: 'Pisos',
     clicAvanzar: '▶ Clic para avanzar',
     nodos: {
@@ -156,7 +158,7 @@ export const T = {
     bannerCombate: 'Combate',
     bannerElite: '¡Élite!',
     bannerJefe: '¡El Coloso Inerte!',
-    bannerJefes: ['¡El Coloso Inerte!', '¡La Bruja de la Fricción!', '¡Hibbelerius!'],
+    bannerJefes: ['¡El Coloso Inerte!', '¡La Bruja de la Fricción!', '¡Hibbelerius!', 'AM'],
     victoria: '¡Victoria!',
     derrota: 'La expedición termina…',
     detenido: '¡DETENIDO!',
@@ -252,6 +254,15 @@ export const T = {
     cita: '«Dominas la fuerza y la energía…\nPero aún no has visto el IMPULSO.\nSube. Te espero en la cima.»\n— Hibbelerius',
     descender: 'Subir a la Torre del Tomo',
     curacion: 'Descansas antes de subir: recuperas',
+  },
+
+  transicion3: {
+    titulo: 'Una grieta en el último capítulo',
+    texto: 'Hibbelerius cae por segunda vez… y su tomo se abre solo. Entre las páginas hay una grieta de engranes que giran sin parar.\nAdentro, algo lleva la cuenta de todo: cada golpe, cada respuesta, cada error.',
+    cita: '«Ya sabes de fuerza, energía e impulso.\nAquí abajo todo CAMBIA: derivadas e integrales.\nÉl te ha estado esperando.»\n— Hibbelerius',
+    descender: 'Entrar al Núcleo del Cálculo',
+    curacion: 'Antes de entrar recuperas',
+    terminar: 'Terminar la expedición aquí',
   },
 
   transicion: {

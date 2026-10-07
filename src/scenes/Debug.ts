@@ -11,7 +11,7 @@ import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { ALMA_IDS } from '../data/almas';
 import { RELIC_POOL, RELICS } from '../data/relics';
-import { codexFlag, emptyCodex, FLOORS, Game, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
+import { codexFlag, emptyCodex, Game, pisosDe, generateMap, isAdmin, newRun, Run, saveLocal, unlock } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
 
 /**
@@ -77,15 +77,15 @@ export class DebugScene extends Phaser.Scene {
     btn(860, 108, 150, `Extras: ${OPTS.extras ? 'sí' : 'no'}`, () => { OPTS.extras = !OPTS.extras; this.draw(); }, OPTS.extras);
 
     label(50, 180, 'Empezar en');
-    [1, 2, 3].forEach((a, i) => btn(200 + i * 200, 222, 180, `Acto ${['I', 'II', 'III'][i]}`, () => this.go(a, 'Map')));
+    [1, 2, 3, 4].forEach((a, i) => btn(170 + i * 190, 222, 176, a === 4 ? 'Acto IV (Núcleo)' : `Acto ${['I', 'II', 'III'][i]}`, () => this.go(a, 'Map'), a === 4));
 
     // ── saltos directos ──
-    label(50, 246, 'Ir directo a (en el acto de la partida actual, o Acto III si no hay)');
+    label(50, 246, 'Ir directo a (en el acto de la partida actual, o Acto III si no hay; Jefe en el Acto IV = AM)');
     const acto = () => (Game.run && !Game.run.done ? Game.run.acto : 3);
     const jumps: [string, () => void][] = [
       ['Combate', () => this.go(acto(), 'Combat', { kind: 'normal', floor: 3 })],
       ['Élite', () => this.go(acto(), 'Combat', { kind: 'elite', floor: 5 })],
-      ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: FLOORS })],
+      ['Jefe', () => this.go(acto(), 'Combat', { kind: 'boss', floor: pisosDe(acto()) })],
       ['Profesor', () => this.go(acto(), 'Event', { floor: 2, eventId: 'victorino' })],
       ['Profe enojado', () => this.go(acto(), 'Event', { floor: 2, eventId: 'profe_enojado' })],
       ['AM', () => this.go(acto(), 'AM', { floor: 3 })],
@@ -100,6 +100,7 @@ export class DebugScene extends Phaser.Scene {
       ['Tira y Afloja', () => { this.go(acto(), 'TiraAfloja', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
       ['¿Más o menos?', () => { this.go(acto(), 'MasMenos', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
       ['M. ambulante', () => this.go(acto(), 'Shop', { floor: 4, ambulante: true })],
+      ['Grieta III→IV', () => this.go(3, 'ActTransition', { to: 4 })],
     ];
     jumps.forEach(([s, fn], i) => btn(106 + (i % 6) * 150, 282 + Math.floor(i / 6) * 36, 142, s, fn));
     const fig = FIGURES[OPTS.figura];
@@ -128,6 +129,7 @@ export class DebugScene extends Phaser.Scene {
       codexFlag('acto1');
       Game.codex.gravedadMax = Math.max(Game.codex.gravedadMax, 3);
       Game.codex.victorias = Math.max(Game.codex.victorias, 1); // desbloquea al Penitente
+      Game.codex.hib = Math.max(Game.codex.hib ?? 0, 2); // abre el Núcleo del Cálculo
       Game.codex.xp = Math.max(Game.codex.xp ?? 0, 1000);
       saveLocal();
       this.say('Grimorio, Arcanista, Penitente, gravedades y nivel 10 de Conocimiento desbloqueados.');

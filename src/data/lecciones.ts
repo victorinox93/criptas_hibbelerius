@@ -30,4 +30,11 @@ export const LECCIONES: Record<string, Leccion> = {
   'Cantidad de movimiento': { nombre: 'Cantidad de movimiento', formula: 'p = m·v   ·   Σp antes = Σp después', idea: 'En choques y explosiones sin fuerzas externas, la cantidad de movimiento TOTAL se conserva.' },
   Choques: { nombre: 'Choques y restitución', formula: 'e = (v₂′ − v₁′) / (v₁ − v₂)', idea: 'p siempre se conserva; la energía cinética sólo si e = 1. Con e = 0 los cuerpos quedan juntos.' },
   'Impulso angular': { nombre: 'Cantidad de movimiento angular', formula: 'H = I·ω   ·   I₁ω₁ = I₂ω₂', idea: 'Sin par externo, si el momento de inercia baja, la rapidez angular sube (como una patinadora).' },
+  // Acto IV · el Núcleo del Cálculo
+  'Derivada: velocidad': { nombre: 'Derivada: velocidad y potencia', formula: 'v = dx/dt   ·   P = dW/dt', idea: 'Deriva término a término: d/dt(tⁿ) = n·tⁿ⁻¹. Luego sustituye el instante que te piden.' },
+  'Derivada: aceleracion': { nombre: 'Derivada: aceleración', formula: 'a = dv/dt = d²x/dt²', idea: 'Si te dan x(t), deriva DOS veces. Si te dan v(t), sólo una.' },
+  'Integral: desplazamiento': { nombre: 'Integral: desplazamiento y velocidad', formula: 'Δx = ∫v dt   ·   Δv = ∫a dt', idea: 'Integra término a término: ∫tⁿ dt = tⁿ⁺¹/(n+1). Evalúa en el límite superior y resta el inferior.' },
+  'Integral: trabajo': { nombre: 'Integral: trabajo', formula: 'W = ∫F dx   ·   resorte: W = ½k·x²', idea: 'Si la fuerza cambia con la posición, el trabajo es el área bajo F(x).' },
+  'Integral: impulso': { nombre: 'Integral: impulso', formula: 'I = ∫F dt = m·Δv', idea: 'Si la fuerza cambia con el tiempo, el impulso es el área bajo F(t). Divídelo entre m para obtener Δv.' },
+  Graficas: { nombre: 'Gráficas: pendientes y áreas', formula: 'pendiente = derivada   ·   área = integral', idea: 'x–t: pendiente = v. v–t: pendiente = a, área = Δx. F–t: área = I. F–x: área = W.' },
 };

@@ -116,6 +116,7 @@ export interface Codex {
   xp?: number; // Conocimiento acumulado (desbloqueos entre expediciones)
   tiempo?: number; // segundos de juego activo en total (se muestra en el menú)
   am?: { visitas: number; pactos: number; rechazos: number; ultima?: string; vistas?: number[] }; // lo que AM recuerda de ti
+  hib?: number; // veces que ha vencido a Hibbelerius (con 2 se abre el Núcleo del Cálculo)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -133,6 +134,8 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.flags = [...new Set([...(a?.flags ?? []), ...(b?.flags ?? [])])];
   c.xp = Math.max(a?.xp ?? 0, b?.xp ?? 0);
   c.tiempo = Math.max(a?.tiempo ?? 0, b?.tiempo ?? 0);
+  const hib = Math.max(a?.hib ?? 0, b?.hib ?? 0);
+  if (hib) c.hib = hib;
   const am = (a?.am?.visitas ?? 0) >= (b?.am?.visitas ?? 0) ? a?.am : b?.am;
   if (am) c.am = am;
   return c;
@@ -182,7 +185,25 @@ export function isAdmin() {
 
 /** Total de pisos de la expedición (3 actos de 9) */
 export const TOTAL_PISOS = 3 * (FLOORS + 1);
-export const ROMAN = ['I', 'II', 'III'];
+export const ROMAN = ['I', 'II', 'III', 'IV'];
+
+/** Victorias sobre Hibbelerius necesarias para que se abra el Núcleo del Cálculo (Acto IV) */
+export const NUCLEO_VICTORIAS = 2;
+/** Pisos del Acto IV (más corto, pero más difícil) */
+export const PISOS_NUCLEO = 8;
+/** Pisos antes del jefe en cada acto */
+export function pisosDe(acto = 1) {
+  return acto >= 4 ? PISOS_NUCLEO : FLOORS;
+}
+/** Cuenta una victoria sobre Hibbelerius (los que lo vencieron antes de v0.20 cuentan como 1) */
+export function contarHib() {
+  Game.codex.hib = (Game.codex.hib ?? ((Game.codex.flags ?? []).includes('acto3') ? 1 : 0)) + 1;
+  codexDirty = true;
+}
+/** ¿Ya puede entrar al Núcleo? (venció a Hibbelerius al menos NUCLEO_VICTORIAS veces) */
+export function nucleoDisponible() {
+  return (Game.codex.hib ?? 0) >= NUCLEO_VICTORIAS;
+}
 
 /** ¿El Arcanista está desbloqueado? (al vencer al Coloso al menos una vez) */
 export function arcanistaUnlocked() {
@@ -255,6 +276,7 @@ export function clearSession() {
 
 // ── mapa ──
 export function generateMap(acto = 1): MapNode[] {
+  const FLOORS = pisosDe(acto); // el Acto IV es más corto
   const nodes = new Map<string, MapNode>();
   let id = 0;
   const get = (f: number, l: number) => {

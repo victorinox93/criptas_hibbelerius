@@ -6,7 +6,7 @@
 // ════════════════════════════════════════════════════════════════
 import { MUSIC_FILES } from './config';
 
-export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3';
+export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4';
 export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
 
 const LEVELS = [0, 0.3, 0.6, 1];
@@ -156,6 +156,42 @@ const TRACKS: Record<TrackId, TrackDef> = {
       55, null, null, null, null, null, null, null, 56, null, null, null, null, null, null, null,
       59, null, null, null, 62, null, null, null, 65, null, null, null, 64, null, 62, null,
       65, null, null, null, null, null, null, null, 59, null, null, null, null, null, null, null,
+    ],
+  },
+  // ── Acto IV: el Núcleo del Cálculo (relojería: tic-tac, Do menor y tritonos) ──
+  mapa4: {
+    bpm: 60,
+    chords: [[48, 51, 55], [44, 48, 51], [46, 50, 53], [43, 47, 50]],
+    drone: 0.07, pad: 0.04, padCut: 700,
+    bells: true,
+    hat: '1...1...1...1...',
+    arp: '1.1.1.1.1.1.1.1.', arpOct: 12,
+  },
+  combate5: {
+    bpm: 100,
+    chords: [[48, 51, 55], [49, 52, 56], [48, 51, 55], [47, 50, 53]],
+    drone: 0.06, pad: 0.04, padCut: 800,
+    arp: '1111111111111111', arpOct: 12,
+    bass: 'x.x.x.x.x.xox.x.', bassOct: -24,
+    hat: '1.1.1.1.1.1.1.1.',
+    tom: '2...1...2...1.1.',
+  },
+  jefe4: {
+    // AM: frío, mecánico y lleno de odio. La disminuida y el tritono no resuelven nunca.
+    bpm: 84,
+    chords: [[45, 48, 51], [46, 49, 53], [45, 48, 51], [44, 47, 50]],
+    drone: 0.13, choir: 0.06, pad: 0.03, padCut: 600,
+    knell: true,
+    grit: 'x.x.b.x.t.x.b.o.', gritOct: -24,
+    arp: '1.11.11.1.11.11.', arpOct: 12,
+    hat: '1111111111111111',
+    tom: '2..1..2.2..1.11.',
+    leadLen: 4,
+    lead: [
+      57, null, null, null, 60, null, null, null, 63, null, null, null, 62, null, null, null,
+      58, null, null, null, 61, null, null, null, 65, null, null, null, 64, null, null, null,
+      57, null, null, null, 60, null, 63, null, 66, null, null, null, 65, null, 63, null,
+      62, null, null, null, null, null, null, null, 56, null, null, null, null, null, null, null,
     ],
   },
   // figuras históricas: coro etéreo en modo lidio

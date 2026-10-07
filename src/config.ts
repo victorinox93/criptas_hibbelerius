@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.19.0 · Locura, Hibbelerius el Autor Eterno, rutas en el mapa y epílogos ilustrados';
+export const VERSION = '0.20.0 · Acto IV secreto: el Núcleo del Cálculo (autómatas, derivadas e integrales y AM)';
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.
@@ -38,6 +38,9 @@ export const MUSIC_FILES: Record<string, string> = {
   mapa3: 'cold-soul-3.mp3',
   combate4: '',
   jefe3: '',
+  mapa4: '',
+  combate5: '',
+  jefe4: '',
 };
 
 // ─────────────────────────────────────────────────────────────

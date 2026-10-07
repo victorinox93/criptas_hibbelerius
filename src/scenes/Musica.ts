@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio, TrackId } from '../audio';
 import { MUSIC_FILES, W } from '../config';
+import { Game, nucleoDisponible } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
 
 /** Pistas del soundtrack, en orden de aparición */
@@ -17,6 +18,9 @@ const PISTAS: [TrackId, string, string][] = [
   ['mapa3', 'La Torre del Tomo', 'Mapa · Acto III'],
   ['combate4', 'Impulso', 'Combate · Acto III'],
   ['jefe3', 'El Autor Eterno', 'Jefe final'],
+  ['mapa4', 'El Núcleo del Cálculo', 'Mapa · Acto IV (secreto)'],
+  ['combate5', 'Relojería', 'Combate · Acto IV'],
+  ['jefe4', 'No tengo boca', 'AM'],
   ['santuario', 'Ecos del Pasado', 'Santuario'],
   ['calma', 'Respiro', 'Fogata y encuentros'],
 ];
@@ -24,6 +28,7 @@ const PISTAS: [TrackId, string, string][] = [
 /** Menú → Soundtrack (se desbloquea al vencer a Hibbelerius) */
 export class MusicaScene extends Phaser.Scene {
   private btns: Btn[] = [];
+  private lista: [TrackId, string, string][] = [];
 
   constructor() { super('Musica'); }
 
@@ -35,9 +40,12 @@ export class MusicaScene extends Phaser.Scene {
     const g = this.add.graphics();
     frame(g, 40, 92, W - 80, 404, 0x0e0b12, UI.border, 0.92);
     this.btns = [];
-    PISTAS.forEach(([id, nombre, donde], i) => {
-      const col = i < 7 ? 0 : 1, row = i < 7 ? i : i - 7;
-      const x = 62 + col * 440, y = 104 + row * 55;
+    // las pistas del Núcleo sólo aparecen cuando ya se abrió
+    const nucleo = nucleoDisponible() || (Game.codex.flags ?? []).includes('acto4');
+    this.lista = PISTAS.filter(([id]) => nucleo || !['mapa4', 'combate5', 'jefe4'].includes(id));
+    this.lista.forEach(([id, nombre, donde], i) => {
+      const col = i < 8 ? 0 : 1, row = i < 8 ? i : i - 8;
+      const x = 62 + col * 440, y = 102 + row * 49;
       const archivo = MUSIC_FILES[id];
       const b = button(this, x + 20, y + 22, 36, 36, '▶', () => this.play(i), { size: 18, silent: true });
       this.btns.push(b);
@@ -48,7 +56,7 @@ export class MusicaScene extends Phaser.Scene {
   }
 
   private play(i: number) {
-    audio.play(PISTAS[i][0]);
+    audio.play(this.lista[i][0]);
     this.btns.forEach((b, j) => {
       b.label.setText(j === i ? '♪' : '▶').setColor(j === i ? CSS.gold : CSS.bone);
     });

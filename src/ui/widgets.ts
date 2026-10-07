@@ -450,6 +450,73 @@ export function towerBackground(s: Phaser.Scene, seed = 7, boss = false) {
   vignette(s);
 }
 
+/** Engrane dibujado con Graphics (para fondos que giran) */
+export function engraneGfx(s: Phaser.Scene, x: number, y: number, r: number, color: number, alpha = 1, dientes = 12) {
+  const g = s.add.graphics({ x, y });
+  g.fillStyle(color, alpha);
+  g.fillCircle(0, 0, r);
+  for (let i = 0; i < dientes; i++) {
+    const a = (i / dientes) * Math.PI * 2;
+    const tx = Math.cos(a) * (r + r * 0.12), ty = Math.sin(a) * (r + r * 0.12);
+    g.fillRect(tx - r * 0.1, ty - r * 0.1, r * 0.2, r * 0.2);
+  }
+  g.fillStyle(0x000000, 0.55).fillCircle(0, 0, r * 0.62);
+  g.fillStyle(color, alpha).fillCircle(0, 0, r * 0.22);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    g.lineStyle(Math.max(2, r * 0.08), color, alpha).lineBetween(0, 0, Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62);
+  }
+  return g;
+}
+
+/** Acto IV · el Núcleo del Cálculo: una fábrica de relojería que no deja de girar */
+export function nucleoBackground(s: Phaser.Scene, seed = 9, boss = false) {
+  const r = rng(seed);
+  const g = s.add.graphics().setDepth(-10);
+  g.fillStyle(boss ? 0x0a0404 : 0x07060a, 1).fillRect(0, 0, W, H);
+  // engranes gigantes al fondo (giran lento, en sentidos opuestos: ω₁·r₁ = ω₂·r₂)
+  const gears: [number, number, number][] = [[140, 150, 120], [330, 70, 70], [W - 150, 170, 130], [W - 360, 60, 60], [W / 2, 250, 90]];
+  gears.forEach(([x, y, rad], i) => {
+    const e = engraneGfx(s, x + (r() - 0.5) * 30, y, rad, boss ? 0x2a1010 : 0x1e1a14, 1, Math.round(rad / 8)).setDepth(-9);
+    s.tweens.add({ targets: e, angle: i % 2 ? -360 : 360, duration: rad * 260, repeat: -1 });
+  });
+  // tuberías de cobre y manómetros
+  g.lineStyle(10, 0x2a1a10, 1).lineBetween(0, 300, W, 300);
+  g.lineStyle(4, 0x4a2a14, 1).lineBetween(0, 296, W, 296);
+  for (let i = 0; i < 6; i++) {
+    const x = 60 + i * 170 + r() * 40;
+    g.lineStyle(8, 0x2a1a10, 1).lineBetween(x, 44, x, 300);
+    g.fillStyle(0x3a2a1a, 1).fillCircle(x, 120 + r() * 120, 12);
+    g.fillStyle(0xc8b8a0, 0.5).fillCircle(x, 120 + r() * 120, 7);
+  }
+  // fórmulas grabadas
+  const eqs = ['v = dx/dt', 'a = dv/dt', 'x = ∫v dt', 'W = ∫F dx', 'I = ∫F dt', 'P = dW/dt'];
+  eqs.forEach((e, i) => {
+    const t = s.add.text(60 + (i % 3) * 320 + r() * 60, 64 + Math.floor(i / 3) * 140 + r() * 30, e, { fontFamily: 'monospace', fontSize: '22px', color: boss ? '#4a1a1a' : '#2e2618' }).setDepth(-8);
+    s.tweens.add({ targets: t, alpha: 0.4, duration: 1800 + i * 400, yoyo: true, repeat: -1 });
+  });
+  // suelo de placas remachadas
+  g.fillStyle(0x0c0a08, 1).fillRect(0, 336, W, H - 336);
+  g.lineStyle(1, 0x2a2016, 0.9);
+  for (let y = 350; y < H; y += 24) g.lineBetween(0, y, W, y);
+  for (let x = 0; x < W; x += 64) for (let y = 344; y < H; y += 24) g.fillStyle(0x3a2e1e, 1).fillRect(x + ((y / 24) % 2) * 32, y, 3, 3);
+  // vapor y chispas
+  s.add.particles(0, 0, 'px', {
+    x: { min: 0, max: W }, y: 330, speedY: { min: -30, max: -12 }, lifespan: 5000, frequency: 260,
+    scale: { start: 4, end: 10 }, alpha: { start: 0.08, end: 0 }, tint: 0xb8b0a0,
+  }).setDepth(-7);
+  s.add.particles(0, 0, 'px', {
+    x: { min: 0, max: W }, y: 60, speedY: { min: 40, max: 90 }, speedX: { min: -30, max: 30 }, lifespan: 1600, frequency: 300,
+    scale: { start: 1.6, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: boss ? [0xff3a1a, 0xffd27a] : [0xffd27a, 0x7fd8ff], blendMode: 'ADD',
+  }).setDepth(-7);
+  if (boss) {
+    const core = s.add.circle(W - 220, 200, 160, 0xff2a1a, 0.06).setBlendMode(Phaser.BlendModes.ADD).setDepth(-8);
+    s.tweens.add({ targets: core, alpha: 0.02, scale: 1.1, duration: 900, yoyo: true, repeat: -1 });
+  }
+  vignette(s);
+  vignette(s);
+}
+
 export function mist(s: Phaser.Scene, y = 300) {
   for (let i = 0; i < 5; i++) {
     const m = s.add.ellipse(Math.random() * W, y + Math.random() * 60, 420 + Math.random() * 200, 70, 0x3a3346, 0.08).setDepth(-6);
