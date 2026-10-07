@@ -307,3 +307,10 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
   - Los de AM (Holograma, Cromo Holográfico, Ojo Holográfico) pasan a ser el logro «Sin boca».
   - ✦ = holográfico: el tono se mueve dentro de su propia gama (fuego, aurora, oro…), no sólo en arcoíris.
 - **Simulador de expediciones** (`tools/simular_expediciones.mjs`): un bot juega expediciones completas de un Caballero sin desbloqueos con los combates reales (los nodos sin combate se resuelven con reglas simples y 75 % de aciertos). Requiere el servidor de desarrollo en el puerto 5175 y Playwright; uso: `node tools/simular_expediciones.mjs base 10 2` (o `menos` para probar el mazo inicial sin una Fuerza Normal).
+
+## v0.23.1 · Formulario, evidencia y perillas de dificultad
+
+- **`apps-script/Formulario.gs`** (pégalo como archivo NUEVO en el mismo proyecto de Apps Script; también pega el `Code.gs` actualizado para que aparezcan las opciones en el menú «Criptas»; no requiere nueva implementación):
+  - **Crear formulario de retroalimentación:** genera un Google Form (experiencia, dificultad, qué te ayudó a aprender por tema, confianza antes/después, ideas de personaje, enemigo, carta, alma o eco, errores, recomendación 0–10 y consentimiento para uso anónimo). Las respuestas llegan a una pestaña de la misma hoja. Pega el enlace en `FORM_URL` (`src/config.ts`) para que aparezca el botón «✎ Tu opinión».
+  - **Generar evidencia:** pestaña «Evidencia» con alumnos activos, horas jugadas, problemas respondidos, % de aciertos, **curva de aprendizaje** (aciertos en las primeras 5 vs. últimas 5 respuestas de cada alumno), aciertos por tema (1ª vs. 2ª mitad) con gráfica, y tabla por alumno.
+- **Perillas de vida** en `src/data/enemies.ts`: `VIDA_POR_ACTO`, `VIDA_JEFES` y `VIDA_ELITES` (todas en 1 = sin cambio), además de `VIDA_ENEMIGOS` (1.2).

@@ -456,9 +456,20 @@ export function encounters(acto: number) {
 /** Multiplicador global de la vida de los enemigos (v0.12: +20 %) */
 export const VIDA_ENEMIGOS = 1.2;
 
+// ── Perillas de dificultad (v0.23.1). 1 = sin cambio. Ej.: VIDA_JEFES = 1.15 → jefes con 15 % más vida ──
+/** Por acto (según el «act» del enemigo; sin «act» = Acto I) */
+export const VIDA_POR_ACTO: Record<number, number> = { 1: 1, 2: 1, 3: 1, 4: 1 };
+/** Jefes de acto */
+export const VIDA_JEFES = 1;
+/** Élites (enemigos con umbral que no son jefes) */
+export const VIDA_ELITES = 1;
+
 export function spawn(id: string): EnemyState {
   const def = ENEMIES[id];
-  const hp = Math.round(rnd(def.hp[0], def.hp[1]) * VIDA_ENEMIGOS);
+  const grupos = [ENCOUNTERS, ENCOUNTERS_2, ENCOUNTERS_3, ENCOUNTERS_4];
+  const es = (k: 'boss' | 'elite') => grupos.some((g) => g[k].some((e) => e[0] === id));
+  const tipo = es('boss') ? VIDA_JEFES : es('elite') ? VIDA_ELITES : 1;
+  const hp = Math.round(rnd(def.hp[0], def.hp[1]) * VIDA_ENEMIGOS * (VIDA_POR_ACTO[def.act ?? 1] ?? 1) * tipo);
   const e: EnemyState = { def, hp, maxHp: hp, block: 0, turn: 0, inercia: 0, stunned: 0, detenido: false, intent: { kind: 'attack', dmg: 0 }, carga: 0, calor: 0, resonancia: 0, fatiga: 0, impulso: 0, impulsoLeft: 0, recibido: 0 };
   e.intent = def.next(e);
   return e;
