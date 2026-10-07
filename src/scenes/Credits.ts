@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CSS } from '../art/palette';
 import { audio } from '../audio';
-import { VERSION, W } from '../config';
+import { VERSION_NUM, W } from '../config';
 import { T } from '../textos';
 import { button, frame, dungeonBackground, embers, fadeTo, panel, title, txt } from '../ui/widgets';
 
@@ -14,7 +14,7 @@ export class CreditsScene extends Phaser.Scene {
     dungeonBackground(this, 77, 0x14111a);
     embers(this);
     title(this, W / 2, 44, T.titulo, 44);
-    txt(this, W / 2, 82, `${T.creditos.titulo} · ${VERSION}`, 22, CSS.dim).setOrigin(0.5);
+    txt(this, W / 2, 82, `${T.creditos.titulo} · v${VERSION_NUM}`, 22, CSS.dim).setOrigin(0.5);
     // el cuadro crece con el contenido (se dibuja detrás de los textos)
     const bg = this.add.graphics();
     let y = 112;

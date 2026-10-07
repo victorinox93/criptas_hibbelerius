@@ -270,3 +270,7 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
 - **Música del Acto IV, nueva:** más lenta y tétrica, estilo sci-fi. Cuatro voces nuevas en el sintetizador (`src/audio.ts`): pad analógico con filtro resonante que abre y cierra (`sweep`), sub grave que «respira» (`throb`), pings de sonar con eco (`sonar`) y chasquidos digitales (`glitch`). Mapa a 54 bpm, combate a 76 bpm con pulso claro (bombo, caja y bajo) y AM a 66 bpm, pesado, con campana y una melodía de notas largas.
 - **Epílogo del alma a pantalla completa:** al ganar con un alma aliada aparece primero su escena animada en grande y luego las estadísticas. Antes, si el alumno tenía temas para repasar, el panel de repaso ocupaba ese lugar y sólo se veía el texto.
 - **Modo profesor:** el botón «Fin + alma» abre el final con un alma aliada; cada clic pasa a la siguiente (Ícaro → Ayudante → … → Duda). Los saltos ahora van en 7 columnas.
+
+## v0.20.2
+
+- La portada, el inicio de sesión y los créditos muestran sólo el número de versión (p. ej. «v0.20.2»). La descripción de cambios sigue en `VERSION` de `src/config.ts` y en este README.

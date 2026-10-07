@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { api, hashPass, isOnline } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
-import { VERSION, W } from '../config';
+import { VERSION_NUM, W } from '../config';
 import { Codex, Game, loadLocal, mergeCodex, rememberSession, restoreSession, Avatar } from '../state';
 import { T } from '../textos';
 import { button, Btn, dungeonBackground, embers, fadeTo, frame, TextField, title, txt } from '../ui/widgets';
@@ -29,7 +29,7 @@ export class LoginScene extends Phaser.Scene {
 
     title(this, W / 2, 62, T.titulo, 54);
     txt(this, W / 2, 104, T.subtitulo, 22, CSS.dim).setOrigin(0.5);
-    txt(this, W - 12, 530, VERSION, 16, '#4a3f55').setOrigin(1, 1);
+    txt(this, W - 12, 530, `v${VERSION_NUM}`, 16, '#4a3f55').setOrigin(1, 1);
 
     const col = this.add.image(W / 2 + 330, 300, 'colossus').setScale(5).setAlpha(0.1).setTint(0x6d4a8a);
     this.tweens.add({ targets: col, y: 306, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });

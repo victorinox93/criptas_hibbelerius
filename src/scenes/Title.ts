@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CSS } from '../art/palette';
 import { audio } from '../audio';
-import { H, VERSION, W } from '../config';
+import { H, VERSION_NUM, W } from '../config';
 import { embers, fadeTo, txt, vignette } from '../ui/widgets';
 
 /** Portada: la ilustración de public/portada.jpg y «clic para comenzar» */
@@ -32,7 +32,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.rectangle(W / 2, H - 58, 420, 44, 0x000000, 0.75);
     const t = txt(this, W / 2, H - 58, 'Clic o toca para comenzar', 26, CSS.gold).setOrigin(0.5).setStroke('#000', 6);
     this.tweens.add({ targets: t, alpha: 0.25, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    txt(this, W - 12, H - 8, VERSION, 16, '#5a5048').setOrigin(1, 1);
+    txt(this, W - 12, H - 8, `v${VERSION_NUM}`, 16, '#5a5048').setOrigin(1, 1);
     let gone = false;
     const go = () => {
       if (gone) return;
