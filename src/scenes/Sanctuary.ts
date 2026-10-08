@@ -3,7 +3,8 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { BOONS, FIGURES, FigureDef } from '../data/figures';
-import { addCard, addEntropia, addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { addCard, addEntropia, addErgios, Game, logEvent, saveLocal, sumarAfinidad, syncRun, unlock } from '../state';
+import { DUOS, Duo, Rivalidad, rivalesDe } from '../data/relaciones';
 import { CardInst, cardName, evolucionable } from '../data/cards';
 import { ENTROPIA } from '../data/abismo';
 import { T } from '../textos';
@@ -15,6 +16,25 @@ export interface SanctuaryData {
   figureId?: string;
   phase?: 'intro' | 'elegir';
   epic?: boolean;
+  reto?: boolean; // venía de un reto de reconciliación
+  sinResponder?: boolean;
+}
+
+const nombreDe = (id: string) => FIGURES.find((f) => f.id === id)?.name ?? id;
+
+/** ¿Este eco está molesto? (aceptaste en esta expedición un don de su rival y no se han reconciliado) */
+export function molestia(figId: string): { rival: string; r: Rivalidad } | null {
+  const run = Game.run!;
+  if ((run.seen ?? []).includes(`recon_${figId}`)) return null;
+  const tengo = new Set(run.boons.map((b) => BOONS[b.id]?.figure));
+  return rivalesDe(figId).find((x) => tengo.has(x.rival)) ?? null;
+}
+
+/** Dúos que este eco puede ofrecer (tienes un don de su pareja y aún no tienes el dúo) */
+export function duosListos(figId: string): Duo[] {
+  const run = Game.run!;
+  const tengo = new Set(run.boons.map((b) => BOONS[b.id]?.figure));
+  return DUOS.filter((d) => d.figs.includes(figId) && tengo.has(d.figs.find((f) => f !== figId)!) && !run.boons.some((b) => b.id === d.id));
 }
 
 function pickFigure(): FigureDef {
@@ -67,6 +87,23 @@ export class SanctuaryScene extends Phaser.Scene {
     txt(this, fx, phase === 'intro' ? 352 : 312, fig.name, 26, CSS.bone).setOrigin(0.5);
     txt(this, fx, phase === 'intro' ? 378 : 336, `${fig.years} · ${fig.epithet}`, 18, '#9ad8f0').setOrigin(0.5);
 
+    // relaciones: afinidad, molestia y dúos
+    const yb = phase === 'intro' ? 404 : 360;
+    const mol = molestia(fig.id);
+    const af = Game.codex.afinidad?.[fig.id] ?? 0;
+    const badges: [string, string, string][] = [];
+    if (mol) badges.push([`💢 Molesto (llevas dones de ${nombreDe(mol.rival)})`, '#e08a8a', `${mol.r.titulo}\n${mol.r.historia}`]);
+    else if (af > 0) badges.push([`❤ Afinidad ×${af}`, '#e8a0b0', `Has elegido a ${fig.name} ${af} ${af === 1 ? 'vez' : 'veces'} en todas tus expediciones.`]);
+    for (const d of duosListos(fig.id)) {
+      const otro = d.figs.find((f) => f !== fig.id)!;
+      badges.push([`✦ Don dúo con ${nombreDe(otro)}`, CSS.gold, `${BOONS[d.id].name}: ${BOONS[d.id].text[0]}`]);
+    }
+    badges.slice(0, 2).forEach(([t, col, info], i) => {
+      const b = txt(this, fx, yb + i * 24, t, 17, col, { align: 'center' }).setOrigin(0.5).setInteractive();
+      if (b.width > 300) b.setScale(300 / b.width);
+      this.tip.attach(b, t.replace(/^\S+ /, ''), info);
+    });
+
     if (phase === 'intro') this.intro(fig, data);
     else this.choose(fig, data, !!data.epic);
     void run;
@@ -76,7 +113,10 @@ export class SanctuaryScene extends Phaser.Scene {
     title(this, 690, 76, T.mapa.nodos.santuario[0], 38, '#9ad8f0');
     const g = this.add.graphics();
     frame(g, 470, 110, 460, 250, 0x07090e, 0x3a6a8a, 0.95);
-    txt(this, 490, 128, fig.intro, 21, CSS.bone, { wordWrap: { width: 420 }, lineSpacing: 2 });
+    const mol = molestia(fig.id);
+    const af = Game.codex.afinidad?.[fig.id] ?? 0;
+    const saludo = mol ? mol.r.queja[fig.id] : af >= 3 ? `«Otra vez tú. Ya van ${af} veces que confías en mí, y eso no se olvida.»` : fig.intro;
+    txt(this, 490, 128, saludo, 21, mol ? '#f0c0b0' : CSS.bone, { wordWrap: { width: 420 }, lineSpacing: 2 });
     txt(this, 490, 250, `${T.santuario.don}s:`, 19, CSS.gold);
     fig.boons.forEach((id, i) => {
       const b = BOONS[id];
@@ -84,12 +124,12 @@ export class SanctuaryScene extends Phaser.Scene {
       txt(this, 520, 276 + i * 24, b.name, 19, CSS.dim);
       this.tip.attach(im, b.name, `${T.santuario.comun}: ${b.text[0]}\n${T.santuario.epico}: ${b.text[1]}`);
     });
-    button(this, 580, 430, 220, 60, T.santuario.responder, () => {
-      fadeTo(this, 'Rune', { floor: data.floor, source: 'santuario', figureId: fig.id });
-    }, { color: UI.gold, size: 21 });
-    button(this, 820, 430, 220, 60, T.santuario.sinResponder, () => {
-      fadeTo(this, 'Sanctuary', { floor: data.floor, figureId: fig.id, phase: 'elegir', epic: false });
-    }, { size: 21 });
+    button(this, 580, 430, 220, 60, mol ? 'Reconciliarte\n(si fallas, se va)' : T.santuario.responder, () => {
+      fadeTo(this, 'Rune', { floor: data.floor, source: 'santuario', figureId: fig.id, reto: !!mol });
+    }, { color: mol ? 0xc8643a : UI.gold, size: mol ? 19 : 21 });
+    button(this, 820, 430, 220, 60, mol ? 'Sin responder\n(sólo 2 dones comunes)' : T.santuario.sinResponder, () => {
+      fadeTo(this, 'Sanctuary', { floor: data.floor, figureId: fig.id, phase: 'elegir', epic: false, sinResponder: true });
+    }, { size: mol ? 19 : 21 });
   }
 
   /** Dones que hacen algo en el momento (Oppenheimer, Darwin) */
@@ -140,43 +180,70 @@ export class SanctuaryScene extends Phaser.Scene {
       button(this, 610, 420, 220, 44, T.santuario.continuar, () => fadeTo(this, 'Map'), { size: 22 });
     };
 
+    // ── relaciones ──
+    const mol = molestia(fig.id);
+    if (mol && data.reto && !epic) {
+      // falló la reconciliación: el eco se va sin dar nada
+      logEvent('eco_molesto', fig.id, false, { rival: mol.rival });
+      return finish(`${fig.name} sigue molesto por ${nombreDe(mol.rival)} y se desvanece sin darte nada.`);
+    }
+    if (mol && data.reto && epic) {
+      (run.seen ??= []).push(`recon_${fig.id}`);
+      logEvent('eco_molesto', fig.id, true, { rival: mol.rival });
+    }
+    const molesto = !!mol && !(data.reto && epic);
     const avail = fig.boons.filter((id) => !run.boons.some((b) => b.id === id));
-    if (!avail.length) {
+    if (!avail.length && !duosListos(fig.id).length) {
       addErgios(30);
       return finish(T.santuario.sinDones);
     }
-    fig.boons.forEach((id, i) => {
+    // molesto y sin reconciliarse: sólo 2 dones (comunes)
+    let lista = [...fig.boons];
+    if (molesto) lista = Phaser.Utils.Array.Shuffle([...avail]).slice(0, 2);
+    // don dúo como cuarta opción
+    const duos = molesto ? [] : duosListos(fig.id);
+    lista.push(...duos.slice(0, 1).map((d) => d.id));
+    if (!lista.length) {
+      addErgios(30);
+      return finish(T.santuario.sinDones);
+    }
+    const n = lista.length;
+    const ancho = n >= 4 ? 156 : 190, paso = n >= 4 ? 168 : 210, x0 = n >= 4 ? 352 : 390;
+    lista.forEach((id, i) => {
       const b = BOONS[id];
-      const owned = !avail.includes(id);
-      const x = 390 + i * 210, y = 140;
+      const esDuo = !!b.duo;
+      const owned = !esDuo && !avail.includes(id);
+      const x = x0 + i * paso, y = 140;
       const c = this.add.container(0, 0).setData('boon', true);
       const g = this.add.graphics();
       const draw = (hover: boolean) => {
         g.clear();
-        frame(g, x - 95, y, 190, 290, hover ? 0x14182a : 0x0b0d16, owned ? UI.border : epic ? UI.gold : 0x9aa4b8, 0.97);
+        frame(g, x - ancho / 2, y, ancho, 290, hover ? (esDuo ? 0x2a2010 : 0x14182a) : esDuo ? 0x1a140a : 0x0b0d16, owned ? UI.border : esDuo ? 0xe8a040 : epic ? UI.gold : 0x9aa4b8, 0.97);
       };
       draw(false);
       c.add(g);
       c.add(icon(this, x, y + 50, b.icon, 6).setAlpha(owned ? 0.3 : 1));
-      c.add(txt(this, x, y + 98, b.name, 22, owned ? CSS.dim : CSS.bone, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
-      c.add(txt(this, x, y + 148, owned ? T.santuario.yaLoTienes : epic ? T.santuario.epico : T.santuario.comun, 18,
-        owned ? CSS.dim : epic ? CSS.gold : '#b8c0d0').setOrigin(0.5, 0));
+      c.add(txt(this, x, y + 98, b.name, n >= 4 ? 19 : 22, owned ? CSS.dim : esDuo ? '#f0c070' : CSS.bone, { align: 'center', wordWrap: { width: ancho - 20 } }).setOrigin(0.5, 0));
+      c.add(txt(this, x, y + 148, owned ? T.santuario.yaLoTienes : esDuo ? `✦ Dúo con ${nombreDe(b.duo!.find((f) => f !== fig.id)!)}` : epic ? T.santuario.epico : T.santuario.comun, n >= 4 ? 15 : 18,
+        owned ? CSS.dim : esDuo ? CSS.gold : epic ? CSS.gold : '#b8c0d0', { align: 'center', wordWrap: { width: ancho - 16 } }).setOrigin(0.5, 0));
       // el texto puede traer una segunda parte con el costo de radiación
       const [good, rad] = b.text[epic ? 1 : 0].split('\nRadiación:');
-      const gt = txt(this, x, y + 172, good, 18, CSS.bone, { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0);
+      const gt = txt(this, x, y + 176, good, n >= 4 ? 16 : 18, CSS.bone, { align: 'center', wordWrap: { width: ancho - 20 } }).setOrigin(0.5, 0);
       c.add(gt);
-      if (rad) c.add(txt(this, x, gt.y + gt.height + 6, `Radiación:${rad}`, 17, '#9bf07a', { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
-      else c.add(txt(this, x, y + 250, b.lore, 15, '#7a8a9a', { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
+      if (rad) c.add(txt(this, x, gt.y + gt.height + 6, `Radiación:${rad}`, 16, '#9bf07a', { align: 'center', wordWrap: { width: ancho - 20 } }).setOrigin(0.5, 0));
+      else if (n < 4) c.add(txt(this, x, y + 250, b.lore, 15, '#7a8a9a', { align: 'center', wordWrap: { width: 170 } }).setOrigin(0.5, 0));
       if (!owned) {
-        const z = this.add.zone(x - 95, y, 190, 290).setOrigin(0).setInteractive({ useHandCursor: true });
+        const z = this.add.zone(x - ancho / 2, y, ancho, 290).setOrigin(0).setInteractive({ useHandCursor: true });
         z.on('pointerover', (p: Phaser.Input.Pointer) => { draw(true); audio.sfx('hover'); this.tip.show(p.worldX + 20, 452, b.name, b.lore); });
         z.on('pointerout', () => { draw(false); this.tip.hide(); });
         z.on('pointerdown', () => {
           run.boons.push({ id, epic });
           unlock('boons', id);
+          if (!run.debug) sumarAfinidad(fig.id);
           audio.sfx('heal');
-          logEvent('don', fig.id, epic, { don: id, epico: epic });
-          const msg = `${T.santuario.don}: ${b.name} (${epic ? T.santuario.epico : T.santuario.comun})`;
+          logEvent('don', fig.id, epic, { don: id, epico: epic, duo: esDuo });
+          const d = esDuo ? DUOS.find((x) => x.id === id) : null;
+          const msg = `${T.santuario.don}${esDuo ? ' dúo' : ''}: ${b.name} (${epic ? T.santuario.epico : T.santuario.comun})${d ? `\n${d.dialogo[0]}\n${d.dialogo[1]}` : ''}`;
           this.tip.hide();
           this.donInmediato(id, epic, (extra) => finish(extra ? `${msg}\n${extra}` : msg));
         });

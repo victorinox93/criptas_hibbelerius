@@ -1,3 +1,4 @@
+import { DUO_BOONS } from './relaciones';
 // ════════════════════════════════════════════════════════════════
 //  FIGURAS HISTÓRICAS ("Ecos del Pasado") Y SUS DONES
 //  Al llegar a un santuario aparece una figura. Si respondes bien su
@@ -13,6 +14,7 @@ export interface BoonDef {
   icon: string;
   text: [string, string]; // [común, épico]
   lore: string;
+  duo?: [string, string]; // don dúo: las dos figuras que lo dan (src/data/relaciones.ts)
 }
 
 export interface FigureDef {
@@ -381,3 +383,6 @@ export const FIGURES: FigureDef[] = [
     boons: ['tu_maquina', 'tu_enigma', 'tu_test'],
   },
 ];
+
+// dones dúo (relaciones entre ecos)
+Object.assign(BOONS, DUO_BOONS);

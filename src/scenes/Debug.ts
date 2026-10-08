@@ -105,6 +105,8 @@ export class DebugScene extends Phaser.Scene {
       ['¿Más o menos?', () => { this.go(acto(), 'MasMenos', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
       ['M. ambulante', () => this.go(acto(), 'Shop', { floor: 4, ambulante: true })],
       ['Grieta III→IV', () => this.go(3, 'ActTransition', { to: 4 })],
+      ['Eco molesto', () => { this.go(acto(), 'Sanctuary', { floor: 2, figureId: 'newton' }); Game.run!.boons.push({ id: FIGURES.find((f) => f.id === 'hooke')!.boons[0], epic: false }); }],
+      ['Eco dúo', () => { this.go(acto(), 'Sanctuary', { floor: 2, figureId: 'newton', phase: 'elegir', epic: true }); Game.run!.boons.push({ id: FIGURES.find((f) => f.id === 'galileo')!.boons[0], epic: false }); }],
       [`Fin + ${CORTO[ALMA_IDS[OPTS.alma % ALMA_IDS.length]] ?? 'alma'}`, () => { const id = ALMA_IDS[OPTS.alma++ % ALMA_IDS.length]; this.go(acto(), 'End', { victory: true }); Game.run!.aliado = id; }],
     ];
     jumps.forEach(([s, fn], i) => btn(96 + (i % 7) * 128, 282 + Math.floor(i / 7) * 36, 124, s, fn, false, 16));

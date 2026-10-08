@@ -27,6 +27,7 @@ export interface RuneData {
   source: RuneSource;
   eventId?: string;
   figureId?: string;
+  reto?: boolean; // eco molesto: reto de reconciliación (si fallas, se va)
 }
 
 /** Aplica el resultado de un encuentro y devuelve una descripción */
@@ -281,10 +282,12 @@ export class RuneScene extends Phaser.Scene {
     }
 
     if (this.d.source === 'santuario') {
-      c.add(txt(this, 560, 400, ok ? '«Bien razonado. Mis dones serán dignos de ti.»' : '«No importa. Aún así te ayudaré, aunque con menos fuerza.»',
-        21, ok ? CSS.green : CSS.dim, { wordWrap: { width: 270 } }));
-      c.add(button(this, W - 210, 496, 220, 40, T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
-        floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok,
+      const reto = !!this.d.reto;
+      c.add(txt(this, 560, 400, ok ? (reto ? '«…Está bien. Razonas mejor de lo que pensé. Hagamos las paces.»' : '«Bien razonado. Mis dones serán dignos de ti.»')
+        : reto ? '«Lo suponía.» El eco te da la espalda y se desvanece.' : '«No importa. Aún así te ayudaré, aunque con menos fuerza.»',
+        21, ok ? CSS.green : reto ? '#e08a8a' : CSS.dim, { wordWrap: { width: 270 } }));
+      c.add(button(this, W - 210, 496, 220, 40, reto && !ok ? T.runa.continuar : T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
+        floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok, reto,
       }), { size: 22, color: ok ? UI.gold : UI.border }));
       return;
     }

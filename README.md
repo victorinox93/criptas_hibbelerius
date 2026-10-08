@@ -314,3 +314,21 @@ Antes de borrar, siempre se guarda una **copia de respaldo** de la hoja en tu Dr
   - **Crear formulario de retroalimentación:** genera un Google Form (experiencia, dificultad, qué te ayudó a aprender por tema, confianza antes/después, ideas de personaje, enemigo, carta, alma o eco, errores, recomendación 0–10 y consentimiento para uso anónimo). Las respuestas llegan a una pestaña de la misma hoja. Pega el enlace en `FORM_URL` (`src/config.ts`) para que aparezca el botón «✎ Tu opinión».
   - **Generar evidencia:** pestaña «Evidencia» con alumnos activos, horas jugadas, problemas respondidos, % de aciertos, **curva de aprendizaje** (aciertos en las primeras 5 vs. últimas 5 respuestas de cada alumno), aciertos por tema (1ª vs. 2ª mitad) con gráfica, y tabla por alumno.
 - **Perillas de vida** en `src/data/enemies.ts`: `VIDA_POR_ACTO`, `VIDA_JEFES` y `VIDA_ELITES` (todas en 1 = sin cambio), además de `VIDA_ENEMIGOS` (1.2).
+
+## v0.24.0 · Relaciones entre ecos (inspirado en Hades)
+
+Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/Sanctuary.ts` (reglas).
+
+- **Rivalidades** (Newton ⚔ Hooke, Newton ⚔ Huygens, Hooke ⚔ Huygens, Tesla ⚔ Einstein): si en la expedición aceptaste un don del rival, el eco llega **💢 molesto** y te lo reclama. Puedes **reconciliarte** respondiendo su pregunta (si aciertas: dones épicos y se le pasa; si fallas: se va sin darte nada) o **aceptar sin responder** (sólo 2 dones comunes).
+- **Dones dúo** (✦): si tienes un don de un eco y encuentras a su pareja, aparece un cuarto don más fuerte, con diálogo entre los dos:
+  - Galileo + Newton · *Hombros de Gigantes*: +1 kg y +1 m/s² (épico +2 kg).
+  - Châtelet + Coriolis · *Teorema Trabajo-Energía*: cada enemigo derrotado devuelve 1 J (2).
+  - Einstein + Curie · *Congreso Solvay*: la radiación que recibes también daña a los enemigos ×2 (×3).
+  - Noether + Einstein · *Simetría del Espacio-tiempo*: tu primer ataque de cada turno hace el doble (+1 carta).
+  - Huygens + Galileo · *Simpatía de Péndulos*: cada 3 turnos (2) +1 J y 1 carta.
+  - Joule + Tesla · *Efecto Joule*: tus rayos aplican 2 de Calor (4).
+  - Asimov + Turing · *El Robot Pensante*: un autómata ataca al final de tu turno (6, o 9 y 3 de Bloqueo).
+  - Oppenheimer + Einstein · *La Carta a Roosevelt*: 20 (30) de daño a todos al iniciar cada combate, con 4 de radiación.
+- **Afinidad:** cada eco recuerda cuántas veces lo elegiste (en el Grimorio, entre expediciones). Se ve como ❤ ×N y, desde 3, te saluda distinto.
+- **Grimorio → Relaciones:** rivalidades con su historia real y lista de dúos; se descubren al conocer a ambos ecos.
+- **Modo profesor:** saltos «Eco molesto» (Newton con un don de Hooke) y «Eco dúo» (Newton con un don de Galileo).

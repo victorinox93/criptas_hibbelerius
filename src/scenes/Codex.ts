@@ -10,6 +10,7 @@ import { EVENTS } from '../data/events';
 import { DILEMMAS } from '../data/dilemmas';
 import { FAMILIARS } from '../data/familiars';
 import { BOONS, FIGURES } from '../data/figures';
+import { DUOS, RIVALIDADES } from '../data/relaciones';
 import { RELICS } from '../data/relics';
 import { CodexKind, Game, nivelActual } from '../state';
 import { DESBLOQUEOS, NIVELES, nivelDe, siguienteNivel } from '../data/progreso';
@@ -46,7 +47,7 @@ export class CodexScene extends Phaser.Scene {
     title(this, W / 2, 40, T.grimorio.titulo, 44);
     this.countT = txt(this, 30, 518, '', 20, CSS.dim).setOrigin(0, 0.5);
     this.tabs = T.grimorio.tabs.map((name, i) =>
-      button(this, 30 + 73 + i * 152, 92, 146, 36, name, () => this.show(i), { size: 19 }));
+      button(this, 30 + 64 + i * 130, 92, 126, 36, name, () => this.show(i), { size: name.length > 12 ? 15 : 18 }));
     const g = this.add.graphics();
     frame(g, 24, 120, 448, 380, 0x0e0b12, UI.border, 0.9);
     frame(g, DX - 8, 120, DW + 16, 380, 0x0e0b12, UI.border, 0.9);
@@ -193,7 +194,7 @@ export class CodexScene extends Phaser.Scene {
           kind: 'boons', id: b.id, tex: b.icon, name: b.name,
           detail: (c) => {
             const fig = FIGURES.find((f) => f.id === b.figure);
-            head(c, b.icon, b.name, `Don de ${fig?.name ?? ''}`, 9);
+            head(c, b.icon, b.name, b.duo ? `Don dúo de ${b.duo.map((f) => FIGURES.find((x) => x.id === f)?.name ?? f).join(' y ')}` : `Don de ${fig?.name ?? ''}`, 9);
             body(c, 290, `${T.grimorio.comun}: ${b.text[0]}`, '#b8c0d0');
             body(c, 340, `${T.grimorio.epico}: ${b.text[1]}`, CSS.gold);
             body(c, 400, b.lore);
@@ -213,6 +214,36 @@ export class CodexScene extends Phaser.Scene {
   }
 
   /** Pestaña «Progreso»: nivel de Conocimiento y lo que desbloquea cada nivel */
+  /** Rivalidades y dúos entre ecos (se descubren al conocer a ambos) */
+  private showRelaciones() {
+    const c = this.grid;
+    const g = this.add.graphics();
+    frame(g, 24, 120, W - 48, 380, 0x0e0b12, UI.border, 0.98);
+    c.add(g);
+    const conoce = (id: string) => Game.codex.figures.includes(id);
+    const nom = (id: string) => (conoce(id) ? FIGURES.find((f) => f.id === id)?.name.split(' ').slice(-1)[0] ?? id : '???');
+    c.add(txt(this, 44, 130, '⚔ Rivalidades', 22, '#e08a8a'));
+    let y = 160;
+    for (const r of RIVALIDADES) {
+      const ok = conoce(r.a) && conoce(r.b);
+      c.add(txt(this, 44, y, `${nom(r.a)} ⚔ ${nom(r.b)}${ok ? ` · ${r.titulo}` : ''}`, 17, ok ? CSS.bone : '#5a5468'));
+      const h = txt(this, 56, y + 20, ok ? r.historia : 'Conoce a ambos ecos para descubrir su historia.', 13, ok ? CSS.dim : '#4a4458', { wordWrap: { width: 400 } });
+      c.add(h);
+      y += 26 + Math.min(h.height, 52);
+    }
+    c.add(txt(this, 490, 130, '✦ Dones dúo', 22, CSS.gold));
+    DUOS.forEach((d, i) => {
+      const ok = conoce(d.figs[0]) && conoce(d.figs[1]);
+      const b = BOONS[d.id];
+      const tiene = Game.codex.boons.includes(d.id);
+      const yy = 160 + i * 40;
+      c.add(txt(this, 490, yy, `${nom(d.figs[0])} + ${nom(d.figs[1])}${ok ? ` → ${b.name}` : ''}${tiene ? '  ✓' : ''}`, 16, ok ? (tiene ? CSS.green : CSS.bone) : '#5a5468'));
+      if (ok) c.add(txt(this, 502, yy + 18, b.text[0].split('\n')[0], 13, CSS.dim, { wordWrap: { width: 430 } }));
+    });
+    const af = Object.entries(Game.codex.afinidad ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    this.countT.setText(af.length ? `❤ Afinidad: ${af.map(([f, n]) => `${nom(f)} ×${n}`).join(' · ')}` : 'Elige dones de los ecos para ganar su afinidad.');
+  }
+
   private showProgress() {
     const xp = Game.codex.xp ?? 0;
     const lv = nivelActual();
@@ -259,6 +290,7 @@ export class CodexScene extends Phaser.Scene {
     this.grid.removeAll(true);
     this.detail.removeAll(true);
     if (tab === 5) return this.showProgress();
+    if (tab === 6) return this.showRelaciones();
     const list = this.entries(tab);
     const known = list.filter((e) => this.has(e.kind, e.id)).length;
     this.countT.setText(`${T.grimorio.descubiertos}: ${known} / ${list.length}`);

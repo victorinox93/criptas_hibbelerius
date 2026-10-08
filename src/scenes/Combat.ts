@@ -125,6 +125,7 @@ export class CombatScene extends Phaser.Scene {
   private palanca = false; // el siguiente ataque hace el doble
   private derivadaBono = 0; // Derivada: daño extra para el siguiente ataque
   private ley3 = false; // Asimov: la Tercera Ley ya se activó en este combate
+  private isoRobo = false; // Péndulo Isócrono: robar 1 carta extra este turno
   private jugadasIni = 0; // cartas jugadas al empezar el turno (Máquina de Turing)
   private danoTurno = 0; // daño total hecho en este turno (Integral)
   private mult = 1; // multiplicador del ataque en curso
@@ -376,6 +377,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.hasFx('impulso')) this.baseAcel += 1;
     // dones de figuras históricas
     this.baseAcel += boonLevel('n_principia');
+    const gig = boonLevel('duo_gigantes'); // Galileo + Newton
+    if (gig) { this.baseAcel += 1; this.masa += gig; }
     this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
     this.marco = boonLevel('e_marco');
@@ -1843,6 +1846,8 @@ export class CombatScene extends Phaser.Scene {
     {
       const run = Game.run!;
       run.stats.kills = (run.stats.kills ?? 0) + 1;
+      const vv = boonLevel('duo_visviva'); // Châtelet + Coriolis
+      if (vv && !this.bannerT.getData('dead')) { this.energy += vv; this.calc(`Teorema Trabajo-Energía: la energía del enemigo vuelve a ti (+${vv} J)`); this.refreshPlayer(); }
       const mul = JEFES.includes(ev.st.def.id) ? PUNTOS.jefeMul : this.kind === 'elite' && ev.st.maxHp >= 50 ? PUNTOS.eliteMul : 1;
       const pts = sumar(run, 'Enemigos derrotados', ev.st.maxHp * PUNTOS.porVidaEnemigo * mul);
       const t = txt(this, ev.baseX, 120, `+${pts}`, 22, CSS.gold).setOrigin(0.5).setDepth(700).setStroke('#000', 4);
@@ -2009,6 +2014,13 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Máquina de Turing: jugaste ${this.played - this.jugadasIni} cartas → +1 J`);
     }
     this.jugadasIni = this.played;
+    if (boonLevel('duo_simetria')) this.palanca = true; // Noether + Einstein: primer ataque ×2
+    const iso = boonLevel('duo_isocrono'); // Huygens + Galileo
+    if (iso && this.turn % (iso === 2 ? 2 : 3) === 0) {
+      this.energy += 1;
+      this.isoRobo = true;
+      this.calc('Simpatía de Péndulos: el periodo se cumple → +1 J y robas 1 carta');
+    }
     if (this.drainNext) this.calc(`Te robaron ${this.drainNext} J`);
     this.drainNext = 0;
     this.pierce = false;
@@ -2061,11 +2073,21 @@ export class CombatScene extends Phaser.Scene {
     }
     let draw = 5 + this.extraDraw;
     if (this.turn === 1) draw += boonLevel('as_fundacion'); // Psicohistoria (Asimov)
+    if (this.isoRobo) { draw += 1; this.isoRobo = false; }
+    if (boonLevel('duo_simetria') === 2) draw += 1;
     if (this.has('agujero')) draw += 1;
     if (this.prohibido('p_infinito')) draw += 1;
     if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
     if (this.turn === 1) {
-      const om = boonLevel('o_manhattan');
+      const fdr = boonLevel('duo_roosevelt'); // Oppenheimer + Einstein
+    if (fdr && this.alive().length) {
+      const d = fdr === 2 ? 30 : 20;
+      this.calc(`La Carta a Roosevelt: ${d} a todos los enemigos`);
+      this.cameras.main.flash(300, 255, 240, 200);
+      await this.rayoTodos(d);
+      if (!(await this.radiate(4, 'Carta a Roosevelt'))) return false;
+    }
+    const om = boonLevel('o_manhattan');
       if (om) {
         this.energy += om;
         draw += 1;
@@ -2233,6 +2255,16 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Cuervo: picotea a ${t.st.def.name} (4)`);
         await this.hitEnemy(t, 4, false, 'res');
       }
+      if (await this.checkEnd()) return;
+    }
+    // dúo Asimov + Turing: el robot pensante
+    const rb = boonLevel('duo_robot');
+    if (rb && this.alive().length) {
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      this.beam(t, 0x9ad8f0);
+      this.calc(`El Robot Pensante ataca a ${t.st.def.name} (${rb === 2 ? 9 : 6})`);
+      await this.hitEnemy(t, rb === 2 ? 9 : 6, false, 'res');
+      if (rb === 2) this.gainBlock(3);
       if (await this.checkEnd()) return;
     }
     // aliado (alma en pena): actúa al final de tu turno
@@ -2581,6 +2613,12 @@ export class CombatScene extends Phaser.Scene {
     this.calc(`Radiación (${src}): pierdes ${n} de vida (ignora el Bloqueo)`);
     this.refreshPlayer();
     await this.wait(220);
+    const sv = boonLevel('duo_solvay'); // Einstein + Curie
+    if (sv && run.hp > 0 && this.alive().length) {
+      const d = n * (sv + 1);
+      this.calc(`Congreso Solvay: la radiación también los alcanza (${d} a todos)`);
+      for (const t of [...this.alive()]) await this.hitEnemy(t, d, true, 'res');
+    }
     if (run.hp <= 0) return !(await this.dies('la radiación'));
     return true;
   }
@@ -2645,6 +2683,11 @@ export class CombatScene extends Phaser.Scene {
     }
     this.tweens.add({ targets: g, alpha: 0, duration: 380, onComplete: () => g.destroy() });
     for (const t of [...this.alive()]) await this.hitEnemy(t, n, false, 'res');
+    const dj = boonLevel('duo_joule'); // Joule + Tesla
+    if (dj) {
+      for (const t of this.alive()) { t.st.calor += dj === 2 ? 4 : 2; this.refreshEnemy(t); }
+      this.calc(`Efecto Joule: Q = I²·R·t → +${dj === 2 ? 4 : 2} de Calor a todos`);
+    }
   }
 
   private beamFrom(x: number, to: EnemyView, color: number) {

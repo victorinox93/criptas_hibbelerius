@@ -67,7 +67,7 @@ export const T = {
 
   grimorio: {
     titulo: 'Grimorio',
-    tabs: ['Bestiario', 'Personajes', 'Figuras', 'Cartas', 'Reliquias y dones', 'Progreso'],
+    tabs: ['Bestiario', 'Personajes', 'Figuras', 'Cartas', 'Reliquias y dones', 'Progreso', 'Relaciones'],
     descubiertos: 'Descubiertos',
     bloqueado: 'Aún no lo descubres.\nSigue explorando las criptas.',
     volver: 'Volver',

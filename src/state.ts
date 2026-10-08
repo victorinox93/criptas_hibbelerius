@@ -122,6 +122,7 @@ export interface Codex {
   hib?: number; // veces que ha vencido a Hibbelerius (con 2 se abre el Núcleo del Cálculo)
   curva?: number; // versión de la curva de niveles con la que se guardó (2 = v0.22)
   nivelPiso?: number; // nivel que ya tenía con la curva anterior (nunca se pierde)
+  afinidad?: Record<string, number>; // veces que elegiste a cada eco (relaciones)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -140,6 +141,9 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.xp = Math.max(a?.xp ?? 0, b?.xp ?? 0);
   c.tiempo = Math.max(a?.tiempo ?? 0, b?.tiempo ?? 0);
   const hib = Math.max(a?.hib ?? 0, b?.hib ?? 0);
+  const af: Record<string, number> = { ...(a?.afinidad ?? {}) };
+  for (const [k, v] of Object.entries(b?.afinidad ?? {})) af[k] = Math.max(af[k] ?? 0, v);
+  if (Object.keys(af).length) c.afinidad = af;
   // curva de niveles v0.22: quien ya tenía un nivel con la curva vieja lo conserva
   const piso = (x: Partial<Codex> | null | undefined) => (!x ? 0 : Math.max(x.nivelPiso ?? 0, (x.curva ?? 1) < 2 ? nivelDeV1(x.xp ?? 0) : 0));
   const np = Math.max(piso(a), piso(b));
@@ -204,6 +208,12 @@ export const PISOS_NUCLEO = 8;
 /** Pisos antes del jefe en cada acto */
 export function pisosDe(acto = 1) {
   return acto >= 4 ? PISOS_NUCLEO : FLOORS;
+}
+/** El eco recuerda que lo elegiste (afinidad entre expediciones) */
+export function sumarAfinidad(fig: string) {
+  const af = (Game.codex.afinidad ??= {});
+  af[fig] = (af[fig] ?? 0) + 1;
+  codexDirty = true;
 }
 /** Cuenta una victoria sobre Hibbelerius (los que lo vencieron antes de v0.20 cuentan como 1) */
 export function contarHib() {
