@@ -341,3 +341,11 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
   - **Temporada (tiempo limitado):** Día de Muertos del 1 oct al 5 nov (corona de cempasúchil, sombrero de Catrina, pan de muerto, calabaza), Navidad del 1 dic al 6 ene (gorro navideño, bastón de caramelo) y 14 de febrero (rosa).
   - Para agregar artículos: `src/data/tienda.ts` (cada uno es una matriz de pixeles pequeña con su precio, ranura y temporada). Layla: `tools/arte/layla.py`.
 - «Créditos» pasó a un botón pequeño arriba a la izquierda del menú. Modo profesor: «Desbloquear todo» da 50 ◈.
+
+## v0.26.0 · Layla atigrada, accesorios en «Forjar héroe» y más artículos
+
+- **Layla** ahora es una atigrada gris-café (como la foto de referencia): rayas oscuras, hocico y pecho blancos, ojos gris verdoso. Tiene 19 frases (clic en ella para que hable) y se presenta como «Layla la comerciante».
+- **Los accesorios se equipan en «Forjar héroe» → ✦ Accesorios** (botón junto a la vista previa): un selector por ranura con lo que ya compraste. En la tienda sólo se compra; lo tuyo aparece como «✓ Es tuyo».
+- **Ranuras nuevas:** Cabeza, Cara, Mano (reemplaza al arma) y Pies.
+- **Filtro en la tienda:** «Sólo lo nuevo» oculta lo que ya tienes. La rotación semanal ahora muestra 5 artículos.
+- **25 artículos nuevos:** cascos (vikingo, espartano, astronauta, minero, kabuto, corona real), cara (lentes de sol, lentes de pasta, monóculo, parche, bigote), pies (botas vaqueras, tenis rojos, pantuflas de gato, botas lunares), armas con guiños a otros juegos y películas (sable láser azul y rojo, espada del mercenario, martillo del trueno, pico de minero, arco élfico, llave inglesa, varita estelar) y de temporada (máscara de calavera en Día de Muertos, botas de duende en Navidad).

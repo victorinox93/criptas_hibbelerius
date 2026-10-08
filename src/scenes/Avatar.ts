@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { LOGROS, logroHecho } from '../data/logros';
+import { ACC, ACCESORIOS, Slot, SLOTS } from '../data/tienda';
 import { api } from '../api';
 import { ARMORS, CAPES, CSS, UI, VISORS, Cosmetico } from '../art/palette';
 import { audio } from '../audio';
@@ -40,8 +41,10 @@ export class AvatarScene extends Phaser.Scene {
       helm: Math.max(0, HELM_IDS.indexOf(av.helm)), cape: av.cape, armor: av.armor ?? 0, visor: av.visor ?? 0,
       arma: av.arma ?? 0, extra: av.extra ?? 0, piel: av.piel ?? 1, figura: av.figura ?? 0,
     };
+    // accesorios de la Tienda de Layla (sólo los comprados)
+    const acc: Record<Slot, string | undefined> = { cabeza: av.cabeza, cara: av.cara, mano: av.mano, pies: av.pies };
     let clase = av.clase;
-    const look = () => ({ helm: HELM_IDS[st.helm], cape: st.cape, armor: st.armor, visor: st.visor, arma: st.arma, extra: st.extra, piel: st.piel, figura: st.figura });
+    const look = () => ({ helm: HELM_IDS[st.helm], cape: st.cape, armor: st.armor, visor: st.visor, arma: st.arma, extra: st.extra, piel: st.piel, figura: st.figura, ...acc });
 
     title(this, W / 2, 40, T.avatar.titulo, 46);
 
@@ -57,7 +60,7 @@ export class AvatarScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, scaleY: 3.06, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     const refreshers: (() => void)[] = [];
     const redraw = () => {
-      makeHeroFromAvatar(this, { ...look(), clase, cabeza: av.cabeza, mano: av.mano });
+      makeHeroFromAvatar(this, { ...look(), clase });
       makeHeroFromAvatar(this, { ...look(), clase: 'caballero' }, 'cls_caballero');
       makeHeroFromAvatar(this, { ...look(), clase: 'arcanista' }, 'cls_arcanista');
       makeHeroFromAvatar(this, { ...look(), clase: 'penitente' }, 'cls_penitente');
@@ -82,6 +85,7 @@ export class AvatarScene extends Phaser.Scene {
       button(this, 326, y, 30, 26, '›', () => { step(1); redraw(); audio.sfx('click'); }, { size: 20, silent: true });
       upd();
     };
+    const n0 = this.children.list.length;
     selector(282, () => 'Figura', () => FIGURAS[st.figura], (d) => (st.figura = cyc(st.figura, d, FIGURAS.length)));
     selector(310, () => por(T.avatar.yelmo, 'Sombrero', 'Tocado'), () => por(HELMS_K, HELMS_M, HELMS_P)[st.helm], (d) => (st.helm = cyc(st.helm, d, HELM_IDS.length)));
     const nivel = nivelActual();
@@ -90,6 +94,29 @@ export class AvatarScene extends Phaser.Scene {
     selector(394, () => por('Arma', 'Bastón', 'En la mano'), () => por(WEAPONS_K, WEAPONS_M, WEAPONS_P)[st.arma], (d) => (st.arma = cyc(st.arma, d, 4)));
     selector(422, () => por('Escudo', 'Barba', 'Espalda'), () => por(EXTRAS_K, EXTRAS_M, EXTRAS_P)[st.extra], (d) => (st.extra = cyc(st.extra, d, 3)));
     selector(450, () => por('Piel (arcanista)', 'Piel', 'Piel'), () => SKINS[st.piel].name, (d) => (st.piel = cyc(st.piel, d, SKINS.length)));
+    const grpA = this.children.list.slice(n0);
+    // ── pestaña «Accesorios»: lo comprado en la Tienda de Layla ──
+    const n1 = this.children.list.length;
+    const compras = Game.codex.compras ?? [];
+    SLOTS.forEach((sl, i) => {
+      const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
+      selector(296 + i * 34, () => `${sl.nombre} (${opciones.length - 1})`, () => (acc[sl.id] ? ACC[acc[sl.id]!]?.nombre ?? 'Nada' : 'Nada'), (d) => {
+        const k = Math.max(0, opciones.indexOf(acc[sl.id]));
+        acc[sl.id] = opciones[(k + d + opciones.length) % opciones.length];
+      });
+    });
+    const totalAcc = ACCESORIOS.filter((a) => compras.includes(a.id)).length;
+    txt(this, 188, 432, totalAcc ? `Tienes ${totalAcc} accesorio${totalAcc === 1 ? '' : 's'}.\nLa mano reemplaza al arma.` : 'Aún no tienes accesorios.\nCómpralos con Momentum en la Tienda de Layla.', 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0);
+    const grpB = this.children.list.slice(n1);
+    grpB.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false));
+    let enAcc = false;
+    const tabB = button(this, 300, 250, 92, 24, '✦ Accesorios', () => {
+      enAcc = !enAcc;
+      grpA.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(!enAcc));
+      grpB.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(enAcc));
+      tabB.label.setText(enAcc ? '← Apariencia' : '✦ Accesorios');
+      audio.sfx('click');
+    }, { size: 13, color: 0xc8864a });
 
     txt(this, 44, 463, T.avatar.capa, 19, CSS.dim);
     const sw: Phaser.GameObjects.Rectangle[] = [];
@@ -164,7 +191,7 @@ export class AvatarScene extends Phaser.Scene {
         alias.focus();
         return;
       }
-      prof.avatar = { alias: name, clase, ...look(), cabeza: av.cabeza, mano: av.mano, ...(amVencido() ? { insignia: 'am' } : {}) };
+      prof.avatar = { alias: name, clase, ...look(), ...(amVencido() ? { insignia: 'am' } : {}) };
       saveLocal();
       rememberSession();
       if (!prof.offline) api.saveProfile(prof.token, name, JSON.stringify(prof.avatar)).catch((e) => console.warn(e));

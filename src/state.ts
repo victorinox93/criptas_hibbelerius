@@ -13,6 +13,8 @@ export interface Avatar {
   figura?: number; // 0 = masculina; 1–5 = femenina (color de cabello)
   cabeza?: string; // accesorio de cabeza (Tienda de Layla)
   mano?: string; // accesorio de mano (reemplaza al arma)
+  cara?: string; // accesorio de cara
+  pies?: string; // accesorio de pies
   clase: string;
   helm: string;
   cape: number;

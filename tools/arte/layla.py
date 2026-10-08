@@ -2,8 +2,9 @@
 # Uso: python3 tools/arte/layla.py → escribe src/art/layla.ts
 import json, sys
 
-PAL = {'k': '#120c08', 'o': '#e8913a', 'O': '#b8621e', 'd': '#7a3a12', 'W': '#f4ece0', 'w': '#d8c8b0',
-       'G': '#7ad84a', 'g': '#2a5a1a', 'p': '#f0a0a8', 'n': '#6a4a2a', 'N': '#4a3020', 'y': '#e8c15a', 'Y': '#a87a2a', 'r': '#a8323a'}
+# tonos de la foto: atigrada gris-café, rayas casi negras, hocico y pecho blancos, ojos gris verdoso
+PAL = {'k': '#100e0c', 'o': '#8c7f6c', 'O': '#3e352c', 'd': '#2a241e', 'W': '#eee8de', 'w': '#c4baac', 'q': '#a89c88',
+       'G': '#8ca89a', 'g': '#2a3a34', 'p': '#a8746a', 'n': '#6a4a2a', 'N': '#4a3020', 'y': '#e8c15a', 'Y': '#a87a2a', 'r': '#a8323a'}
 W, H = 30, 32
 g = [['.'] * W for _ in range(H)]
 def P(x, y, c):
@@ -20,17 +21,25 @@ cx = 13.5
 # cola que se enrosca (detrás)
 for i, (x, y) in enumerate([(22, 29), (24, 28), (26, 26), (27, 24), (27, 22), (26, 20), (25, 19)]):
     oval(x, y, 1.6, 1.6, 'o' if i % 2 == 0 else 'O')
-P(25, 18, 'W'); P(24, 18, 'W')
+P(25, 18, 'O'); P(24, 18, 'O')
 # cuerpo sentado
 oval(cx, 23, 8, 8, 'o')
 oval(cx, 24, 4.5, 6.5, 'W')  # pecho blanco
-# rayas del cuerpo
-for y in (17, 20, 23):
-    for x in (6, 7, 20, 21):
-        P(x, y, 'O'); P(x, y + 1, 'O')
-# patitas
-rect(9, 29, 12, 31, 'W'); rect(15, 29, 18, 31, 'W')
-P(10, 31, 'w'); P(16, 31, 'w')
+# rayas del cuerpo (atigrado «caballa»: franjas verticales que bajan por los costados)
+for y in (16, 19, 22, 25):
+    for x in (6, 7, 8, 19, 20, 21):
+        if 0 <= y < H and g[y][x] == 'o': P(x, y, 'O')
+for y in (17, 20, 23, 26):
+    for x in (5, 22):
+        if g[y][x] == 'o': P(x, y, 'O')
+# zona clara del lomo
+for y in range(17, 28):
+    for x in (9, 18):
+        if g[y][x] == 'o': P(x, y, 'q')
+# patitas atigradas con dedos blancos
+rect(9, 28, 12, 31, 'o'); rect(15, 28, 18, 31, 'o')
+for x in (9, 12, 15, 18): P(x, 29, 'O')
+rect(9, 31, 12, 31, 'W'); rect(15, 31, 18, 31, 'W')
 # cabeza
 oval(cx, 10, 8, 6.8, 'o')
 # orejas
@@ -42,12 +51,15 @@ for (ex, d) in ((7, -1), (20, 1)):
 # rayas de la frente (M de los atigrados)
 for (x, y) in ((11, 5), (12, 6), (13, 5), (14, 5), (15, 6), (16, 5), (13, 6), (14, 6)):
     P(x, y, 'O')
-P(5, 9, 'O'); P(6, 9, 'O'); P(21, 9, 'O'); P(22, 9, 'O'); P(5, 11, 'O'); P(22, 11, 'O')
+for (x, y) in ((5, 9), (6, 9), (5, 11), (6, 11), (4, 10), (12, 4), (15, 4), (13, 7), (14, 7)):
+    P(x, y, 'O'); P(27 - x, y, 'O')
+# línea oscura que sale del ojo (marca típica de los atigrados)
+P(7, 11, 'O'); P(20, 11, 'O'); P(6, 12, 'O'); P(21, 12, 'O')
 # hocico blanco
 oval(cx, 13, 3.8, 2.6, 'W')
 # ojos verdes
 for ex in (10, 17):
-    rect(ex - 1, 9, ex + 1, 10, 'G'); P(ex, 9, 'k'); P(ex, 10, 'k'); P(ex - 1, 9, 'W')
+    rect(ex - 1, 8, ex + 1, 10, 'G'); P(ex, 9, 'g'); P(ex, 10, 'g'); P(ex - 1, 8, 'W')
 # nariz y boca
 P(13, 12, 'p'); P(14, 12, 'p'); P(13, 13, 'k'); P(14, 13, 'k'); P(12, 14, 'k'); P(15, 14, 'k')
 # bigotes

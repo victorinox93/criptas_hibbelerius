@@ -845,21 +845,21 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
 }
 
 /** Dónde va cada accesorio según la clase: [cabeza (centro inferior), mano (agarre)] */
-const ANCLAS: Record<string, { cabeza: [number, number]; mano: [number, number] }> = {
-  caballero: { cabeza: [19.5, 8], mano: [27, 28] },
-  arcanista: { cabeza: [19.5, 8], mano: [31, 25] },
-  penitente: { cabeza: [19.5, 9], mano: [31, 24] },
+const ANCLAS: Record<string, { cabeza: [number, number]; cara: [number, number]; mano: [number, number]; pies: [number, number][] }> = {
+  caballero: { cabeza: [19.5, 8], cara: [20.5, 11], mano: [27, 28], pies: [[16, 43], [22.5, 43]] },
+  arcanista: { cabeza: [19.5, 8], cara: [19.5, 12], mano: [31, 25], pies: [[15, 44], [23, 44]] },
+  penitente: { cabeza: [19.5, 9], cara: [19.5, 11], mano: [31, 24], pies: [[16, 44], [22.5, 44]] },
 };
 
 /** Dibuja los accesorios de la Tienda de Layla encima de la textura del héroe (con contorno) */
 export function pintarAccesorios(scene: Phaser.Scene, key: string, av: HeroAvatar) {
-  const items = [av.cabeza, av.mano].map((id) => (id ? ACC[id] : undefined)).filter((a): a is NonNullable<typeof a> => !!a);
+  const items = [av.pies, av.cara, av.cabeza, av.mano].map((id) => (id ? ACC[id] : undefined)).filter((a): a is NonNullable<typeof a> => !!a);
   if (!items.length) return;
   const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
   const ctx = tex.getContext();
   const an = ANCLAS[av.clase ?? 'caballero'] ?? ANCLAS.caballero;
-  for (const a of items) {
-    const [px, py] = an[a.slot];
+  const lugares = (a: (typeof items)[number]): [number, number][] => (a.slot === 'pies' ? an.pies : [an[a.slot]]);
+  for (const a of items) for (const [px, py] of lugares(a)) {
     const x0 = Math.round(px - a.ancla[0]), y0 = Math.round(py - a.ancla[1]);
     const lleno = (x: number, y: number) => (a.rows[y]?.[x] ?? '.') !== '.';
     // contorno
@@ -900,7 +900,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
   });
   tex.refresh();
 }
-export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string }
+export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string; cara?: string; pies?: string }
 
 const NPC = mirrorHalf([
   '.....kkk',

@@ -9,7 +9,10 @@
 //    (cabeza o mano); un accesorio de mano reemplaza al arma.
 // ════════════════════════════════════════════════════════════════
 
-export type Slot = 'cabeza' | 'mano';
+export type Slot = 'cabeza' | 'cara' | 'mano' | 'pies';
+export const SLOTS: { id: Slot; nombre: string }[] = [
+  { id: 'cabeza', nombre: 'Cabeza' }, { id: 'cara', nombre: 'Cara' }, { id: 'mano', nombre: 'Mano' }, { id: 'pies', nombre: 'Pies' },
+];
 
 export interface Temporada {
   nombre: string;
@@ -24,7 +27,7 @@ export interface Accesorio {
   precio: number;
   desc: string;
   rows: string[];
-  /** cabeza: centro inferior; mano: punto de agarre [x, y] dentro de la matriz */
+  /** cabeza: centro inferior · cara: centro de los ojos · mano: punto de agarre · pies: centro inferior de UNA bota (se dibujan dos) */
   ancla: [number, number];
   temporada?: string; // id de TEMPORADAS
 }
@@ -114,6 +117,112 @@ export const ACCESORIOS: Accesorio[] = [
     id: 'rosa', nombre: 'Rosa Roja', slot: 'mano', precio: 4, temporada: 'amor', desc: 'Para tu compañero de estudio favorito.',
     rows: ['.rr.', 'rRrr', '.rr.', '.g..', '.gG.', '.g..', '.g..', '.g..'], ancla: [1, 6],
   },
+  // ── v0.26 · cascos ──
+  {
+    id: 'vikingo', nombre: 'Casco Vikingo', slot: 'cabeza', precio: 7, desc: 'Cuernos de hueso. (Los vikingos reales no los usaban, pero se ven bien.)',
+    rows: ['w..........w', 'ww..llll..ww', '.wllllllllw.', '.llllllllll.', '.yyyyyyyyyy.'], ancla: [6, 4],
+  },
+  {
+    id: 'espartano', nombre: 'Casco Espartano', slot: 'cabeza', precio: 8, desc: 'Con penacho rojo. Esto es… ¡DINÁMICA!',
+    rows: ['..rrrrrr..', '.rrRrrRrr.', '...yyyy...', '..yyyyyy..', '.yyyyyyyy.', '.yyY..Yyy.'], ancla: [5, 4],
+  },
+  {
+    id: 'astronauta', nombre: 'Casco de Astronauta', slot: 'cabeza', precio: 10, desc: 'En la Luna, g = 1.62 m/s². Aquí no te sirve, pero luce.',
+    rows: ['...WWWWWW...', '..WBBBBBBW..', '.WBWBBBBBBW.', '.WBBWBBBBBW.', '.WBBBBBBBBW.', '.WBBBBBBBBW.', '..WBBBBBBW..', '..WWWWWWWW..', '..llllllll..'], ancla: [6, 3],
+  },
+  {
+    id: 'minero', nombre: 'Casco de Minero', slot: 'cabeza', precio: 5, desc: 'Con lámpara, para las Galerías de la Fricción.',
+    rows: ['...yyyy...', '..yyWByy..', '.yyyyyyyy.', 'yyyyyyyyyy'], ancla: [5, 4],
+  },
+  {
+    id: 'kabuto', nombre: 'Kabuto de Samurái', slot: 'cabeza', precio: 9, desc: 'Yelmo con cuernos dorados. Disciplina y momento angular.',
+    rows: ['..y......y..', '...y....y...', '....yyyy....', '..rrrrrrrr..', '.rRrRrRrRrr.', 'rrrrrrrrrrrr'], ancla: [6, 5],
+  },
+  {
+    id: 'corona_real', nombre: 'Corona Real', slot: 'cabeza', precio: 10, desc: 'Para el primer lugar del ranking. O para quien la compre.',
+    rows: ['y.y.y.y.y', 'yyyyyyyyy', 'yryyByyry', 'yyyyyyyyy'], ancla: [4, 4],
+  },
+  // ── v0.26 · cara ──
+  {
+    id: 'lentes_sol', nombre: 'Lentes de Sol', slot: 'cara', precio: 4, desc: 'Demasiado cool para el Abismo.',
+    rows: ['ddddkdddd', '.dd...dd.'], ancla: [4, 0],
+  },
+  {
+    id: 'lentes_nerd', nombre: 'Lentes de Pasta', slot: 'cara', precio: 3, desc: 'Para leer el Hibbeler sin perder detalle.',
+    rows: ['kkkkkkkkk', 'kBBk.kBBk', 'kkkk.kkkk'], ancla: [4, 1],
+  },
+  {
+    id: 'monoculo', nombre: 'Monóculo', slot: 'cara', precio: 5, desc: 'Muy distinguido. Muy siglo XIX.',
+    rows: ['.yyy', 'yWBy', '.yyy', '...y', '...y'], ancla: [2, 1],
+  },
+  {
+    id: 'parche', nombre: 'Parche de Pirata', slot: 'cara', precio: 4, desc: '¡Arrr! La fuerza de flotación también aplica en altamar.',
+    rows: ['kkkkkkkkkk', '...kkk....', '...kkk....'], ancla: [4, 0],
+  },
+  {
+    id: 'bigote', nombre: 'Bigote Elegante', slot: 'cara', precio: 3, desc: 'Al estilo de Einstein (o casi).',
+    rows: ['nn....nn', '.nnnnnn.'], ancla: [4, -2],
+  },
+  // ── v0.26 · pies ──
+  {
+    id: 'vaqueras', nombre: 'Botas Vaqueras', slot: 'pies', precio: 6, desc: 'Con espuelas. Yiijaa: fricción garantizada.',
+    rows: ['.nnn..', '.nYn..', '.nnn..', '.nnnnn', 'NN.lNN'], ancla: [3, 5],
+  },
+  {
+    id: 'tenis', nombre: 'Tenis Rojos', slot: 'pies', precio: 5, desc: 'Más fricción estática para arrancar rápido.',
+    rows: ['.rr...', '.rrr..', 'rrrrrr', 'WWWWWW'], ancla: [3, 4],
+  },
+  {
+    id: 'pantuflas', nombre: 'Pantuflas de Gato', slot: 'pies', precio: 4, desc: 'Regalo de Layla para los días de estudio en casa.',
+    rows: ['q...q.', 'qqqqqq', 'qkqkqq', 'qqsqqq'], ancla: [3, 4],
+  },
+  {
+    id: 'botas_espacio', nombre: 'Botas Lunares', slot: 'pies', precio: 7, desc: 'Suela pesada: más masa, menos rebote.',
+    rows: ['.WWW..', '.WWW..', '.WWWW.', 'WWWWWW', 'llllll'], ancla: [3, 5],
+  },
+  // ── v0.26 · armas (guiños a otros juegos y películas) ──
+  {
+    id: 'sable_azul', nombre: 'Sable Láser Azul', slot: 'mano', precio: 10, desc: 'Una hoja de plasma. La energía cinética de los electrones nunca fue tan elegante.',
+    rows: ['.W.', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'BWB', 'lll', 'dld', 'ldl', 'ddd'], ancla: [1, 13],
+  },
+  {
+    id: 'sable_rojo', nombre: 'Sable Láser Rojo', slot: 'mano', precio: 10, desc: 'El lado oscuro de la fuerza… neta.',
+    rows: ['.W.', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'rWr', 'lll', 'dld', 'ldl', 'ddd'], ancla: [1, 13],
+  },
+  {
+    id: 'espada_gigante', nombre: 'Espada del Mercenario', slot: 'mano', precio: 9, desc: 'Más grande que tú. La inercia de esa hoja es enorme.',
+    rows: ['.ll.', 'llll', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'lwwl', 'llll', 'yyyyyy', '.nn.', '.nn.', '.yy.'], ancla: [2, 15],
+  },
+  {
+    id: 'martillo_trueno', nombre: 'Martillo del Trueno', slot: 'mano', precio: 9, desc: 'De la mitología nórdica. Sólo lo levanta quien domina F = m·a.',
+    rows: ['llllll', 'lwwwwl', 'lwwwwl', 'llllll', '..nn..', '..nn..', '..nn..', '..nn..', '..NN..', '..y...'], ancla: [2, 7],
+  },
+  {
+    id: 'pico', nombre: 'Pico de Minero', slot: 'mano', precio: 5, desc: 'Para picar bloques… y rocas de las criptas.',
+    rows: ['.llll..', 'l..n.ll', '...n...', '...n...', '...n...', '...n...', '...n...', '...n...'], ancla: [3, 6],
+  },
+  {
+    id: 'arco', nombre: 'Arco Élfico', slot: 'mano', precio: 7, desc: 'Energía potencial elástica convertida en cinética. Física pura.',
+    rows: ['nn..', '.nw.', '..nw', '..nw', '..nw', '..nw', '..nw', '..nw', '.nw.', 'nn..'], ancla: [2, 5],
+  },
+  {
+    id: 'llave_inglesa', nombre: 'Llave Inglesa', slot: 'mano', precio: 4, desc: 'Momento de torsión: M = F·d. Mientras más larga, menos esfuerzo.',
+    rows: ['l..l', 'l..l', 'llll', '.ll.', '.ll.', '.ll.', '.ll.', '.ll.', '.ll.'], ancla: [1, 7],
+  },
+  {
+    id: 'varita', nombre: 'Varita Estelar', slot: 'mano', precio: 6, desc: 'Ilumina las fórmulas. No las resuelve por ti.',
+    rows: ['.y.', 'yyy', '.y.', '.n.', '.n.', '.n.', '.n.', '.n.'], ancla: [1, 6],
+  },
+  // ── Día de Muertos (extra) ──
+  {
+    id: 'mascara_calavera', nombre: 'Máscara de Calavera', slot: 'cara', precio: 5, temporada: 'muertos', desc: 'Calaverita de azúcar con flores.',
+    rows: ['.WWWWWWW.', 'WWkWWWkWW', 'WrWWkWWrW', '.WkWkWkW.'], ancla: [4, 1],
+  },
+  // ── Navidad (extra) ──
+  {
+    id: 'botas_duende', nombre: 'Botas de Duende', slot: 'pies', precio: 5, temporada: 'navidad', desc: 'Con punta enroscada y cascabel.',
+    rows: ['....gy', '.gg.g.', '.ggg..', 'gggggg', 'rrrrrr'], ancla: [3, 5],
+  },
 ];
 
 export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Record<string, Accesorio>;
@@ -123,7 +232,7 @@ export const MOMENTUM_JEFES = [0, 2, 5, 10, 15];
 /** Regalo diario de Layla por entrar al juego */
 export const REGALO_DIARIO = 1;
 /** Artículos de rotación por semana */
-export const ROTACION = 4;
+export const ROTACION = 5;
 
 const mmdd = (d: Date) => `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -169,6 +278,18 @@ export function hastaTexto(id: string) {
 /** Frases de Layla */
 export const LAYLA = [
   '«Miau. Sólo acepto Momentum: p = m·v. Lo demás no me interesa.»',
+  '«¿Ves mis rayas? Atigrada «caballa». Las tuyas no cuentan, humano.»',
+  '«Duermo 16 horas al día. Conservo la energía mejor que cualquier sistema cerrado.»',
+  '«Si me empujas de la mesa, caigo con a = g. Como todo. Pero no lo intentes.»',
+  '«Mis bigotes miden distancias. Mi cola, el equilibrio. Mi tienda, tu Momentum.»',
+  '«Un vaso en el borde de la mesa es energía potencial esperando a ser liberada. Por mí.»',
+  '«Los lunes cambio la mercancía. Los martes duermo. Los miércoles también.»',
+  '«Hibbelerius me debe tres latas de atún. Si lo ves, recuérdaselo.»',
+  '«¿Sabías que salto hasta 6 veces mi altura? Todo es fuerza en las patas traseras.»',
+  '«AM me ofreció un pacto. Le respondí con un rasguño. Sin boca, pero no sin uñas.»',
+  '«Compra algo bonito. Luego póntelo en «Forjar héroe». Yo no visto a nadie, miau.»',
+  '«Ícaro me quiso vender sus alas derretidas. No acepto mercancía usada.»',
+  '«La curiosidad mató al gato… pero la física lo trajo de vuelta. Siete veces.»',
   '«Cada lunes traigo mercancía nueva. Si no vienes, otro se la lleva. Miau.»',
   '«¿Ergios? Esos se quedan en las criptas. Aquí se paga con Momentum.»',
   '«Ronroneo a 25 Hz. Es física, no cariño. Bueno… un poco de cariño.»',
