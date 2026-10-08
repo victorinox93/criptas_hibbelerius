@@ -3,7 +3,8 @@ import { CSS, UI } from '../art/palette';
 import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { addConocimiento, codexFlag, FLOORS, Game, logEvent, nivelActual, PISOS_NUCLEO, saveLocal, TOTAL_PISOS } from '../state';
+import { MOMENTUM_JEFES } from '../data/tienda';
+import { addConocimiento, codexFlag, ganarMomentum, FLOORS, Game, logEvent, nivelActual, PISOS_NUCLEO, saveLocal, TOTAL_PISOS } from '../state';
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
 import { ALMAS } from '../data/almas';
@@ -89,6 +90,14 @@ export class EndScene extends Phaser.Scene {
     if (!almaFin) popup();
     void nivelDe;
 
+    // ── Momentum (Tienda de Layla): por jefes vencidos en esta expedición ──
+    const jefes = data.victory ? (data.nucleo === 'am' ? 4 : 3) : Math.max(0, (run.acto ?? 1) - 1);
+    const mom = run.debug ? 0 : MOMENTUM_JEFES[Math.min(4, jefes)] ?? 0;
+    if (mom) {
+      ganarMomentum(mom);
+      const mt = txt(this, 340, 446, `+${mom} ◈ Momentum para la Tienda de Layla`, 18, '#f0b070').setOrigin(0.5).setAlpha(0);
+      this.tweens.add({ targets: mt, alpha: 1, duration: 800, delay: 1800 });
+    }
     // ── logros (cosméticos del Vestidor) ──
     if (!run.debug) {
       if (run.stats.runasOk >= 15) codexFlag('logro_erudito');

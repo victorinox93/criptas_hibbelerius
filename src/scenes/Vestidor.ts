@@ -7,6 +7,7 @@ import { W } from '../config';
 import { Game, nivelActual, saveLocal } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, Tooltip, txt } from '../ui/widgets';
 import { bloqueado, comoDesbloquear } from './Avatar';
+import { ACCESORIOS, TEMPORADAS } from '../data/tienda';
 
 type Parte = 'cape' | 'armor' | 'visor';
 const PARTES: { id: Parte; nombre: string; lista: Cosmetico[] }[] = [
@@ -35,9 +36,53 @@ export class VestidorScene extends Phaser.Scene {
     txt(this, W / 2, 66, 'Clic en un cosmético desbloqueado para equiparlo. Los demás dicen cómo conseguirlos.', 16, CSS.dim).setOrigin(0.5);
     this.tip = new Tooltip(this);
     this.layer = this.add.container(0, 0);
-    this.tabs = PARTES.map((p, i) => button(this, W / 2 + (i - 1) * 200, 98, 190, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 18 }));
+    this.tabs = [...PARTES.map((p) => p.nombre), 'Accesorios'].map((_, i) => button(this, W / 2 + (i - 1.5) * 200, 98, 190, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 18 }));
     button(this, W / 2, 516, 200, 36, 'Volver', () => fadeTo(this, 'Menu'), { size: 21 });
     this.draw();
+  }
+
+  /** Accesorios de la Tienda de Layla: los comprados se equipan aquí */
+  private drawAcc() {
+    const prof = Game.profile!;
+    const av = prof.avatar!;
+    const compras = Game.codex.compras ?? [];
+    const porPag = COLS * FILAS;
+    const pags = Math.ceil(ACCESORIOS.length / porPag);
+    ACCESORIOS.slice(this.pag * porPag, (this.pag + 1) * porPag).forEach((a, k) => {
+      const x = X0 + (k % COLS) * (CW + GAP), y = 124 + Math.floor(k / COLS) * (CH + 8);
+      const tiene = compras.includes(a.id);
+      const puesto = av[a.slot] === a.id;
+      const g = this.add.graphics();
+      frame(g, x, y, CW, CH, puesto ? 0x2a2014 : 0x0e0b12, puesto ? UI.gold : tiene ? 0xc8864a : UI.border, 0.95);
+      this.layer.add(g);
+      const key = `vacc_${a.id}`;
+      makeHeroFromAvatar(this, { ...av, [a.slot]: a.id }, key);
+      const im = this.add.image(x + CW / 2, y + 40, key).setScale(1.35);
+      if (!tiene) im.setTint(0x2a2630);
+      this.layer.add(im);
+      const nombre = txt(this, x + CW / 2, y + 72, a.nombre, 15, tiene ? CSS.bone : '#6a6478', { align: 'center' }).setOrigin(0.5, 0);
+      if (nombre.width > CW - 10) nombre.setScale((CW - 10) / nombre.width, 1);
+      this.layer.add(nombre);
+      const estado = !tiene ? `🔒 Tienda de Layla${a.temporada ? ` (${TEMPORADAS[a.temporada].nombre})` : ''}` : puesto ? '✓ Puesto · clic para quitar' : 'Clic para ponértelo';
+      const et = txt(this, x + CW / 2, y + 92, estado, 12, !tiene ? '#8a7a6a' : puesto ? CSS.green : CSS.dim, { align: 'center', wordWrap: { width: CW - 10 } }).setOrigin(0.5, 0);
+      this.layer.add(et);
+      const z = this.add.zone(x, y, CW, CH).setOrigin(0).setInteractive({ useHandCursor: tiene });
+      z.on('pointerover', () => this.tip.show(x + CW / 2, y + CH + 4, a.nombre, a.desc));
+      z.on('pointerout', () => this.tip.hide());
+      z.on('pointerdown', () => {
+        if (!tiene) { audio.sfx('wrong'); return; }
+        av[a.slot] = puesto ? undefined : a.id;
+        saveLocal();
+        if (!prof.offline) enqueue('saveProfile', { token: prof.token, alias: av.alias, avatar: JSON.stringify(av) });
+        makeHeroFromAvatar(this, av);
+        audio.sfx('click');
+        this.draw();
+      });
+      this.layer.add(z);
+    });
+    if (pags > 1) {
+      this.layer.add(button(this, W - 90, 516, 120, 32, this.pag + 1 < pags ? 'Más ▸' : '◂ Inicio', () => { this.pag = (this.pag + 1) % pags; this.draw(); }, { size: 17 }));
+    }
   }
 
   private draw() {
@@ -49,6 +94,9 @@ export class VestidorScene extends Phaser.Scene {
       const n = p.lista.filter((c) => !bloqueado(c, nivel)).length;
       this.tabs[i].label.setText(`${p.nombre} ${n}/${p.lista.length}`).setColor(i === this.tab ? CSS.gold : CSS.dim);
     });
+    const compras = Game.codex.compras ?? [];
+    this.tabs[3].label.setText(`Accesorios ${ACCESORIOS.filter((a) => compras.includes(a.id)).length}/${ACCESORIOS.length}`).setColor(this.tab === 3 ? CSS.gold : CSS.dim);
+    if (this.tab === 3) return this.drawAcc();
     const parte = PARTES[this.tab];
     const porPag = COLS * FILAS;
     const pags = Math.ceil(parte.lista.length / porPag);

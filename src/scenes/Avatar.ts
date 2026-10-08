@@ -57,7 +57,7 @@ export class AvatarScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, scaleY: 3.06, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     const refreshers: (() => void)[] = [];
     const redraw = () => {
-      makeHeroFromAvatar(this, { ...look(), clase });
+      makeHeroFromAvatar(this, { ...look(), clase, cabeza: av.cabeza, mano: av.mano });
       makeHeroFromAvatar(this, { ...look(), clase: 'caballero' }, 'cls_caballero');
       makeHeroFromAvatar(this, { ...look(), clase: 'arcanista' }, 'cls_arcanista');
       makeHeroFromAvatar(this, { ...look(), clase: 'penitente' }, 'cls_penitente');
@@ -164,7 +164,7 @@ export class AvatarScene extends Phaser.Scene {
         alias.focus();
         return;
       }
-      prof.avatar = { alias: name, clase, ...look(), ...(amVencido() ? { insignia: 'am' } : {}) };
+      prof.avatar = { alias: name, clase, ...look(), cabeza: av.cabeza, mano: av.mano, ...(amVencido() ? { insignia: 'am' } : {}) };
       saveLocal();
       rememberSession();
       if (!prof.offline) api.saveProfile(prof.token, name, JSON.stringify(prof.avatar)).catch((e) => console.warn(e));

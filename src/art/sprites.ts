@@ -1,3 +1,5 @@
+import { LAYLA_PAL, LAYLA_ROWS } from './layla';
+import { ACC, PAL_ACC } from '../data/tienda';
 import { ACT4_PAL, ACT4_SPRITES } from './act4';
 import Phaser from 'phaser';
 import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
@@ -824,7 +826,8 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   const vis = VISORS[av.visor ?? 0] ?? VISORS[0];
   const visor = vis.c;
   const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
-  const rows = heroMatrix({ clase: av.clase, helm: av.helm, arma: av.arma, extra: av.extra, figura: av.figura });
+  const mano = av.mano && ACC[av.mano] ? av.mano : undefined;
+  const rows = heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.extra, figura: av.figura });
   const ov: Record<string, string> = { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
   if ((av.figura ?? 0) > 0) ov.h = CABELLOS[av.figura!] ?? CABELLOS[1];
   // cosméticos holográficos (premio de AM): el tono recorre el arcoíris por pixel y con el tiempo
@@ -834,11 +837,49 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   if (vis.holo !== undefined) { const r = vis.rango ?? 360; holo.E = [vis.holo, 0.65, r]; holo.B = [vis.holo, 0.65, r]; }
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
-  if (!Object.keys(holo).length) return makeTexture(scene, key, rows, ov);
+  if (!Object.keys(holo).length) { makeTexture(scene, key, rows, ov); return pintarAccesorios(scene, key, av); }
   const t0 = performance.now();
-  const draw = () => makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8);
+  const draw = () => { makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8); pintarAccesorios(scene, key, av); };
   draw();
   (scene as unknown as Record<string, Phaser.Time.TimerEvent>)[`__holo_${key}`] = scene.time.addEvent({ delay: 90, loop: true, callback: draw });
+}
+
+/** Dónde va cada accesorio según la clase: [cabeza (centro inferior), mano (agarre)] */
+const ANCLAS: Record<string, { cabeza: [number, number]; mano: [number, number] }> = {
+  caballero: { cabeza: [19.5, 8], mano: [27, 28] },
+  arcanista: { cabeza: [19.5, 8], mano: [31, 25] },
+  penitente: { cabeza: [19.5, 9], mano: [31, 24] },
+};
+
+/** Dibuja los accesorios de la Tienda de Layla encima de la textura del héroe (con contorno) */
+export function pintarAccesorios(scene: Phaser.Scene, key: string, av: HeroAvatar) {
+  const items = [av.cabeza, av.mano].map((id) => (id ? ACC[id] : undefined)).filter((a): a is NonNullable<typeof a> => !!a);
+  if (!items.length) return;
+  const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
+  const ctx = tex.getContext();
+  const an = ANCLAS[av.clase ?? 'caballero'] ?? ANCLAS.caballero;
+  for (const a of items) {
+    const [px, py] = an[a.slot];
+    const x0 = Math.round(px - a.ancla[0]), y0 = Math.round(py - a.ancla[1]);
+    const lleno = (x: number, y: number) => (a.rows[y]?.[x] ?? '.') !== '.';
+    // contorno
+    ctx.fillStyle = PAL_ACC.k;
+    for (let y = -1; y <= a.rows.length; y++) {
+      for (let x = -1; x <= Math.max(...a.rows.map((r) => r.length)); x++) {
+        if (lleno(x, y)) continue;
+        if (lleno(x + 1, y) || lleno(x - 1, y) || lleno(x, y + 1) || lleno(x, y - 1)) ctx.fillRect(x0 + x, y0 + y, 1, 1);
+      }
+    }
+    a.rows.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const col = PAL_ACC[row[x]];
+        if (!col) continue;
+        ctx.fillStyle = col;
+        ctx.fillRect(x0 + x, y0 + y, 1, 1);
+      }
+    });
+  }
+  tex.refresh();
 }
 
 /** Como makeTexture, pero las letras de `holo` cambian de tono según su posición y el tiempo (efecto holograma) */
@@ -859,7 +900,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
   });
   tex.refresh();
 }
-export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number }
+export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string }
 
 const NPC = mirrorHalf([
   '.....kkk',
@@ -1105,6 +1146,8 @@ export function generateAllTextures(scene: Phaser.Scene) {
   for (const [k, rows] of Object.entries(ACT3_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
   // v0.9: enemigos más duros (casi todos son variantes de color de otros)
   for (const [k, rows] of Object.entries(EXTRA_SPRITES)) makeTexture(scene, k, rows, { c: '#7fd8ff' });
+  // Layla, la gata de la tienda del menú
+  makeTexture(scene, 'layla', LAYLA_ROWS, LAYLA_PAL);
   // Acto IV: el Núcleo del Cálculo (autómatas y AM)
   for (const [k, rows] of Object.entries(ACT4_SPRITES)) makeTexture(scene, k === 'am' ? 'am_jefe' : k, rows, ACT4_PAL);
   makeTexture(scene, 'babosaMadre', SPRITES.slime, { L: '#8a6a3a', G: '#4a3418', w: '#c8a070', F: '#ff8a3a' });

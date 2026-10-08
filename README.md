@@ -332,3 +332,12 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
 - **Afinidad:** cada eco recuerda cuántas veces lo elegiste (en el Grimorio, entre expediciones). Se ve como ❤ ×N y, desde 3, te saluda distinto.
 - **Grimorio → Relaciones:** rivalidades con su historia real y lista de dúos; se descubren al conocer a ambos ecos.
 - **Modo profesor:** saltos «Eco molesto» (Newton con un don de Hooke) y «Eco dúo» (Newton con un don de Galileo).
+
+## v0.25.0 · Momentum y la Tienda de Layla
+
+- **Momentum (◈, p = m·v):** nueva moneda que se conserva entre expediciones (en el Grimorio, se sincroniza con la hoja como `mGanado`/`mGastado`). Se gana al vencer jefes en una expedición —Coloso 2, Bruja +3, Hibbelerius +5, AM +5 (máximo 15)— y **Layla regala 1 cada día** que entras al juego.
+- **Tienda de Layla** (botón «Layla ◈N» en el menú): una gata atigrada que vende **accesorios para cualquier clase** (cabeza o mano; los de mano reemplazan al arma). Todo lo comprado es permanente y se equipa en la tienda o en Vestidor → Accesorios.
+  - **Rotación semanal:** 4 artículos que cambian cada lunes, iguales para todos (orejas de gato, sombrero de copa, laurel, birrete, látigo, vaso de matcha, tridente, guadaña, espada de madera, calculadora).
+  - **Temporada (tiempo limitado):** Día de Muertos del 1 oct al 5 nov (corona de cempasúchil, sombrero de Catrina, pan de muerto, calabaza), Navidad del 1 dic al 6 ene (gorro navideño, bastón de caramelo) y 14 de febrero (rosa).
+  - Para agregar artículos: `src/data/tienda.ts` (cada uno es una matriz de pixeles pequeña con su precio, ranura y temporada). Layla: `tools/arte/layla.py`.
+- «Créditos» pasó a un botón pequeño arriba a la izquierda del menú. Modo profesor: «Desbloquear todo» da 50 ◈.

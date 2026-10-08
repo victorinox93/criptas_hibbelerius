@@ -11,7 +11,8 @@ import { GRAVITY } from '../data/gravity';
 import { siguienteNivel } from '../data/progreso';
 import { ALMA_IDS } from '../data/almas';
 import { progresoGrimorio } from './Codex';
-import { amVencido, claseJugable, codexFlag, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { REGALO_DIARIO } from '../data/tienda';
+import { amVencido, claseJugable, codexFlag, momentum, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -36,6 +37,13 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: 326, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     this.progreso();
+    button(this, 70, 22, 110, 26, T.menu.creditos, () => fadeTo(this, 'Credits'), { size: 15 });
+    // regalo diario de Layla (fomenta entrar seguido)
+    const regalo = regaloDiario(REGALO_DIARIO);
+    if (regalo) {
+      const t = txt(this, 690, 112, `Layla te dejó +${regalo} ◈ Momentum. ¡Pasa a su tienda!`, 18, '#f0b070').setOrigin(0.5).setAlpha(0);
+      this.tweens.add({ targets: t, alpha: 1, duration: 600, delay: 600, hold: 3500, yoyo: true });
+    }
 
     panel(this, 60, 412, 380, 108);
     const aliasT = txt(this, 80, 422, av.alias, 30, CSS.gold);
@@ -76,12 +84,12 @@ export class MenuScene extends Phaser.Scene {
       ['Glosario', () => fadeTo(this, 'Glosario')],
       [T.menu.editar, () => fadeTo(this, 'Avatar')],
       ['Vestidor', () => fadeTo(this, 'Vestidor')],
+      [`Layla ◈${momentum()}`, () => fadeTo(this, 'Tienda')],
       [Game.codex.victorias > 0 ? '♪ Soundtrack' : '🔒 Soundtrack', () => {
         if (Game.codex.victorias > 0) return fadeTo(this, 'Musica');
         const t = txt(this, 690, 112, 'Vence a Hibbelerius para desbloquear el soundtrack.', 18, CSS.dim).setOrigin(0.5);
         this.tweens.add({ targets: t, alpha: 0, delay: 1800, duration: 500, onComplete: () => t.destroy() });
       }],
-      [T.menu.creditos, () => fadeTo(this, 'Credits')],
       ...(FORM_URL ? [['✎ Tu opinión', () => window.open(FORM_URL, '_blank')] as [string, () => void]] : []),
       [T.menu.salir, () => {
         clearSession();

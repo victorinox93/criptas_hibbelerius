@@ -221,9 +221,11 @@ function knight(look: HeroLook): Grid {
 function mage(look: HeroLook): Grid {
   const g = grid();
   const baston = look.arma ?? 0, barba = look.extra ?? 0;
-  // bastón (detrás de la mano)
-  line(g, 31, 43, 31, 9, 'n');
-  line(g, 32, 43, 32, 9, 'd');
+  // bastón (detrás de la mano); arma −1 = sin bastón (lleva un accesorio de la Tienda de Layla)
+  if (baston >= 0) {
+    line(g, 31, 43, 31, 9, 'n');
+    line(g, 32, 43, 32, 9, 'd');
+  }
   // túnica larga
   poly(g, [[15, 17], [24, 17], [29, 42], [9, 42]], 'c');
   poly(g, [[15, 17], [17, 17], [14, 42], [9, 42]], 'C');
@@ -290,7 +292,9 @@ function mage(look: HeroLook): Grid {
     put(g, 18, 6, 'k'); put(g, 21, 6, 'k');
   }
   // remate del bastón
-  if (baston === 0) {
+  if (baston < 0) {
+    // sin bastón
+  } else if (baston === 0) {
     oval(g, 31.5, 6, 3, 3, 'B'); put(g, 30, 5, 'W');
     line(g, 29, 9, 34, 9, 'y'); put(g, 28, 8, 'y'); put(g, 35, 8, 'y');
   } else if (baston === 1) {
@@ -386,8 +390,10 @@ function penitent(look: HeroLook): Grid {
     rect(g, 15, 14, 16, 23, 'h'); rect(g, 23, 14, 24, 21, 'h');
     put(g, 15, 24, 'h'); put(g, 24, 22, 'h');
   }
-  // lo que lleva en la mano
-  if (arma === 0) {
+  // lo que lleva en la mano (−1 = nada: lleva un accesorio de la Tienda de Layla)
+  if (arma < 0) {
+    // nada
+  } else if (arma === 0) {
     // incensario colgando de una cadena
     for (let y = 25; y < 33; y++) put(g, 32, y, y % 2 ? 'l' : 'g');
     oval(g, 32, 35, 3, 2.6, 'y'); rect(g, 30, 35, 34, 35, 'n');

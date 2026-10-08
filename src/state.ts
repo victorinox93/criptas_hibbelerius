@@ -11,6 +11,8 @@ export interface Avatar {
   alias: string;
   insignia?: string; // 'am' = venció a AM (se ve en el ranking y el menú)
   figura?: number; // 0 = masculina; 1–5 = femenina (color de cabello)
+  cabeza?: string; // accesorio de cabeza (Tienda de Layla)
+  mano?: string; // accesorio de mano (reemplaza al arma)
   clase: string;
   helm: string;
   cape: number;
@@ -123,6 +125,10 @@ export interface Codex {
   curva?: number; // versión de la curva de niveles con la que se guardó (2 = v0.22)
   nivelPiso?: number; // nivel que ya tenía con la curva anterior (nunca se pierde)
   afinidad?: Record<string, number>; // veces que elegiste a cada eco (relaciones)
+  mGanado?: number; // Momentum ganado en total (Tienda de Layla)
+  mGastado?: number; // Momentum gastado en total
+  compras?: string[]; // accesorios y cosméticos comprados a Layla
+  regalo?: string; // último día (AAAA-MM-DD) en que Layla dio su regalo diario
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -144,6 +150,12 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   const af: Record<string, number> = { ...(a?.afinidad ?? {}) };
   for (const [k, v] of Object.entries(b?.afinidad ?? {})) af[k] = Math.max(af[k] ?? 0, v);
   if (Object.keys(af).length) c.afinidad = af;
+  // Momentum: ganado y gastado sólo crecen, así que se combinan con el máximo
+  c.mGanado = Math.max(a?.mGanado ?? 0, b?.mGanado ?? 0);
+  c.mGastado = Math.max(a?.mGastado ?? 0, b?.mGastado ?? 0);
+  c.compras = [...new Set([...(a?.compras ?? []), ...(b?.compras ?? [])])];
+  const rg = [a?.regalo ?? '', b?.regalo ?? ''].sort().pop();
+  if (rg) c.regalo = rg;
   // curva de niveles v0.22: quien ya tenía un nivel con la curva vieja lo conserva
   const piso = (x: Partial<Codex> | null | undefined) => (!x ? 0 : Math.max(x.nivelPiso ?? 0, (x.curva ?? 1) < 2 ? nivelDeV1(x.xp ?? 0) : 0));
   const np = Math.max(piso(a), piso(b));
@@ -209,6 +221,35 @@ export const PISOS_NUCLEO = 8;
 export function pisosDe(acto = 1) {
   return acto >= 4 ? PISOS_NUCLEO : FLOORS;
 }
+/** Momentum disponible (Tienda de Layla) */
+export function momentum() {
+  return Math.max(0, (Game.codex.mGanado ?? 0) - (Game.codex.mGastado ?? 0));
+}
+export function ganarMomentum(n: number) {
+  if (n <= 0) return;
+  Game.codex.mGanado = (Game.codex.mGanado ?? 0) + n;
+  codexDirty = true;
+}
+/** Compra a Layla: descuenta Momentum y guarda el artículo. Devuelve false si no alcanza. */
+export function comprar(id: string, precio: number) {
+  if (momentum() < precio || (Game.codex.compras ?? []).includes(id)) return false;
+  Game.codex.mGastado = (Game.codex.mGastado ?? 0) + precio;
+  (Game.codex.compras ??= []).push(id);
+  codexDirty = true;
+  saveLocal();
+  return true;
+}
+/** Regalo diario de Layla: devuelve cuánto dio (0 si ya lo dio hoy) */
+export function regaloDiario(n: number) {
+  const d = new Date();
+  const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  if (Game.codex.regalo === hoy) return 0;
+  Game.codex.regalo = hoy;
+  ganarMomentum(n);
+  saveLocal();
+  return n;
+}
+
 /** El eco recuerda que lo elegiste (afinidad entre expediciones) */
 export function sumarAfinidad(fig: string) {
   const af = (Game.codex.afinidad ??= {});
