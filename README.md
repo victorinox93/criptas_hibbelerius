@@ -357,3 +357,8 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
 - Maldiciones: Entropía Creciente (−3 cartas al azar), Masa Perdida (−8 Vida máx.), Impuesto de Fricción (−½ Ergios), Ruido Térmico (+2 Ruido Blanco), Fatiga del Material (2 cartas pierden su mejora), Mirada del Abismo (+20 Locura), Pies de Lodo, Arma Hueca, Frascos Rotos (pierdes pociones), Hurto Arcano (roba una reliquia común).
 - Se registra en el Grimorio (NPCs) y en Sheets (`myriam`, con la maldición elegida).
 - Ajustes en `src/data/myriam.ts` (`MYRIAM_CHANCE`, lista `MALDICIONES`). Modo profesor: salto «Myriam».
+
+## v0.27.1 · Ajustes de texto
+
+- Encuentros: al responder, el mensaje del NPC y la recompensa/castigo se apilan y se encogen solos para no quedar debajo del botón «Continuar». La solución de la izquierda también se ajusta.
+- Grimorio: los nombres largos (p. ej. «Hibbelerius, el Autor Eterno») se reducen para caber en un renglón y la ficha (masa, peso, vida) se acomoda debajo, sin encimarse. Igual en las cartas.

@@ -249,6 +249,19 @@ export class RuneScene extends Phaser.Scene {
     this.showResult(ok);
   }
 
+  /** Columna derecha del resultado: apila los textos debajo del título y los encoge
+   *  hasta que quepan arriba del botón «Continuar» (que vive en y≈476–516). */
+  private apilar(c: Phaser.GameObjects.Container, textos: Phaser.GameObjects.Text[], top = 384, fondo = 468) {
+    const base = textos.map((t) => Number.parseInt(String(t.style.fontSize), 10) || 20);
+    const colocar = () => {
+      let y = top;
+      textos.forEach((t) => { t.setPosition(560, y); y += t.height + 6; });
+      return y - 6;
+    };
+    for (let k = 0; colocar() > fondo && k < 8; k++) textos.forEach((t, i) => t.setFontSize(Math.max(13, base[i] - k - 1)));
+    textos.forEach((t) => c.add(t));
+  }
+
   private flash(s: string, color: string, y = 440) {
     const t = txt(this, W / 2, y, s, 21, color).setOrigin(0.5).setDepth(20).setStroke('#000', 4);
     this.tweens.add({ targets: t, alpha: 0, delay: 2200, duration: 400, onComplete: () => t.destroy() });
@@ -264,7 +277,9 @@ export class RuneScene extends Phaser.Scene {
     if (p.answer !== undefined) {
       c.add(txt(this, W - 132, 352, `${T.runa.respuesta}: ${Math.round(p.answer * 100) / 100} ${p.unit}`, 22, CSS.gold).setOrigin(1, 0));
     }
-    c.add(txt(this, 132, 382, p.solution.join('\n'), 21, CSS.bone, { lineSpacing: 2, wordWrap: { width: 420 } }));
+    const sol = txt(this, 132, 382, p.solution.join('\n'), 21, CSS.bone, { lineSpacing: 2, wordWrap: { width: 410 } });
+    for (let f = 20; sol.y + sol.height > 518 && f >= 14; f--) sol.setFontSize(f);
+    c.add(sol);
 
     const cont = () => fadeTo(this, 'Map');
     const contBtn = () => c.add(button(this, W - 210, 496, 220, 40, T.runa.continuar, cont, { size: 22 }));
@@ -276,16 +291,16 @@ export class RuneScene extends Phaser.Scene {
         r.shop.discount = ok;
       }
       saveLocal();
-      c.add(txt(this, 560, 400, ok ? '«Trato hecho: −30 % en todo.»' : '«Lo siento, viajero. Precio completo.»', 21, ok ? CSS.green : CSS.dim, { wordWrap: { width: 270 } }));
+      this.apilar(c, [txt(this, 0, 0, ok ? '«Trato hecho: −30 % en todo.»' : '«Lo siento, viajero. Precio completo.»', 21, ok ? CSS.green : CSS.dim, { wordWrap: { width: 300 } })]);
       c.add(button(this, W - 210, 496, 220, 40, T.runa.continuar, () => fadeTo(this, 'Shop', { floor: this.d.floor }), { size: 22 }));
       return;
     }
 
     if (this.d.source === 'santuario') {
       const reto = !!this.d.reto;
-      c.add(txt(this, 560, 400, ok ? (reto ? '«…Está bien. Razonas mejor de lo que pensé. Hagamos las paces.»' : '«Bien razonado. Mis dones serán dignos de ti.»')
+      this.apilar(c, [txt(this, 0, 0, ok ? (reto ? '«…Está bien. Razonas mejor de lo que pensé. Hagamos las paces.»' : '«Bien razonado. Mis dones serán dignos de ti.»')
         : reto ? '«Lo suponía.» El eco te da la espalda y se desvanece.' : '«No importa. Aún así te ayudaré, aunque con menos fuerza.»',
-        21, ok ? CSS.green : reto ? '#e08a8a' : CSS.dim, { wordWrap: { width: 270 } }));
+        21, ok ? CSS.green : reto ? '#e08a8a' : CSS.dim, { wordWrap: { width: 300 } })]);
       c.add(button(this, W - 210, 496, 220, 40, reto && !ok ? T.runa.continuar : T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
         floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok, reto,
       }), { size: 22, color: ok ? UI.gold : UI.border }));
@@ -298,8 +313,10 @@ export class RuneScene extends Phaser.Scene {
       saveLocal();
       this.hud.refresh();
       logEvent('encuentro', p.concept, ok, { npc: ev.id, resultado: res });
-      c.add(txt(this, 560, 384, ok ? ev.win : ev.lose, 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 280 } }));
-      c.add(txt(this, 560, 440, res, 18, CSS.gold, { wordWrap: { width: 280 } }));
+      this.apilar(c, [
+        txt(this, 0, 0, ok ? ev.win : ev.lose, 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 300 } }),
+        txt(this, 0, 0, res, 18, CSS.gold, { wordWrap: { width: 300 } }),
+      ]);
       contBtn();
       return;
     }

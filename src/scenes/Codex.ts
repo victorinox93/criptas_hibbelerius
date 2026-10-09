@@ -67,8 +67,13 @@ export class CodexScene extends Phaser.Scene {
       const img = this.add.image(DX + 70, 210, tex);
       img.setScale(Math.min(scale, 120 / img.height, 120 / img.width));
       L(c, img);
-      L(c, txt(this, DX + 150, 150, name, 28, CSS.gold, { wordWrap: { width: DW - 160 } }));
-      L(c, txt(this, DX + 150, 188, sub, 19, CSS.dim, { wordWrap: { width: DW - 160 }, lineSpacing: 2 }));
+      // nombres largos (p. ej. «Hibbelerius, …»): se encogen para caber en un renglón
+      // y el subtítulo se acomoda debajo, sin encimarse
+      const nt = txt(this, DX + 150, 150, name, 28, CSS.gold);
+      for (let f = 27; nt.width > DW - 160 && f >= 18; f--) nt.setFontSize(f);
+      if (nt.width > DW - 160) nt.setWordWrapWidth(DW - 160);
+      L(c, nt);
+      L(c, txt(this, DX + 150, Math.max(188, nt.y + nt.height + 6), sub, 19, CSS.dim, { wordWrap: { width: DW - 160 }, lineSpacing: 2 }));
     };
     const body = (c: Phaser.GameObjects.Container, y: number, s: string, color = CSS.bone, size = 20) =>
       L(c, txt(this, DX + 8, y, s, size, color, { wordWrap: { width: DW - 16 }, lineSpacing: 2 }));
@@ -183,8 +188,11 @@ export class CodexScene extends Phaser.Scene {
           kind: 'cards', id: cd.id, tex: cd.icon, name: cd.name,
           detail: (c) => {
             L(c, cardView(this, DX + 90, 280, { uid: -1, id: cd.id, up: false }));
-            L(c, txt(this, DX + 185, 150, cd.name, 26, CSS.gold, { wordWrap: { width: DW - 190 } }));
-            L(c, txt(this, DX + 185, 186, `${cd.type} · ${cd.concept}\n${cd.rarity}`, 19, CSS.dim));
+            const ct = txt(this, DX + 185, 150, cd.name, 26, CSS.gold);
+            for (let f = 25; ct.width > DW - 190 && f >= 18; f--) ct.setFontSize(f);
+            if (ct.width > DW - 190) ct.setWordWrapWidth(DW - 190);
+            L(c, ct);
+            L(c, txt(this, DX + 185, Math.max(186, ct.y + ct.height + 4), `${cd.type} · ${cd.concept}\n${cd.rarity}`, 19, CSS.dim));
             L(c, txt(this, DX + 185, 250, cd.lore, 19, CSS.bone, { wordWrap: { width: DW - 190 }, lineSpacing: 2 }));
             if (cd.lock) L(c, txt(this, DX + 185, 440, `Desbloqueable: nivel ${cd.lock} de Conocimiento`, 17, '#9ad8f0', { wordWrap: { width: DW - 190 } }));
           },
