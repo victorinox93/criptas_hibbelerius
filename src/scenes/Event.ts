@@ -5,6 +5,7 @@ import { W, H } from '../config';
 import { EVENTS, EventDef, PROFE_CHANCE, PROFE_ENOJADO_CHANCE } from '../data/events';
 import { ALMA_CHANCE, ALMA_IDS } from '../data/almas';
 import { AM_CHANCE } from '../data/am';
+import { MYRIAM_CHANCE } from '../data/myriam';
 
 /** Probabilidad de encontrar el Necronomicón en un encuentro (Actos II y III, una vez) */
 const NECRO_CHANCE = 0.15;
@@ -27,7 +28,11 @@ export class EventScene extends Phaser.Scene {
     if (!ev) {
       const profeVisto = seen.includes('victorino') || seen.includes('profe_enojado');
       const almas = ALMA_IDS.filter((id) => !seen.includes(`alma_${id}`));
-      if (!profeVisto && data.floor >= 2 && Math.random() < PROFE_ENOJADO_CHANCE) {
+      if (!seen.includes('myriam') && data.floor >= 2 && Math.random() < MYRIAM_CHANCE) {
+        // Myriam, la hechicera oscura: sólo maldiciones (src/data/myriam.ts)
+        this.scene.start('Myriam', { floor: data.floor });
+        return;
+      } else if (!profeVisto && data.floor >= 2 && Math.random() < PROFE_ENOJADO_CHANCE) {
         ev = EVENTS.find((e) => e.id === 'profe_enojado')!;
       } else if (!profeVisto && Math.random() < PROFE_CHANCE) {
         ev = EVENTS.find((e) => e.id === 'victorino')!;

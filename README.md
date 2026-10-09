@@ -349,3 +349,11 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
 - **Ranuras nuevas:** Cabeza, Cara, Mano (reemplaza al arma) y Pies.
 - **Filtro en la tienda:** «Sólo lo nuevo» oculta lo que ya tienes. La rotación semanal ahora muestra 5 artículos.
 - **25 artículos nuevos:** cascos (vikingo, espartano, astronauta, minero, kabuto, corona real), cara (lentes de sol, lentes de pasta, monóculo, parche, bigote), pies (botas vaqueras, tenis rojos, pantuflas de gato, botas lunares), armas con guiños a otros juegos y películas (sable láser azul y rojo, espada del mercenario, martillo del trueno, pico de minero, arco élfico, llave inglesa, varita estelar) y de temporada (máscara de calavera en Día de Muertos, botas de duende en Navidad).
+
+## v0.27.0 · Myriam, la Hechicera Oscura
+
+- Nuevo encuentro: **Myriam**. En cada nodo de encuentro (desde el piso 3) hay **15 %** de probabilidad de toparte con ella, una sola vez por expedición.
+- No regala nada: muestra **3 maldiciones** al azar (sólo las que pueden aplicarse) y debes aceptar una. Lo único que decides es cuál duele menos.
+- Maldiciones: Entropía Creciente (−3 cartas al azar), Masa Perdida (−8 Vida máx.), Impuesto de Fricción (−½ Ergios), Ruido Térmico (+2 Ruido Blanco), Fatiga del Material (2 cartas pierden su mejora), Mirada del Abismo (+20 Locura), Pies de Lodo, Arma Hueca, Frascos Rotos (pierdes pociones), Hurto Arcano (roba una reliquia común).
+- Se registra en el Grimorio (NPCs) y en Sheets (`myriam`, con la maldición elegida).
+- Ajustes en `src/data/myriam.ts` (`MYRIAM_CHANCE`, lista `MALDICIONES`). Modo profesor: salto «Myriam».

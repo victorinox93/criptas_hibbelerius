@@ -1092,6 +1092,15 @@ const DIL: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     rows: mirrorHalf(['......', '.pppp.', 'pGGGGp', 'pGwwwG', 'pGwLkw', 'pGwwwG', 'pppppp', '....nn', '....nn', '....nn', '...nnn', '.nnnnn']),
     ov: { p: '#2a1a3a', G: '#3d4a22', w: '#c8d0a0', L: '#9bf07a', k: '#0d0b10', n: '#3a2a1e' },
   },
+  // Myriam, la hechicera oscura: sombrero puntiagudo, cabello negro largo y ojos violeta
+  npc_myriam: {
+    rows: mirrorHalf([
+      '.......p', '......pp', '.....ppp', '....pppp', '...ppPPp', 'pppppppp', '..hhhhhh', '..hhhsss',
+      '..hhsEks', '..hhssss', '..hhhssr', '.hhhhhss', '.hhhhhCC', '.hhcccCC', 'hhcccPcc', '.hcccPcc',
+      '.ccccPcc', '.ccccPcc', 'cccccPcc', 'ccccccPP',
+    ]),
+    ov: { p: '#2a1438', P: '#9a4ac8', h: '#121014', s: '#d8c8d8', E: '#d07aff', r: '#7a1a4a', c: '#1a1024', C: '#3a2050', k: '#0d0b10' },
+  },
   npc_am: {
     rows: mirrorHalf(['..kkkk', '.kgggg', '.kgddd', '.kgddd', '.kgdRF', '.kgdFF', '.kgddd', '.kgddd', '.kgdLd', '.kgddd', '.kgdLL', '.kgddd', '.kgddd', '.kgddd', 'kkgggg', 'kggggg']),
     ov: { k: '#050505', g: '#2a2a30', d: '#101014', F: '#ff2a1a', R: '#ff9a7a', L: '#3aff6a' },

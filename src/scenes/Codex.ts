@@ -131,6 +131,14 @@ export class CodexScene extends Phaser.Scene {
           });
         }
         list.push({
+          kind: 'npcs', id: 'myriam', tex: 'npc_myriam', name: 'Myriam',
+          detail: (c) => {
+            head(c, 'npc_myriam', 'Myriam, la Hechicera Oscura', 'Encuentro raro · sólo maldiciones', 6);
+            body(c, 290, 'No vende, no regala, no pregunta: sólo cobra. Te muestra tres maldiciones y debes aceptar una. Lo único que decides es cuál duele menos.', CSS.bone, 18);
+            body(c, 400, 'Puede quitarte cartas, Vida máxima, Ergios, reliquias o pociones, degradar tus mejoras, subir tu Locura o ensuciar tus próximos combates.', '#d07aff', 16);
+          },
+        });
+        list.push({
           kind: 'npcs', id: 'am', tex: 'npc_am', name: 'AM',
           detail: (c) => {
             head(c, 'npc_am', 'AM', 'Inteligencia artificial · recuerda cada visita', 6);

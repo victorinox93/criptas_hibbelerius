@@ -105,11 +105,12 @@ export class DebugScene extends Phaser.Scene {
       ['¿Más o menos?', () => { this.go(acto(), 'MasMenos', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],
       ['M. ambulante', () => this.go(acto(), 'Shop', { floor: 4, ambulante: true })],
       ['Grieta III→IV', () => this.go(3, 'ActTransition', { to: 4 })],
+      ['Myriam', () => this.go(acto(), 'Myriam', { floor: 3 })],
       ['Eco molesto', () => { this.go(acto(), 'Sanctuary', { floor: 2, figureId: 'newton' }); Game.run!.boons.push({ id: FIGURES.find((f) => f.id === 'hooke')!.boons[0], epic: false }); }],
       ['Eco dúo', () => { this.go(acto(), 'Sanctuary', { floor: 2, figureId: 'newton', phase: 'elegir', epic: true }); Game.run!.boons.push({ id: FIGURES.find((f) => f.id === 'galileo')!.boons[0], epic: false }); }],
       [`Fin + ${CORTO[ALMA_IDS[OPTS.alma % ALMA_IDS.length]] ?? 'alma'}`, () => { const id = ALMA_IDS[OPTS.alma++ % ALMA_IDS.length]; this.go(acto(), 'End', { victory: true }); Game.run!.aliado = id; }],
     ];
-    jumps.forEach(([s, fn], i) => btn(96 + (i % 7) * 128, 282 + Math.floor(i / 7) * 36, 124, s, fn, false, 16));
+    jumps.forEach(([s, fn], i) => btn(88 + (i % 8) * 112, 282 + Math.floor(i / 8) * 36, 108, s, fn, false, 14));
     const fig = FIGURES[OPTS.figura];
     btn(150, 396, 240, `Eco: ${fig.name}`, () => this.go(acto(), 'Sanctuary', { floor: 2, figureId: fig.id }));
     btn(300, 396, 50, '▸', () => { OPTS.figura = (OPTS.figura + 1) % FIGURES.length; this.draw(); });
@@ -128,6 +129,7 @@ export class DebugScene extends Phaser.Scene {
       FAMILIAR_POOL.forEach((f) => unlock('npcs', `fam_${f}`));
       ALMA_IDS.forEach((a) => unlock('npcs', `alma_${a}`));
       unlock('npcs', 'am');
+      unlock('npcs', 'myriam');
       FIGURES.forEach((f) => unlock('figures', f.id));
       Object.keys(CARDS).forEach((k) => unlock('cards', k));
       Object.keys(RELICS).forEach((k) => unlock('relics', k));
