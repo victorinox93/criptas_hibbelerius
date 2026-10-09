@@ -298,9 +298,17 @@ export class RuneScene extends Phaser.Scene {
       saveLocal();
       this.hud.refresh();
       logEvent('encuentro', p.concept, ok, { npc: ev.id, resultado: res });
-      c.add(txt(this, 560, 384, ok ? ev.win : ev.lose, 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 280 } }));
-      c.add(txt(this, 560, 440, res, 18, CSS.gold, { wordWrap: { width: 280 } }));
-      contBtn();
+      // el botón ocupa la parte baja de la columna derecha: el texto debe caber encima de él
+      const tw = txt(this, 560, 380, ok ? ev.win : ev.lose, 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 280 } });
+      const tr = txt(this, 560, 380, res, 18, CSS.gold, { wordWrap: { width: 280 } });
+      for (let size = 20; size >= 13; size--) {
+        tw.setFontSize(size);
+        tr.setFontSize(Math.min(size, 18));
+        if (tw.height + 6 + tr.height <= 92) break;
+      }
+      tr.setY(380 + tw.height + 6);
+      c.add([tw, tr]);
+      c.add(button(this, W - 210, 504, 200, 34, T.runa.continuar, cont, { size: 20 }));
       return;
     }
 
