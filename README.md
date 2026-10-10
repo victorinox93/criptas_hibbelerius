@@ -362,3 +362,9 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
 
 - Encuentros: al responder, el mensaje del NPC y la recompensa/castigo se apilan y se encogen solos para no quedar debajo del botón «Continuar». La solución de la izquierda también se ajusta.
 - Grimorio: los nombres largos (p. ej. «Hibbelerius, el Autor Eterno») se reducen para caber en un renglón y la ficha (masa, peso, vida) se acomoda debajo, sin encimarse. Igual en las cartas.
+
+## v0.28.0 · Castillo y balance
+
+- **Acto II:** las peleas ocurren en el salón de un castillo (muros de sillares, ventanales con luna, pilares, estandartes, antorchas y alfombra). Contra la Bruja aparece su trono, la luna se vuelve roja y los estandartes morados.
+- **Balance:** enemigos con **+15 % de vida y +15 % de daño** en los Actos I–III (+10 % en el Núcleo). Se suma a la gravedad (Neptuno/Júpiter).
+- Perillas en `src/data/enemies.ts`: `VIDA_POR_ACTO`, `VIDA_JEFES`, `VIDA_ELITES`, y las nuevas `DANO_POR_ACTO`, `DANO_JEFES`, `DANO_ELITES` (1 = sin cambio). El número que ve el alumno en la intención del enemigo ya incluye el ajuste.

@@ -383,6 +383,103 @@ export function wizardryBackground(s: Phaser.Scene, seed = 7, boss = false) {
   return g;
 }
 
+/** Acto II · el castillo de la Bruja: salón de piedra con ventanales a la luna,
+ *  pilares, estandartes, antorchas y alfombra. En el jefe aparece el trono y la luna se tiñe de rojo. */
+export function castleBackground(s: Phaser.Scene, seed = 7, boss = false) {
+  const r = rng(seed);
+  const g = s.add.graphics().setDepth(-10);
+  const FL = 336; // donde empieza el suelo
+  g.fillStyle(0x08070a, 1).fillRect(0, 0, W, H);
+  // muro de sillares, más oscuro arriba
+  for (let y = 0, fila = 0; y < FL; y += 18, fila++) {
+    const luz = 0.35 + 0.65 * (y / FL);
+    for (let x = fila % 2 ? -24 : 0; x < W; x += 48) {
+      const v = (0.8 + r() * 0.4) * luz;
+      g.fillStyle(Phaser.Display.Color.GetColor(30 * v, 27 * v, 34 * v), 1).fillRect(x + 1, y + 1, 46, 16);
+    }
+  }
+  // ventanales en arco con cielo nocturno
+  const lunaC = boss ? 0xd85a4a : 0xd8e0f0;
+  const ventana = (cx: number, conLuna: boolean) => {
+    const w = 104, top = 70, bot = 250, rr = w / 2;
+    g.fillStyle(0x1a1620, 1).fillRect(cx - rr - 8, top + rr - 8, w + 16, bot - top - rr + 16).fillCircle(cx, top + rr, rr + 8);
+    g.fillStyle(boss ? 0x1a0a12 : 0x0c1428, 1).fillRect(cx - rr, top + rr, w, bot - top - rr).fillCircle(cx, top + rr, rr);
+    g.fillStyle(boss ? 0x2a0e18 : 0x14223e, 1).fillRect(cx - rr, bot - 70, w, 70);
+    for (let i = 0; i < 9; i++) g.fillStyle(0xffffff, 0.3 + r() * 0.5).fillRect(cx - rr + 6 + r() * (w - 12), top + 20 + r() * 110, 2, 2);
+    if (conLuna) {
+      g.fillStyle(lunaC, 0.9).fillCircle(cx + 18, top + 52, 16);
+      g.fillStyle(boss ? 0x1a0a12 : 0x0c1428, 1).fillCircle(cx + 25, top + 47, 13);
+    }
+    // montañas lejanas
+    g.fillStyle(0x06060a, 1);
+    const pts = [{ x: cx - rr, y: bot }];
+    for (let i = 0; i <= 6; i++) pts.push({ x: cx - rr + (w * i) / 6, y: bot - 22 - r() * 40 });
+    pts.push({ x: cx + rr, y: bot });
+    g.fillPoints(pts, true);
+    // parteluz y travesaños
+    g.lineStyle(4, 0x1a1620, 1).lineBetween(cx, top + 6, cx, bot).lineBetween(cx - rr, top + rr + 40, cx + rr, top + rr + 40);
+    g.fillStyle(0x24202a, 1).fillRect(cx - rr - 14, bot, w + 28, 10);
+    // haz de luna sobre el suelo
+    const haz = s.add.graphics().setDepth(-9).setBlendMode(Phaser.BlendModes.ADD);
+    haz.fillStyle(boss ? 0xc84a4a : 0x8aa0d0, 0.05);
+    haz.fillPoints([{ x: cx - rr, y: bot }, { x: cx + rr, y: bot }, { x: cx + rr + 90, y: H }, { x: cx - rr + 40, y: H }], true);
+    s.tweens.add({ targets: haz, alpha: 0.6, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    s.add.particles(0, 0, 'px', {
+      x: { min: cx - rr, max: cx + rr + 60 }, y: { min: bot, max: H }, speedY: { min: -6, max: 6 }, speedX: { min: -4, max: 8 },
+      lifespan: 4000, frequency: 260, scale: { start: 1.2, end: 0 }, alpha: { start: 0.5, end: 0 }, tint: boss ? 0xe08a7a : 0xc8d8f0,
+    }).setDepth(-8);
+  };
+  ventana(195, true);
+  ventana(W - 195, false);
+  // estandartes al centro
+  const tela = boss ? 0x3a1450 : 0x5a1418, borde = 0xb8903a;
+  for (const bx of [418, 542]) {
+    g.fillStyle(0x3a2a1a, 1).fillRect(bx - 34, 46, 68, 6);
+    g.fillStyle(tela, 1).fillPoints([{ x: bx - 28, y: 52 }, { x: bx + 28, y: 52 }, { x: bx + 28, y: 210 }, { x: bx, y: 190 }, { x: bx - 28, y: 210 }], true);
+    g.fillStyle(0x000000, 0.25).fillRect(bx + 14, 52, 14, 150);
+    g.lineStyle(2, borde, 0.9).strokeRect(bx - 22, 58, 44, 4);
+    // emblema: un engrane dorado
+    g.fillStyle(borde, 0.9).fillCircle(bx, 118, 14);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; g.fillRect(bx + Math.cos(a) * 16 - 3, 118 + Math.sin(a) * 16 - 3, 6, 6); }
+    g.fillStyle(tela, 1).fillCircle(bx, 118, 6);
+  }
+  // pilares
+  for (const px of [52, 330, W - 330, W - 52]) {
+    g.fillStyle(0x16131a, 1).fillRect(px - 26, 30, 52, FL - 30);
+    g.fillStyle(0x221e28, 1).fillRect(px - 26, 30, 10, FL - 30);
+    g.fillStyle(0x0c0a0e, 1).fillRect(px + 16, 30, 10, FL - 30);
+    g.fillStyle(0x2a2530, 1).fillRect(px - 34, 22, 68, 14).fillRect(px - 34, FL - 16, 68, 16);
+    g.lineStyle(1, 0x0a080c, 0.8);
+    for (let y = 60; y < FL - 16; y += 36) g.lineBetween(px - 26, y, px + 26, y);
+  }
+  // arco superior que une los pilares centrales
+  g.lineStyle(10, 0x1a1620, 1).beginPath().arc(W / 2, 120, 150, Math.PI * 1.05, Math.PI * 1.95).strokePath();
+  // suelo: losas en perspectiva
+  g.fillStyle(0x0c0a0e, 1).fillRect(0, FL, W, H - FL);
+  g.lineStyle(1, 0x241e28, 0.9);
+  for (let y = FL + 12, k = 12; y < H; k *= 1.35, y += k) g.lineBetween(0, y, W, y);
+  for (let x = -480; x < W + 480; x += 80) g.lineBetween(W / 2 + (x - W / 2) * 0.4, FL, x, H);
+  // alfombra
+  g.fillStyle(boss ? 0x3a1248 : 0x4a1016, 1).fillPoints([{ x: W / 2 - 70, y: FL }, { x: W / 2 + 70, y: FL }, { x: W / 2 + 220, y: H }, { x: W / 2 - 220, y: H }], true);
+  g.lineStyle(3, borde, 0.6);
+  g.lineBetween(W / 2 - 60, FL, W / 2 - 196, H).lineBetween(W / 2 + 60, FL, W / 2 + 196, H);
+  // trono de la Bruja (sólo en el jefe)
+  if (boss) {
+    const tx = W / 2;
+    g.fillStyle(0x1a1018, 1).fillRect(tx - 40, 200, 80, FL - 200).fillTriangle(tx - 40, 200, tx + 40, 200, tx, 150);
+    g.fillStyle(0x3a1450, 1).fillRect(tx - 28, 230, 56, 70);
+    g.fillStyle(borde, 0.8).fillCircle(tx, 176, 7).fillRect(tx - 46, 280, 12, 50).fillRect(tx + 34, 280, 12, 50);
+    const aura = s.add.circle(tx, 250, 120, 0x9a3ac8, 0.06).setBlendMode(Phaser.BlendModes.ADD).setDepth(-9);
+    s.tweens.add({ targets: aura, alpha: 0.02, scale: 1.1, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  }
+  // antorchas en los pilares centrales
+  for (const tx of [330, W - 330]) torch(s, tx, 180);
+  mist(s, 330);
+  vignette(s);
+  vignette(s);
+  return g;
+}
+
 /** Acto III: interior de la Torre del Tomo (libreros, vitral con engrane, velas y páginas flotando) */
 export function towerBackground(s: Phaser.Scene, seed = 7, boss = false) {
   const r = rng(seed);

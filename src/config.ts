@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.27.1 · Textos de encuentros y títulos del Grimorio sin encimarse';
+export const VERSION = '0.28.0 · Castillo en el Acto II y enemigos más duros';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)

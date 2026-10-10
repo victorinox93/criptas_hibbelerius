@@ -15,7 +15,7 @@ function umbralDe(st: EnemyState) {
   return Math.round((st.def.umbral + (st.phase2 ? 3 : 0)) * (st.umbralMul ?? 1));
 }
 const ESQUIVA = 6;
-import { AddCards, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
+import { AddCards, danoDe, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
@@ -30,7 +30,7 @@ import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH } from '../ui/card';
 import { deckOverlay, Hud, setPotionHandler, topBar } from '../ui/hud';
-import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, Tooltip, txt, wizardryBackground } from '../ui/widgets';
+import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, castleBackground, Tooltip, txt } from '../ui/widgets';
 
 type Kind = 'easy' | 'normal' | 'elite' | 'boss';
 
@@ -285,7 +285,7 @@ export class CombatScene extends Phaser.Scene {
       towerBackground(this, 300 + this.floor * 7, this.kind === 'boss');
     } else if (this.acto === 2) {
       audio.play(this.kind === 'boss' ? 'jefe2' : 'combate3');
-      wizardryBackground(this, 200 + this.floor * 7, this.kind === 'boss');
+      castleBackground(this, 200 + this.floor * 7, this.kind === 'boss');
     } else {
       audio.play(this.kind === 'boss' ? 'jefe' : Math.random() < 0.5 ? 'combate' : 'combate2');
       dungeonBackground(this, 100 + this.floor * 7, this.kind === 'boss' ? 0x241820 : this.kind === 'elite' ? 0x201822 : 0x1c1722);
@@ -409,8 +409,8 @@ export class CombatScene extends Phaser.Scene {
 
   // ───────────────────────── ENEMIGOS ─────────────────────────
   /** Ajusta el daño de una intención según el nivel de gravedad */
-  private scaleIntent(i: Intent): Intent {
-    const m = this.grav.dmgMul;
+  private scaleIntent(i: Intent, st?: EnemyState): Intent {
+    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1);
     if (m === 1) return i;
     if (i.kind === 'attack') return { ...i, dmg: Math.round(i.dmg * m) };
     if (i.kind === 'block' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
@@ -423,7 +423,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.grav.hpMul !== 1) {
       st.maxHp = st.hp = Math.round(st.hp * this.grav.hpMul);
     }
-    st.intent = this.scaleIntent(st.intent);
+    st.intent = this.scaleIntent(st.intent, st);
     const root = this.add.container(x, 0);
     const sprite = this.add.image(0, 330, st.def.sprite).setOrigin(0.5, 1).setScale(st.def.scale);
     const shadow = this.add.ellipse(0, 330, sprite.displayWidth * 0.9, 16, 0x000000, 0.5);
@@ -2360,7 +2360,7 @@ export class CombatScene extends Phaser.Scene {
       if (st.stunned > 0) st.intent = { kind: 'stunned' };
       else {
         st.detenido = false;
-        st.intent = this.scaleIntent(st.def.next(st));
+        st.intent = this.scaleIntent(st.def.next(st), st);
       }
       this.refreshEnemy(ev);
       this.refreshPlayer();

@@ -458,11 +458,22 @@ export const VIDA_ENEMIGOS = 1.2;
 
 // ── Perillas de dificultad (v0.23.1). 1 = sin cambio. Ej.: VIDA_JEFES = 1.15 → jefes con 15 % más vida ──
 /** Por acto (según el «act» del enemigo; sin «act» = Acto I) */
-export const VIDA_POR_ACTO: Record<number, number> = { 1: 1, 2: 1, 3: 1, 4: 1 };
+export const VIDA_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1 }; // v0.28: +15 %
 /** Jefes de acto */
 export const VIDA_JEFES = 1;
 /** Élites (enemigos con umbral que no son jefes) */
 export const VIDA_ELITES = 1;
+/** Daño de los ataques enemigos, por acto (v0.28: +15 %). Se aplica junto con la gravedad. */
+export const DANO_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1 };
+/** Multiplicador extra de daño para jefes y élites */
+export const DANO_JEFES = 1;
+export const DANO_ELITES = 1;
+/** Multiplicador total de daño para un enemigo */
+export function danoDe(def: EnemyDef) {
+  const grupos = [ENCOUNTERS, ENCOUNTERS_2, ENCOUNTERS_3, ENCOUNTERS_4];
+  const es = (k: 'boss' | 'elite') => grupos.some((g) => g[k].some((e) => e[0] === def.id));
+  return (DANO_POR_ACTO[def.act ?? 1] ?? 1) * (es('boss') ? DANO_JEFES : es('elite') ? DANO_ELITES : 1);
+}
 
 export function spawn(id: string): EnemyState {
   const def = ENEMIES[id];
