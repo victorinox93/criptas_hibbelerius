@@ -131,6 +131,7 @@ export interface Codex {
   mGastado?: number; // Momentum gastado en total
   compras?: string[]; // accesorios y cosméticos comprados a Layla
   regalo?: string; // último día (AAAA-MM-DD) en que Layla dio su regalo diario
+  expediciones?: number; // expediciones terminadas (muerte o victoria); abre la Tienda de Layla
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -155,6 +156,7 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   // Momentum: ganado y gastado sólo crecen, así que se combinan con el máximo
   c.mGanado = Math.max(a?.mGanado ?? 0, b?.mGanado ?? 0);
   c.mGastado = Math.max(a?.mGastado ?? 0, b?.mGastado ?? 0);
+  c.expediciones = Math.max(a?.expediciones ?? 0, b?.expediciones ?? 0);
   c.compras = [...new Set([...(a?.compras ?? []), ...(b?.compras ?? [])])];
   const rg = [a?.regalo ?? '', b?.regalo ?? ''].sort().pop();
   if (rg) c.regalo = rg;
@@ -223,6 +225,18 @@ export const PISOS_NUCLEO = 8;
 export function pisosDe(acto = 1) {
   return acto >= 4 ? PISOS_NUCLEO : FLOORS;
 }
+/** Expediciones terminadas. Para cuentas anteriores a v0.29 (sin contador) se estima con lo que ya hay. */
+export function expediciones() {
+  const c = Game.codex;
+  if (c.expediciones !== undefined) return c.expediciones;
+  return Math.max(c.victorias ?? 0, (c.xp ?? 0) > 0 || (c.mGanado ?? 0) > 0 ? 1 : 0);
+}
+export function contarExpedicion() {
+  Game.codex.expediciones = expediciones() + 1;
+  codexDirty = true;
+}
+/** La Tienda de Layla abre cuando regresas de tu primera expedición */
+export const tiendaAbierta = () => expediciones() > 0 || isAdmin();
 /** Momentum disponible (Tienda de Layla) */
 export function momentum() {
   return Math.max(0, (Game.codex.mGanado ?? 0) - (Game.codex.mGastado ?? 0));

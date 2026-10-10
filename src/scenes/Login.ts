@@ -112,6 +112,7 @@ export class LoginScene extends Phaser.Scene {
         Game.profile = { matricula: r.matricula, grupo: r.grupo, token: r.token, offline: false, avatar };
         let server: Codex | null = null;
         try { server = r.grimorio ? JSON.parse(r.grimorio) : null; } catch { server = null; }
+        if (r.expediciones) server = { ...(server ?? {}), expediciones: Math.max(server?.expediciones ?? 0, r.expediciones) } as Codex;
         this.enter(server);
       } catch (e) {
         say((e as Error).message || 'No se pudo conectar.');

@@ -28,6 +28,7 @@ export interface LoginResp {
   alias: string;
   avatar: string; // JSON
   grimorio?: string; // JSON
+  expediciones?: number; // v0.29: partidas terminadas según la hoja
 }
 
 export interface RankRow {

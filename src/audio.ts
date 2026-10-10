@@ -6,7 +6,7 @@
 // ════════════════════════════════════════════════════════════════
 import { MUSIC_FILES } from './config';
 
-export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4';
+export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4' | 'funk';
 export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
 
 const LEVELS = [0, 0.3, 0.6, 1];
@@ -38,6 +38,12 @@ interface TrackDef {
   throb?: number; // sub grave que «respira» con trémolo, como una máquina viva (volumen)
   sonar?: string; // 16 pasos: 1 = ping de sonar con eco largo
   glitch?: number; // probabilidad por paso de un chasquido digital (0–1)
+  // ── funk synth (Tienda de Layla) ──
+  slap?: string; // 16 pasos: x = raíz, o = octava, - = quinta, b = séptima menor, g = nota fantasma (apagada)
+  stab?: string; // 16 pasos: 1 = acorde staccato
+  clap?: string; // 16 pasos: 1 = palmada
+  ohat?: string; // 16 pasos: 1 = hi-hat abierto
+  synthLead?: boolean; // melodía con sintetizador brillante (sierra con filtro) en vez del cuadrado
 }
 
 // Notas MIDI: 36 = Do2, 48 = Do3, 60 = Do4. Acordes de una tríada por compás.
@@ -204,6 +210,26 @@ const TRACKS: Record<TrackId, TrackDef> = {
       69, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
     ],
   },
+  // ── Tienda de Layla: funk synth (v0.29) ──
+  // Mi dórico, bajo «slap» sincopado, acordes staccato a contratiempo,
+  // palmadas en 2 y 4 y un sinte brillante que contesta.
+  funk: {
+    bpm: 108,
+    chords: [[52, 55, 59, 62], [57, 61, 64, 67], [52, 55, 59, 62], [57, 61, 64, 67], [48, 52, 55, 59], [47, 51, 54, 57], [52, 55, 59, 62], [57, 61, 64, 67]],
+    slap: 'x..o.gx.-.bo.gx.', bassOct: -24,
+    stab: '..1...1..1....1.',
+    kick: '1.....1...1..1..',
+    clap: '....1.......1...',
+    hat: '1.1.1.1.1.1.1.1.',
+    ohat: '..............1.',
+    synthLead: true, leadLen: 1.6,
+    lead: [
+      null, null, null, null, null, null, null, null, 76, null, 79, null, 81, null, 79, 76,
+      null, null, 74, null, 76, null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, 83, null, 81, null, 79, null, 81, null,
+      83, null, null, 86, null, 83, 81, null, 79, null, null, null, null, null, null, null,
+    ],
+  },
   // figuras históricas: coro etéreo en modo lidio
   santuario: {
     bpm: 46,
@@ -288,12 +314,21 @@ class Sequencer {
       const n = chord[seq[step % seq.length]] + (d.arpOct ?? 0) + (step % 32 >= 16 && d.bpm > 100 ? 12 : 0);
       e.pluck(this.out, n, t, d.bpm > 100 ? 0.07 : 0.1);
     }
+    if (d.slap) {
+      const c = d.slap[s16];
+      const root = chord[0] + (d.bassOct ?? -24);
+      const off = c === 'x' ? 0 : c === 'o' ? 12 : c === '-' ? 7 : c === 'b' ? 10 : c === 'g' ? 0 : null;
+      if (off !== null) e.slap(this.out, root + off, t, c === 'g' ? 0.04 : dt * (d.slap[s16 + 1] === '.' ? 1.6 : 0.8), c === 'g' ? 0.08 : c === 'o' ? 0.24 : 0.2);
+    }
+    if (d.stab && d.stab[s16] === '1') e.stab(this.out, chord, t, dt * 0.7);
+    if (d.clap && d.clap[s16] === '1') e.clap(this.out, t);
+    if (d.ohat && d.ohat[s16] === '1') e.ohat(this.out, t);
     if (d.kick && d.kick[s16] === '1') e.kick(this.out, t);
     if (d.snare && d.snare[s16] === '1') e.snare(this.out, t);
     if (d.hat && d.hat[s16] === '1') e.hat(this.out, t, s16 % 4 === 2 ? 0.07 : 0.035);
     if (d.lead) {
       const n = d.lead[step % d.lead.length];
-      if (n) e.lead(this.out, n, t, dt * (d.leadLen ?? 3.5));
+      if (n) (d.synthLead ? e.synthLead(this.out, n, t, dt * (d.leadLen ?? 3.5)) : e.lead(this.out, n, t, dt * (d.leadLen ?? 3.5)));
     }
     if (d.bells && s16 % 8 === 4 && Math.random() < 0.6) {
       const n = chord[Math.floor(Math.random() * 3)] + 12;
@@ -679,6 +714,92 @@ export class AudioEngine {
     lfo.start(t);
     o.stop(t + dur + 0.05);
     lfo.stop(t + dur + 0.05);
+  }
+
+  /** Bajo «slap»: sierra + cuadrado con un filtro que se abre de golpe y se cierra rápido (el «pop») */
+  slap(out: AudioNode, n: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = mtof(n);
+    const q = ctx.createOscillator();
+    q.type = 'square';
+    q.frequency.value = mtof(n);
+    q.detune.value = 7;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = 9;
+    f.frequency.setValueAtTime(2600, t);
+    f.frequency.exponentialRampToValueAtTime(260, t + 0.09);
+    const g = ctx.createGain();
+    this.env(g, t, 0.003, vol, Math.max(0.05, dur));
+    const qg = ctx.createGain();
+    qg.gain.value = 0.4;
+    o.connect(f);
+    q.connect(qg).connect(f);
+    f.connect(g).connect(out);
+    o.start(t); q.start(t);
+    o.stop(t + dur + 0.1); q.stop(t + dur + 0.1);
+  }
+
+  /** Acorde staccato de sintetizador (sierras desafinadas por un pasabanda) */
+  stab(out: AudioNode, notes: number[], t: number, dur: number) {
+    const ctx = this.ctx!;
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = 1.2;
+    f.frequency.setValueAtTime(2200, t);
+    f.frequency.exponentialRampToValueAtTime(900, t + dur);
+    const g = ctx.createGain();
+    this.env(g, t, 0.004, 0.05, Math.max(0.06, dur));
+    f.connect(g);
+    g.connect(out);
+    g.connect(this.delay!);
+    for (const n of notes) {
+      for (const det of [-8, 8]) {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = mtof(n + 12);
+        o.detune.value = det;
+        o.connect(f);
+        o.start(t);
+        o.stop(t + dur + 0.1);
+      }
+    }
+  }
+
+  /** Palmada: tres ráfagas de ruido muy juntas */
+  clap(out: AudioNode, t: number) {
+    for (const k of [0, 0.011, 0.022]) this.noiseHit(out, t + k, 'bandpass', 1500, k === 0.022 ? 0.22 : 0.14, k === 0.022 ? 0.13 : 0.02, 1.4);
+  }
+
+  /** Hi-hat abierto */
+  ohat(out: AudioNode, t: number) {
+    this.noiseHit(out, t, 'highpass', 6500, 0.06, 0.22);
+  }
+
+  /** Melodía funk: sierra brillante con portamento corto y filtro que «habla» */
+  synthLead(out: AudioNode, n: number, t: number, dur: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(mtof(n - 1), t);
+    o.frequency.exponentialRampToValueAtTime(mtof(n), t + 0.04);
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = 5;
+    f.frequency.setValueAtTime(3200, t);
+    f.frequency.exponentialRampToValueAtTime(1100, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.015);
+    g.gain.setValueAtTime(0.05, t + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g);
+    g.connect(out);
+    g.connect(this.delay!);
+    o.start(t);
+    o.stop(t + dur + 0.05);
   }
 
   /** Pad analógico sci-fi: dos sierras desafinadas y un cuadrado, con filtro resonante que se abre y cierra */

@@ -193,6 +193,29 @@ const DIBUJOS: Record<string, Dib> = {
       s.tweens.add({ targets: humo, y: y - 175, alpha: { from: 0.5, to: 0 }, scale: 2.5, duration: 1600, delay: 3300 + i * 260, repeat: -1, repeatDelay: 600 });
     }
   },
+  // Sir Dextro: escribe el determinante en su escudo y la flecha de r×F aparece sola
+  manco: (s, c, x, y) => {
+    const esc = s.add.graphics();
+    esc.fillStyle(0x1e2a38, 1).fillRoundedRect(x - 56, y - 140, 112, 128, 14);
+    esc.fillStyle(0x3a4a5e, 1).fillRoundedRect(x - 50, y - 134, 100, 116, 12);
+    esc.lineStyle(3, 0x7ad0ff, 0.8).strokeRoundedRect(x - 50, y - 134, 100, 116, 12);
+    c.add(esc);
+    const lineas = ['| i  j  k |', '| 2  1  0 |', '| 1  3  0 |', '= (6−1)k', '= +5k  ⊙'];
+    lineas.forEach((l, i) => {
+      const t = txt(s, x - 42, y - 128 + i * 20, '', 14, i < 3 ? '#e8e0d0' : '#7ad0ff');
+      c.add(t);
+      let k = 0;
+      s.time.addEvent({ delay: 80, startAt: 0, repeat: l.length - 1, callback: () => t.setText(l.slice(0, ++k)) });
+    });
+    // la flecha de r×F «sale del plano»: un punto que crece (⊙)
+    const punto = s.add.circle(x + 82, y - 120, 8, 0x7ad0ff, 0.9).setScale(0);
+    const anillo = s.add.circle(x + 82, y - 120, 16).setStrokeStyle(3, 0x7ad0ff, 0.9).setScale(0);
+    c.add([anillo, punto]);
+    s.tweens.add({ targets: [punto, anillo], scale: 1, duration: 600, delay: 3600, ease: 'Back.out' });
+    s.tweens.add({ targets: anillo, scale: 1.4, alpha: 0.3, duration: 900, delay: 4300, yoyo: true, repeat: -1 });
+    c.add(txt(s, x + 82, y - 96, 'sale', 12, '#7ad0ff').setOrigin(0.5, 0));
+    chispas(s, c, x, y - 80, 0x7ad0ff, 6);
+  },
 };
 
 /**

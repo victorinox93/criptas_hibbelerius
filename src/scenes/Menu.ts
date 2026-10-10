@@ -12,7 +12,7 @@ import { siguienteNivel } from '../data/progreso';
 import { ALMA_IDS } from '../data/almas';
 import { progresoGrimorio } from './Codex';
 import { REGALO_DIARIO } from '../data/tienda';
-import { amVencido, claseJugable, codexFlag, momentum, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { amVencido, claseJugable, codexFlag, expediciones, momentum, tiendaAbierta, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -39,13 +39,13 @@ export class MenuScene extends Phaser.Scene {
     this.progreso();
     button(this, 70, 22, 110, 26, T.menu.creditos, () => fadeTo(this, 'Credits'), { size: 15 });
     // regalo diario de Layla (fomenta entrar seguido)
-    const regalo = regaloDiario(REGALO_DIARIO);
+    const regalo = tiendaAbierta() ? regaloDiario(REGALO_DIARIO) : 0;
     if (regalo) {
       const t = txt(this, 690, 112, `Layla te dejó +${regalo} ◈ Momentum. ¡Pasa a su tienda!`, 18, '#f0b070').setOrigin(0.5).setAlpha(0);
       this.tweens.add({ targets: t, alpha: 1, duration: 600, delay: 600, hold: 3500, yoyo: true });
     }
 
-    panel(this, 60, 412, 380, 108);
+    panel(this, 60, 412, 450, 108);
     const aliasT = txt(this, 80, 422, av.alias, 30, CSS.gold);
     if (av.insignia === 'am' || amVencido()) {
       // insignia de quien venció a AM
@@ -56,8 +56,8 @@ export class MenuScene extends Phaser.Scene {
     }
     const xp = Game.codex.xp ?? 0;
     const sig = siguienteNivel(xp, nivelActual());
-    txt(this, 424, 428, `Conocimiento: nivel ${nivelActual()}`, 18, '#9ad8f0').setOrigin(1, 0);
-    txt(this, 424, 478, sig ? `${xp} / ${sig}` : 'máximo', 16, CSS.dim).setOrigin(1, 0);
+    txt(this, 494, 424, `Conocimiento: nivel ${nivelActual()}`, 18, '#9ad8f0').setOrigin(1, 0);
+    txt(this, 494, 452, sig ? `${xp} / ${sig}` : 'máximo', 16, CSS.dim).setOrigin(1, 0);
     txt(this, 80, 454, `${CLASSES.find((c) => c.id === av.clase)?.name ?? 'Caballero de la Masa'} · ${p.matricula}`, 20, CSS.bone);
     const gmax = Game.codex.gravedadMax;
     txt(this, 80, 476, `${T.menu.mejorGravedad}: ${gmax ? GRAVITY[gmax - 1].name : T.menu.ninguna}`, 18, CSS.dim);
@@ -66,7 +66,9 @@ export class MenuScene extends Phaser.Scene {
     const seg = Game.codex.tiempo ?? 0;
     const hrs = Math.floor(seg / 3600);
     const min = Math.floor((seg % 3600) / 60);
-    txt(this, 424, 498, `Jugado: ${hrs ? `${hrs} h ` : ''}${min} min`, 16, CSS.dim).setOrigin(1, 0);
+    const nExp = expediciones();
+    txt(this, 494, 476, `Expediciones: ${nExp}`, 16, CSS.bone).setOrigin(1, 0);
+    txt(this, 494, 498, `Jugado: ${hrs ? `${hrs} h ` : ''}${min} min`, 16, CSS.dim).setOrigin(1, 0);
 
     const x = 690;
     let y = 150;
@@ -84,7 +86,11 @@ export class MenuScene extends Phaser.Scene {
       ['Glosario', () => fadeTo(this, 'Glosario')],
       [T.menu.editar, () => fadeTo(this, 'Avatar')],
       ['Vestidor', () => fadeTo(this, 'Vestidor')],
-      [`Layla ◈${momentum()}`, () => fadeTo(this, 'Tienda')],
+      [tiendaAbierta() ? `Layla ◈${momentum()}` : '🔒 Layla', () => {
+        if (tiendaAbierta()) return fadeTo(this, 'Tienda');
+        const t = txt(this, 690, 112, 'La tienda de Layla abre cuando regreses de tu primera expedición.', 18, '#f0b070').setOrigin(0.5);
+        this.tweens.add({ targets: t, alpha: 0, delay: 2200, duration: 500, onComplete: () => t.destroy() });
+      }],
       [Game.codex.victorias > 0 ? '♪ Soundtrack' : '🔒 Soundtrack', () => {
         if (Game.codex.victorias > 0) return fadeTo(this, 'Musica');
         const t = txt(this, 690, 112, 'Vence a Hibbelerius para desbloquear el soundtrack.', 18, CSS.dim).setOrigin(0.5);

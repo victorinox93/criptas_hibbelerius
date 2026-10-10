@@ -368,3 +368,15 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
 - **Acto II:** las peleas ocurren en el salón de un castillo (muros de sillares, ventanales con luna, pilares, estandartes, antorchas y alfombra). Contra la Bruja aparece su trono, la luna se vuelve roja y los estandartes morados.
 - **Balance:** enemigos con **+15 % de vida y +15 % de daño** en los Actos I–III (+10 % en el Núcleo). Se suma a la gravedad (Neptuno/Júpiter).
 - Perillas en `src/data/enemies.ts`: `VIDA_POR_ACTO`, `VIDA_JEFES`, `VIDA_ELITES`, y las nuevas `DANO_POR_ACTO`, `DANO_JEFES`, `DANO_ELITES` (1 = sin cambio). El número que ve el alumno en la intención del enemigo ya incluye el ajuste.
+
+## v0.29.0 · Sir Dextro, Hibbelerius clásico y la nueva tienda
+
+- **Hibbelerius** vuelve a su diseño original (archimago con cuernos, báculo y tomo).
+- **Nueva alma en pena: Sir Dextro, el Caballero sin Diestra.** Perdió la mano derecha y con ella «la regla de la mano derecha». Si le enseñas que el producto cruz se calcula con un determinante, se vuelve tu aliado: cada turno calcula r × F = rx·Fy − ry·Fx con vectores al azar; si sale positivo (sale del plano) golpea, si sale negativo te da Bloqueo. Epílogo: escribe el determinante en su escudo. Su sprite no tiene mano (muñón vendado).
+- **Tienda de Layla:**
+  - Cerrada (🔒) hasta terminar la primera expedición; el regalo diario también empieza ahí.
+  - Música propia: funk synth en Mi dórico (bajo slap, acordes staccato, palmadas y un sinte brillante).
+  - Ya no hay temporadas ni rotación: **todo el catálogo (92 artículos) está siempre a la venta**, en 9 categorías: Clásicos, Armas, UDEM, México, Halloween, Día de Muertos, Navidad, Ciencia ficción y De las Criptas (objetos de ecos, almas, Myriam, AM y Hibbelerius).
+  - Lo que antes era de temporada ahora cuesta más (8–16 ◈).
+  - **Oferta del día:** un artículo con −40 %, igual para todo el grupo, cambia a medianoche.
+- **Menú:** el panel del alumno muestra sus **expediciones** terminadas. Al iniciar sesión, el servidor las cuenta en la hoja Partidas (requiere publicar la nueva versión de `Code.gs`; sin eso se estima con el progreso guardado).

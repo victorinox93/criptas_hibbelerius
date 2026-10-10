@@ -224,7 +224,10 @@ var ACTIONS = {
     var token = Utilities.getUuid();
     sh.getRange(row, 7).setValue(token);
     sh.getRange(row, 9).setValue(new Date());
-    return { ok: true, token: token, matricula: mat, grupo: v[1], alias: v[2], avatar: v[3], grimorio: v[9] || '', reinicio: reinicio };
+    // v0.29: expediciones terminadas (para el menú y la Tienda de Layla)
+    var exp = 0;
+    rows_('Partidas').forEach(function (p) { if (p[1] === mat && p[11] && p[11] !== 'en curso') exp++; });
+    return { ok: true, token: token, matricula: mat, grupo: v[1], alias: v[2], avatar: v[3], grimorio: v[9] || '', reinicio: reinicio, expediciones: exp };
   },
 
   saveProfile: function (r) {

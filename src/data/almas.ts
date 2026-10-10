@@ -13,6 +13,8 @@ export interface AlmaDef {
   name: string;
   /** apariencia de su fantasma (usa el generador de héroes) */
   look: { clase: 'caballero' | 'arcanista' | 'penitente'; helm: string; arma: number; extra: number };
+  /** el fantasma no tiene mano derecha (se le dibuja un muñón vendado) */
+  sinMano?: boolean;
   pal: Record<string, string>; // colores apagados del sprite
   intro: string; // su historia, en sus palabras
   pregunta: string; // pregunta filosófica
@@ -207,6 +209,28 @@ export const ALMAS: Record<string, AlmaDef> = {
     yaTienes: '«Ya caminas con alguien que piensa por sí mismo. Bien.» Te da unos Ergios que la llama le dijo que guardara.',
     habilidad: 'Al final de tu turno su llama golpea a TODOS los enemigos (7). Pero 1 de cada 4 veces «alucina»: no le pega a nadie y te sube 3 de Locura.',
     final: 'Sir Autocompleto apaga la llama de su yelmo y escribe la solución a mano. Abajo firma: «Lo verifiqué yo.»',
+  },
+  // Perdió la mano derecha y con ella «la regla»: no sabe hacia dónde apuntan torques ni fuerzas magnéticas
+  manco: {
+    id: 'manco',
+    name: 'Sir Dextro, el Caballero sin Diestra',
+    look: { clase: 'caballero', helm: 'penacho', arma: -1, extra: 1 },
+    sinMano: true,
+    pal: { c: '#3a4a5e', C: '#1e2a38', l: '#7a8494', g: '#4a5262', E: '#7ad0ff', B: '#7ad0ff', s: '#c8b8a8', q: '#9a8a7a', W: '#d8d0c0' },
+    intro: 'Un caballero con la manga vacía dibuja flechas en el polvo y las borra, una y otra vez.\n«Perdí la mano derecha en un duelo con Hibbelerius. Y con ella perdí la regla de la mano derecha: ya no sé hacia dónde apunta un torque, ni un momento, ni nada. Todas mis flechas salen al revés.»',
+    pregunta: '«Dime, viajero: sin mi mano derecha… ¿cómo voy a saber hacia dónde apunta r × F?»',
+    opciones: [
+      'No puedes: sin la regla de la mano derecha no hay forma.',
+      'La mano es sólo un atajo: el producto cruz se calcula con un determinante, y su signo te dice la dirección.',
+      'Usa la mano izquierda: da exactamente lo mismo.',
+    ],
+    correcta: 1,
+    ayuda: { label: 'Enseñarle el determinante 3×3 (−35 Ergios)', ergios: 35 },
+    gracias: '«|i j k; rx ry 0; Fx Fy 0|… rx·Fy − ry·Fx… ¡positivo: sale del pizarrón! ¡No necesito la mano, necesito álgebra lineal!» Te jura lealtad con la izquierda.',
+    triste: '«¿La izquierda? Pero… así me sale todo al revés.» Vuelve a borrar sus flechas en el polvo.',
+    yaTienes: '«Ya tienes quien te cuide la espalda. Toma estos Ergios: los conté con la izquierda.»',
+    habilidad: 'Al final de tu turno calcula r × F = rx·Fy − ry·Fx con vectores al azar. Si sale positivo (sale del plano) golpea a un enemigo con ese valor; si sale negativo, te da ese Bloqueo.',
+    final: 'Sir Dextro escribe el determinante en su escudo y lo resuelve sin dudar: ya no necesita la mano derecha, tiene el álgebra lineal.',
   },
 };
 

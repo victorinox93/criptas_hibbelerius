@@ -4,7 +4,7 @@ import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { MOMENTUM_JEFES } from '../data/tienda';
-import { addConocimiento, codexFlag, ganarMomentum, FLOORS, Game, logEvent, nivelActual, PISOS_NUCLEO, saveLocal, TOTAL_PISOS } from '../state';
+import { addConocimiento, codexFlag, contarExpedicion, expediciones, ganarMomentum, FLOORS, Game, logEvent, nivelActual, PISOS_NUCLEO, saveLocal, TOTAL_PISOS } from '../state';
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
 import { ALMAS } from '../data/almas';
@@ -90,6 +90,13 @@ export class EndScene extends Phaser.Scene {
     if (!almaFin) popup();
     void nivelDe;
 
+    // ── contador de expediciones (la primera abre la Tienda de Layla) ──
+    const primera = !run.debug && expediciones() === 0;
+    if (!run.debug) contarExpedicion();
+    if (primera) {
+      const lt = txt(this, 340, 470, '🐾 Layla abrió su tienda en el menú principal', 17, '#f0b070').setOrigin(0.5).setAlpha(0);
+      this.tweens.add({ targets: lt, alpha: 1, duration: 800, delay: 2400 });
+    }
     // ── Momentum (Tienda de Layla): por jefes vencidos en esta expedición ──
     const jefes = data.victory ? (data.nucleo === 'am' ? 4 : 3) : Math.max(0, (run.acto ?? 1) - 1);
     const mom = run.debug ? 0 : MOMENTUM_JEFES[Math.min(4, jefes)] ?? 0;

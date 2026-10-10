@@ -1142,7 +1142,7 @@ export function generateAllTextures(scene: Phaser.Scene) {
     h: '#2a2420', s: '#e0907a', q: '#b06a5a', g: '#1a1a1a', G: '#ff5a3a', K: '#3a1210', W: '#e8e4dc', t: '#8a2030', T: '#8a2030', c: '#2a3a5a',
   });
   // Almas en pena (fantasmas aliados): usan el generador de héroes
-  for (const a of Object.values(ALMAS)) makeTexture(scene, `alma_${a.id}`, heroMatrix(a.look), a.pal);
+  for (const a of Object.values(ALMAS)) makeTexture(scene, `alma_${a.id}`, a.sinMano ? sinManoDerecha(heroMatrix(a.look)) : heroMatrix(a.look), a.pal);
   // Acto II: variantes oscuras de sprites existentes
   makeTexture(scene, 'brea', SPRITES.slime, { L: '#2e2c26', G: '#141310', w: '#5a5440', F: '#e0a040' });
   makeTexture(scene, 'minero', NPC, { c: '#2c3836', C: '#161e1c', E: '#9bf0c0', s: '#4a5a58' });
@@ -1182,4 +1182,21 @@ export function generateAllTextures(scene: Phaser.Scene) {
     c.getContext().fillRect(0, 0, 2, 2);
     c.refresh();
   }
+}
+
+/** Sir Dextro: el antebrazo delantero termina en un muñón vendado (W) a media altura; sin mano */
+function sinManoDerecha(rows: string[]) {
+  return rows.map((r, y) => {
+    if (y < 25 || y > 30) return r;
+    const a = r.split('');
+    if (y === 30) { for (let x = 27; x < a.length; x++) a[x] = '.'; return a.join(''); }
+    const set = (x: number, c: string) => { if (x < a.length) a[x] = c; };
+    if (y === 25) { for (let x = 24; x <= 28; x++) set(x, 'W'); set(29, 'k'); }
+    else {
+      for (let x = 24; x < a.length; x++) a[x] = '.';
+      set(24, 'g'); set(25, 'g'); set(26, 'k');
+      if (y === 26) { set(27, 'W'); set(28, 'k'); } // la punta de la venda cuelga
+    }
+    return a.join('');
+  });
 }

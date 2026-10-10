@@ -2812,6 +2812,27 @@ export class CombatScene extends Phaser.Scene {
           await this.hitEnemy(t, 7, false, 'res');
         }
       }
+    } else if (a.id === 'manco') {
+      // producto cruz por determinante: el signo de rx·Fy − ry·Fx dice si sale o entra del plano
+      const v = () => Phaser.Math.Between(-3, 4) || 1;
+      const rx = v(), ry = v(), fx = v(), fy = v();
+      const z = rx * fy - ry * fx;
+      this.floatText(img.x + 90, 186, `(${rx},${ry})×(${fx},${fy}) = ${z}k`, '#7ad0ff');
+      if (z > 0) {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        const dmg = Math.min(16, z + 2);
+        rayo(t);
+        this.calc(`${a.name}: r×F = ${rx}·${fy} − ${ry}·${fx} = +${z} (sale del plano) → ${dmg} de daño`);
+        await this.hitEnemy(t, dmg, false, 'res');
+      } else if (z < 0) {
+        const b = Math.min(14, -z + 2);
+        this.gainBlock(b);
+        this.calc(`${a.name}: r×F = ${rx}·${fy} − ${ry}·${fx} = ${z} (entra al plano) → +${b} de Bloqueo`);
+        await this.wait(300);
+      } else {
+        this.calc(`${a.name}: r×F = 0, r y F son paralelos: no hay torque.`);
+        await this.wait(300);
+      }
     } else if (a.id === 'bernoulli') {
       this.calc(`${a.name}: ¡la energía se conserva! 5 a todos`);
       for (const t of this.alive()) {

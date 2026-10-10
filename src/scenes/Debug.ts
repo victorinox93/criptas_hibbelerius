@@ -12,7 +12,7 @@ import { EVENTS } from '../data/events';
 import { ALMA_IDS } from '../data/almas';
 
 /** Nombres cortos de las almas para el botón «Fin + alma» (cada clic pasa a la siguiente) */
-const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda', autocompleto: 'Autocomp.' };
+const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda', autocompleto: 'Autocomp.', manco: 'Dextro' };
 import { RELIC_POOL, RELICS } from '../data/relics';
 import { codexFlag, emptyCodex, Game, pisosDe, generateMap, isAdmin, newRun, Run, saveLocal, unlock, ganarMomentum } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';

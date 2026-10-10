@@ -7,7 +7,7 @@ import { W } from '../config';
 import { Game, nivelActual, saveLocal } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, Tooltip, txt } from '../ui/widgets';
 import { bloqueado, comoDesbloquear } from './Avatar';
-import { ACCESORIOS, TEMPORADAS } from '../data/tienda';
+import { ACCESORIOS, NOMBRE_CAT } from '../data/tienda';
 
 type Parte = 'cape' | 'armor' | 'visor';
 const PARTES: { id: Parte; nombre: string; lista: Cosmetico[] }[] = [
@@ -63,7 +63,7 @@ export class VestidorScene extends Phaser.Scene {
       const nombre = txt(this, x + CW / 2, y + 72, a.nombre, 15, tiene ? CSS.bone : '#6a6478', { align: 'center' }).setOrigin(0.5, 0);
       if (nombre.width > CW - 10) nombre.setScale((CW - 10) / nombre.width, 1);
       this.layer.add(nombre);
-      const estado = !tiene ? `🔒 Tienda de Layla${a.temporada ? ` (${TEMPORADAS[a.temporada].nombre})` : ''}` : puesto ? '✓ Puesto · clic para quitar' : 'Clic para ponértelo';
+      const estado = !tiene ? `🔒 Tienda de Layla (${NOMBRE_CAT[a.cat!]})` : puesto ? '✓ Puesto · clic para quitar' : 'Clic para ponértelo';
       const et = txt(this, x + CW / 2, y + 92, estado, 12, !tiene ? '#8a7a6a' : puesto ? CSS.green : CSS.dim, { align: 'center', wordWrap: { width: CW - 10 } }).setOrigin(0.5, 0);
       this.layer.add(et);
       const z = this.add.zone(x, y, CW, CH).setOrigin(0).setInteractive({ useHandCursor: tiene });
