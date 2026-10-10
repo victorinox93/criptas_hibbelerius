@@ -6,6 +6,7 @@ import { ACT3_SPRITES, EXTRA_SPRITES, HIBBELERIUS, HIB_PAL } from './act3';
 import { ARMORS, CAPES, PAL, VISORS } from './palette';
 import { heroMatrix, SKINS, CABELLOS } from './heroes';
 import { ALMAS } from '../data/almas';
+import { MECHA_PAL, MECHA_ROWS } from './mecha';
 import { POCIONES } from '../data/pociones';
 
 // Cada sprite es una matriz de caracteres; cada carácter es un color de la paleta.
@@ -839,13 +840,16 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   const visor = vis.c;
   const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
   const mano = av.mano && ACC[av.mano] ? av.mano : undefined;
-  const rows = heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.extra, figura: av.figura });
-  const ov: Record<string, string> = { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
-  if ((av.figura ?? 0) > 0) ov.h = CABELLOS[av.figura!] ?? CABELLOS[1];
+  // el Mecha reemplaza todo el cuerpo (conserva el color de capa y de visor del alumno)
+  const rows = armor.mecha ? MECHA_ROWS : heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.extra, figura: av.figura });
+  const ov: Record<string, string> = armor.mecha
+    ? { ...MECHA_PAL, c: cape.c, C: cape.C, E: visor }
+    : { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
+  if ((av.figura ?? 0) > 0 && !armor.mecha) ov.h = CABELLOS[av.figura!] ?? CABELLOS[1];
   // cosméticos holográficos (premio de AM): el tono recorre el arcoíris por pixel y con el tiempo
   const holo: Record<string, [number, number, number]> = {}; // letra → [tono inicial, luminosidad, rango de tono]
   if (cape.holo !== undefined) { const r = cape.rango ?? 360; holo.c = [cape.holo, 0.62, r]; holo.C = [cape.holo + Math.min(40, r / 3), 0.42, r]; }
-  if (armor.holo !== undefined) { const r = armor.rango ?? 360; holo.l = [armor.holo, 0.75, r]; holo.g = [armor.holo + Math.min(40, r / 3), 0.5, r]; }
+  if (armor.holo !== undefined && !armor.mecha) { const r = armor.rango ?? 360; holo.l = [armor.holo, 0.75, r]; holo.g = [armor.holo + Math.min(40, r / 3), 0.5, r]; }
   if (vis.holo !== undefined) { const r = vis.rango ?? 360; holo.E = [vis.holo, 0.65, r]; holo.B = [vis.holo, 0.65, r]; }
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
@@ -861,6 +865,7 @@ const ANCLAS: Record<string, { cabeza: [number, number]; cara: [number, number];
   caballero: { cabeza: [19.5, 8], cara: [20.5, 11], mano: [27, 28], pies: [[16, 43], [22.5, 43]] },
   arcanista: { cabeza: [19.5, 8], cara: [19.5, 12], mano: [31, 25], pies: [[15, 44], [23, 44]] },
   penitente: { cabeza: [19.5, 9], cara: [19.5, 11], mano: [31, 24], pies: [[16, 44], [22.5, 44]] },
+  mecha: { cabeza: [20, 5], cara: [21, 7], mano: [30, 28], pies: [[15.5, 44], [25.5, 44]] },
 };
 
 /** Dibuja los accesorios de la Tienda de Layla encima de la textura del héroe (con contorno) */
@@ -869,7 +874,7 @@ export function pintarAccesorios(scene: Phaser.Scene, key: string, av: HeroAvata
   if (!items.length) return;
   const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
   const ctx = tex.getContext();
-  const an = ANCLAS[av.clase ?? 'caballero'] ?? ANCLAS.caballero;
+  const an = ARMORS[av.armor ?? 0]?.mecha ? ANCLAS.mecha : ANCLAS[av.clase ?? 'caballero'] ?? ANCLAS.caballero;
   const lugares = (a: (typeof items)[number]): [number, number][] => (a.slot === 'pies' ? an.pies : [an[a.slot]]);
   for (const a of items) for (const [px, py] of lugares(a)) {
     const x0 = Math.round(px - a.ancla[0]), y0 = Math.round(py - a.ancla[1]);

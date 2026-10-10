@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.30.0 · Lápidas y signos, Thomas Bayes, La Entropía y música de Shook';
+export const VERSION = '0.31.0 · Mecha «Inercia-01», créditos y README';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)

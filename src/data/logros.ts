@@ -30,6 +30,11 @@ export const LOGROS: Record<string, Logro> = {
   intacto: { id: 'intacto', nombre: 'Intocable', como: 'Vence a un jefe sin perder vida', check: () => flag('logro_jefePerfecto') },
   almas: { id: 'almas', nombre: 'Coleccionista de almas', como: `Encuentra a las ${ALMA_IDS.length} almas en pena`, check: () => ALMA_IDS.every((a) => Game.codex.npcs.includes(`alma_${a}`)) },
   grimorio: { id: 'grimorio', nombre: 'Bibliotecario', como: 'Descubre el 75 % del Grimorio', check: () => flag('logro_grimorio') },
+  // v0.31 · el último desbloqueable (Mecha «Inercia-01»): todos los demás logros
+  mecha: {
+    id: 'mecha', nombre: 'Piloto de élite (platino)', como: 'Consigue TODOS los demás logros',
+    check: () => Object.values(LOGROS).filter((l) => l.id !== 'mecha').every((l) => l.check()),
+  },
 };
 
 export function logroHecho(id?: string) {

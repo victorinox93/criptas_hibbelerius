@@ -51,7 +51,6 @@ function onOpen() {
     .addItem('Actualizar panel', 'actualizarPanel')
     .addItem('Configurar hojas', 'setup')
     .addItem('Actualizar panel cada hora', 'instalarDisparador')
-    .addItem('Limpiar datos de prueba…', 'limpiarPruebas')
     .addSeparator()
     .addItem('Generar evidencia (reporte del proyecto)', 'generarEvidencia')
     .addItem('Crear formulario de retroalimentación', 'crearFormulario')
@@ -117,7 +116,7 @@ function respaldo_() {
 /** Borra a una persona (p. ej. un amigo que probó el juego en el grupo real) */
 function borrarAlumno() {
   var ui = SpreadsheetApp.getUi();
-  var r = ui.prompt('Borrar datos de un alumno', 'Matrícula a borrar (se quitan su cuenta, partidas y eventos):', ui.ButtonSet.OK_CANCEL);
+  var r = ui.prompt('Borrar datos de un alumno', 'Matrícula a borrar (se quitan su cuenta, partidas, eventos, lápidas y signos):', ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK) return;
   var mat = String(r.getResponseText()).trim().toUpperCase();
   if (!mat) return;
@@ -128,6 +127,7 @@ function borrarAlumno() {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     quitarFilas_('Alumnos', 1, mat); quitarFilas_('Partidas', 2, mat); quitarFilas_('Eventos', 2, mat);
+    quitarFilas_('Huellas', 2, mat); // v0.30: lápidas y signos
   } finally { lock.releaseLock(); }
   actualizarPanel();
   ui.alert('Listo. Respaldo guardado en tu Drive como «' + copia + '».');
@@ -136,7 +136,7 @@ function borrarAlumno() {
 /** Borra todo lo de una clave de grupo (p. ej. BETA o PRUEBAS) */
 function borrarGrupo() {
   var ui = SpreadsheetApp.getUi();
-  var r = ui.prompt('Borrar datos de un grupo', 'Clave del grupo a borrar (p. ej. BETA). La clave sigue en «Grupos»; sólo se borran alumnos, partidas y eventos:', ui.ButtonSet.OK_CANCEL);
+  var r = ui.prompt('Borrar datos de un grupo', 'Clave del grupo a borrar (p. ej. BETA). La clave sigue en «Grupos»; sólo se borran alumnos, partidas, eventos, lápidas y signos:', ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK) return;
   var g = String(r.getResponseText()).trim().toUpperCase();
   if (!g) return;
@@ -146,7 +146,7 @@ function borrarGrupo() {
   var copia = respaldo_();
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    quitarFilas_('Alumnos', 2, g); quitarFilas_('Partidas', 3, g); quitarFilas_('Eventos', 3, g);
+    quitarFilas_('Alumnos', 2, g); quitarFilas_('Partidas', 3, g); quitarFilas_('Eventos', 3, g); quitarFilas_('Huellas', 3, g);
   } finally { lock.releaseLock(); }
   actualizarPanel();
   ui.alert('Listo. Respaldo guardado en tu Drive como «' + copia + '».');
@@ -155,12 +155,12 @@ function borrarGrupo() {
 /** Deja la hoja como nueva (conserva los grupos) */
 function borrarTodo() {
   var ui = SpreadsheetApp.getUi();
-  var r = ui.prompt('Borrar TODO', 'Esto borra TODAS las cuentas, partidas y eventos (los grupos se conservan).\nSe guarda un respaldo antes. Escribe BORRAR para confirmar:', ui.ButtonSet.OK_CANCEL);
+  var r = ui.prompt('Borrar TODO', 'Esto borra TODAS las cuentas, partidas, eventos, lápidas y signos (los grupos se conservan).\nSe guarda un respaldo antes. Escribe BORRAR para confirmar:', ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK || String(r.getResponseText()).trim().toUpperCase() !== 'BORRAR') { ui.alert('Cancelado.'); return; }
   var copia = respaldo_();
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    ['Alumnos', 'Partidas', 'Eventos'].forEach(function (n) {
+    ['Alumnos', 'Partidas', 'Eventos', 'Huellas'].forEach(function (n) {
       var sh = sheet_(n);
       if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
     });
@@ -639,37 +639,3 @@ function avisosHuellas_(mat) {
   return out;
 }
 
-// ───────────────────────── v0.30 · Limpiar datos de prueba ─────────────────────────
-// Menú Criptas → «Limpiar datos de prueba». Haz antes una copia: Archivo → Hacer una copia.
-function limpiarPruebas() {
-  var ui = SpreadsheetApp.getUi();
-  var resp = ui.prompt('Limpiar datos de prueba',
-    'Escribe las MATRÍCULAS o CLAVES DE GRUPO a borrar, separadas por comas (ej.: 237440, BOT30, PRUEBA-1).\n' +
-    'Se borran sus filas en Alumnos, Partidas, Eventos y Huellas.\n\n' +
-    'O escribe TODO para vaciar Partidas, Eventos y Huellas de todos (las cuentas en Alumnos se conservan).',
-    ui.ButtonSet.OK_CANCEL);
-  if (resp.getSelectedButton() !== ui.Button.OK) return;
-  var txt = resp.getResponseText().trim();
-  if (!txt) return;
-  var todo = txt.toUpperCase() === 'TODO';
-  var lista = txt.split(',').map(function (x) { return x.trim().toUpperCase(); }).filter(String);
-  var ok = ui.alert('Confirmar', todo ? '¿Vaciar Partidas, Eventos y Huellas de TODOS los alumnos?' : '¿Borrar todo lo de: ' + lista.join(', ') + '?', ui.ButtonSet.YES_NO);
-  if (ok !== ui.Button.YES) return;
-  var borrar = function (fila) { return lista.indexOf(String(fila[0]).toUpperCase()) >= 0 || lista.indexOf(String(fila[1]).toUpperCase()) >= 0; };
-  var resumen = [];
-  [['Alumnos', 0, 1], ['Partidas', 1, 2], ['Eventos', 1, 2], ['Huellas', 1, 2]].forEach(function (cfg) {
-    var nombre = cfg[0];
-    if (todo && nombre === 'Alumnos') return;
-    var sh = SpreadsheetApp.getActive().getSheetByName(nombre);
-    if (!sh || sh.getLastRow() < 2) return;
-    var n = sh.getLastRow() - 1, w = HEAD[nombre].length;
-    var datos = sh.getRange(2, 1, n, w).getValues();
-    // matrícula y grupo según la hoja
-    var quedan = todo ? [] : datos.filter(function (f) { return !borrar([f[cfg[1]], f[cfg[2]]]); });
-    sh.getRange(2, 1, n, w).clearContent();
-    if (quedan.length) sh.getRange(2, 1, quedan.length, w).setValues(quedan);
-    resumen.push(nombre + ': ' + (n - quedan.length) + ' filas borradas');
-  });
-  try { actualizarPanel(); } catch (e) {}
-  ui.alert('Listo', resumen.join('\n'), ui.ButtonSet.OK);
-}

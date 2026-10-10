@@ -26,7 +26,7 @@ export const PAL: Record<string, string> = {
 // Colores de capa disponibles en el creador de avatar
 // lock = nivel de Conocimiento necesario para usarlo (src/data/progreso.ts)
 /** Cosmético: lock = nivel de Conocimiento; logro = reto de src/data/logros.ts; holo = tono inicial animado (rango = amplitud del tono) */
-export interface Cosmetico { name: string; lock?: number; logro?: string; holo?: number; rango?: number }
+export interface Cosmetico { name: string; lock?: number; logro?: string; holo?: number; rango?: number; mecha?: boolean }
 export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
   { name: 'Ceniza', c: '#6e6a78', C: '#403c48' },
@@ -63,6 +63,8 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Pergamino Dorado', l: '#e8d8a0', g: '#a89060', logro: 'hibbelerius' },
   { name: 'Diamante', l: '#d0f4ff', g: '#7ab0c8', logro: 'intacto' },
   { name: 'Cromo Dorado', l: '#f0d070', g: '#a8802a', logro: 'grimorio', holo: 28, rango: 30 },
+  // v0.31 · el último desbloqueable: armadura completa de mecha (logro platino)
+  { name: 'Mecha «Inercia-01»', l: '#e8ecf0', g: '#9aa4b4', logro: 'mecha', mecha: true },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
