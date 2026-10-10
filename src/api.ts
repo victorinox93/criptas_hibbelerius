@@ -44,7 +44,26 @@ export interface RankRow {
   lugar: number;
 }
 
+export interface Huella {
+  id: number;
+  alias: string;
+  tipo: 'lapida' | 'signo';
+  piso: number;
+  jefe: string;
+  datos: string; // JSON
+}
+
+export interface Estadisticas {
+  partidas: number; victorias: number; derrotas: number; abandonadas: number;
+  minutos: number; mejorPiso: number; mejorActo: number;
+  causas: [string, number][];
+  temas: [string, number, number][]; // [concepto, aciertos, intentos]
+}
+
 export const api = {
+  huellas: (token: string, acto: number) => call<{ ok: true; lapidas: Huella[]; signos: Huella[] }>('huellas', { token, acto }),
+  avisos: (token: string) => call<{ ok: true; ayudas: number; honras: number; ayudantes: string[] }>('avisos', { token }),
+  estadisticas: (token: string) => call<{ ok: true } & Estadisticas>('estadisticas', { token }),
   register: (matricula: string, passHash: string, grupo: string) =>
     call<LoginResp>('register', { matricula, passHash, grupo }),
   login: (matricula: string, passHash: string) => call<LoginResp>('login', { matricula, passHash }),

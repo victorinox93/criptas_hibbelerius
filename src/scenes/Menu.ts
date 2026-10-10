@@ -12,8 +12,13 @@ import { siguienteNivel } from '../data/progreso';
 import { ALMA_IDS } from '../data/almas';
 import { progresoGrimorio } from './Codex';
 import { REGALO_DIARIO } from '../data/tienda';
-import { amVencido, claseJugable, codexFlag, expediciones, momentum, tiendaAbierta, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
+import { BAYES_EXPEDICIONES } from '../data/figures';
+import { MOMENTUM_POR_AYUDA, TOPE_AYUDAS } from '../huellas';
+import { amVencido, claseJugable, codexFlag, expediciones, ganarMomentum, momentum, tiendaAbierta, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
+
+/** los avisos de huellas se piden una vez por sesión */
+let avisosPedidos = false;
 
 export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
@@ -39,6 +44,7 @@ export class MenuScene extends Phaser.Scene {
     this.progreso();
     button(this, 70, 22, 110, 26, T.menu.creditos, () => fadeTo(this, 'Credits'), { size: 15 });
     // regalo diario de Layla (fomenta entrar seguido)
+    this.avisosHuellas();
     const regalo = tiendaAbierta() ? regaloDiario(REGALO_DIARIO) : 0;
     if (regalo) {
       const t = txt(this, 690, 112, `Layla te dejó +${regalo} ◈ Momentum. ¡Pasa a su tienda!`, 18, '#f0b070').setOrigin(0.5).setAlpha(0);
@@ -86,9 +92,14 @@ export class MenuScene extends Phaser.Scene {
       ['Glosario', () => fadeTo(this, 'Glosario')],
       [T.menu.editar, () => fadeTo(this, 'Avatar')],
       ['Vestidor', () => fadeTo(this, 'Vestidor')],
-      [tiendaAbierta() ? `Layla ◈${momentum()}` : '🔒 Layla', () => {
+      [tiendaAbierta() ? 'Tienda de Layla' : '🔒 Tienda de Layla', () => {
         if (tiendaAbierta()) return fadeTo(this, 'Tienda');
         const t = txt(this, 690, 112, 'La tienda de Layla abre cuando regreses de tu primera expedición.', 18, '#f0b070').setOrigin(0.5);
+        this.tweens.add({ targets: t, alpha: 0, delay: 2200, duration: 500, onComplete: () => t.destroy() });
+      }],
+      [expediciones() >= BAYES_EXPEDICIONES || isAdmin() ? '📊 Estadísticas' : '🔒 Estadísticas', () => {
+        if (expediciones() >= BAYES_EXPEDICIONES || isAdmin()) return fadeTo(this, 'Estadisticas');
+        const t = txt(this, 690, 112, `Termina ${BAYES_EXPEDICIONES} expediciones y Thomas Bayes analizará tus datos.`, 18, CSS.dim).setOrigin(0.5);
         this.tweens.add({ targets: t, alpha: 0, delay: 2200, duration: 500, onComplete: () => t.destroy() });
       }],
       [Game.codex.victorias > 0 ? '♪ Soundtrack' : '🔒 Soundtrack', () => {
@@ -105,9 +116,30 @@ export class MenuScene extends Phaser.Scene {
       }],
     ];
     grid.forEach(([label, fn], i) => {
-      button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 46, 160, 40, label, fn, { size: 20 });
+      button(this, x - 84 + (i % 2) * 168, y + Math.floor(i / 2) * 46, 160, 40, label, fn, { size: label.length > 14 ? 16 : 20 });
     });
     if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 46, 330, 38, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
+  }
+
+  /** v0.30: ¿tus signos ayudaron a alguien? ¿honraron tu lápida? (una vez por sesión) */
+  private avisosHuellas() {
+    const prof = Game.profile;
+    if (!prof || prof.offline || !isOnline() || avisosPedidos) return;
+    avisosPedidos = true;
+    api.avisos(prof.token).then((a) => {
+      const msgs: string[] = [];
+      if (a.ayudas > 0) {
+        const mom = Math.min(TOPE_AYUDAS, a.ayudas * MOMENTUM_POR_AYUDA);
+        ganarMomentum(mom);
+        saveLocal();
+        const quien = a.ayudantes?.length ? a.ayudantes.join(', ') : 'un compañero';
+        msgs.push(`✦ Tu signo dorado ayudó a ${quien} a vencer a un jefe: +${mom} ◈ Momentum`);
+      }
+      if (a.honras > 0) msgs.push(`🪦 Tus compañeros honraron tu lápida ${a.honras} ${a.honras === 1 ? 'vez' : 'veces'}.`);
+      if (!msgs.length || !this.scene.isActive()) return;
+      const t = txt(this, 690, 84, msgs.join('\n'), 16, CSS.gold, { align: 'center', wordWrap: { width: 520 } }).setOrigin(0.5, 0).setStroke('#000', 4).setDepth(800).setAlpha(0);
+      this.tweens.add({ targets: t, alpha: 1, duration: 600, hold: 6000, yoyo: true, onComplete: () => t.destroy() });
+    }).catch(() => { avisosPedidos = false; });
   }
 
   /** Panel de progreso: Grimorio, jefes, almas, figuras y cartas */

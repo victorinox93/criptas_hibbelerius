@@ -242,7 +242,12 @@ export class RuneScene extends Phaser.Scene {
       }
       const tr = boonLevel('c_traductora');
       if (tr && this.d.source !== 'regateo') addErgios(15 * tr);
-    } else if (!this.amUsado) run.stats.racha = 0;
+      if (boonLevel('by_actualiza') >= 2 && this.d.source !== 'regateo') addErgios(10);
+    } else {
+      run.ultimoFallo = p.concept; // se escribe en tu lápida si caes
+      // Actualización Bayesiana (Bayes): un error no borra la evidencia acumulada
+      if (!this.amUsado && !boonLevel('by_actualiza')) run.stats.racha = 0;
+    }
     if (this.d.source !== 'regateo') run.floor = this.d.floor + 1;
     saveLocal();
     syncRun('en curso');

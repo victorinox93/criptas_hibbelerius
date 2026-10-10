@@ -4,6 +4,7 @@ import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { MOMENTUM_JEFES } from '../data/tienda';
+import { dejarLapida } from '../huellas';
 import { addConocimiento, codexFlag, contarExpedicion, expediciones, ganarMomentum, FLOORS, Game, logEvent, nivelActual, PISOS_NUCLEO, saveLocal, TOTAL_PISOS } from '../state';
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
 import { LECCIONES } from '../data/lecciones';
@@ -90,6 +91,9 @@ export class EndScene extends Phaser.Scene {
     if (!almaFin) popup();
     void nivelDe;
 
+    // ── v0.30: si caíste, dejas tu lápida para tus compañeros del grupo ──
+    if (!data.victory && !run.debug) dejarLapida(run, data.by ?? '');
+    run.fantasma = undefined;
     // ── contador de expediciones (la primera abre la Tienda de Layla) ──
     const primera = !run.debug && expediciones() === 0;
     if (!run.debug) contarExpedicion();

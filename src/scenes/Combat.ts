@@ -15,6 +15,7 @@ function umbralDe(st: EnemyState) {
   return Math.round((st.def.umbral + (st.phase2 ? 3 : 0)) * (st.umbralMul ?? 1));
 }
 const ESQUIVA = 6;
+import { dejarSigno, usarHuella } from '../huellas';
 import { AddCards, danoDe, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
@@ -108,6 +109,7 @@ export class CombatScene extends Phaser.Scene {
   private polonio = 0; // daño extra de la carta de ataque en curso (Curie)
   private famImg: Phaser.GameObjects.Image | null = null;
   private aliadoImg: Phaser.GameObjects.Image | null = null; // alma en pena aliada (élites y jefes)
+  private fantasmaImg: Phaser.GameObjects.Image | null = null; // v0.30: compañero invocado con su signo (sólo jefes)
   private aliadoN = 0; // turnos del aliado (Sir Mañana)
   // v0.7: Acto III y cartas nuevas
   private estela = false; // Estela Cinética: cada ataque da +1 m/s
@@ -181,6 +183,7 @@ export class CombatScene extends Phaser.Scene {
     this.fuegoAmigo = false;
     this.hondaV = new Map();
     this.aliadoImg = null;
+    this.fantasmaImg = null;
     this.aliadoN = 0;
     this.estela = false;
     this.noFric = false;
@@ -399,6 +402,7 @@ export class CombatScene extends Phaser.Scene {
     }
     this.showFamiliar();
     this.showAliado();
+    this.showFantasma();
     this.refreshPlayer();
     this.banner(this.kind === 'boss' ? T.combate.bannerJefes[Math.min(3, this.acto - 1)] : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
@@ -1256,6 +1260,15 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`ΣF = 0: fuerza entrante ${inc} N → +${b} de Bloqueo`);
         break;
       }
+      case 'entropia_udem': {
+        // el desorden aumenta: el descarte vuelve revuelto al mazo
+        const n = this.discard.length;
+        this.draw.push(...this.discard.splice(0));
+        Phaser.Utils.Array.Shuffle(this.draw);
+        this.calc(`La Entropía: ΔS ≥ 0 → ${n} cartas del descarte vuelven revueltas al mazo; robas ${st.extra}`);
+        this.drawCards(st.extra!);
+        break;
+      }
       case 'carrera': {
         const vv = boonLevel('c_visviva');
         this.acel += st.extra! + vv;
@@ -2073,6 +2086,7 @@ export class CombatScene extends Phaser.Scene {
     }
     let draw = 5 + this.extraDraw;
     if (this.turn === 1) draw += boonLevel('as_fundacion'); // Psicohistoria (Asimov)
+    if (this.turn === 1) draw += boonLevel('by_prior'); // Prior Informativo (Bayes)
     if (this.isoRobo) { draw += 1; this.isoRobo = false; }
     if (boonLevel('duo_simetria') === 2) draw += 1;
     if (this.has('agujero')) draw += 1;
@@ -2272,6 +2286,11 @@ export class CombatScene extends Phaser.Scene {
       await this.aliadoActua();
       if (await this.checkEnd()) return;
     }
+    // fantasma de un compañero (signo dorado): también actúa al final de tu turno
+    if (this.fantasmaImg && this.alive().length) {
+      await this.fantasmaActua();
+      if (await this.checkEnd()) return;
+    }
 
     for (const ev of this.alive()) {
       const st = ev.st;
@@ -2399,6 +2418,13 @@ export class CombatScene extends Phaser.Scene {
       run.maxHp += vm === 2 ? 3 : 2;
       run.hp += vm === 2 ? 3 : 2;
     }
+    const bp = boonLevel('by_posterior');
+    if (bp && run.hp > 0) {
+      // Distribución Posterior (Bayes): la evidencia acumulada (preguntas acertadas) te cura
+      const cura = Math.min(bp === 2 ? 10 : 6, Math.floor((run.stats.runasOk ?? 0) / 2) + 1);
+      run.hp = Math.min(run.maxHp, run.hp + cura);
+      this.calc(`Distribución Posterior (Bayes): ${run.stats.runasOk ?? 0} aciertos de evidencia → +${cura} de vida`);
+    }
     const da = boonLevel('d_apto');
     if (da && run.hp < run.maxHp / 2) {
       run.maxHp += da === 2 ? 5 : 3;
@@ -2420,6 +2446,11 @@ export class CombatScene extends Phaser.Scene {
     logEvent('combate', '', true, { tipo: this.kind, piso: this.floor, turnos: this.turn, vida: run.hp });
     saveLocal();
     if (this.kind === 'boss') (run.seen ??= []).push(`jefe_${this.acto}`);
+    if (this.kind === 'boss') {
+      // v0.30: dejas tu signo para tus compañeros y, si te ayudó un fantasma, se le avisa
+      dejarSigno(run, ['colossus', 'bruja', 'hibbelerius', 'am'][Math.min(3, this.acto - 1)]);
+      if (run.fantasma) { usarHuella(run.fantasma.id); this.calc(`${run.fantasma.alias} recibirá Momentum por ayudarte.`); run.fantasma = undefined; }
+    }
     if (this.kind === 'boss' && this.acto === 1) {
       codexFlag('acto1');
       logEvent('acto', '', true, { acto: 1, vida: run.hp });
@@ -2719,6 +2750,39 @@ export class CombatScene extends Phaser.Scene {
       fl.setDepth(img.depth + 1);
     }
     this.time.delayedCall(900, () => this.floatText(x, 190, 'Alma invocada', CSS.gold));
+  }
+
+  /** v0.30: el fantasma dorado de un compañero (invocado con su signo antes del jefe) */
+  private showFantasma() {
+    const f = Game.run!.fantasma;
+    if (!f || this.kind !== 'boss' || f.acto !== this.acto) return;
+    let av: Record<string, unknown> = {};
+    try { av = JSON.parse(f.avatar || '{}'); } catch { av = {}; }
+    const key = `fantasma_${f.id}`;
+    try { makeHeroFromAvatar(this, av as never, key); } catch { return; }
+    const x = this.heroX - (this.aliadoImg ? 80 : 150), y = 280;
+    const halo = this.add.image(x, y, key).setScale(2.3).setTintFill(0xe8c15a).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
+    const img = this.add.image(x, y, key).setScale(2.2).setAlpha(0).setTint(0xfff0c0);
+    this.tweens.add({ targets: img, alpha: 0.75, duration: 900, delay: 300 });
+    this.tweens.add({ targets: halo, alpha: 0.22, duration: 900, delay: 300 });
+    this.tweens.add({ targets: [img, halo], y: y - 6, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    img.setInteractive();
+    this.tip.attach(img, `${f.alias} (fantasma invocado)`, 'Un compañero de tu grupo que ya venció a este jefe. Al final de tu turno ataca a un enemigo.');
+    this.fantasmaImg = img;
+    this.time.delayedCall(800, () => this.floatText(x, 190, `${f.alias} responde a tu llamado`, CSS.gold));
+  }
+
+  private async fantasmaActua() {
+    const f = Game.run!.fantasma!;
+    const img = this.fantasmaImg!;
+    const t = Phaser.Utils.Array.GetRandom(this.alive());
+    const dmg = Phaser.Math.Between(4, 8) + 2 * this.acto;
+    this.tweens.add({ targets: img, x: img.x + 30, duration: 140, yoyo: true, ease: 'Quad.out' });
+    const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+    g.lineStyle(4, 0xe8c15a, 0.9).lineBetween(img.x + 20, 250, t.baseX, 260);
+    this.tweens.add({ targets: g, alpha: 0, duration: 350, onComplete: () => g.destroy() });
+    this.calc(`${f.alias} (fantasma): golpea a ${t.st.def.name} (${dmg})`);
+    await this.hitEnemy(t, dmg, false, 'res');
   }
 
   private async aliadoActua() {

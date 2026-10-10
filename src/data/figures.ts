@@ -239,6 +239,22 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['Tus cartas hacen +3 de daño a los autómatas del Núcleo y a AM.', 'Hacen +6 de daño a los autómatas y a AM.'],
     lore: '¿Puede una máquina pensar? Turing propuso una prueba: si no la distingues de un humano… Tú sí sabes distinguirlas.',
   },
+  // ── Thomas Bayes (v0.30: se desbloquea tras varias expediciones) ──
+  by_prior: {
+    id: 'by_prior', figure: 'bayes', name: 'Prior Informativo', icon: 'i_book',
+    text: ['En el primer turno de cada combate robas 1 carta más.', 'Robas 2 cartas más en el primer turno.'],
+    lore: 'Antes de ver los datos ya sabes algo: tu experiencia previa es la probabilidad «a priori».',
+  },
+  by_actualiza: {
+    id: 'by_actualiza', figure: 'bayes', name: 'Actualización Bayesiana', icon: 'i_rune',
+    text: ['Si fallas una pregunta, tu racha NO se reinicia: la evidencia se acumula.', 'Además, cada pregunta acertada te da +10 Ergios.'],
+    lore: 'P(H|E) = P(E|H)·P(H) / P(E). Un dato nuevo no borra lo que sabías: lo actualiza.',
+  },
+  by_posterior: {
+    id: 'by_posterior', figure: 'bayes', name: 'Distribución Posterior', icon: 'i_heart',
+    text: ['Al ganar un combate recuperas vida según tus aciertos de la expedición (1 + aciertos/2, máx. 6).', 'Máximo 10 de vida por combate.'],
+    lore: 'Con más evidencia, la posterior se concentra: cada acierto te hace más certero… y más resistente.',
+  },
   // ── J. Robert Oppenheimer (dones enormes con RADIACIÓN) ──
   o_trinity: {
     id: 'o_trinity', figure: 'oppenheimer', name: 'Trinity', icon: 'i_rad',
@@ -382,7 +398,18 @@ export const FIGURES: FigureDef[] = [
     concepts: ['Integral: trabajo', 'Integral: impulso', 'Derivada: aceleracion'],
     boons: ['tu_maquina', 'tu_enigma', 'tu_test'],
   },
+  {
+    // se desbloquea tras BAYES_EXPEDICIONES expediciones (ver Sanctuary.ts)
+    id: 'bayes', name: 'Thomas Bayes', years: '1701–1761', epithet: 'El Reverendo de las Probabilidades', sprite: 'fig_bayes',
+    intro: '«Has venido varias veces a estas criptas. Cada intento es evidencia, y con evidencia se actualiza lo que creemos.\nResuelve esto y te enseñaré a aprender de tus propios datos.»',
+    farewell: '«No te preguntes si fallarás: pregúntate cuánto cambia lo que sabes después de cada intento.»',
+    concepts: ['2a ley', 'Friccion', 'Trabajo-energia'],
+    boons: ['by_prior', 'by_actualiza', 'by_posterior'],
+  },
 ];
+
+/** Expediciones terminadas que se necesitan para que aparezca Bayes (y su pantalla de estadísticas) */
+export const BAYES_EXPEDICIONES = 5;
 
 // dones dúo (relaciones entre ecos)
 Object.assign(BOONS, DUO_BOONS);

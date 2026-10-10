@@ -696,6 +696,18 @@ export const SPRITES: Record<string, string[]> = {
     '..yyyyy..',
     '...yyy...',
   ],
+  // La Entropía (escultura amarilla del campus UDEM… o un montón de papas)
+  i_entropia: [
+    '....yy...',
+    '...yEy.y.',
+    '..yyy.yE.',
+    '...yEyyy.',
+    '..yyyEy..',
+    '.yEyyy...',
+    '..yyEyy..',
+    '.yyyyEyy.',
+    '.ggggggg.',
+  ],
   i_book: [
     '.yyyyyyy.',
     '.ywwwwwky',
@@ -1024,6 +1036,14 @@ const FIG: Record<string, { rows: string[]; ov: Record<string, string> }> = {
       '...sssss', '....ssss', '.....sss', '...cWWWt', '..ccWWWt', '.cccccWt', 'cccccccc', 'cccccccc', 'cccccccc',
     ]),
     ov: { h: '#2a1e16', s: '#e4c8b0', q: '#b8987e', k: '#2a2a3a', c: '#5a4a36', W: '#e8e4dc', t: '#3a4a6a' },
+  },
+  fig_bayes: {
+    // reverendo del siglo XVIII: peluca blanca, sotana negra y alzacuello con bandas blancas
+    rows: mirrorHalf([
+      '........', '....wwww', '...wwwww', '..wwwsss', '..wwssss', '..wwskks', '..wwssss', '.wwwsssq',
+      '.wwwssss', '..ww.sss', '.....sss', '...cccWW', '..ccccWW', '.cccccWc', 'cccccccc', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { w: '#e4e0d8', s: '#e0c0a4', q: '#b8987e', k: '#2a2a3a', c: '#18161c', W: '#f0ece4' },
   },
   fig_joule: {
     rows: mirrorHalf([

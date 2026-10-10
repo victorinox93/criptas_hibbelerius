@@ -3,7 +3,10 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
+import { addErgios, FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
+import { makeHeroFromAvatar } from '../art/sprites';
+import { cargarHuellas, datosDe, HONRA_ERGIOS, usarHuella } from '../huellas';
+import { ENEMIES } from '../data/enemies';
 import { topBar } from '../ui/hud';
 import { button, embers, engraneGfx, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { CONSEJOS } from '../data/glosario';
@@ -197,6 +200,11 @@ export class MapScene extends Phaser.Scene {
       });
     }
 
+    // lápidas de compañeros (llegan del servidor; se dibujan cuando estén)
+    const lapidas = () => this.dibujarLapidas(run.map.filter((n) => n.type !== 'jefe'), nodeXY, tip);
+    if (run.huellas?.acto === (run.acto ?? 1)) lapidas();
+    else void cargarHuellas(() => { if (this.scene.isActive()) lapidas(); });
+
     // héroe en el mapa
     const hp = current ? nodeXY(current) : { x: 30, y: 280 };
     const hero = this.add.image(hp.x, hp.y - 46, 'hero').setScale(1);
@@ -267,8 +275,12 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Combat', { kind: n.floor <= 1 ? 'easy' : 'normal', floor: n.floor });
       case 'elite':
         return fadeTo(this, 'Combat', { kind: 'elite', floor: n.floor });
-      case 'jefe':
+      case 'jefe': {
+        const r = Game.run!;
+        const signos = r.huellas?.acto === (r.acto ?? 1) ? r.huellas.signos : [];
+        if (signos.length && !r.fantasma) return this.elegirSigno(n.floor, signos);
         return fadeTo(this, 'Combat', { kind: 'boss', floor: n.floor });
+      }
       case 'fogata':
         return fadeTo(this, 'Campfire', { floor: n.floor });
       case 'runa':
@@ -282,5 +294,84 @@ export class MapScene extends Phaser.Scene {
       case 'taberna':
         return fadeTo(this, 'Taberna', { floor: n.floor });
     }
+  }
+
+  /** Lápidas: donde cayó un compañero del grupo (mismo acto y piso). Clic = honrar (+Ergios, una vez) */
+  private dibujarLapidas(nodos: MapNode[], nodeXY: (n: MapNode) => { x: number; y: number }, tip: Tooltip) {
+    const r = Game.run!;
+    const h = r.huellas;
+    if (!h?.lapidas.length) return;
+    const usados = new Map<string, number>();
+    for (const l of h.lapidas) {
+      const enPiso = nodos.filter((n) => n.floor === Math.max(0, Math.min(l.piso, Math.max(...nodos.map((m) => m.floor)))));
+      if (!enPiso.length) continue;
+      const n = enPiso[l.id % enPiso.length];
+      const k = `${n.id}`;
+      const off = usados.get(k) ?? 0;
+      usados.set(k, off + 1);
+      const { x, y } = nodeXY(n);
+      const lx = x + 30 + off * 22, ly = y + 30;
+      const honrada = h.honradas.includes(l.id);
+      const brillo = this.add.circle(lx, ly - 4, 18, honrada ? 0xe8c15a : 0x9ad8f0, 0.12).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: brillo, alpha: 0.03, scale: 1.25, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      const g = this.add.graphics({ x: lx, y: ly });
+      const lapida = (oro: boolean) => {
+        g.clear();
+        g.fillStyle(0x000000, 0.5).fillEllipse(0, 13, 30, 8);
+        g.fillStyle(0x0d0b10, 1).fillRoundedRect(-12, -19, 24, 32, { tl: 12, tr: 12, bl: 2, br: 2 });
+        g.fillStyle(oro ? 0xb8b0a0 : 0x8a8698, 1).fillRoundedRect(-10, -17, 20, 29, { tl: 10, tr: 10, bl: 1, br: 1 });
+        g.fillStyle(oro ? 0xe8c15a : 0x3a3644, 1).fillRect(-1.5, -12, 3, 14).fillRect(-6, -7, 12, 3);
+      };
+      lapida(honrada);
+      const d = datosDe(l);
+      const enemigo = d.por ? (ENEMIES[d.por]?.name ?? d.por) : '¿?';
+      const z = this.add.zone(lx, ly - 3, 26, 34).setInteractive({ useHandCursor: !honrada });
+      z.on('pointerover', () => tip.show(lx + 14, ly - 20, `Aquí cayó ${l.alias}`, `Lo venció: ${enemigo}${d.concepto ? `\nFalló una pregunta de: ${d.concepto}` : ''}\n${honrada ? 'Ya la honraste.' : `Clic para honrarla (+${HONRA_ERGIOS} Ergios).`}`));
+      z.on('pointerout', () => tip.hide());
+      z.on('pointerdown', () => {
+        if (h.honradas.includes(l.id)) return;
+        h.honradas.push(l.id);
+        addErgios(HONRA_ERGIOS);
+        usarHuella(l.id);
+        saveLocal();
+        audio.sfx('coin');
+        lapida(true);
+        brillo.setFillStyle(0xe8c15a, 0.12);
+        const t = txt(this, lx, ly - 30, `Honraste a ${l.alias} · +${HONRA_ERGIOS}`, 15, CSS.gold).setOrigin(0.5).setStroke('#000', 4);
+        this.tweens.add({ targets: t, y: t.y - 20, alpha: 0, delay: 900, duration: 700, onComplete: () => t.destroy() });
+      });
+    }
+  }
+
+  /** Antes del jefe: signos dorados de compañeros que ya lo vencieron. Puedes invocar a uno. */
+  private elegirSigno(floor: number, signos: { id: number; alias: string; datos: string }[]) {
+    const r = Game.run!;
+    const layer = this.add.container(0, 0).setDepth(5000);
+    layer.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.82).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, 150, 80, W - 300, 380, 0x0c0a10, 0xe8c15a, 0.97);
+    layer.add(g);
+    layer.add(txt(this, W / 2, 96, 'Signos dorados en el suelo', 28, CSS.gold).setOrigin(0.5, 0));
+    layer.add(txt(this, W / 2, 134, 'Compañeros de tu grupo que ya vencieron a este jefe dejaron su signo.\nPuedes invocar a uno para que pelee a tu lado. Si ganan, a él le llega Momentum.', 16, CSS.bone, { align: 'center' }).setOrigin(0.5, 0));
+    const ir = (f?: { id: number; alias: string; datos: string }) => {
+      if (f) { r.fantasma = { id: f.id, alias: f.alias, avatar: datosDe(f).avatar ?? '{}', acto: r.acto ?? 1 }; saveLocal(); }
+      fadeTo(this, 'Combat', { kind: 'boss', floor });
+    };
+    signos.slice(0, 3).forEach((sg, i) => {
+      const x = W / 2 + (i - (Math.min(3, signos.length) - 1) / 2) * 200, y = 268;
+      let av: Record<string, unknown> = {};
+      try { av = JSON.parse(datosDe(sg).avatar ?? '{}'); } catch { av = {}; }
+      const key = `signo_${sg.id}`;
+      try { makeHeroFromAvatar(this, av as never, key); } catch { /* avatar raro: sin dibujo */ }
+      if (this.textures.exists(key)) {
+        const halo = this.add.image(x, y, key).setScale(2.6).setTintFill(0xe8c15a).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD);
+        const im = this.add.image(x, y, key).setScale(2.5).setAlpha(0.85);
+        this.tweens.add({ targets: [im, halo], y: y - 6, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        layer.add([halo, im]);
+      }
+      layer.add(txt(this, x, y + 64, sg.alias || 'Compañero', 18, CSS.gold).setOrigin(0.5, 0));
+      layer.add(button(this, x, y + 112, 160, 34, 'Invocar', () => ir(sg), { color: UI.gold, size: 18 }));
+    });
+    layer.add(button(this, W / 2, 432, 200, 32, 'Pelear solo', () => ir(), { size: 17 }));
   }
 }

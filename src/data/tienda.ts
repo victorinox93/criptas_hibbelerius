@@ -103,8 +103,8 @@ export const ACCESORIOS: Accesorio[] = [
     rows: ['...yy...', '.yyNNyy.', 'yyNyyNyy', 'yyyyyyyy', '.yyyyyy.'], ancla: [4, 3],
   },
   {
-    id: 'calabaza', nombre: 'Calabaza', slot: 'cabeza', cat: 'halloween', precio: 10, desc: 'Para la noche de brujas. Cuidado con la Bruja de la Fricción.',
-    rows: ['....g.....', '..oooooo..', '.oOkooOko.', '.oooooooo.', '.ookkkkoo.', '..oooooo..'], ancla: [5, 6],
+    id: 'calabaza', nombre: 'Cabeza de Calabaza', slot: 'cabeza', cat: 'halloween', precio: 10, desc: 'Para la noche de brujas. Cuidado con la Bruja de la Fricción.',
+    rows: ['......Gg......', '...oooOOooo...', '.ooOoooOoooOo.', 'ooOooooOooooOo', 'oOoyyooOooyyOo', 'oOoykooOookyOo', 'oOooooyyooooOo', 'oOoooooooooOoo', 'oOykykyykykyOo', 'oOoykykykykoOo', '.ooOoooOoooOo.', '...ooooooooo..'], ancla: [7, 5],
   },
   // ── Navidad ──
   {
@@ -130,8 +130,8 @@ export const ACCESORIOS: Accesorio[] = [
     rows: ['..rrrrrr..', '.rrRrrRrr.', '...yyyy...', '..yyyyyy..', '.yyyyyyyy.', '.yyY..Yyy.'], ancla: [5, 4],
   },
   {
-    id: 'astronauta', nombre: 'Casco de Astronauta', slot: 'cabeza', cat: 'scifi', precio: 10, desc: 'En la Luna, g = 1.62 m/s². Aquí no te sirve, pero luce.',
-    rows: ['...WWWWWW...', '..WBBBBBBW..', '.WBWBBBBBBW.', '.WBBWBBBBBW.', '.WBBBBBBBBW.', '.WBBBBBBBBW.', '..WBBBBBBW..', '..WWWWWWWW..', '..llllllll..'], ancla: [6, 3],
+    id: 'astronauta', nombre: 'Escafandra de Astronauta', slot: 'cabeza', cat: 'scifi', precio: 10, desc: 'En la Luna, g = 1.62 m/s². Aquí no te sirve, pero luce.',
+    rows: ['....WWWWWW....', '..WWBBBBBBWW..', '.WBiBBBBBBBBW.', '.WBBiBBBBBBBW.', 'WBBBiBBBBBBBBW', 'WBBBBBBBBBBBBW', 'WBBBBBBBBBBBBW', 'WBBBBBBBBBBBBW', '.WBBBBBBBBBBW.', '.WWBBBBBBBBWW.', '..llllllllll..', '.llylllllylll.'], ancla: [7, 5],
   },
   {
     id: 'minero', nombre: 'Casco de Minero', slot: 'cabeza', cat: 'clasicos', precio: 5, desc: 'Con lámpara, para las Galerías de la Fricción.',
@@ -219,7 +219,7 @@ export const ACCESORIOS: Accesorio[] = [
   // ── Día de Muertos (extra) ──
   {
     id: 'mascara_calavera', nombre: 'Máscara de Calavera', slot: 'cara', cat: 'muertos', precio: 10, desc: 'Calaverita de azúcar con flores.',
-    rows: ['.WWWWWWW.', 'WWkWWWkWW', 'WrWWkWWrW', '.WkWkWkW.'], ancla: [4, 1],
+    rows: ['...WWWWWWWW...', '..WWfWWWWbWW..', '.WWfyfWWbybWW.', '.WWWfWWWWbWWW.', 'WWWWWWWWWWWWWW', 'WWWWWWWWWWWWWW', 'WWkkkWWWWkkkWW', 'WkkpkkWWkkpkkW', 'WkkkkkWWkkkkkW', 'WWWWWkWWkWWWWW', '.WWkWkWkWkWkW.', '..WWWWWWWWWW..'], ancla: [8, 8],
   },
   // ── Navidad (extra) ──
   {
@@ -234,10 +234,12 @@ export const ACCESORIOS: Accesorio[] = [
   { id: 'cafe_examenes', nombre: 'Café de Exámenes', slot: 'mano', cat: 'udem', precio: 5, desc: 'Semana de parciales: la cafeína no es energía cinética, pero ayuda.', rows: ['.w.w.', '.....', 'WWWWW', 'WnnnW', 'WuuuW', 'WnnnW', '.WWW.'], ancla: [2, 5] },
   { id: 'credencial', nombre: 'Credencial de Estudiante', slot: 'mano', cat: 'udem', precio: 4, desc: 'Abre la biblioteca, el gimnasio y, con suerte, el estacionamiento.', rows: ['.y...', '.y...', 'uuuuu', 'uWsWu', 'uWWWu', 'uwwwu', 'uuuuu'], ancla: [2, 4] },
   { id: 'lentes_lab', nombre: 'Lentes de Laboratorio', slot: 'cara', cat: 'udem', precio: 4, desc: 'Protección ocular: las partículas también obedecen F = m·a.', rows: ['BBBBBBBBB', 'BiiBBBiiB'], ancla: [4, 0] },
+  { id: 'mini_entropia', nombre: 'Réplica de La Entropía', slot: 'mano', cat: 'udem', precio: 12, desc: 'La escultura amarilla del campus, en miniatura. ¿Bloques en desorden… o papas? ΔS ≥ 0.', rows: ['..ay..', '.aYa..', '..yay.', '.ayY..', '..aYya', '.yaY..', 'ayYa..', '.yaYy.', '..aYa.', '.yaYy.', 'aYyaY.', '.llll.'], ancla: [2, 10] },
+  { id: 'papas_entropia', nombre: 'Papas a la Entropía', slot: 'mano', cat: 'udem', precio: 7, desc: 'Lo que todos ven en la escultura. Crujientes, amarillas y en máximo desorden.', rows: ['.a.y.a', 'a.ya.y', '.yaYay', 'ya.yaY', 'rrrrrr', 'rWrrWr', 'rrrrrr', '.rrrr.'], ancla: [2, 5] },
   { id: 'termo', nombre: 'Termo Universitario', slot: 'mano', cat: 'udem', precio: 5, desc: 'Conserva el calor: casi un sistema aislado.', rows: ['.ll.', 'uuuu', 'uyyu', 'uuuu', 'uUUu', 'uuuu', '.uu.'], ancla: [1, 4] },
   // ── México ──
   { id: 'sombrero_charro', nombre: 'Sombrero de Charro', slot: 'cabeza', cat: 'mexico', precio: 12, desc: 'Ala ancha, momento de inercia enorme. ¡Ajúa!', rows: ['.....nnnn.....', '....nyyyyn....', '....nnnnnn....', '.nnnnnnnnnnnn.', 'nyynnyynnyynny'], ancla: [7, 5] },
-  { id: 'mascara_luchador', nombre: 'Máscara de Luchador', slot: 'cara', cat: 'mexico', precio: 9, desc: 'Llave de tercera ley: toda acción tiene su reacción… en el ring.', rows: ['.rrrrrrr.', 'rWWrrrWWr', 'rWkrrrkWr', '.rryyyrr.'], ancla: [4, 2] },
+  { id: 'mascara_luchador', nombre: 'Máscara de Luchador', slot: 'cara', cat: 'mexico', precio: 9, desc: 'Llave de tercera ley: toda acción tiene su reacción… en el ring.', rows: ['...rrrrrrrr...', '..rrrrrrrrrr..', '.rrrrryyrrrrr.', '.rrrryrryrrrr.', 'rrrryrrrryrrrr', 'rrryrrrrrryrrr', 'rryrrrrrrrryrr', 'rWWWWrrrrWWWWr', 'rWkkWrrrrWkkWr', 'rrWWrrrrrrWWrr', '.rrrrsssssrrr.', '..rrrrrrrrrr..'], ancla: [8, 8] },
   { id: 'paliacate', nombre: 'Paliacate', slot: 'cara', cat: 'mexico', precio: 5, desc: 'Rojo con flores blancas. Para el polvo de las criptas.', rows: ['rrWrrWrr', '.rrWrrr.', '..rrr...'], ancla: [4, -2] },
   { id: 'maracas', nombre: 'Maraca', slot: 'mano', cat: 'mexico', precio: 6, desc: 'Oscilación forzada con ritmo.', rows: ['.rr.', 'rgrr', 'rrgr', '.rr.', '.n..', '.n..', '.n..'], ancla: [1, 5] },
   { id: 'elote', nombre: 'Elote con Chile', slot: 'mano', cat: 'mexico', precio: 6, desc: 'Con limón, mayonesa y chile del que pica.', rows: ['..yy.', '.yyyy', '.yryy', '.yyyy', '.yyry', '.yyyy', '.GGG.', '..n..', '..n..'], ancla: [2, 7] },
@@ -249,7 +251,7 @@ export const ACCESORIOS: Accesorio[] = [
   { id: 'sombrero_bruja', nombre: 'Sombrero de Bruja', slot: 'cabeza', cat: 'halloween', precio: 12, desc: 'Puntiagudo y con hebilla. La Bruja de la Fricción tiene uno igual.', rows: ['......dd...', '.....ddd...', '....ddd....', '...dddd....', '...dPdd....', '.ddddddddd.', 'ddddddddddd'], ancla: [5, 7] },
   { id: 'antifaz_murcielago', nombre: 'Antifaz de Murciélago', slot: 'cara', cat: 'halloween', precio: 8, desc: 'Ecolocalización: mide distancias con el tiempo de ida y vuelta del sonido.', rows: ['p.......p', 'pp.ppp.pp', 'ppppppppp', '.pWp.pWp.'], ancla: [4, 3] },
   { id: 'diablito', nombre: 'Diadema de Diablito', slot: 'cabeza', cat: 'halloween', precio: 7, desc: 'Cuernitos rojos. Travesura garantizada.', rows: ['r......r', 'rr....rr', '.rrrrrr.'], ancla: [3.5, 3] },
-  { id: 'venda_momia', nombre: 'Vendas de Momia', slot: 'cara', cat: 'halloween', precio: 8, desc: 'Tres mil años de antigüedad y todavía con dudas de Dinámica.', rows: ['WwWwWwWwW', 'Wk.WwW.kW', 'wWwWwWwWw'], ancla: [4, 1] },
+  { id: 'venda_momia', nombre: 'Vendas de Momia', slot: 'cara', cat: 'halloween', precio: 8, desc: 'Tres mil años de antigüedad y todavía con dudas de Dinámica.', rows: ['..WwWwWwWwWw..', '.wWwWwWwWwWwW.', 'WwWwWwWwWwWwWw', 'wWwWwWwWwWwWwW', 'WwWwWwWwWwWwWw', 'wWwWwWwWwWwWwW', 'WwWwWwWwWwWwWw', 'wWkkwWwWwkkwWw', 'WwkrkwWwWkrkWw', 'wWwWwWwWwWwWwW', '.wWwWwWwWwWwW.', '..WwWwWwWwWw..'], ancla: [8, 8] },
   { id: 'escoba', nombre: 'Escoba Voladora', slot: 'mano', cat: 'halloween', precio: 11, desc: 'Sustentación mágica. La física aún la está investigando.', rows: ['..n..', '..n..', '..n..', '..n..', '..n..', '..n..', '..N..', '.yYy.', 'yYyYy', 'YyYyY', 'yYyYy'], ancla: [2, 4] },
   { id: 'caldero', nombre: 'Caldero Burbujeante', slot: 'mano', cat: 'halloween', precio: 10, desc: 'Transferencia de calor por convección. Y algo de magia verde.', rows: ['.v.v..', '..v...', 'kkkkkk', 'kvvvvk', 'keeeek', 'keeeek', '.kkkk.'], ancla: [3, 2] },
   { id: 'linterna_calabaza', nombre: 'Linterna de Calabaza', slot: 'mano', cat: 'halloween', precio: 8, desc: 'Ilumina las criptas. Cuidado: la vela no es infinita.', rows: ['..n..', '..n..', '.ooo.', 'oOkOo', 'ooooo', 'okkko', '.ooo.'], ancla: [2, 1] },
@@ -264,8 +266,8 @@ export const ACCESORIOS: Accesorio[] = [
   { id: 'rosca_reyes', nombre: 'Rosca de Reyes', slot: 'mano', cat: 'navidad', precio: 11, desc: 'Si te sale el muñeco, invitas los tamales.', rows: ['..tttttt..', '.tryGtyrt.', 'tt......tt', '.tttttttt.'], ancla: [5, 3] },
   { id: 'esfera', nombre: 'Esfera Navideña', slot: 'mano', cat: 'navidad', precio: 8, desc: 'Una esfera de vidrio: I = ⅔·m·r² (cascarón delgado).', rows: ['..y..', '.yyy.', '.rrr.', 'rrWrr', 'rrrrr', '.rrr.'], ancla: [2, 0] },
   // ── Ciencia ficción ──
-  { id: 'casco_ciber', nombre: 'Casco Cibernético', slot: 'cabeza', cat: 'scifi', precio: 12, desc: 'Con antena y visor de datos. Calcula trayectorias en tiempo real.', rows: ['...c...', '...l...', '.lllll.', 'llBBBll', 'lllllll'], ancla: [3, 5] },
-  { id: 'visor_ciber', nombre: 'Visor Cyberpunk', slot: 'cara', cat: 'scifi', precio: 10, desc: 'Luz de neón sobre los ojos. Ves los vectores de fuerza.', rows: ['eeeeeeeee', 'cfcfcfcfc'], ancla: [4, 0] },
+  { id: 'casco_ciber', nombre: 'Cabeza de Robot', slot: 'cabeza', cat: 'scifi', precio: 12, desc: 'Cabeza completa de autómata, con antena. Calcula trayectorias en tiempo real.', rows: ['......cc......', '......ll......', '.llllllllllll.', 'llWlllllllllll', 'lleeeeeeeeeell', 'lecccceeccccel', 'lecBcceecBccel', 'lecccceeccccel', 'lleeeeeeeeeell', 'llleWeWeWeWlll', '.llleeeeeelll.', '..llllllllll..'], ancla: [7, 5] },
+  { id: 'visor_ciber', nombre: 'Visor Cyberpunk', slot: 'cara', cat: 'scifi', precio: 10, desc: 'Luz de neón sobre los ojos. Ves los vectores de fuerza.', rows: ['eeeeeeeeeeeeee', 'ecfcfcfcfcfcfe', 'eeeeeeeeeeeeee'], ancla: [8, 1] },
   { id: 'pistola_rayos', nombre: 'Pistola de Rayos', slot: 'mano', cat: 'scifi', precio: 12, desc: 'Dispara fotones: momento sin masa, p = E/c.', rows: ['...c....', '.lllll..', 'lcclllvv', '.lll....', '..e.....', '..e.....'], ancla: [2, 4] },
   { id: 'antenas_alien', nombre: 'Antenas Alienígenas', slot: 'cabeza', cat: 'scifi', precio: 8, desc: 'Captan señales de otras galaxias (y de tu profesor).', rows: ['v.....v', '.v...v.', '..vvv..'], ancla: [3, 3] },
   { id: 'botas_cohete', nombre: 'Botas Cohete', slot: 'pies', cat: 'scifi', precio: 14, desc: 'Empuje = flujo de masa × velocidad de salida. ¡Despegue!', rows: ['.lll..', '.lll..', '.llll.', 'llllll', '.oyo..', '..o...'], ancla: [3, 4] },
@@ -284,6 +286,7 @@ export const ACCESORIOS: Accesorio[] = [
   { id: 'manzana', nombre: 'Manzana de Newton', slot: 'mano', cat: 'criptas', precio: 6, desc: 'Cayó con a = 9.81 m/s². La historia hizo el resto.', rows: ['..g.', '.Gn.', 'rrrr', 'rWrr', 'rrrr', '.rr.'], ancla: [2, 3] },
   { id: 'bobina_tesla', nombre: 'Bobina de Tesla', slot: 'mano', cat: 'criptas', precio: 13, desc: 'Resonancia eléctrica. Chispas incluidas.', rows: ['.B.B.', 'BBcBB', '.lll.', '.yyy.', '.yyy.', '.yyy.', '.lll.', '..n..', '..n..'], ancla: [2, 7] },
   { id: 'melena_einstein', nombre: 'Melena de Einstein', slot: 'cabeza', cat: 'criptas', precio: 12, desc: 'Despeinada a velocidades relativistas.', rows: ['w.w.w.w.w', '.wwwwwww.', 'wwwwwwwww', 'ww.....ww'], ancla: [4, 3] },
+  { id: 'mascara_layla', nombre: 'Máscara de Layla', slot: 'cabeza', cat: 'criptas', precio: 18, desc: 'Atigrada, con bigotes y ojos verdes. Layla dice que no se parece. Miau.', rows: ['q..........q', 'qq........qq', 'qsq......qsq', 'qqqqqqqqqqqq', 'qnqnqqqqnqnq', 'qqqqqqqqqqqq', 'qGGkqqqqGGkq', 'qqqqqWWqqqqq', 'qqqqqsWqqqqq', 'qnqWWWWWWqnq', '.qqWWWWWWqq.', '..qqqqqqqq..'], ancla: [6, 5] },
 ];
 
 export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Record<string, Accesorio>;

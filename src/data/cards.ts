@@ -122,6 +122,13 @@ export const CARDS: Record<string, CardDef> = {
     text: (s) => `+${s.extra} m/s² a tus ataques\neste turno. Roba 1 carta.`,
     lore: 'Con la misma masa, aumentar la aceleración aumenta proporcionalmente la fuerza: F ∝ a.',
   },
+  // v0.30 · inspirada en «La Entropía», la escultura amarilla del campus UDEM (dicen que parecen papas)
+  entropia_udem: {
+    id: 'entropia_udem', name: 'La Entropía', type: 'Habilidad', icon: 'i_entropia', concept: 'Entropía', rarity: 'rara', cls: 'neutral', target: 'self', exhaust: true,
+    stats: (up) => ({ cost: up ? 0 : 1, extra: up ? 3 : 2 }),
+    text: (s) => `Revuelve tu descarte\ndentro de tu mazo.\nRoba ${s.extra} cartas. Se agota.`,
+    lore: 'Segunda ley de la termodinámica: en un sistema aislado la entropía (el desorden) nunca disminuye. Como la escultura del campus: bloques que parecen caer… o papas a la francesa.',
+  },
   segunda: {
     id: 'segunda', name: 'Segunda Ley', type: 'Habilidad', icon: 'i_bolt', concept: '2ª ley', rarity: 'común', target: 'self',
     stats: (up) => ({ cost: 0, extra: up ? 2 : 1 }),

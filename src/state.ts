@@ -82,6 +82,12 @@ export interface Run {
   prohibidos?: string[]; // Problemas Prohibidos leídos del Necronomicón
   amPacto?: number; // runas que AM puede resolver por ti
   aliado?: string; // alma en pena que te acompaña (src/data/almas.ts); sólo una por expedición
+  /** v0.30 · huellas de compañeros del grupo para el acto actual (lápidas y signos) */
+  huellas?: { acto: number; lapidas: import('./api').Huella[]; signos: import('./api').Huella[]; honradas: number[] };
+  /** v0.30 · fantasma de un compañero invocado para el jefe del acto */
+  fantasma?: { id: number; alias: string; avatar: string; acto: number };
+  /** último concepto que fallaste (se escribe en tu lápida) */
+  ultimoFallo?: string;
   finalizado?: boolean; // ya se sumaron los bonos finales
   desglose?: Record<string, number>; // de dónde salió el puntaje (src/data/puntaje.ts)
   tiempo?: number; // segundos de juego activo (para la hoja «Resumen» y «Actividad»)

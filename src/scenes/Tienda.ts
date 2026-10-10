@@ -110,7 +110,7 @@ export class TiendaScene extends Phaser.Scene {
     L(g);
     const key = `tnd_${a.id}`;
     makeHeroFromAvatar(this, { ...av, [a.slot]: a.id }, key);
-    L(this.add.image(x + CW / 2, y + 48, key).setScale(1.4));
+    L(this.add.image(x + CW / 2, y + 84, key).setOrigin(0.5, 1).setScale(1.8));
     const n = txt(this, x + CW / 2, y + 86, a.nombre, 14, CSS.bone, { align: 'center' }).setOrigin(0.5, 0);
     if (n.width > CW - 8) n.setScale((CW - 8) / n.width, 1);
     L(n);

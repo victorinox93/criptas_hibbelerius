@@ -100,6 +100,7 @@ export const T = {
       ['Inspirado en', 'Slay the Spire (Mega Crit), Loop Hero (Four Quarters) y Hades (Supergiant Games)'],
       ['Pixel art', 'Diseñado en código por Victorino Sepúlveda Arróniz con asistencia de Claude (Anthropic)'],
       ['Música', '«Cold Soul» (partes 1–3) de Lost in The Forest · lostintheforest.bandcamp.com (clic para visitar). Combates y jefes: dungeon synth generado en vivo con Web Audio'],
+      ['Música de Layla', '«Kitty Paw» de Shook (álbum «Synth Funk», 2024) · shook.bandcamp.com/album/synth-funk (clic para visitar)'],
       ['Tecnología', 'Phaser 3 · Vite · Google Apps Script'],
       ['Tipografías', 'VT323 (Peter Hull) y Pirata One (Rodrigo Fuenzalida y Nicolás Massi), licencia SIL OFL'],
     ] as [string, string][],

@@ -21,8 +21,10 @@ export class CreditsScene extends Phaser.Scene {
     T.creditos.filas.forEach(([k, v], i) => {
       txt(this, 80, y, k, 19, CSS.dim);
       const t = txt(this, 270, y - 2, v, i === 0 ? 24 : 19, i === 0 ? CSS.gold : CSS.bone, { wordWrap: { width: W - 350 } });
-      if (v.includes('bandcamp.com')) {
-        t.setInteractive({ useHandCursor: true }).on('pointerdown', () => window.open('https://lostintheforest.bandcamp.com/album/cold-soul', '_blank'));
+      const url = v.match(/([a-z0-9-]+\.bandcamp\.com[^\s)]*)/i)?.[1];
+      if (url) {
+        const link = url.includes('/') ? `https://${url}` : 'https://lostintheforest.bandcamp.com/album/cold-soul';
+        t.setInteractive({ useHandCursor: true }).on('pointerdown', () => window.open(link, '_blank'));
         t.on('pointerover', () => t.setColor(CSS.gold)).on('pointerout', () => t.setColor(CSS.bone));
       }
       y += Math.max(30, t.height + 8);

@@ -57,7 +57,7 @@ export class VestidorScene extends Phaser.Scene {
       this.layer.add(g);
       const key = `vacc_${a.id}`;
       makeHeroFromAvatar(this, { ...av, [a.slot]: a.id }, key);
-      const im = this.add.image(x + CW / 2, y + 40, key).setScale(1.35);
+      const im = this.add.image(x + CW / 2, y + 71, key).setOrigin(0.5, 1).setScale(1.5);
       if (!tiene) im.setTint(0x2a2630);
       this.layer.add(im);
       const nombre = txt(this, x + CW / 2, y + 72, a.nombre, 15, tiene ? CSS.bone : '#6a6478', { align: 'center' }).setOrigin(0.5, 0);
@@ -111,7 +111,7 @@ export class VestidorScene extends Phaser.Scene {
       // vista previa: tu héroe con este cosmético
       const key = `vest_${parte.id}_${i}`;
       makeHeroFromAvatar(this, { ...av, [parte.id]: i }, key);
-      const im = this.add.image(x + CW / 2, y + 40, key).setScale(1.35);
+      const im = this.add.image(x + CW / 2, y + 71, key).setOrigin(0.5, 1).setScale(1.5);
       if (locked) im.setTint(0x2a2630);
       this.layer.add(im);
       const nombre = txt(this, x + CW / 2, y + 72, c.name, 15, locked ? '#6a6478' : CSS.bone, { align: 'center' }).setOrigin(0.5, 0);

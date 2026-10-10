@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { BOONS, FIGURES, FigureDef } from '../data/figures';
-import { addCard, addEntropia, addErgios, Game, logEvent, saveLocal, sumarAfinidad, syncRun, unlock } from '../state';
+import { BAYES_EXPEDICIONES, BOONS, FIGURES, FigureDef } from '../data/figures';
+import { addCard, addEntropia, addErgios, expediciones, Game, logEvent, saveLocal, sumarAfinidad, syncRun, unlock } from '../state';
 import { DUOS, Duo, Rivalidad, rivalesDe } from '../data/relaciones';
 import { CardInst, cardName, evolucionable } from '../data/cards';
 import { ENTROPIA } from '../data/abismo';
@@ -40,7 +40,7 @@ export function duosListos(figId: string): Duo[] {
 function pickFigure(): FigureDef {
   const r = Game.run!;
   const acto = r.acto ?? 1;
-  const posibles = FIGURES.filter((f) => !f.act || acto >= f.act);
+  const posibles = FIGURES.filter((f) => (!f.act || acto >= f.act) && (f.id !== 'bayes' || expediciones() >= BAYES_EXPEDICIONES));
   // en el Núcleo, los ecos del Núcleo (Asimov y Turing) salen más seguido
   const delActo = posibles.filter((f) => f.act === acto && !r.met.includes(f.id));
   if (delActo.length && Math.random() < 0.6) return Phaser.Utils.Array.GetRandom(delActo);

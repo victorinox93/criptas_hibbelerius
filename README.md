@@ -380,3 +380,16 @@ Todo está en `src/data/relaciones.ts` (datos e historia real) y `src/scenes/San
   - Lo que antes era de temporada ahora cuesta más (8–16 ◈).
   - **Oferta del día:** un artículo con −40 %, igual para todo el grupo, cambia a medianoche.
 - **Menú:** el panel del alumno muestra sus **expediciones** terminadas. Al iniciar sesión, el servidor las cuenta en la hoja Partidas (requiere publicar la nueva versión de `Code.gs`; sin eso se estima con el progreso guardado).
+
+## v0.30.0 · Lápidas y signos, Thomas Bayes y La Entropía
+
+- **Huellas entre compañeros (estilo Souls, asíncrono, sólo dentro del mismo grupo y con alias):**
+  - **Lápidas:** al morir dejas una lápida en tu acto y piso. Tus compañeros la ven en su mapa (hasta 6 por acto), con quién te venció y el último concepto que fallaste. Honrarla da +6 Ergios (una vez por expedición).
+  - **Signos dorados:** al vencer a un jefe dejas tu signo (uno por jefe; se actualiza). Antes de ese jefe, un compañero puede invocar tu fantasma (hasta 3 opciones): pelea a su lado y golpea al final de cada turno. Si ganan, recibes +1 ◈ Momentum por ayuda (tope 5 por aviso) y un aviso en el menú con quién te invocó.
+  - Hoja nueva **Huellas** (se crea sola). Endpoints: `dejarHuella`, `huellas`, `usarHuella`, `avisos`.
+- **Thomas Bayes** (eco): aparece en los santuarios cuando el alumno lleva **5 expediciones**. Dones: Prior Informativo (robas más en el primer turno), Actualización Bayesiana (fallar no reinicia la racha; nivel 2: +10 Ergios por acierto) y Distribución Posterior (curación al ganar según tus aciertos).
+- **Estadísticas** (menú, se abre a las 5 expediciones): tiempo, expediciones, victorias, derrotas, tasa de victoria, mejor acto, el enemigo que más te vence y los temas que más se complican, con la estimación bayesiana P = (aciertos + 1)/(intentos + 2). Datos del servidor (`estadisticas`, a partir de Partidas y Eventos).
+- **La Entropía (UDEM):** carta rara neutral («Revuelve tu descarte dentro de tu mazo y roba 2/3; se agota») inspirada en la escultura amarilla del campus, y dos accesorios: Réplica de La Entropía y Papas a la Entropía.
+- **Cosméticos de cabeza completa:** Cabeza de Calabaza, Escafandra de Astronauta, Cabeza de Robot, Máscara de Luchador, Calavera, Vendas de Momia, Visor Cyberpunk ancho y la nueva Máscara de Layla. Vistas previas más grandes en la tienda y el vestidor.
+- **Música de la tienda:** «Kitty Paw» de Shook (álbum «Synth Funk», 2024 · shook.bandcamp.com/album/synth-funk), en créditos y en el Soundtrack. El botón del menú dice «Tienda de Layla».
+- **Limpieza de pruebas:** menú de la hoja Criptas → «Limpiar datos de prueba…» (por matrícula o clave de grupo, o TODO para vaciar Partidas, Eventos y Huellas conservando las cuentas).

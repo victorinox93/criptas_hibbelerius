@@ -25,6 +25,8 @@ var HEAD = {
   Partidas: ['runId', 'matricula', 'grupo', 'alias', 'clase', 'inicio', 'actualizado', 'acto', 'pisoMax', 'vida',
     'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo', 'gravedad', 'minutos'],
   Eventos: ['fecha', 'matricula', 'grupo', 'runId', 'tipo', 'concepto', 'correcto', 'detalle'],
+  // v0.30: lápidas (donde murió un compañero) y signos de invocación (quien venció a un jefe)
+  Huellas: ['fecha', 'matricula', 'grupo', 'alias', 'tipo', 'acto', 'piso', 'jefe', 'datos', 'usos', 'avisado'],
 };
 
 // ───────────────────────── Configuración ─────────────────────────
@@ -49,6 +51,7 @@ function onOpen() {
     .addItem('Actualizar panel', 'actualizarPanel')
     .addItem('Configurar hojas', 'setup')
     .addItem('Actualizar panel cada hora', 'instalarDisparador')
+    .addItem('Limpiar datos de prueba…', 'limpiarPruebas')
     .addSeparator()
     .addItem('Generar evidencia (reporte del proyecto)', 'generarEvidencia')
     .addItem('Crear formulario de retroalimentación', 'crearFormulario')
@@ -314,6 +317,92 @@ var ACTIONS = {
     }) };
   },
 
+  // ── v0.30 · Huellas: lápidas y signos (sólo entre alumnos del mismo grupo; se muestra el alias, nunca la matrícula) ──
+  dejarHuella: function (r) {
+    var u = auth_(r.token);
+    var tipo = r.tipo === 'signo' ? 'signo' : 'lapida';
+    var sh = sheet_('Huellas');
+    var fila = [new Date(), u.mat, u.grupo, u.alias, tipo, num_(r.acto), num_(r.piso), clean_(r.jefe, 20), clean_(r.datos, 1500), 0, 0];
+    if (tipo === 'signo') {
+      // un signo por alumno y jefe: se actualiza el anterior
+      var datos = rows_('Huellas');
+      for (var i = 0; i < datos.length; i++) {
+        if (datos[i][1] === u.mat && datos[i][4] === 'signo' && String(datos[i][7]) === fila[7]) {
+          sh.getRange(i + 2, 1, 1, 9).setValues([fila.slice(0, 9)]);
+          return { ok: true };
+        }
+      }
+    }
+    sh.appendRow(fila);
+    return { ok: true };
+  },
+
+  huellas: function (r) {
+    var u = auth_(r.token);
+    var acto = num_(r.acto);
+    var datos = rows_('Huellas');
+    var lapidas = [], signos = [], vistos = {};
+    for (var i = datos.length - 1; i >= 0; i--) {
+      var h = datos[i];
+      if (h[2] !== u.grupo || h[1] === u.mat || num_(h[5]) !== acto) continue;
+      var item = { id: i + 2, alias: h[3], tipo: h[4], piso: num_(h[6]), jefe: h[7], datos: h[8] };
+      if (h[4] === 'lapida' && lapidas.length < 6) lapidas.push(item);
+      if (h[4] === 'signo' && signos.length < 3 && !vistos[h[1]]) { vistos[h[1]] = true; signos.push(item); }
+    }
+    return { ok: true, lapidas: lapidas, signos: signos };
+  },
+
+  usarHuella: function (r) {
+    var u = auth_(r.token);
+    var sh = sheet_('Huellas');
+    var row = num_(r.id);
+    if (row < 2 || row > sh.getLastRow()) return { ok: true };
+    var h = sh.getRange(row, 1, 1, HEAD.Huellas.length).getValues()[0];
+    if (h[2] !== u.grupo || h[1] === u.mat) return { ok: true };
+    sh.getRange(row, 10).setValue(num_(h[9]) + 1);
+    var quien = clean_(u.alias || 'Alguien', 20);
+    var prev = String(h[8] || '');
+    // guardamos quién te invocó (los últimos) para el aviso
+    try { var d = JSON.parse(prev || '{}'); d.ayudados = (d.ayudados || []).concat([quien]).slice(-5); sh.getRange(row, 9).setValue(clean_(JSON.stringify(d), 1500)); } catch (e) {}
+    return { ok: true };
+  },
+
+  // ¿tus signos ayudaron a alguien? ¿honraron tus lápidas? (se consulta al entrar al menú)
+  avisos: function (r) {
+    var u = auth_(r.token);
+    var av = avisosHuellas_(u.mat);
+    return { ok: true, ayudas: av.ayudas, honras: av.honras, ayudantes: av.quienes };
+  },
+
+  // ── v0.30 · Estadísticas para la pantalla de Bayes ──
+  estadisticas: function (r) {
+    var u = auth_(r.token);
+    var partidas = 0, victorias = 0, derrotas = 0, abandonadas = 0, minutos = 0, mejorPiso = 0, mejorActo = 0;
+    var causas = {};
+    rows_('Partidas').forEach(function (p) {
+      if (p[1] !== u.mat) return;
+      var res = String(p[11] || '');
+      if (!res || res === 'en curso') return;
+      partidas++;
+      if (res === 'victoria') victorias++;
+      else if (res === 'derrota') { derrotas++; var c = String(p[12] || '¿?'); causas[c] = (causas[c] || 0) + 1; }
+      else abandonadas++;
+      minutos += num_(p[19]);
+      mejorPiso = Math.max(mejorPiso, num_(p[8]));
+      mejorActo = Math.max(mejorActo, num_(p[7]));
+    });
+    var temas = {};
+    rows_('Eventos').forEach(function (e) {
+      if (e[1] !== u.mat || !e[5] || e[6] === '') return;
+      var t = temas[e[5]] || (temas[e[5]] = [0, 0]);
+      t[1]++;
+      if (e[6] === true || e[6] === 'TRUE' || e[6] === 'true') t[0]++;
+    });
+    var lt = Object.keys(temas).map(function (k) { return [k, temas[k][0], temas[k][1]]; });
+    var lc = Object.keys(causas).map(function (k) { return [k, causas[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
+    return { ok: true, partidas: partidas, victorias: victorias, derrotas: derrotas, abandonadas: abandonadas, minutos: minutos, mejorPiso: mejorPiso, mejorActo: mejorActo, causas: lc, temas: lt };
+  },
+
   logEvent: function (r) {
     var u = auth_(r.token);
     sheet_('Eventos').appendRow([new Date(), u.mat, u.grupo, clean_(r.runId, 20), clean_(r.tipo, 20),
@@ -481,7 +570,14 @@ function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 function sheet_(n) {
-  var sh = SpreadsheetApp.getActive().getSheetByName(n);
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName(n);
+  if (!sh && HEAD[n]) {
+    // hojas nuevas de versiones posteriores (p. ej. Huellas) se crean solas
+    sh = ss.insertSheet(n);
+    sh.getRange(1, 1, 1, HEAD[n].length).setValues([HEAD[n]]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
+    sh.setFrozenRows(1);
+  }
   if (!sh) throw new Error('Falta la hoja ' + n + '. Ejecuta setup().');
   return sh;
 }
@@ -520,4 +616,60 @@ function clean_(v, max) {
 function num_(v) {
   var n = Number(v);
   return isFinite(n) ? n : 0;
+}
+
+// ───────────────────────── v0.30 · Huellas: avisos al iniciar sesión ─────────────────────────
+function avisosHuellas_(mat) {
+  var out = { ayudas: 0, honras: 0, quienes: [] };
+  var sh = SpreadsheetApp.getActive().getSheetByName('Huellas');
+  if (!sh || sh.getLastRow() < 2) return out;
+  var datos = sh.getRange(2, 1, sh.getLastRow() - 1, HEAD.Huellas.length).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    var h = datos[i];
+    if (h[1] !== mat) continue;
+    var nuevos = num_(h[9]) - num_(h[10]);
+    if (nuevos <= 0) continue;
+    if (h[4] === 'signo') {
+      out.ayudas += nuevos;
+      try { out.quienes = out.quienes.concat(JSON.parse(h[8] || '{}').ayudados || []); } catch (e) {}
+    } else out.honras += nuevos;
+    sh.getRange(i + 2, 11).setValue(num_(h[9]));
+  }
+  out.quienes = out.quienes.slice(-3);
+  return out;
+}
+
+// ───────────────────────── v0.30 · Limpiar datos de prueba ─────────────────────────
+// Menú Criptas → «Limpiar datos de prueba». Haz antes una copia: Archivo → Hacer una copia.
+function limpiarPruebas() {
+  var ui = SpreadsheetApp.getUi();
+  var resp = ui.prompt('Limpiar datos de prueba',
+    'Escribe las MATRÍCULAS o CLAVES DE GRUPO a borrar, separadas por comas (ej.: 237440, BOT30, PRUEBA-1).\n' +
+    'Se borran sus filas en Alumnos, Partidas, Eventos y Huellas.\n\n' +
+    'O escribe TODO para vaciar Partidas, Eventos y Huellas de todos (las cuentas en Alumnos se conservan).',
+    ui.ButtonSet.OK_CANCEL);
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+  var txt = resp.getResponseText().trim();
+  if (!txt) return;
+  var todo = txt.toUpperCase() === 'TODO';
+  var lista = txt.split(',').map(function (x) { return x.trim().toUpperCase(); }).filter(String);
+  var ok = ui.alert('Confirmar', todo ? '¿Vaciar Partidas, Eventos y Huellas de TODOS los alumnos?' : '¿Borrar todo lo de: ' + lista.join(', ') + '?', ui.ButtonSet.YES_NO);
+  if (ok !== ui.Button.YES) return;
+  var borrar = function (fila) { return lista.indexOf(String(fila[0]).toUpperCase()) >= 0 || lista.indexOf(String(fila[1]).toUpperCase()) >= 0; };
+  var resumen = [];
+  [['Alumnos', 0, 1], ['Partidas', 1, 2], ['Eventos', 1, 2], ['Huellas', 1, 2]].forEach(function (cfg) {
+    var nombre = cfg[0];
+    if (todo && nombre === 'Alumnos') return;
+    var sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+    if (!sh || sh.getLastRow() < 2) return;
+    var n = sh.getLastRow() - 1, w = HEAD[nombre].length;
+    var datos = sh.getRange(2, 1, n, w).getValues();
+    // matrícula y grupo según la hoja
+    var quedan = todo ? [] : datos.filter(function (f) { return !borrar([f[cfg[1]], f[cfg[2]]]); });
+    sh.getRange(2, 1, n, w).clearContent();
+    if (quedan.length) sh.getRange(2, 1, quedan.length, w).setValues(quedan);
+    resumen.push(nombre + ': ' + (n - quedan.length) + ' filas borradas');
+  });
+  try { actualizarPanel(); } catch (e) {}
+  ui.alert('Listo', resumen.join('\n'), ui.ButtonSet.OK);
 }

@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.29.0 · Sir Dextro, Hibbelerius clásico, tienda con 92 artículos y música funk';
+export const VERSION = '0.30.0 · Lápidas y signos, Thomas Bayes, La Entropía y música de Shook';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
@@ -43,7 +43,8 @@ export const MUSIC_FILES: Record<string, string> = {
   mapa4: '',
   combate5: '',
   jefe4: '',
-  funk: '',
+  // Tienda de Layla: «Kitty Paw» de Shook (álbum «Synth Funk», 2024) · https://shook.bandcamp.com/album/synth-funk
+  funk: 'kitty-paw.mp3',
 };
 
 // ─────────────────────────────────────────────────────────────
