@@ -5,7 +5,7 @@ import { W } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { CARDS, rewardPool } from '../data/cards';
-import { RELIC_POOL, RELICS } from '../data/relics';
+import { RELIC_POOL, RELICS, cuentaTope, MAX_RELIQUIAS } from '../data/relics';
 import { addCard, addFamiliar, Game, saveLocal, unlock, nivelActual, amVencido } from '../state';
 import { FAMILIARS } from '../data/familiars';
 import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
@@ -26,6 +26,18 @@ export function grantRelic(id: string) {
     r.maxHp += 30;
     r.hp = Math.min(r.maxHp, r.hp + 30);
   }
+  // ¿te pasaste del límite? La capa superior (Overlay) te pide descartar una
+  if (r.relics.filter(cuentaTope).length > MAX_RELIQUIAS) r.reliquiaNueva = id;
+}
+
+/** Descarta una reliquia y deshace lo que dio al obtenerse */
+export function descartarRelic(id: string) {
+  const r = Game.run!;
+  const i = r.relics.indexOf(id);
+  if (i < 0) return;
+  r.relics.splice(i, 1);
+  const quitar = id === 'ascua' ? 10 : id === 'coloso' ? 30 : 0;
+  if (quitar) { r.maxHp -= quitar; r.hp = Math.min(r.hp, r.maxHp); }
 }
 
 export function randomRelics(n: number) {

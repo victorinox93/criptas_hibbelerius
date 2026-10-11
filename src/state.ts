@@ -88,6 +88,8 @@ export interface Run {
   fantasma?: { id: number; alias: string; avatar: string; acto: number };
   /** último concepto que fallaste (se escribe en tu lápida) */
   ultimoFallo?: string;
+  /** v0.32.2: reliquia recién ganada que te pasó del límite (se elige cuál descartar en la capa superior) */
+  reliquiaNueva?: string;
   finalizado?: boolean; // ya se sumaron los bonos finales
   desglose?: Record<string, number>; // de dónde salió el puntaje (src/data/puntaje.ts)
   tiempo?: number; // segundos de juego activo (para la hoja «Resumen» y «Actividad»)

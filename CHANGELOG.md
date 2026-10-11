@@ -2,6 +2,10 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.32.2 · Límite de reliquias
+
+- Puedes cargar a lo más **8 reliquias** (`MAX_RELIQUIAS` en `src/data/relics.ts`); las especiales del Profe (Vida Extra, Necronomicón) no cuentan. Al ganar la novena, venga de donde venga (botín, tienda, altar, dilema, jefe), se abre una ventana para elegir cuál dejar en la cripta, incluida la nueva. Al descartar el Corazón de Ascua o el del Coloso se quita la vida máxima que daban. Se registra en Eventos (`descarte_reliquia`).
+
 ## v0.32.1 · Arreglos
 
 - **Menú:** al regresar de una expedición ya no se abre otra vez la ventana de dificultad (el menú «recordaba» que venías del diagnóstico).
