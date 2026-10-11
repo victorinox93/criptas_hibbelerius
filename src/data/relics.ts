@@ -26,7 +26,7 @@ export const RELICS: Record<string, RelicDef> = {
   volante: { id: 'volante', jefe: true, name: 'Volante de Inercia', icon: 'i_pend', text: 'Los J que no uses pasan al siguiente turno (máx. 3).\nCosto: robas 1 carta menos en tu primer turno.', lore: 'Guarda energía cinética de rotación para soltarla después.' },
 };
 /** Máximo de reliquias que puedes cargar (las especiales del Profe no cuentan). Al pasarte, eliges una para descartar. */
-export const MAX_RELIQUIAS = 8;
+export const MAX_RELIQUIAS = 5;
 export const cuentaTope = (id: string) => !RELICS[id]?.especial;
 
 export const RELIC_POOL = Object.keys(RELICS).filter((id) => !RELICS[id].especial && !RELICS[id].jefe);
