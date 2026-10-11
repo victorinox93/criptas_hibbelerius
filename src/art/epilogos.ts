@@ -36,6 +36,38 @@ function chispas(s: Phaser.Scene, c: Phaser.GameObjects.Container, x: number, y:
   }
 }
 
+/** traza una polilínea poco a poco (como si alguien la dibujara) */
+function trazo(s: Phaser.Scene, k: Phaser.GameObjects.Container, pts: [number, number][], color: number, delay: number, dur: number, ancho = 3) {
+  const g = s.add.graphics();
+  k.add(g);
+  const L: number[] = [];
+  let tot = 0;
+  for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); L.push(d); tot += d; }
+  const o = { t: 0 };
+  s.tweens.add({
+    targets: o, t: 1, delay, duration: dur, onUpdate: () => {
+      g.clear().lineStyle(ancho, color, 1).beginPath().moveTo(pts[0][0], pts[0][1]);
+      let resto = o.t * tot;
+      for (let i = 1; i < pts.length; i++) {
+        const d = L[i - 1];
+        if (resto >= d) { g.lineTo(pts[i][0], pts[i][1]); resto -= d; continue; }
+        const f = resto / d;
+        g.lineTo(pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f);
+        break;
+      }
+      g.strokePath();
+    },
+  });
+  return g;
+}
+
+/** flecha horizontal o inclinada dibujada en g */
+function flecha(g: Phaser.GameObjects.Graphics, x0: number, y0: number, x1: number, y1: number, color: number, ancho = 5) {
+  const a = Math.atan2(y1 - y0, x1 - x0);
+  g.lineStyle(ancho, color, 1).lineBetween(x0, y0, x1 - Math.cos(a) * 8, y1 - Math.sin(a) * 8);
+  g.fillStyle(color, 1).fillTriangle(x1, y1, x1 - Math.cos(a - 0.5) * 16, y1 - Math.sin(a - 0.5) * 16, x1 - Math.cos(a + 0.5) * 16, y1 - Math.sin(a + 0.5) * 16);
+}
+
 const DIBUJOS: Record<string, Dib> = {
   // Ícaro levanta su examen: un 10 en rojo
   icaro: (s, c, x, y) => {
@@ -215,6 +247,184 @@ const DIBUJOS: Record<string, Dib> = {
     s.tweens.add({ targets: anillo, scale: 1.4, alpha: 0.3, duration: 900, delay: 4300, yoyo: true, repeat: -1 });
     c.add(txt(s, x + 82, y - 96, 'sale', 12, '#7ad0ff').setOrigin(0.5, 0));
     chispas(s, c, x, y - 80, 0x7ad0ff, 6);
+  },
+  // Fray Histéresis: dibuja su propio ciclo σ–ε; al descargar no vuelve al origen (queda la huella)
+  histeresis: (s, c, x, y) => {
+    const h = hoja(s, c, x, y - 72, 160, 136, -3);
+    const ej = s.add.graphics();
+    ej.lineStyle(2, 0x3a3024, 1).lineBetween(-64, 50, 70, 50).lineBetween(-64, 50, -64, -58);
+    h.add(ej);
+    h.add(txt(s, -76, -64, 'σ', 16, '#3a3024'));
+    h.add(txt(s, 62, 50, 'ε', 16, '#3a3024'));
+    const P2 = (u: number, v: number): [number, number] => [-64 + u * 124, 50 - v * 100];
+    trazo(s, h, [P2(0, 0), P2(0.3, 0.6), P2(0.45, 0.74), P2(0.62, 0.82), P2(0.8, 0.86)], 0xc83a3a, 2600, 1500);
+    trazo(s, h, [P2(0.8, 0.86), P2(0.37, 0)], 0x3a5a8a, 4200, 900);
+    const marca = s.add.circle(P2(0.37, 0)[0], P2(0.37, 0)[1], 7).setStrokeStyle(3, 0xc83a3a).setAlpha(0);
+    const et = txt(s, P2(0.37, 0)[0] + 12, 34, 'huella', 13, '#c83a3a').setOrigin(0, 0.5).setAlpha(0);
+    h.add([marca, et]);
+    s.tweens.add({ targets: [marca, et], alpha: 1, duration: 500, delay: 5200 });
+    h.add(txt(s, -40, -56, 'carga', 12, '#c83a3a').setAlpha(0.9));
+    h.add(txt(s, 22, -10, 'descarga', 12, '#3a5a8a').setAlpha(0.9));
+  },
+  // Sir Cebollín: empuja su proyecto; nada… nada… hasta superar μs·N, y entonces se desliza
+  cebollin: (s, c, x, y) => {
+    const g0 = s.add.graphics();
+    g0.fillStyle(0x3a3020, 1).fillRect(x - 100, y - 4, 196, 6);
+    for (let i = 0; i < 13; i++) g0.fillStyle(0x5a4a3a, 1).fillRect(x - 96 + i * 15, y + 2, 8, 3);
+    c.add(g0);
+    const caja = s.add.container(x - 10, y - 26);
+    const cg = s.add.graphics();
+    px(cg, -24, -20, [[0, 0, 12, 11, 0x8a6a3a], [0, 0, 12, 1, 0xa88a5a], [0, 10, 12, 1, 0x5a4020], [5, 0, 2, 11, 0x6a5030]]);
+    caja.add([cg, txt(s, 0, -28, 'Proyecto', 12, '#e8dcc0').setOrigin(0.5, 1)]);
+    c.add(caja);
+    const fg = s.add.graphics();
+    c.add(fg);
+    const lab = txt(s, x - 50, y - 50, '', 15, '#e8e0d0').setOrigin(0.5);
+    const reg = txt(s, x + 30, y - 120, 'f ≤ μs·N = 12', 14, '#9ad8f0').setOrigin(0.5);
+    c.add([lab, reg]);
+    const o = { f: 0 };
+    s.tweens.add({
+      targets: o, f: 14, delay: 2600, duration: 2600, onUpdate: () => {
+        const F = Math.floor(o.f / 2) * 2;
+        fg.clear();
+        flecha(fg, caja.x - 34 - 6 - F * 4, y - 26, caja.x - 34, y - 26, 0xe8c15a);
+        lab.setText(`F = ${F}`).setColor(F > 12 ? '#7fc87a' : '#e8e0d0');
+      },
+      onComplete: () => {
+        reg.setText('μk < μs: ¡ya se mueve!').setColor('#7fc87a');
+        s.tweens.add({
+          targets: caja, x: x + 50, duration: 900, ease: 'Quad.in', onUpdate: () => {
+            fg.clear();
+            flecha(fg, caja.x - 34 - 62, y - 26, caja.x - 34, y - 26, 0xe8c15a);
+          },
+          onComplete: () => {
+            const sello = txt(s, caja.x, y - 24, 'ENTREGADO', 18, '#c83a3a').setOrigin(0.5).setAngle(-12).setScale(2).setAlpha(0);
+            c.add(sello);
+            s.tweens.add({ targets: sello, scale: 1, alpha: 1, duration: 300, ease: 'Back.out' });
+          },
+        });
+      },
+    });
+  },
+  // Sir Helios: un sol sube detrás de él, y los Joules que sobraban vuelan hacia él
+  helios: (s, c, x, y) => {
+    const halo = s.add.circle(x, y - 20, 58, 0xffd21a, 0.12);
+    const rayos = s.add.container(x, y - 20);
+    const rg = s.add.graphics();
+    for (let i = 0; i < 12; i++) {
+      const a = (i * Math.PI) / 6;
+      rg.fillStyle(0xffb020, 1).fillTriangle(Math.cos(a - 0.12) * 34, Math.sin(a - 0.12) * 34, Math.cos(a + 0.12) * 34, Math.sin(a + 0.12) * 34, Math.cos(a) * (i % 2 ? 48 : 58), Math.sin(a) * (i % 2 ? 48 : 58));
+    }
+    rayos.add(rg);
+    const sol = s.add.circle(x, y - 20, 30, 0xffd21a);
+    const cara = s.add.graphics();
+    px(cara, x - 10, y - 30, [[0, 0, 1, 2, 0xa86a10], [4, 0, 1, 2, 0xa86a10], [0, 4, 1, 1, 0xa86a10], [1, 5, 3, 1, 0xa86a10], [4, 4, 1, 1, 0xa86a10]]);
+    const sube = [halo, rayos, sol, cara];
+    c.add(sube);
+    s.tweens.add({ targets: sube, y: '-=40', duration: 2000, delay: 1800, ease: 'Sine.out' });
+    s.tweens.add({ targets: rayos, angle: 360, duration: 12000, repeat: -1 });
+    s.tweens.add({ targets: halo, scale: 1.3, alpha: 0.05, duration: 1100, yoyo: true, repeat: -1 });
+    for (let i = 0; i < 6; i++) {
+      const j = txt(s, x + Phaser.Math.Between(-90, 90), y + 4, 'J', 18, '#ffd21a').setOrigin(0.5).setAlpha(0);
+      c.add(j);
+      s.tweens.add({ targets: j, x, y: y - 60, alpha: { from: 1, to: 0 }, duration: 1200, delay: 4000 + i * 250, repeat: -1, repeatDelay: 900, ease: 'Quad.in' });
+    }
+    const lema = txt(s, x, y - 130, '¡Alabado sea!', 20, '#ffd21a').setOrigin(0.5).setAlpha(0);
+    c.add(lema);
+    s.tweens.add({ targets: lema, alpha: 1, duration: 700, delay: 4400 });
+  },
+  // Parches: abre su cofre y te regresa tus Ergios… casi todos (uno vuelve a su bolsillo)
+  parches: (s, c, x, y) => {
+    const cof = s.add.graphics();
+    px(cof, x - 28, y - 30, [[0, 0, 14, 8, 0x6a4a2a], [0, 0, 14, 1, 0x8a6a3a], [0, 3, 14, 1, 0xa8873a], [6, 2, 2, 3, 0xe8c15a]]);
+    c.add(cof);
+    const tapa = s.add.container(x - 28, y - 30);
+    const tg = s.add.graphics();
+    px(tg, 0, -16, [[0, 0, 14, 4, 0x7a5a32], [0, 0, 14, 1, 0xa88a5a]]);
+    tapa.add(tg);
+    c.add(tapa);
+    s.tweens.add({ targets: tapa, angle: -35, duration: 500, delay: 2600, ease: 'Back.out' });
+    const brillo = s.add.ellipse(x, y - 34, 50, 14, 0xc8f070, 0).setBlendMode(Phaser.BlendModes.ADD);
+    c.add(brillo);
+    s.tweens.add({ targets: brillo, fillAlpha: 0.5, duration: 400, delay: 2900, yoyo: true, repeat: -1, repeatDelay: 300 });
+    const n = 8;
+    for (let i = 0; i < n; i++) {
+      const vuelve = i === n - 1;
+      const m = s.add.circle(x, y - 34, 6, 0xc8f070).setStrokeStyle(2, 0x5a7a20).setAlpha(0);
+      c.add(m);
+      const dx = vuelve ? -150 : 30 + i * 6;
+      const o = { t: 0 };
+      s.tweens.add({
+        targets: o, t: 1, duration: 800, delay: 3100 + i * 180,
+        onStart: () => m.setAlpha(1),
+        onUpdate: () => { m.x = x + dx * o.t; m.y = y - 34 - 70 * 4 * o.t * (1 - o.t) + (vuelve ? 0 : 30 * o.t); },
+        onComplete: () => { if (vuelve) m.destroy(); },
+      });
+    }
+    const cuenta = txt(s, x + 30, y - 132, '+ 38 de 40 Ergios', 16, '#c8f070').setOrigin(0.5).setAlpha(0);
+    const nota = txt(s, x + 30, y - 112, '(comisión: 2)', 12, '#a8a088').setOrigin(0.5).setAlpha(0);
+    c.add([cuenta, nota]);
+    s.tweens.add({ targets: [cuenta, nota], alpha: 1, duration: 600, delay: 5000 });
+  },
+  // Hanbei: tres vasijas de energía que suben y bajan, pero la suma no cambia; caen pétalos
+  hanbei: (s, c, x, y) => {
+    const g = s.add.graphics();
+    c.add(g);
+    const tot = txt(s, x - 16, y - 126, 'ΣE = 90 J', 20, '#e8c15a').setOrigin(0.5);
+    const vals = [0, 1, 2].map((i) => txt(s, x - 54 + i * 54, y - 4, '', 14, '#e8e0d0').setOrigin(0.5, 0));
+    c.add([tot, ...vals]);
+    const o = { f: 0 };
+    s.tweens.add({
+      targets: o, f: Math.PI * 2, duration: 4200, repeat: -1, delay: 1600, onUpdate: () => {
+        g.clear();
+        const Es = [0, 1, 2].map((i) => 30 + 18 * Math.sin(o.f + (i * 2 * Math.PI) / 3));
+        const r0 = Math.round(Es[0]), r1 = Math.round(Es[1]);
+        const rs = [r0, r1, 90 - r0 - r1]; // así la suma en pantalla siempre da 90
+        [0, 1, 2].forEach((i) => {
+          const E = Es[i];
+          const bx = x - 70 + i * 54;
+          g.fillStyle(0x1a1620, 1).fillRect(bx, y - 110, 32, 104);
+          g.fillStyle(0xe8c15a, 0.9).fillRect(bx + 3, y - 9 - E * 2, 26, E * 2);
+          g.lineStyle(2, 0x8a7a5a, 1).strokeRect(bx, y - 110, 32, 104);
+          vals[i].setText(`${rs[i]}`);
+        });
+      },
+    });
+    for (let i = 0; i < 10; i++) {
+      const p = s.add.rectangle(x + Phaser.Math.Between(-150, 120), y - 190, P + 1, P, 0xf0a0c0).setAlpha(0.9);
+      c.add(p);
+      s.tweens.add({ targets: p, y: y, x: p.x + Phaser.Math.Between(20, 60), angle: 360, duration: Phaser.Math.Between(3200, 4800), delay: i * 420, repeat: -1 });
+    }
+  },
+  // Gough: dispara a 45° sin ver; la flecha sigue la parábola de alcance máximo y da en el blanco
+  gough: (s, c, x, y) => {
+    const x0 = x - 100, y0 = y - 24, R = 150;
+    const xb = x0 + R;
+    const blanco = s.add.graphics();
+    [[16, 0xe8e0d0], [12, 0xc83a3a], [8, 0xe8e0d0], [4, 0xc83a3a]].forEach(([r, col]) => blanco.fillStyle(col, 1).fillCircle(xb, y0, r));
+    blanco.fillStyle(0x5a4a3a, 1).fillRect(xb - 2, y0 + 16, 4, 20);
+    c.add(blanco);
+    const ang = s.add.graphics();
+    ang.lineStyle(2, 0x9ad8f0, 0.8).lineBetween(x0, y0, x0 + 50, y0).lineBetween(x0, y0, x0 + 36, y0 - 36);
+    ang.beginPath().arc(x0, y0, 26, -Math.PI / 4, 0).strokePath();
+    c.add([ang, txt(s, x0 + 30, y0 - 18, '45°', 13, '#9ad8f0')]);
+    const pts: [number, number][] = [];
+    for (let i = 0; i <= 30; i++) { const u = i / 30; pts.push([x0 + R * u, y0 - R * u * (1 - u)]); }
+    trazo(s, c, pts, 0x8a8478, 2800, 1300, 2).setAlpha(0.7);
+    const fl = s.add.rectangle(x0, y0, 18, 3, 0xe8dcc0).setAlpha(0);
+    c.add(fl);
+    const o = { u: 0 };
+    s.tweens.add({
+      targets: o, u: 1, delay: 2800, duration: 1300, onStart: () => fl.setAlpha(1),
+      onUpdate: () => { fl.x = x0 + R * o.u; fl.y = y0 - R * o.u * (1 - o.u); fl.setRotation(Math.atan(-(1 - 2 * o.u))); },
+      onComplete: () => {
+        fl.setPosition(xb - 6, y0).setRotation(0);
+        chispas(s, c, xb, y0, 0xe8c15a, 6);
+        const t = txt(s, xb, y0 - 54, '¡Blanco!', 18, '#e8c15a').setOrigin(0.5);
+        c.add(t);
+      },
+    });
+    c.add(txt(s, x + 10, y - 118, 'R = v²·sen 2θ / g', 15, '#e8e0d0').setOrigin(0.5));
   },
 };
 

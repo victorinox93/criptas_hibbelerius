@@ -2,6 +2,16 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.33.1 · Epílogos de las seis almas nuevas
+
+Al vencer a Hibbelerius con una de ellas, su epílogo ahora tiene escena animada:
+- **Fray Histéresis** dibuja su curva σ–ε: al descargar no vuelve al origen y queda la «huella» (deformación residual).
+- **Sir Cebollín** empuja su proyecto: la fuerza crece y no pasa nada hasta superar μs·N; entonces se desliza y le ponen el sello «ENTREGADO».
+- **Sir Helios**: sale un sol detrás de él y los Joules sobrantes vuelan hacia él.
+- **Parches** abre su cofre y te regresa 38 de 40 Ergios; una moneda vuelve a su bolsillo.
+- **Hanbei**: tres vasijas de energía suben y bajan, pero ΣE = 90 J siempre; caen pétalos.
+- **Gough** dispara a 45°; la flecha sigue la parábola de alcance máximo y da en el blanco.
+
 ## v0.33.0 · Seis almas nuevas inspiradas en los «Souls»
 
 - **Fray Histéresis** (Gascoigne): alterna humano (+6 Bloqueo, +2 vida) y bestia (9 de daño a todos, pero −2 vida a ti) cada 2 turnos, o se transforma si pierdes 12+ de vida. Concepto: histéresis y límite elástico.
