@@ -110,6 +110,10 @@ export class CombatScene extends Phaser.Scene {
   private famImg: Phaser.GameObjects.Image | null = null;
   private aliadoImg: Phaser.GameObjects.Image | null = null; // alma en pena aliada (élites y jefes)
   private fantasmaImg: Phaser.GameObjects.Image | null = null; // v0.30: compañero invocado con su signo (sólo jefes)
+  // v0.33 · estado de las almas nuevas
+  private histBestia = false; // Fray Histéresis: forma bestia
+  private histHp = 0; // vida al final del turno anterior (para su «límite elástico»)
+  private hanbeiE = 0; // energía que Hanbei recibió por ti y te devolverá
   private aliadoN = 0; // turnos del aliado (Sir Mañana)
   // v0.7: Acto III y cartas nuevas
   private estela = false; // Estela Cinética: cada ataque da +1 m/s
@@ -185,6 +189,9 @@ export class CombatScene extends Phaser.Scene {
     this.aliadoImg = null;
     this.fantasmaImg = null;
     this.aliadoN = 0;
+    this.histBestia = false;
+    this.histHp = Game.run?.hp ?? 0;
+    this.hanbeiE = 0;
     this.estela = false;
     this.noFric = false;
     this.restE = 0;
@@ -1842,6 +1849,7 @@ export class CombatScene extends Phaser.Scene {
 
   private floatText(x: number, y: number, s: string, color: string) {
     const t = txt(this, x, y, s, 32, color).setOrigin(0.5).setDepth(700).setStroke('#000', 5);
+    t.x = Phaser.Math.Clamp(x, t.width / 2 + 8, 960 - t.width / 2 - 8);
     this.tweens.add({ targets: t, y: y - 40, alpha: 0, delay: 600, duration: 700, onComplete: () => t.destroy() });
   }
 
@@ -1953,6 +1961,13 @@ export class CombatScene extends Phaser.Scene {
       const red = cd === 2 ? 5 : 3;
       this.calc(`Efecto Coriolis: el golpe se desvía (−${red})`);
       dmg = Math.max(0, dmg - red);
+    }
+    // Hanbei (alma): recibe por ti un tercio del golpe; esa energía no se pierde, te la devuelve
+    if (from && dmg > 0 && this.aliadoImg && run.aliado === 'hanbei') {
+      const parte = Math.max(1, Math.round(dmg / 3));
+      dmg -= parte;
+      this.hanbeiE += parte;
+      this.floatText(this.aliadoImg.x, 200, `Hanbei recibe ${parte}`, '#e8c15a');
     }
     const absorbed = Math.min(this.block, dmg);
     this.block -= absorbed;
@@ -2751,6 +2766,14 @@ export class CombatScene extends Phaser.Scene {
       fl.setDepth(img.depth + 1);
     }
     this.time.delayedCall(900, () => this.floatText(x, 190, 'Alma invocada', CSS.gold));
+    if (a.id === 'parches') {
+      const run = Game.run!;
+      const cobro = Math.min(10, run.ergios);
+      if (cobro > 0) {
+        addErgios(-cobro);
+        this.time.delayedCall(1500, () => { this.floatText(x, 170, `−${cobro} Ergios («comisión»)`, '#c8f070'); this.calc(`Parches cobra su comisión: −${cobro} Ergios`); this.hud.refresh(); });
+      }
+    }
   }
 
   /** v0.30: el fantasma dorado de un compañero (invocado con su signo antes del jefe) */
@@ -2898,6 +2921,98 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`${a.name}: r×F = 0, r y F son paralelos: no hay torque.`);
         await this.wait(300);
       }
+    } else if (a.id === 'histeresis') {
+      // cambia de forma cada 2 turnos, o si superaste su «límite elástico» (perdiste 12+ de vida en el turno)
+      this.aliadoN++;
+      const perdida = this.histHp - run.hp;
+      const antes = this.histBestia;
+      if (perdida >= 12) this.histBestia = true;
+      else if (this.aliadoN % 2 === 0) this.histBestia = !this.histBestia;
+      if (antes !== this.histBestia) {
+        this.floatText(img.x, 176, this.histBestia ? '¡Forma bestia!' : 'Vuelve a ser humano', this.histBestia ? '#ff5a3a' : CSS.gold);
+        img.setTint(this.histBestia ? 0xff7a5a : 0xffffff);
+        this.tweens.add({ targets: img, scale: this.histBestia ? 2.6 : 2.2, duration: 300 });
+      }
+      if (this.histBestia) {
+        this.calc(`${a.name} (bestia): ${perdida >= 12 && !antes ? 'superaste su límite elástico. ' : ''}9 a todos… y 2 a ti`);
+        for (const t of [...this.alive()]) { rayo(t); await this.hitEnemy(t, 9, false, 'res'); }
+        run.hp = Math.max(1, run.hp - 2);
+        this.floatText(this.heroX, 200, '−2', '#e05050');
+      } else {
+        this.gainBlock(6);
+        run.hp = Math.min(run.maxHp, run.hp + 2);
+        this.calc(`${a.name} (humano): +6 de Bloqueo y +2 de vida`);
+        await this.wait(300);
+      }
+      this.histHp = run.hp;
+      this.refreshPlayer();
+      this.hud.refresh();
+    } else if (a.id === 'cebollin') {
+      // fricción estática: acumula fuerza sin moverse hasta superar μs·N; después basta la cinética
+      this.aliadoN++;
+      const F = 4 * this.aliadoN, umbral = 12;
+      if (F < umbral) {
+        this.floatText(img.x, 186, 'Mmm…', CSS.dim);
+        this.calc(`${a.name}: empuja con F = ${F} N < μs·N = ${umbral} N. No se mueve… mmm.`);
+        await this.wait(300);
+      } else {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        if (F === umbral || F - 4 < umbral) this.floatText(img.x, 176, '¡Arrancó!', CSS.gold);
+        rayo(t);
+        this.calc(`${a.name}: ${F - 4 < umbral ? `F = ${F} N ≥ μs·N: ¡arrancó! ` : ''}en movimiento sólo hay fricción cinética → 10 de daño`);
+        await this.hitEnemy(t, 10, false, 'res');
+      }
+    } else if (a.id === 'helios') {
+      // la energía que no usaste se transforma en daño
+      const j = Math.max(0, this.energy);
+      const dmg = 5 * j + 3;
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+      g.lineStyle(6, 0xfff0a0, 0.9).lineBetween(img.x + 20, 240, t.baseX, 260);
+      this.tweens.add({ targets: g, alpha: 0, duration: 400, onComplete: () => g.destroy() });
+      this.floatText(img.x, 186, `☀ ${j} J → ${dmg}`, '#fff0a0');
+      this.calc(`${a.name}: ${j} J sin usar se transforman en luz → ${dmg} de daño. ¡Alabado sea el Sol!`);
+      await this.hitEnemy(t, dmg, false, 'res');
+    } else if (a.id === 'parches') {
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      rayo(t);
+      this.calc(`${a.name}: golpe traicionero a ${t.st.def.name} (12)`);
+      await this.hitEnemy(t, 12, false, 'res');
+      if (Math.random() < 0.25) {
+        run.hp = Math.max(1, run.hp - 3);
+        this.floatText(this.heroX, 200, '−3', '#e05050');
+        this.calc(`${a.name}: «¡Ups!» La reacción de su golpe te alcanza (3ª ley): −3 de vida`);
+        this.refreshPlayer();
+        this.hud.refresh();
+      }
+    } else if (a.id === 'hanbei') {
+      if (this.hanbeiE > 0) {
+        const t = this.alive().reduce((x, y) => (y.st.hp > x.st.hp ? y : x));
+        const dmg = this.hanbeiE;
+        this.hanbeiE = 0;
+        rayo(t);
+        this.calc(`${a.name}: la energía que recibió por ti no se perdió → la devuelve a ${t.st.def.name} (${dmg})`);
+        await this.hitEnemy(t, dmg, false, 'res');
+      } else {
+        this.calc(`${a.name}: guarda la posición.`);
+        await this.wait(250);
+      }
+    } else if (a.id === 'gough') {
+      // alcance de un tiro parabólico: R ∝ sen(2θ)
+      const th = Phaser.Utils.Array.GetRandom([15, 30, 45, 60, 75]);
+      const f = Math.sin((2 * th * Math.PI) / 180);
+      const dmg = Math.round(16 * f);
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      // la flecha dibuja su parábola
+      const g = this.add.graphics().setDepth(650);
+      g.lineStyle(3, 0x9ad8f0, 0.9).beginPath();
+      const x0 = img.x + 10, y0 = 240, x1 = t.baseX, y1 = 250, hmax = 40 + 160 * Math.sin((th * Math.PI) / 180) ** 2;
+      for (let k = 0; k <= 20; k++) { const u = k / 20; const xx = x0 + (x1 - x0) * u, yy = y0 + (y1 - y0) * u - 4 * hmax * u * (1 - u); if (k) g.lineTo(xx, yy); else g.moveTo(xx, yy); }
+      g.strokePath();
+      this.tweens.add({ targets: g, alpha: 0, duration: 600, delay: 200, onComplete: () => g.destroy() });
+      this.floatText(img.x + 60, 176, `θ = ${th}° → sen(${2 * th}°) = ${f.toFixed(2)}`, '#9ad8f0');
+      this.calc(`${a.name}: dispara a θ = ${th}°. Alcance ∝ sen(2θ) = ${f.toFixed(2)} → ${dmg} de daño${th === 45 ? ' (¡ángulo óptimo!)' : ''}`);
+      await this.hitEnemy(t, dmg, false, 'res');
     } else if (a.id === 'bernoulli') {
       this.calc(`${a.name}: ¡la energía se conserva! 5 a todos`);
       for (const t of this.alive()) {

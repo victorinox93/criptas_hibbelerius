@@ -12,7 +12,7 @@ Roguelike de cartas *dark fantasy* para aprender **Dinámica** (Universidad de M
 |---|---|
 | **Expedición** | 3 actos de 13 pisos: Leyes de Newton (Coloso Inerte), trabajo y energía (la Bruja de la Fricción) e impulso y cantidad de movimiento (**Hibbelerius**). Tras vencer dos veces a Hibbelerius se abre un **Acto IV secreto**, el Núcleo del Cálculo (derivadas e integrales), con **AM** como jefe final |
 | **Clases** | Caballero de la Masa (F = m·a), Arcanista Cinético (K = ½mv²) y Penitente del Empuje (masa variable), con figura masculina o femenina |
-| **Contenido** | 93 cartas, 44 enemigos, 16 ecos históricos con 56 dones, 10 almas en pena, pociones, familiares, reliquias, dilemas y encuentros especiales (el Profe, Myriam la Hechicera Oscura) |
+| **Contenido** | 93 cartas, 44 enemigos, 16 ecos históricos con 56 dones, 16 almas en pena (homenajes a personajes «Souls» con una idea física), pociones, familiares, reliquias, dilemas y encuentros especiales (el Profe, Myriam la Hechicera Oscura) |
 | **Preguntas** | Problemas numéricos con datos al azar y preguntas conceptuales de opción múltiple. Siempre muestran la solución; al final se repasan los temas fallados |
 | **Progreso** | Conocimiento por niveles (desbloquea cartas y cosméticos), Grimorio, 13 logros, Vestidor y la **Tienda de Layla** (95 accesorios pagados con *Momentum*, con oferta diaria) |
 | **Entre compañeros** | Ranking por grupo, **lápidas** donde murió un compañero y **signos dorados** para invocar a quien ya venció a un jefe (estilo «Souls», sólo dentro del grupo y con alias) |
@@ -29,6 +29,10 @@ Roguelike de cartas *dark fantasy* para aprender **Dinámica** (Universidad de M
 | Trabajo y energía | El Arcanista ataca con ½mv²; la fricción lo frena |
 | Impulso | Hibbelerius carga un Impulso Final que hay que detener a tiempo |
 | Producto cruz | Sir Dextro (sin mano derecha) calcula r × F con un determinante: el signo decide si ataca o protege |
+| Histéresis | Fray Histéresis alterna entre humano y bestia: si se deforma de más, no vuelve igual |
+| Fricción estática | Sir Cebollín no se mueve hasta que la fuerza acumulada supera μs·N; luego golpea |
+| Conservación de energía | Sir Helios convierte tus Joules sin usar en daño; Hanbei absorbe 1/3 del daño y lo devuelve |
+| Tiro parabólico | Gough dispara con un ángulo al azar: alcance ∝ sen 2θ (máximo a 45°) |
 | Entropía | La carta «La Entropía» (homenaje a la escultura del campus UDEM) revuelve tu descarte en el mazo |
 
 ## Para el profesor

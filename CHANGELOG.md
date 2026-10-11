@@ -2,6 +2,17 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.33.0 · Seis almas nuevas inspiradas en los «Souls»
+
+- **Fray Histéresis** (Gascoigne): alterna humano (+6 Bloqueo, +2 vida) y bestia (9 de daño a todos, pero −2 vida a ti) cada 2 turnos, o se transforma si pierdes 12+ de vida. Concepto: histéresis y límite elástico.
+- **Sir Cebollín** (Siegmeyer): acumula fuerza 4 por turno y no actúa hasta superar μs·N (12); luego golpea 10. Concepto: μs > μk.
+- **Sir Helios** (Solaire): convierte tus Joules sin usar en daño (5·E + 3). Concepto: conservación de la energía.
+- **Parches** (Patches): pega 12, cobra hasta 10 Ergios al inicio de élites y jefes y a veces la reacción te alcanza (3 de daño). Concepto: 3ª ley.
+- **Hanbei** (Sekiro): absorbe 1/3 del daño que recibes y lo devuelve al enemigo más sano. Concepto: la energía no se pierde.
+- **Gough** (arquero ciego): dispara con θ al azar; daño = 16·sen 2θ. Concepto: alcance máximo a 45°.
+- El logro «Coleccionista de almas» ahora pide las 16 (afecta también al platino del mecha).
+- Los textos flotantes del combate ya no se salen de la pantalla.
+
 ## v0.32.2 · Límite de reliquias
 
 - Puedes cargar a lo más **8 reliquias** (`MAX_RELIQUIAS` en `src/data/relics.ts`); las especiales del Profe (Vida Extra, Necronomicón) no cuentan. Al ganar la novena, venga de donde venga (botín, tienda, altar, dilema, jefe), se abre una ventana para elegir cuál dejar en la cripta, incluida la nueva. Al descartar el Corazón de Ascua o el del Coloso se quita la vida máxima que daban. Se registra en Eventos (`descarte_reliquia`).
