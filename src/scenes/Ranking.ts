@@ -3,13 +3,17 @@ import { api, isOnline, RankRow } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
-import { W } from '../config';
+import { H, W } from '../config';
+import { ARMORS, CAPES, VISORS } from '../art/palette';
+import { CLASSES } from '../data/classes';
+import { ACC } from '../data/tienda';
 import { gravityOf } from '../data/gravity';
 import { Game, TOTAL_PISOS } from '../state';
 import { T } from '../textos';
 import { button, Btn, dungeonBackground, embers, fadeTo, frame, title, txt } from '../ui/widgets';
 
-const PER_PAGE = 7;
+const PER_PAGE = 6;
+const ROW_H = 53;
 const COLS = [56, 100, 150, 420, 560, 680, 800];
 
 export class RankingScene extends Phaser.Scene {
@@ -41,6 +45,7 @@ export class RankingScene extends Phaser.Scene {
     this.rows = this.add.container(0, 0);
     this.msg = txt(this, W / 2, 290, '', 22, CSS.dim, { align: 'center' }).setOrigin(0.5);
     this.pageT = txt(this, W / 2, 494, '', 19, CSS.dim).setOrigin(0.5);
+    txt(this, W - 40, 518, 'Toca a un héroe para ver su ficha', 17, CSS.dim).setOrigin(1, 0.5);
     button(this, W / 2 - 150, 494, 44, 30, '‹', () => this.turn(-1), { size: 22 });
     button(this, W / 2 + 150, 494, 44, 30, '›', () => this.turn(1), { size: 22 });
     button(this, 110, 518, 160, 34, T.grimorio.volver, () => fadeTo(this, 'Menu'), { size: 21 });
@@ -83,14 +88,19 @@ export class RankingScene extends Phaser.Scene {
     this.pageT.setText(this.list.length ? `${T.ranking.pagina} ${this.page + 1} / ${pages}` : '');
     const slice = this.list.slice(this.page * PER_PAGE, (this.page + 1) * PER_PAGE);
     slice.forEach((p, i) => {
-      const y = 158 + i * 45;
+      const y = 154 + i * ROW_H + 5; // las filas originales median 42; se centra el contenido en 53
       const R = (o: Phaser.GameObjects.GameObject) => this.rows.add(o);
       if (p.yo) {
         const hl = this.add.graphics();
-        hl.fillStyle(0x2a2233, 1).fillRect(44, y - 2, W - 88, 42);
-        hl.lineStyle(1, UI.gold, 0.8).strokeRect(44, y - 2, W - 88, 42);
+        hl.fillStyle(0x2a2233, 1).fillRect(44, y - 6, W - 88, ROW_H - 2);
+        hl.lineStyle(1, UI.gold, 0.8).strokeRect(44, y - 6, W - 88, ROW_H - 2);
         R(hl);
       }
+      // toda la fila se puede tocar para abrir la ficha del héroe
+      const zona = this.add.rectangle(44, y - 6, W - 88, ROW_H - 2, 0xe8c15a, 0).setOrigin(0).setInteractive({ useHandCursor: true });
+      zona.on('pointerover', () => zona.setFillStyle(0xe8c15a, 0.07));
+      zona.on('pointerout', () => zona.setFillStyle(0xe8c15a, 0));
+      R(zona);
       const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
       R(txt(this, COLS[0], y + 8, `${p.lugar}`, 26, medal));
       // avatar dibujado con sus colores
@@ -98,7 +108,8 @@ export class RankingScene extends Phaser.Scene {
       try { av = p.avatar ? JSON.parse(p.avatar) : {}; } catch { av = {}; }
       const key = `rk_${this.scope}_${this.page}_${i}`;
       makeHeroFromAvatar(this, { ...av, helm: av.helm ?? 'penacho', cape: av.cape ?? 0 }, key);
-      R(this.add.image(COLS[1] + 18, y + 19, key).setScale(0.8));
+      R(this.add.image(COLS[1] + 20, y + 21, key).setScale(1.12));
+      zona.on('pointerup', () => this.ficha(p, av, key));
       const name = txt(this, COLS[2], y + 6, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);
@@ -114,5 +125,71 @@ export class RankingScene extends Phaser.Scene {
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));
     });
+  }
+
+  /** Ficha grande del héroe: el personaje en grande con su clase, cosméticos y logros */
+  private ficha(p: RankRow, av: { insignia?: string; cape?: number; armor?: number; visor?: number; clase?: string; cabeza?: string; cara?: string; mano?: string; pies?: string }, key: string) {
+    audio.sfx?.('click');
+    const L = this.add.container(0, 0).setDepth(900);
+    const fondo = this.add.rectangle(0, 0, W, H, 0x050407, 0.85).setOrigin(0).setInteractive();
+    L.add(fondo);
+    const pw = 700, ph = 400, px0 = (W - pw) / 2, py0 = (H - ph) / 2;
+    const g = this.add.graphics();
+    frame(g, px0, py0, pw, ph, 0x100c14, UI.gold, 0.98);
+    L.add(g);
+    // pedestal con luz y el héroe en grande
+    const cx = px0 + 170, piso = py0 + ph - 46;
+    L.add(this.add.ellipse(cx, piso - 120, 250, 300, 0xe8c15a, 0.06));
+    L.add(this.add.ellipse(cx, piso + 4, 190, 26, 0x000000, 0.55));
+    const heroe = this.add.image(cx, piso + 8, key).setOrigin(0.5, 1).setScale(6.4);
+    L.add(heroe);
+    this.tweens.add({ targets: heroe, y: piso + 2, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    // datos
+    const x = px0 + 345;
+    let y = py0 + 26;
+    const nombre = txt(this, x, y, p.alias, 38, CSS.gold);
+    if (nombre.width > pw - 370) nombre.setScale((pw - 370) / nombre.width, 1);
+    L.add(nombre);
+    y += 46;
+    const clase = CLASSES.find((c) => c.id === (av.clase ?? 'caballero'));
+    L.add(txt(this, x, y, `${clase?.name ?? 'Héroe'} · ${p.grupo}`, 21, CSS.dim));
+    y += 34;
+    const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
+    L.add(txt(this, x, y, `Lugar ${p.lugar}`, 24, medal));
+    L.add(txt(this, x + 140, y, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
+    y += 30;
+    const piso2 = p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} + Acto IV` : `${p.piso}/${TOTAL_PISOS}`;
+    L.add(txt(this, x, y, `Piso máx. ${piso2}`, 21, CSS.bone));
+    y += 26;
+    const vic = p.victorias ? `${p.victorias} victoria${p.victorias === 1 ? '' : 's'} · gravedad máx. ${gravityOf(p.gravedad || 1).name}` : 'Aún sin victorias';
+    L.add(txt(this, x, y, vic, 21, p.victorias ? CSS.green : CSS.dim, { wordWrap: { width: pw - 370 } }));
+    y += 36;
+    if (av.insignia === 'am') {
+      const ojo = this.add.image(x + 10, y + 11, 'i_ojo').setScale(2).setTint(0xff3a3a);
+      L.add([ojo, txt(this, x + 28, y, 'Venció a AM', 21, '#ff6a5a')]);
+      this.tweens.add({ targets: ojo, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+      y += 30;
+    }
+    g.fillStyle(UI.border, 1).fillRect(x, y + 2, pw - 370, 2);
+    y += 12;
+    L.add(txt(this, x, y, 'Equipo', 19, CSS.dim));
+    y += 24;
+    const equipo = [
+      ['Capa', CAPES[av.cape ?? 0]?.name],
+      ['Armadura', ARMORS[av.armor ?? 0]?.name],
+      ['Visor', VISORS[av.visor ?? 0]?.name],
+      ...(['cabeza', 'cara', 'mano', 'pies'] as const).filter((k) => av[k] && ACC[av[k]!]).map((k) => [k[0].toUpperCase() + k.slice(1), ACC[av[k]!].nombre]),
+    ].filter((e): e is [string, string] => !!e[1]);
+    equipo.forEach(([k, v], i) => {
+      const col = i % 2, fila = Math.floor(i / 2);
+      const t = txt(this, x + col * 170, y + fila * 22, `${k}: ${v}`, 17, CSS.bone);
+      if (t.width > 164) t.setScale(164 / t.width, 1);
+      L.add(t);
+    });
+    const cerrar = () => L.destroy();
+    L.add(button(this, px0 + pw - 70, py0 + ph - 30, 110, 32, 'Cerrar', cerrar, { size: 20 }));
+    fondo.on('pointerup', cerrar);
+    L.setAlpha(0);
+    this.tweens.add({ targets: L, alpha: 1, duration: 200 });
   }
 }

@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.33.2 · Ficha de héroe en el ranking
+
+- En el Salón de las Leyendas los héroes se ven más grandes (6 por página).
+- Al tocar una fila se abre la **ficha del héroe**: el personaje en grande con todos sus cosméticos, clase, grupo, lugar, puntaje, piso máximo, victorias con su gravedad, la insignia de AM y la lista de su equipo (capa, armadura, visor y accesorios de la Tienda de Layla).
+
 ## v0.33.1 · Epílogos de las seis almas nuevas
 
 Al vencer a Hibbelerius con una de ellas, su epílogo ahora tiene escena animada:
