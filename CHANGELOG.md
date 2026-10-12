@@ -2,6 +2,12 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.34.0 · Escudos chistosos
+
+- Nuevo espacio de accesorio **Escudo** y nueva categoría en la Tienda de Layla con 11 escudos: Pizza, Tortilla de Harina, Concha de Vainilla, Tapa de Olla Exprés, Señal de ALTO, El Hibbeler (14ª ed.), Vinilo de Synth Funk, Galleta Gigante, Rebanada de Sandía, Tupper de la Abuela y Cartón del Proyecto Final (3–9 de Momentum).
+- Se equipan en «Forjar héroe» → Accesorios. El caballero cambia su escudo normal por el chistoso; el arcanista y el penitente lo cargan en la otra mano.
+- Las pestañas de la tienda ahora van en dos filas de 6. El ranking muestra el escudo en la ficha del héroe.
+
 ## v0.33.2 · Ficha de héroe en el ranking
 
 - En el Salón de las Leyendas los héroes se ven más grandes (6 por página).

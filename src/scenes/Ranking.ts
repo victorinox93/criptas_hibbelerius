@@ -128,7 +128,7 @@ export class RankingScene extends Phaser.Scene {
   }
 
   /** Ficha grande del héroe: el personaje en grande con su clase, cosméticos y logros */
-  private ficha(p: RankRow, av: { insignia?: string; cape?: number; armor?: number; visor?: number; clase?: string; cabeza?: string; cara?: string; mano?: string; pies?: string }, key: string) {
+  private ficha(p: RankRow, av: { insignia?: string; cape?: number; armor?: number; visor?: number; clase?: string; cabeza?: string; cara?: string; mano?: string; pies?: string; escudo?: string }, key: string) {
     audio.sfx?.('click');
     const L = this.add.container(0, 0).setDepth(900);
     const fondo = this.add.rectangle(0, 0, W, H, 0x050407, 0.85).setOrigin(0).setInteractive();
@@ -178,7 +178,7 @@ export class RankingScene extends Phaser.Scene {
       ['Capa', CAPES[av.cape ?? 0]?.name],
       ['Armadura', ARMORS[av.armor ?? 0]?.name],
       ['Visor', VISORS[av.visor ?? 0]?.name],
-      ...(['cabeza', 'cara', 'mano', 'pies'] as const).filter((k) => av[k] && ACC[av[k]!]).map((k) => [k[0].toUpperCase() + k.slice(1), ACC[av[k]!].nombre]),
+      ...(['cabeza', 'cara', 'mano', 'pies', 'escudo'] as const).filter((k) => av[k] && ACC[av[k]!]).map((k) => [k[0].toUpperCase() + k.slice(1), ACC[av[k]!].nombre]),
     ].filter((e): e is [string, string] => !!e[1]);
     equipo.forEach(([k, v], i) => {
       const col = i % 2, fila = Math.floor(i / 2);

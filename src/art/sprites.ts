@@ -841,7 +841,7 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
   const mano = av.mano && ACC[av.mano] ? av.mano : undefined;
   // el Mecha reemplaza todo el cuerpo (conserva el color de capa y de visor del alumno)
-  const rows = armor.mecha ? MECHA_ROWS : heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.extra, figura: av.figura });
+  const rows = armor.mecha ? MECHA_ROWS : heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.escudo && ACC[av.escudo] && (av.clase ?? 'caballero') === 'caballero' ? 0 : av.extra, figura: av.figura });
   const ov: Record<string, string> = armor.mecha
     ? { ...MECHA_PAL, c: cape.c, C: cape.C, E: visor }
     : { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
@@ -861,16 +861,16 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
 }
 
 /** Dónde va cada accesorio según la clase: [cabeza (centro inferior), mano (agarre)] */
-const ANCLAS: Record<string, { cabeza: [number, number]; cara: [number, number]; mano: [number, number]; pies: [number, number][] }> = {
-  caballero: { cabeza: [19.5, 8], cara: [20.5, 11], mano: [27, 28], pies: [[16, 43], [22.5, 43]] },
-  arcanista: { cabeza: [19.5, 8], cara: [19.5, 12], mano: [31, 25], pies: [[15, 44], [23, 44]] },
-  penitente: { cabeza: [19.5, 9], cara: [19.5, 11], mano: [31, 24], pies: [[16, 44], [22.5, 44]] },
-  mecha: { cabeza: [20, 5], cara: [21, 7], mano: [30, 28], pies: [[15.5, 44], [25.5, 44]] },
+const ANCLAS: Record<string, { cabeza: [number, number]; cara: [number, number]; mano: [number, number]; escudo: [number, number]; pies: [number, number][] }> = {
+  caballero: { cabeza: [19.5, 8], cara: [20.5, 11], mano: [27, 28], escudo: [12, 25], pies: [[16, 43], [22.5, 43]] },
+  arcanista: { cabeza: [19.5, 8], cara: [19.5, 12], mano: [31, 25], escudo: [11, 27], pies: [[15, 44], [23, 44]] },
+  penitente: { cabeza: [19.5, 9], cara: [19.5, 11], mano: [31, 24], escudo: [11, 27], pies: [[16, 44], [22.5, 44]] },
+  mecha: { cabeza: [20, 5], cara: [21, 7], mano: [30, 28], escudo: [10, 28], pies: [[15.5, 44], [25.5, 44]] },
 };
 
 /** Dibuja los accesorios de la Tienda de Layla encima de la textura del héroe (con contorno) */
 export function pintarAccesorios(scene: Phaser.Scene, key: string, av: HeroAvatar) {
-  const items = [av.pies, av.cara, av.cabeza, av.mano].map((id) => (id ? ACC[id] : undefined)).filter((a): a is NonNullable<typeof a> => !!a);
+  const items = [av.pies, av.cara, av.cabeza, av.mano, av.escudo].map((id) => (id ? ACC[id] : undefined)).filter((a): a is NonNullable<typeof a> => !!a);
   if (!items.length) return;
   const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
   const ctx = tex.getContext();
@@ -917,7 +917,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
   });
   tex.refresh();
 }
-export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string; cara?: string; pies?: string }
+export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string; cara?: string; pies?: string; escudo?: string }
 
 const NPC = mirrorHalf([
   '.....kkk',

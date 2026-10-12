@@ -42,7 +42,7 @@ export class AvatarScene extends Phaser.Scene {
       arma: av.arma ?? 0, extra: av.extra ?? 0, piel: av.piel ?? 1, figura: av.figura ?? 0,
     };
     // accesorios de la Tienda de Layla (sólo los comprados)
-    const acc: Record<Slot, string | undefined> = { cabeza: av.cabeza, cara: av.cara, mano: av.mano, pies: av.pies };
+    const acc: Record<Slot, string | undefined> = { cabeza: av.cabeza, cara: av.cara, mano: av.mano, pies: av.pies, escudo: av.escudo };
     let clase = av.clase;
     const look = () => ({ helm: HELM_IDS[st.helm], cape: st.cape, armor: st.armor, visor: st.visor, arma: st.arma, extra: st.extra, piel: st.piel, figura: st.figura, ...acc });
 
@@ -100,13 +100,13 @@ export class AvatarScene extends Phaser.Scene {
     const compras = Game.codex.compras ?? [];
     SLOTS.forEach((sl, i) => {
       const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
-      selector(296 + i * 34, () => `${sl.nombre} (${opciones.length - 1})`, () => (acc[sl.id] ? ACC[acc[sl.id]!]?.nombre ?? 'Nada' : 'Nada'), (d) => {
+      selector(290 + i * 28, () => `${sl.nombre} (${opciones.length - 1})`, () => (acc[sl.id] ? ACC[acc[sl.id]!]?.nombre ?? 'Nada' : 'Nada'), (d) => {
         const k = Math.max(0, opciones.indexOf(acc[sl.id]));
         acc[sl.id] = opciones[(k + d + opciones.length) % opciones.length];
       });
     });
     const totalAcc = ACCESORIOS.filter((a) => compras.includes(a.id)).length;
-    txt(this, 188, 432, totalAcc ? `Tienes ${totalAcc} accesorio${totalAcc === 1 ? '' : 's'}.\nLa mano reemplaza al arma.` : 'Aún no tienes accesorios.\nCómpralos con Momentum en la Tienda de Layla.', 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0);
+    txt(this, 188, 426, totalAcc ? `Tienes ${totalAcc} accesorio${totalAcc === 1 ? '' : 's'}.\nLa mano reemplaza al arma.` : 'Aún no tienes accesorios.\nCómpralos con Momentum en la Tienda de Layla.', 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0);
     const grpB = this.children.list.slice(n1);
     grpB.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false));
     let enAcc = false;

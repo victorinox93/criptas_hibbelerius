@@ -52,10 +52,11 @@ export class TiendaScene extends Phaser.Scene {
     txt(this, 180, 440, `Ganas Momentum venciendo jefes\n(Coloso ${MOMENTUM_JEFES[1]} · Bruja ${MOMENTUM_JEFES[2] - MOMENTUM_JEFES[1]} · Hibbelerius ${MOMENTUM_JEFES[3] - MOMENTUM_JEFES[2]} · AM ${MOMENTUM_JEFES[4] - MOMENTUM_JEFES[3]})\ny Layla te regala ${REGALO_DIARIO} cada día que entras.`, 14, CSS.dim, { align: 'center', lineSpacing: 2 }).setOrigin(0.5, 0);
 
     title(this, X0 + (N * CW + (N - 1) * GAP) / 2, 26, 'Tienda de Layla', 34, '#f0b070');
-    // pestañas: Todo + 9 categorías, en dos filas de 5
+    // pestañas: Todo + categorías, en dos filas
     const pest: { id: Cat | 'todo'; nombre: string }[] = [{ id: 'todo', nombre: 'Todo' }, ...CATEGORIAS];
-    const TW = (N * CW + (N - 1) * GAP - 4 * 6) / 5;
-    this.tabs = pest.map((pc, i) => button(this, X0 + TW / 2 + (i % 5) * (TW + 6), 62 + Math.floor(i / 5) * 28, TW, 24, pc.nombre, () => { this.cat = pc.id; this.pag = 0; this.draw(); }, { size: 13 }));
+    const PC = Math.ceil(pest.length / 2);
+    const TW = (N * CW + (N - 1) * GAP - (PC - 1) * 6) / PC;
+    this.tabs = pest.map((pc, i) => button(this, X0 + TW / 2 + (i % PC) * (TW + 6), 62 + Math.floor(i / PC) * 28, TW, 24, pc.nombre, () => { this.cat = pc.id; this.pag = 0; this.draw(); }, { size: 13 }));
     this.tabs.forEach((b, i) => b.setData('cat', pest[i].id));
     this.layer = this.add.container(0, 0);
     button(this, X0 + (N * CW + (N - 1) * GAP) / 2, 516, 160, 34, 'Volver', () => fadeTo(this, 'Menu'), { size: 20 });
@@ -104,7 +105,7 @@ export class TiendaScene extends Phaser.Scene {
     const precio = precioHoy(a);
     const oferta = precio < a.precio;
     const alcanza = momentum() >= precio;
-    const SLOT = { cabeza: 'Cabeza', cara: 'Cara', mano: 'Mano (en vez del arma)', pies: 'Pies' }[a.slot];
+    const SLOT = { cabeza: 'Cabeza', cara: 'Cara', mano: 'Mano (en vez del arma)', pies: 'Pies', escudo: 'Escudo' }[a.slot];
     const g = this.add.graphics();
     frame(g, x, y, CW, CH, puesto ? 0x2a1e10 : 0x120e0a, puesto ? UI.gold : oferta ? 0xf070b0 : UI.border, 0.96);
     L(g);

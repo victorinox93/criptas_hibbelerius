@@ -15,6 +15,7 @@ export interface Avatar {
   mano?: string; // accesorio de mano (reemplaza al arma)
   cara?: string; // accesorio de cara
   pies?: string; // accesorio de pies
+  escudo?: string; // escudo de la Tienda de Layla (v0.34)
   clase: string;
   helm: string;
   cape: number;

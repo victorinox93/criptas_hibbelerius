@@ -10,12 +10,12 @@
 //    (cabeza o mano); un accesorio de mano reemplaza al arma.
 // ════════════════════════════════════════════════════════════════
 
-export type Slot = 'cabeza' | 'cara' | 'mano' | 'pies';
+export type Slot = 'cabeza' | 'cara' | 'mano' | 'pies' | 'escudo';
 export const SLOTS: { id: Slot; nombre: string }[] = [
-  { id: 'cabeza', nombre: 'Cabeza' }, { id: 'cara', nombre: 'Cara' }, { id: 'mano', nombre: 'Mano' }, { id: 'pies', nombre: 'Pies' },
+  { id: 'cabeza', nombre: 'Cabeza' }, { id: 'cara', nombre: 'Cara' }, { id: 'mano', nombre: 'Mano' }, { id: 'pies', nombre: 'Pies' }, { id: 'escudo', nombre: 'Escudo' },
 ];
 
-export type Cat = 'clasicos' | 'armas' | 'udem' | 'mexico' | 'halloween' | 'muertos' | 'navidad' | 'scifi' | 'criptas';
+export type Cat = 'clasicos' | 'armas' | 'udem' | 'mexico' | 'halloween' | 'muertos' | 'navidad' | 'scifi' | 'criptas' | 'escudos';
 export const CATEGORIAS: { id: Cat; nombre: string; color: string }[] = [
   { id: 'clasicos', nombre: 'Clásicos', color: '#c8b49a' },
   { id: 'armas', nombre: 'Armas', color: '#c8c4bc' },
@@ -26,6 +26,7 @@ export const CATEGORIAS: { id: Cat; nombre: string; color: string }[] = [
   { id: 'navidad', nombre: 'Navidad', color: '#e05a5a' },
   { id: 'scifi', nombre: 'Ciencia ficción', color: '#3ad8d0' },
   { id: 'criptas', nombre: 'De las Criptas', color: '#b89ad0' },
+  { id: 'escudos', nombre: 'Escudos', color: '#f0c050' },
 ];
 export const NOMBRE_CAT = Object.fromEntries(CATEGORIAS.map((c) => [c.id, c.nombre])) as Record<Cat, string>;
 
@@ -36,7 +37,7 @@ export interface Accesorio {
   precio: number;
   desc: string;
   rows: string[];
-  /** cabeza: centro inferior · cara: centro de los ojos · mano: punto de agarre · pies: centro inferior de UNA bota (se dibujan dos) */
+  /** cabeza: centro inferior · cara: centro de los ojos · mano: punto de agarre · escudo: centro del escudo · pies: centro inferior de UNA bota (se dibujan dos) */
   ancla: [number, number];
   cat?: Cat; // categoría en la tienda (se completa en CAT_DE si falta)
 }
@@ -45,6 +46,8 @@ export interface Accesorio {
 export const PAL_ACC: Record<string, string> = {
   k: '#0d0b10', W: '#f0ece4', w: '#c8c4bc', r: '#c8323a', R: '#7a1a20', o: '#f08a1a', O: '#b85a10', y: '#e8c15a', Y: '#a87a2a',
   n: '#7a5232', N: '#4a3020', g: '#3a8a3a', G: '#8ad06a', m: '#b8d878', p: '#6a3a8a', P: '#a86ac8', s: '#f0a0b8', b: '#3a5a9a', B: '#9ad8f0', d: '#2a2433', l: '#9a93a8',
+  // v0.34 · escudos chistosos
+  T: '#f0dca0', u: '#c8a060', S: '#d07890', e: '#3a3640', c: '#c8904a', C: '#8a5a2a', x: '#b88a50',
 };
 
 export const ACCESORIOS: Accesorio[] = [
@@ -287,6 +290,51 @@ export const ACCESORIOS: Accesorio[] = [
   { id: 'bobina_tesla', nombre: 'Bobina de Tesla', slot: 'mano', cat: 'criptas', precio: 13, desc: 'Resonancia eléctrica. Chispas incluidas.', rows: ['.B.B.', 'BBcBB', '.lll.', '.yyy.', '.yyy.', '.yyy.', '.lll.', '..n..', '..n..'], ancla: [2, 7] },
   { id: 'melena_einstein', nombre: 'Melena de Einstein', slot: 'cabeza', cat: 'criptas', precio: 12, desc: 'Despeinada a velocidades relativistas.', rows: ['w.w.w.w.w', '.wwwwwww.', 'wwwwwwwww', 'ww.....ww'], ancla: [4, 3] },
   { id: 'mascara_layla', nombre: 'Máscara de Layla', slot: 'cabeza', cat: 'criptas', precio: 18, desc: 'Atigrada, con bigotes y ojos verdes. Layla dice que no se parece. Miau.', rows: ['q..........q', 'qq........qq', 'qsq......qsq', 'qqqqqqqqqqqq', 'qnqnqqqqnqnq', 'qqqqqqqqqqqq', 'qGGkqqqqGGkq', 'qqqqqWWqqqqq', 'qqqqqsWqqqqq', 'qnqWWWWWWqnq', '.qqWWWWWWqq.', '..qqqqqqqq..'], ancla: [6, 5] },
+  // ── v0.34 · escudos chistosos (van en la mano de atrás; el caballero deja su escudo normal) ──
+  {
+    id: 'esc_pizza', nombre: 'Escudo de Pizza', slot: 'escudo', cat: 'escudos', precio: 8, desc: 'A = πr². Más radio, más área, más queso.',
+    rows: [".....OOO.....", "...OOOnOOO...", "..OnnyyYnnO..", ".OnyyYyyrrnO.", ".OnrryyyrrnO.", "OOyrryyyyyyOO", "OnyyyyyyyyYnO", "OOyyyyyyYyyOO", ".OnyyyYrrynO.", ".OnyrryrrynO.", "..OnnyyynnO..", "...OOOnOOO...", ".....OOO....."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_tortilla', nombre: 'Tortilla de Harina', slot: 'escudo', cat: 'escudos', precio: 4, desc: 'Norteña y gigante. Resistencia al impacto: dudosa.',
+    rows: [".....TuT.....", "...TuTTTuT...", "..TTTTTTuTu..", ".TTuTTTTTTTT.", ".TTTTTTuTTTu.", "TTuTTTTTTTTuT", "uTTTTTuTTTTTu", "TuTTTTTTTTuTT", ".uTTTuTTTTTT.", ".TTTTTTTTuTT.", "..uTuTTTTTT..", "...TuTTTuT...", ".....TuT....."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_concha', nombre: 'Concha de Vainilla', slot: 'escudo', cat: 'escudos', precio: 5, desc: 'Pan dulce reforzado. Las grietas del azúcar no son fallas estructurales.',
+    rows: [".....uuu.....", "...uuusuuu...", "..usssSsssu..", ".usSsSsSsSsu.", ".ussSsssSssu.", "uusSsSsSsSsuu", "usSsssSsssSsu", "uusSsSsSsSsuu", ".ussSsssSssu.", ".usSsSsSsSsu.", "..usssSsssu..", "...uuusuuu...", ".....uuu....."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_olla', nombre: 'Tapa de Olla Exprés', slot: 'escudo', cat: 'escudos', precio: 6, desc: 'PV = nRT. Si silba, aléjate.',
+    rows: [".....lll.....", "...llwwwll...", "..lwwwwwwwl..", ".lwwwwwwwwwl.", ".lWwwwwwwwwl.", "lwwWwdddwwwwl", "lwwwWdddwwwwl", "lwwwwdddwwwwl", ".lwwwwWwwwwl.", ".lwwwwwWwwwl.", "..lwwwwwWwl..", "...llwwwll...", ".....lll....."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_alto', nombre: 'Señal de ALTO', slot: 'escudo', cat: 'escudos', precio: 7, desc: 'Fuerza neta = 0. Literalmente.',
+    rows: ["...WWWWWWW...", "..WrrrrrrrW..", ".WrrrrrrrrrW.", "WrrrrrrrrrrrW", "WrrrrrrrrrrrW", "WrWWWWWWWWWrW", "WrWWWWWWWWWrW", "WrWWWWWWWWWrW", "WrrrrrrrrrrrW", "WrrrrrrrrrrrW", ".WrrrrrrrrrW.", "..WrrrrrrrW..", "...WWWWWWW..."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_hibbeler', nombre: 'El Hibbeler (14ª ed.)', slot: 'escudo', cat: 'escudos', precio: 9, desc: 'Bloquea todo… menos las preguntas del examen.',
+    rows: ["Bbbbbbbbbb", "Bbbbbbbbbb", "BbWWWWWWbb", "BbWyyyyWbb", "BbWWWWWWbb", "Bbbbbbbbbb", "BbbbYYbbbb", "BbbYyyYbbb", "BbbbYYbbbb", "Bbbbbbbbbb", "BbWWWWWWbb", "Bbbbbbbbbb", "BBBBBBBBBB"], ancla: [4.5, 6.0],
+  },
+  {
+    id: 'esc_vinilo', nombre: 'Vinilo de Synth Funk', slot: 'escudo', cat: 'escudos', precio: 8, desc: '33⅓ rpm: ω ≈ 3.49 rad/s. Layla lo aprueba.',
+    rows: [".....eee.....", "...eddddde...", "..ededddede..", ".eddeedeedde.", ".deeWrrrdeed.", "edderrrrredde", "edddrrkrrddde", "edderrrrredde", ".deedrrrdeed.", ".eddeedeedde.", "..ededddede..", "...eddddde...", ".....eee....."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_galleta', nombre: 'Galleta Gigante', slot: 'escudo', cat: 'escudos', precio: 5, desc: 'Con chispas de chocolate. Masa: la suficiente.',
+    rows: [".....CCC.....", "...CCcccCC...", "..CcccccccC..", ".CcNcccccccC.", ".CccNccccccC.", "CccccNccccccC", "CcccccNcccccC", "CccccccNccccC", ".CccccccNccC.", ".CcccccccNcC.", "..CcccccccC..", "...CCcccCC...", ".....CCC....."], ancla: [6.0, 6.0],
+  },
+  {
+    id: 'esc_sandia', nombre: 'Rebanada de Sandía', slot: 'escudo', cat: 'escudos', precio: 4, desc: '92 % agua: ρ casi de 1000 kg/m³.',
+    rows: ["gGrrrrrrrrrGg", "gGrrkrrrkrrGg", ".gGrrrrrrrGg.", ".gGrrkrrkrGg.", "..gGrrrrrGg..", "...gGGGGGg...", "....ggggg...."], ancla: [6.0, 3.0],
+  },
+  {
+    id: 'esc_tupper', nombre: 'Tupper de la Abuela', slot: 'escudo', cat: 'escudos', precio: 6, desc: 'Con tamales adentro. Si lo pierdes, no regreses.',
+    rows: [".bbbbbbbbbbbb.", "bBBBBBBBBBBBBb", "bBbbbbbbbbbbBb", "bBbWWWWWWWWbBb", "bBbWkkWkWkWbBb", "bBbWWWWWWWWbBb", "bBbbbbbbbbbbBb", "bBBBBBBBBBBBBb", ".bbbbbbbbbbbb."], ancla: [6.5, 4.0],
+  },
+  {
+    id: 'esc_carton', nombre: 'Cartón del Proyecto Final', slot: 'escudo', cat: 'escudos', precio: 3, desc: 'Hecho a las 3 a. m. Aguanta lo justo para la entrega.',
+    rows: ["cccccTTccccc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cxkkxTTxkxkc", "cxkxkTTxkkxc", "cxkkxTTxkxkc", "cxkxxTTxkxkc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cccccTTccccc"], ancla: [5.5, 5.0],
+  },
 ];
 
 export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Record<string, Accesorio>;
