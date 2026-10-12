@@ -101,13 +101,13 @@ export class AvatarScene extends Phaser.Scene {
     const n1 = this.children.list.length;
     const compras = Game.codex.compras ?? [];
     SLOTS.forEach((sl, i) => {
-      const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => !a.color && a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
+      const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => !a.color && !a.set && a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
       selector(290 + i * 28, () => `${sl.nombre} (${opciones.length - 1})`, () => (acc[sl.id] ? ACC[acc[sl.id]!]?.nombre ?? 'Nada' : 'Nada'), (d) => {
         const k = Math.max(0, opciones.indexOf(acc[sl.id]));
         acc[sl.id] = opciones[(k + d + opciones.length) % opciones.length];
       });
     });
-    const totalAcc = ACCESORIOS.filter((a) => !a.color && compras.includes(a.id)).length;
+    const totalAcc = ACCESORIOS.filter((a) => !a.color && !a.set && compras.includes(a.id)).length;
     txt(this, 188, 426, totalAcc ? `Tienes ${totalAcc} accesorio${totalAcc === 1 ? '' : 's'}.\nLa mano reemplaza al arma.` : 'Aún no tienes accesorios.\nCómpralos con Momentum en la Tienda de Layla.', 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0);
     const grpB = this.children.list.slice(n1);
     grpB.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false));

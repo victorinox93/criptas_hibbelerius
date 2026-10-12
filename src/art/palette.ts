@@ -32,6 +32,8 @@ export interface Cosmetico {
   id?: string; tienda?: number;
   /** v0.35 · efecto «cósmico»: nebulosa que se mueve y estrellas que titilan */
   cosmos?: boolean;
+  /** v0.36 · sólo se consigue con un set de la Tienda de Layla (no sale suelto en «Colores») */
+  enSet?: boolean;
 }
 export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
@@ -71,6 +73,15 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Arcoíris', c: '#ff5a5a', C: '#a83a3a', holo: 0, id: 'col_capa_arcoiris', tienda: 12 },
   { name: 'Rosa Chicle', c: '#f07ab0', C: '#a84a7a', id: 'col_capa_chicle', tienda: 4 },
   { name: 'Mezclilla', c: '#3a5a8a', C: '#1e3252', id: 'col_capa_mezclilla', tienda: 4 },
+  // v0.36 · capas de los sets de la Tienda de Layla
+  { name: 'Cera Negra', c: '#2a2622', C: '#120f0d', id: 'col_capa_cera', tienda: 6, enSet: true },
+  { name: 'Tierra de Tumba', c: '#4a3a2a', C: '#261c12', id: 'col_capa_tumba', tienda: 6, enSet: true },
+  { name: 'Latón Viejo', c: '#8a6a30', C: '#4a3818', id: 'col_capa_laton', tienda: 6, enSet: true },
+  { name: 'Hábito Gris', c: '#5a5650', C: '#2e2c28', id: 'col_capa_habito', tienda: 6, enSet: true },
+  { name: 'Terciopelo Sangre', c: '#6a0a1a', C: '#2a0410', id: 'col_capa_terciopelo', tienda: 6, enSet: true },
+  { name: 'Cobre', c: '#b06a3a', C: '#6a3a1a', id: 'col_capa_cobre', tienda: 6, enSet: true },
+  { name: 'Traje Espacial', c: '#e0e0e8', C: '#9a9aa8', id: 'col_capa_espacial', tienda: 6, enSet: true },
+  { name: 'Lentejuela Dorada', c: '#ffd040', C: '#a87a10', holo: 45, rango: 20, id: 'col_capa_lentejuela', tienda: 6, enSet: true },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [

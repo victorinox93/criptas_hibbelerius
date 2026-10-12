@@ -16,7 +16,7 @@ export const SLOTS: { id: Slot; nombre: string }[] = [
   { id: 'cabeza', nombre: 'Cabeza' }, { id: 'cara', nombre: 'Cara' }, { id: 'mano', nombre: 'Mano' }, { id: 'pies', nombre: 'Pies' }, { id: 'escudo', nombre: 'Escudo' },
 ];
 
-export type Cat = 'clasicos' | 'armas' | 'udem' | 'mexico' | 'halloween' | 'muertos' | 'navidad' | 'scifi' | 'criptas' | 'escudos' | 'colores';
+export type Cat = 'clasicos' | 'armas' | 'udem' | 'mexico' | 'halloween' | 'muertos' | 'navidad' | 'scifi' | 'criptas' | 'escudos' | 'colores' | 'sets';
 export const CATEGORIAS: { id: Cat; nombre: string; color: string }[] = [
   { id: 'clasicos', nombre: 'Clásicos', color: '#c8b49a' },
   { id: 'armas', nombre: 'Armas', color: '#c8c4bc' },
@@ -29,6 +29,7 @@ export const CATEGORIAS: { id: Cat; nombre: string; color: string }[] = [
   { id: 'criptas', nombre: 'De las Criptas', color: '#b89ad0' },
   { id: 'escudos', nombre: 'Escudos', color: '#f0c050' },
   { id: 'colores', nombre: 'Colores', color: '#c890ff' },
+  { id: 'sets', nombre: 'Sets', color: '#e05a5a' },
 ];
 export const NOMBRE_CAT = Object.fromEntries(CATEGORIAS.map((c) => [c.id, c.nombre])) as Record<Cat, string>;
 
@@ -44,6 +45,8 @@ export interface Accesorio {
   cat?: Cat; // categoría en la tienda (se completa en CAT_DE si falta)
   /** v0.35 · el artículo es un color (capa, armadura o visor de src/art/palette.ts), no un accesorio */
   color?: { parte: 'cape' | 'armor' | 'visor'; idx: number };
+  /** v0.36 · el artículo es un set: varias piezas y una capa, con descuento */
+  set?: { piezas: string[]; capa: string };
 }
 
 /** Colores de los accesorios (independientes de la capa y la armadura del héroe) */
@@ -52,6 +55,10 @@ export const PAL_ACC: Record<string, string> = {
   n: '#7a5232', N: '#4a3020', g: '#3a8a3a', G: '#8ad06a', m: '#b8d878', p: '#6a3a8a', P: '#a86ac8', s: '#f0a0b8', b: '#3a5a9a', B: '#9ad8f0', d: '#2a2433', l: '#9a93a8',
   // v0.34 · escudos chistosos
   T: '#f0dca0', u: '#c8a060', S: '#d07890', e: '#3a3640', c: '#c8904a', C: '#8a5a2a', x: '#b88a50',
+  // v0.36 · letras que usaban algunos accesorios y no tenían color (se veían huecos)
+  U: '#8a6a30', a: '#f0d040', f: '#ff8a4a', h: '#a0703a', i: '#dff4ff', q: '#a89a8a', t: '#d05a2a', v: '#9ae05a',
+  // v0.36 · sets
+  H: '#5a5248', J: '#3a342e',
 };
 
 export const ACCESORIOS: Accesorio[] = [
@@ -339,17 +346,49 @@ export const ACCESORIOS: Accesorio[] = [
     id: 'esc_carton', nombre: 'Cartón del Proyecto Final', slot: 'escudo', cat: 'escudos', precio: 3, desc: 'Hecho a las 3 a. m. Aguanta lo justo para la entrega.',
     rows: ["cccccTTccccc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cxkkxTTxkxkc", "cxkxkTTxkkxc", "cxkkxTTxkxkc", "cxkxxTTxkxkc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cccccTTccccc"], ancla: [5.5, 5.0],
   },
+  // ── v0.36 · piezas de los sets (también se venden sueltas) ──
+  { id: 'pico_peste', nombre: 'Máscara de Pico', slot: 'cara', cat: 'criptas', precio: 8, desc: 'El pico llevaba hierbas: el primer filtro de aire de la historia.', rows: ["..WWWWWWW......", ".WWWWWWWWWW....", "WWkkWWkkWWWWW..", "WkBBkkBBkWWWWW.", "WWkkWWkkWWWwwww", "WWWWWWWWWwwww..", ".WWWWWWWww.....", "..WWWWWWW......"], ancla: [4.5, 3] },
+  { id: 'sombrero_ala', nombre: 'Sombrero de Ala Ancha', slot: 'cabeza', cat: 'criptas', precio: 6, desc: 'Ala ancha: más área, más resistencia del aire al caer.', rows: ["....dddddd....", "....dddddd....", "....dddddd....", "....eeeeee....", "dddddddddddddd", ".dddddddddddd."], ancla: [7, 6] },
+  { id: 'farol', nombre: 'Farol de Aceite', slot: 'mano', cat: 'criptas', precio: 6, desc: 'Combustión lenta: energía química → luz y calor.', rows: ["..k..", ".ddd.", "dyoyd", "doyod", "dyoyd", ".ddd.", "..n..", "..n..", "..n.."], ancla: [2, 7] },
+  { id: 'bombin', nombre: 'Bombín Raído', slot: 'cabeza', cat: 'criptas', precio: 5, desc: 'Remendado tres veces. Como el pozo que cava.', rows: ["...dddd...", "..dddddd..", "..dedddd..", "..eeeeee..", "dddddddddd"], ancla: [5, 5] },
+  { id: 'pala', nombre: 'Pala de Sepulturero', slot: 'mano', cat: 'criptas', precio: 6, desc: 'Trabajo = F·d: cada palada cuenta.', rows: [".lll.", "lllll", "lllll", "llwll", ".lll.", "..n..", "..n..", "..n..", "..n..", "..n..", "..n..", ".nnn."], ancla: [2, 9] },
+  { id: 'esc_lapida', nombre: 'Lápida', slot: 'escudo', cat: 'criptas', precio: 7, desc: 'Q.E.P.D. Pesa como 80 kg, pero protege.', rows: ["...llll...", ".llllllll.", "llllllllll", "llllelllll", "lllleeelll", "llllelllll", "llllelllll", "llllllllll", "llllllllll", "llllllllll", "gggggggggg"], ancla: [4.5, 5] },
+  { id: 'corona_engranes', nombre: 'Corona de Engranes', slot: 'cabeza', cat: 'criptas', precio: 7, desc: 'Cada engrane transmite el torque al siguiente: τ₁/r₁ = τ₂/r₂.', rows: ["y.y.y.y.y", "yyyyyyyyy", "yYkYyYkYy", "yyyyyyyyy"], ancla: [4, 4] },
+  { id: 'pendulo', nombre: 'Maza de Péndulo', slot: 'mano', cat: 'criptas', precio: 8, desc: 'T = 2π√(L/g): no depende de la masa de la bola.', rows: [".nnn.", "..n..", "..Y..", "..Y..", "..Y..", "..Y..", "..Y..", ".yyy.", "yyYyy", "yYkYy", "yyYyy", ".yyy."], ancla: [2, 0] },
+  { id: 'esc_reloj', nombre: 'Escudo de Reloj', slot: 'escudo', cat: 'criptas', precio: 8, desc: 'Las 3:00. Siempre son las 3:00 en las criptas.', rows: [".....YYY.....", "...YYWkWYY...", "..YWWWWWWWY..", ".YWWWWkWWWWY.", ".YWWWWkWWWWY.", "YWWWWWkWWWWWY", "YkWWWWkkkkWkY", "YWWWWWWWWWWWY", ".YWWWWWWWWWY.", ".YWWWWWWWWWY.", "..YWWWWWWWY..", "...YYWkWYY...", ".....YYY....."], ancla: [6, 6] },
+  { id: 'capucha_monje', nombre: 'Capucha de Monje', slot: 'cabeza', cat: 'criptas', precio: 9, desc: 'En la oscuridad sólo se ven los ojos. Voto de silencio (y de estudio).', rows: [".....HHHH.....", "...HHHHHHHH...", "..HHHHHHHHHH..", ".HHHJJJJJJHHH.", ".HHJkkkkkkJHH.", "HHJkkkkkkkkJHH", "HHJkkkykkkykJH", "HHJkkkkkkkkJHH", "HHHJkkkkkkJHHH", "HHHHJJJJJJHHHH", ".HHHHHHHHHHHH.", "..HHHHHHHHHH.."], ancla: [7, 5] },
+  { id: 'campana', nombre: 'Campana de Bronce', slot: 'mano', cat: 'criptas', precio: 6, desc: 'Resuena a su frecuencia natural. Dong.', rows: ["..n..", "..n..", ".yyy.", "yyyyy", "yyYyy", "yyyyy", "YYYYY", "..k.."], ancla: [2, 1] },
+  { id: 'goggles', nombre: 'Goggles de Latón', slot: 'cara', cat: 'scifi', precio: 6, desc: 'Protegen del vapor a 100 °C (a 1 atm).', rows: ["YYYY.YYYY", "YBBYYYBBY", "YBiYnYBiY", "YYYY.YYYY"], ancla: [4, 1] },
+  { id: 'matraz', nombre: 'Matraz Burbujeante', slot: 'mano', cat: 'scifi', precio: 5, desc: 'PV = nRT: si calientas, sube la presión. Cuidado.', rows: ["..ll..", "..ll..", "..ll..", ".lGGl.", "lGGGGl", "lGvGGl", "lGGGvl", ".llll."], ancla: [2, 5] },
+  { id: 'bandera_exp', nombre: 'Bandera de la Expedición', slot: 'mano', cat: 'scifi', precio: 5, desc: 'En la Luna, g = 1.62 m/s²: la bandera casi flota.', rows: ["nyyyyy", "nykkky", "nyyyyy", "n.....", "n.....", "n.....", "n.....", "n.....", "n.....", "n....."], ancla: [0, 7] },
+  { id: 'cinturon', nombre: 'Cinturón de Campeón', slot: 'mano', cat: 'mexico', precio: 8, desc: 'Impulso = F·Δt: la plancha desde la tercera cuerda.', rows: ["kk.....kk", "kyyyyyyyk", "kyYrrrYyk", "kyyyyyyyk", "kk.....kk"], ancla: [4, 2] },
+  { id: 'colmillos', nombre: 'Colmillos', slot: 'cara', cat: 'halloween', precio: 4, desc: 'Para morder los problemas difíciles.', rows: ["WkkkkW", ".W..W."], ancla: [2.5, -3] },
+  { id: 'candelabro', nombre: 'Candelabro', slot: 'mano', cat: 'criptas', precio: 7, desc: 'Tres llamas, la misma presión atmosférica.', rows: ["y.y.y", "o.o.o", "W.W.W", "W.W.W", "YYYYY", "..Y..", "..Y..", ".YYY."], ancla: [2, 6] },
 ];
 
 // v0.35 · los colores con precio (campo tienda en src/art/palette.ts) también se venden
 const NOMBRE_PARTE = { cape: 'Capa', armor: 'Armadura', visor: 'Visor' } as const;
 for (const [parte, lista] of [['cape', CAPES], ['armor', ARMORS], ['visor', VISORS]] as const) {
   lista.forEach((c, idx) => {
-    if (c.tienda === undefined || !c.id) return;
+    if (c.tienda === undefined || !c.id || c.enSet) return;
     const efecto = c.cosmos ? ' Efecto cósmico: nebulosa en movimiento y estrellas que titilan.' : c.holo !== undefined ? ' Holográfico: cambia de color con el tiempo.' : '';
     ACCESORIOS.push({ id: c.id, nombre: `${NOMBRE_PARTE[parte]} ${c.name}`, slot: 'cabeza', cat: 'colores', precio: c.tienda, desc: `Color de ${NOMBRE_PARTE[parte].toLowerCase()}.${efecto}`, rows: [], ancla: [0, 0], color: { parte, idx } });
   });
 }
+
+// ── v0.36 · SETS: varias piezas + una capa exclusiva, con 25 % de descuento sobre lo que te falte ──
+export const DESCUENTO_SET = 0.25;
+const SETS: { id: string; nombre: string; desc: string; piezas: string[]; capa: string }[] = [
+  { id: 'set_peste', nombre: 'Doctor de la Peste', desc: 'Máscara de pico, sombrero de ala ancha, farol y capa de cera negra. El pico llevaba hierbas: el primer filtro de aire.', piezas: ['pico_peste', 'sombrero_ala', 'farol'], capa: 'col_capa_cera' },
+  { id: 'set_sepulturero', nombre: 'Sepulturero', desc: 'Bombín raído, pala, lápida de escudo y capa color tierra. Trabajo = F·d: cada palada cuenta.', piezas: ['bombin', 'pala', 'esc_lapida'], capa: 'col_capa_tumba' },
+  { id: 'set_pendulo', nombre: 'Caballero de Péndulo', desc: 'Corona de engranes, maza de péndulo, escudo de reloj y capa de latón. T = 2π√(L/g).', piezas: ['corona_engranes', 'pendulo', 'esc_reloj'], capa: 'col_capa_laton' },
+  { id: 'set_monje', nombre: 'Monje de la Campana', desc: 'Capucha, campana de bronce y hábito gris. La campana resuena a su frecuencia natural.', piezas: ['capucha_monje', 'campana'], capa: 'col_capa_habito' },
+  { id: 'set_conde', nombre: 'Conde de las Criptas', desc: 'Colmillos, candelabro y capa de terciopelo. Un aristócrata gótico que nunca ve el sol.', piezas: ['colmillos', 'candelabro', 'copa'], capa: 'col_capa_terciopelo' },
+  { id: 'set_alquimista', nombre: 'Alquimista de Vapor', desc: 'Goggles de latón, matraz, sombrero de copa y capa de cobre. PV = nRT con estilo.', piezas: ['goggles', 'matraz', 'copa'], capa: 'col_capa_cobre' },
+  { id: 'set_astronauta', nombre: 'Astronauta de las Criptas', desc: 'Escafandra, botas lunares, bandera y traje blanco. En la Luna, g = 1.62 m/s².', piezas: ['astronauta', 'botas_espacio', 'bandera_exp'], capa: 'col_capa_espacial' },
+  { id: 'set_luchador', nombre: 'Luchador', desc: 'Máscara, cinturón de campeón y capa de lentejuela. Impulso = F·Δt desde la tercera cuerda.', piezas: ['mascara_luchador', 'cinturon'], capa: 'col_capa_lentejuela' },
+];
+for (const st of SETS) ACCESORIOS.push({ id: st.id, nombre: st.nombre, slot: 'cabeza', cat: 'sets', precio: 0, desc: st.desc, rows: [], ancla: [0, 0], set: { piezas: st.piezas, capa: st.capa } });
 
 export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Record<string, Accesorio>;
 
@@ -365,10 +404,25 @@ export function diaNum(hoy = new Date()) {
   return Math.floor(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()) / 86400000);
 }
 
-/** La oferta del día (−40 %): cambia cada día, igual para todo el grupo */
+/** La oferta del día (−40 %): cambia cada día, igual para todo el grupo (los sets ya traen descuento) */
 export function ofertaDelDia(hoy = new Date()) {
   const n = diaNum(hoy);
-  return ACCESORIOS[(n * 7919) % ACCESORIOS.length];
+  const sueltos = ACCESORIOS.filter((a) => !a.set);
+  return sueltos[(n * 7919) % sueltos.length];
+}
+
+/** ¿Ya tienes el artículo? (un set cuenta si tienes todas sus piezas y su capa) */
+export function loTiene(a: Accesorio, compras: string[]) {
+  return a.set ? [...a.set.piezas, a.set.capa].every((id) => compras.includes(id)) : compras.includes(a.id);
+}
+
+/** Precio de un set: 25 % menos que lo que te falte de él */
+export function precioSet(a: Accesorio, compras: string[]) {
+  if (!a.set) return a.precio;
+  const capa = CAPES.find((c) => c.id === a.set!.capa);
+  const falta = a.set.piezas.filter((id) => !compras.includes(id)).reduce((s, id) => s + (ACC[id]?.precio ?? 0), 0)
+    + (capa && !compras.includes(capa.id!) ? capa.tienda ?? 0 : 0);
+  return Math.max(1, Math.round(falta * (1 - DESCUENTO_SET)));
 }
 
 /** Precio de hoy (con la oferta si aplica) */

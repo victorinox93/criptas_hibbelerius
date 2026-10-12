@@ -277,6 +277,13 @@ export function comprar(id: string, precio: number) {
   saveLocal();
   return true;
 }
+/** v0.36 · agrega artículos ya pagados (las piezas de un set) */
+export function otorgar(ids: string[]) {
+  const c = (Game.codex.compras ??= []);
+  for (const id of ids) if (!c.includes(id)) c.push(id);
+  codexDirty = true;
+  saveLocal();
+}
 /** Regalo diario de Layla: devuelve cuánto dio (0 si ya lo dio hoy) */
 export function regaloDiario(n: number) {
   const d = new Date();

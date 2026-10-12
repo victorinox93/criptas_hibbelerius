@@ -2,6 +2,16 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.36.0 · Sets de la Tienda de Layla
+
+- Nueva pestaña **Sets**: piezas + una capa exclusiva con 25 % de descuento sobre lo que te falte (si ya tienes una pieza, no se cobra).
+  - Góticos: **Doctor de la Peste**, **Sepulturero**, **Caballero de Péndulo**, **Monje de la Campana** y **Conde de las Criptas**.
+  - Otros: **Alquimista de Vapor**, **Astronauta de las Criptas** y **Luchador**.
+- 17 piezas nuevas (también se venden sueltas): máscara de pico, sombrero de ala ancha, farol, bombín, pala, lápida (escudo), corona de engranes, maza de péndulo, escudo de reloj, capucha de monje, campana, goggles, matraz, bandera, cinturón de campeón, colmillos y candelabro.
+- 8 capas que sólo vienen en los sets: Cera Negra, Tierra de Tumba, Latón Viejo, Hábito Gris, Terciopelo Sangre, Cobre, Traje Espacial y Lentejuela Dorada (holográfica).
+- Corregido: 16 accesorios usaban colores sin definir y se veían con huecos (Máscara de Layla, Réplica de La Entropía, Termo, Vela de Ofrenda, Calaverita, etc.).
+- La oferta del día ya no cae en un set.
+
 ## v0.35.1 · Diagnóstico final en la cuenta del profesor
 
 - La cuenta del profesor (ADMINS) ya puede hacer el diagnóstico final: al tener 6 expediciones aparece el aviso en el menú y se abre al tocar «Expedición». No se le exige el inicial.

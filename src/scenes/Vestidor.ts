@@ -8,7 +8,7 @@ import { Game, nivelActual, saveLocal } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, Tooltip, txt } from '../ui/widgets';
 import { bloqueado, comoDesbloquear } from './Avatar';
 import { ACCESORIOS as TODO_TIENDA, NOMBRE_CAT } from '../data/tienda';
-const ACCESORIOS = TODO_TIENDA.filter((a) => !a.color); // los colores salen en sus pestañas
+const ACCESORIOS = TODO_TIENDA.filter((a) => !a.color && !a.set); // los colores salen en sus pestañas
 
 type Parte = 'cape' | 'armor' | 'visor';
 const PARTES: { id: Parte; nombre: string; lista: Cosmetico[] }[] = [
