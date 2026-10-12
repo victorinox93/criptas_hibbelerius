@@ -98,8 +98,9 @@ export class DiagnosticoScene extends Phaser.Scene {
     const segundos = Math.round((performance.now() - this.t0) / 1000);
     const c = Game.codex;
     const d = (c.diag ??= {});
-    const primeraVez = !d[this.fase];
-    if (primeraVez && !isAdmin()) {
+    const primeraVez = d[this.fase] === undefined;
+    // v0.35.1: también se guarda en la cuenta del profesor (para la Capa UDEM); su resultado no va a la hoja
+    if (primeraVez) {
       d[this.fase] = aciertos;
       d.total = n;
       d.version = DIAG_VERSION;
@@ -118,13 +119,14 @@ export class DiagnosticoScene extends Phaser.Scene {
       L(txt(this, 310, 140, '¡Listo! Ya tengo tu punto de partida.', 22, CSS.gold, { wordWrap: { width: 460 } }));
       L(txt(this, 310, 190, `No te digo cuántas acertaste: lo verás al final, cuando lo compares con tu diagnóstico final.\n\n${primeraVez ? `+${DIAG_PREMIO} ◈ Momentum.` : ''}`, 18, CSS.bone, { wordWrap: { width: 460 }, lineSpacing: 4 }));
     } else {
+      const sinPre = d.pre === undefined;
       const pre = d.pre ?? 0;
-      const gn = ganancia(pre, aciertos, n);
+      const gn = sinPre ? null : ganancia(pre, aciertos, n);
       const nivel = gn === null ? '' : gn >= 0.7 ? 'alta' : gn >= 0.3 ? 'media' : gn > 0 ? 'baja' : 'sin mejora';
       L(txt(this, 310, 136, 'Tu avance', 24, CSS.gold));
-      L(txt(this, 310, 176, `Diagnóstico inicial: ${pre}/${n}\nDiagnóstico final:   ${aciertos}/${n}`, 20, CSS.bone, { lineSpacing: 6 }));
-      L(txt(this, 310, 248, gn === null ? 'Tu inicial ya era perfecto: ¡no había nada que ganar!' : `Ganancia de aprendizaje g = ${gn.toFixed(2)} (${nivel})`, 20, gn !== null && gn >= 0.3 ? CSS.green : CSS.gold, { wordWrap: { width: 460 } }));
-      L(txt(this, 310, 290, `g = (final − inicial) / (${n} − inicial): qué parte de lo que te faltaba aprendiste.${primeraVez ? `\n+${DIAG_PREMIO} ◈ Momentum.` : ''}`, 15, CSS.dim, { wordWrap: { width: 460 }, lineSpacing: 3 }));
+      L(txt(this, 310, 176, `Diagnóstico inicial: ${sinPre ? '—' : `${pre}/${n}`}\nDiagnóstico final:   ${aciertos}/${n}`, 20, CSS.bone, { lineSpacing: 6 }));
+      L(txt(this, 310, 248, sinPre ? 'Sin diagnóstico inicial no se calcula la ganancia.' : gn === null ? 'Tu inicial ya era perfecto: ¡no había nada que ganar!' : `Ganancia de aprendizaje g = ${gn.toFixed(2)} (${nivel})`, 20, gn !== null && gn >= 0.3 ? CSS.green : CSS.gold, { wordWrap: { width: 460 } }));
+      L(txt(this, 310, 290, `g = (final − inicial) / (${n} − inicial): qué parte de lo que te faltaba aprendiste.${primeraVez ? `\n+${DIAG_PREMIO} ◈ Momentum y la Capa UDEM (Vestidor).` : ''}`, 15, CSS.dim, { wordWrap: { width: 460 }, lineSpacing: 3 }));
     }
     L(button(this, W / 2, 440, 260, 44, this.luego === 'expedicion' ? 'A las criptas' : 'Volver al menú', () => fadeTo(this, 'Menu', this.luego === 'expedicion' ? { iniciar: true } : {}), { color: UI.gold, size: 21 }));
   }

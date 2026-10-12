@@ -2,6 +2,13 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.35.1 · Diagnóstico final en la cuenta del profesor
+
+- La cuenta del profesor (ADMINS) ya puede hacer el diagnóstico final: al tener 6 expediciones aparece el aviso en el menú y se abre al tocar «Expedición». No se le exige el inicial.
+- Su resultado se guarda en su Grimorio (desbloquea la Capa UDEM) pero **no** se registra en Eventos, así que no altera la ganancia de Hake del grupo.
+- Si no hubo diagnóstico inicial, la pantalla final ya no muestra «0/8» ni calcula g.
+- Corregido: quien sacaba 0 en un diagnóstico podía repetirlo como si fuera la primera vez.
+
 ## v0.35.0 · Colores nuevos y colores cósmicos
 
 - **Por nivel de Conocimiento:** 7 capas (Rosa Mexicano, Cempasúchil, Jade Olmeca, Vino Tinto, Talavera, Verde Bandera, Bata de Laboratorio), 4 armaduras (Cobre Oxidado, Oro Rosa, Titanio Azul, Grafito) y 4 visores neón (Lima, Naranja, Rosa, Rojo Láser), repartidos entre los niveles 2 y 10.

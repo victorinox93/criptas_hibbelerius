@@ -20,8 +20,9 @@ import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, 
 
 /** ¿Qué diagnóstico toca? (el profesor no lo hace) */
 function diagPendiente(): 'pre' | 'post' | null {
-  if (isAdmin()) return null;
   const d = Game.codex.diag ?? {};
+  // el profesor no está obligado al inicial, pero sí puede hacer el final (Capa UDEM)
+  if (isAdmin()) return d.post === undefined && expediciones() >= DIAG_POST_EXPEDICIONES ? 'post' : null;
   if (d.pre === undefined) return 'pre';
   if (d.post === undefined && expediciones() >= DIAG_POST_EXPEDICIONES) return 'post';
   return null;
