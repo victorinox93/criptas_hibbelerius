@@ -26,7 +26,13 @@ export const PAL: Record<string, string> = {
 // Colores de capa disponibles en el creador de avatar
 // lock = nivel de Conocimiento necesario para usarlo (src/data/progreso.ts)
 /** Cosmético: lock = nivel de Conocimiento; logro = reto de src/data/logros.ts; holo = tono inicial animado (rango = amplitud del tono) */
-export interface Cosmetico { name: string; lock?: number; logro?: string; holo?: number; rango?: number; mecha?: boolean }
+export interface Cosmetico {
+  name: string; lock?: number; logro?: string; holo?: number; rango?: number; mecha?: boolean;
+  /** v0.35 · se compra en la Tienda de Layla: id del artículo y precio en Momentum */
+  id?: string; tienda?: number;
+  /** v0.35 · efecto «cósmico»: nebulosa que se mueve y estrellas que titilan */
+  cosmos?: boolean;
+}
 export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Carmesí', c: '#86223a', C: '#4e1222' },
   { name: 'Ceniza', c: '#6e6a78', C: '#403c48' },
@@ -48,6 +54,23 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Tinta de Hibbeler', c: '#24346a', C: '#101a38', logro: 'erudito' },
   { name: 'Velo de las Almas', c: '#9ab8ff', C: '#5a4aa8', logro: 'alma', holo: 200, rango: 80 },
   { name: 'Llama de Júpiter', c: '#ff8a3a', C: '#a83a1a', logro: 'jupiter', holo: 0, rango: 45 },
+  // v0.35 · por nivel de Conocimiento
+  { name: 'Rosa Mexicano', c: '#d0207a', C: '#7a0f46', lock: 2 },
+  { name: 'Cempasúchil', c: '#f0a020', C: '#a8600e', lock: 3 },
+  { name: 'Jade Olmeca', c: '#2fa88a', C: '#17604e', lock: 4 },
+  { name: 'Vino Tinto', c: '#6a1428', C: '#3a0a16', lock: 6 },
+  { name: 'Talavera', c: '#2aa8c8', C: '#14607a', lock: 7 },
+  { name: 'Verde Bandera', c: '#1f7a3a', C: '#0f4220', lock: 8 },
+  { name: 'Bata de Laboratorio', c: '#e8e8ec', C: '#a8a8b4', lock: 9 },
+  // v0.35 · regalo por completar el diagnóstico final
+  { name: 'UDEM', c: '#f2c21b', C: '#141414', logro: 'udem' },
+  // v0.35 · se compran en la Tienda de Layla
+  { name: 'Cósmica', c: '#1a1446', C: '#0a0820', cosmos: true, id: 'col_capa_cosmos', tienda: 15 },
+  { name: 'Aurora Boreal', c: '#5affb0', C: '#2a8a6a', holo: 110, rango: 150, id: 'col_capa_aurora', tienda: 10 },
+  { name: 'Lava Volcánica', c: '#ff5a1a', C: '#8a1a0a', holo: 0, rango: 30, id: 'col_capa_lava', tienda: 8 },
+  { name: 'Arcoíris', c: '#ff5a5a', C: '#a83a3a', holo: 0, id: 'col_capa_arcoiris', tienda: 12 },
+  { name: 'Rosa Chicle', c: '#f07ab0', C: '#a84a7a', id: 'col_capa_chicle', tienda: 4 },
+  { name: 'Mezclilla', c: '#3a5a8a', C: '#1e3252', id: 'col_capa_mezclilla', tienda: 4 },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -65,6 +88,14 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Cromo Dorado', l: '#f0d070', g: '#a8802a', logro: 'grimorio', holo: 28, rango: 30 },
   // v0.31 · el último desbloqueable: armadura completa de mecha (logro platino)
   { name: 'Mecha «Inercia-01»', l: '#e8ecf0', g: '#9aa4b4', logro: 'mecha', mecha: true },
+  // v0.35 · por nivel de Conocimiento
+  { name: 'Cobre Oxidado', l: '#5aa88a', g: '#2e6a54', lock: 4 },
+  { name: 'Oro Rosa', l: '#e8b0a0', g: '#a8706a', lock: 6 },
+  { name: 'Titanio Azul', l: '#8aa0d8', g: '#4a5a8a', lock: 7 },
+  { name: 'Grafito', l: '#3a3a40', g: '#1c1c22', lock: 10 },
+  // v0.35 · Tienda de Layla
+  { name: 'Nebulosa', l: '#2a2060', g: '#120c30', cosmos: true, id: 'col_arm_cosmos', tienda: 15 },
+  { name: 'Cromo Arcoíris', l: '#e0e0ff', g: '#8080c8', holo: 0, id: 'col_arm_arcoiris', tienda: 12 },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
@@ -78,6 +109,14 @@ export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Lucidez', c: '#7fffe8', logro: 'lucido', holo: 165, rango: 35 },
   { name: 'Ánima Dorada', c: '#ffe07a', logro: 'almas', holo: 38, rango: 22 },
   { name: 'Aurora de Neptuno', c: '#7affc8', logro: 'neptuno', holo: 140, rango: 120 },
+  // v0.35 · por nivel de Conocimiento
+  { name: 'Lima Neón', c: '#c8ff3a', lock: 2 },
+  { name: 'Naranja Neón', c: '#ff9a2a', lock: 3 },
+  { name: 'Rosa Neón', c: '#ff6ad0', lock: 5 },
+  { name: 'Rojo Láser', c: '#ff2a2a', lock: 8 },
+  // v0.35 · Tienda de Layla
+  { name: 'Púlsar', c: '#a0d8ff', holo: 190, rango: 50, id: 'col_vis_pulsar', tienda: 6 },
+  { name: 'Supernova', c: '#ffb03a', holo: 15, rango: 50, id: 'col_vis_supernova', tienda: 6 },
 ];
 
 // UI

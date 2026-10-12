@@ -851,11 +851,15 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   if (cape.holo !== undefined) { const r = cape.rango ?? 360; holo.c = [cape.holo, 0.62, r]; holo.C = [cape.holo + Math.min(40, r / 3), 0.42, r]; }
   if (armor.holo !== undefined && !armor.mecha) { const r = armor.rango ?? 360; holo.l = [armor.holo, 0.75, r]; holo.g = [armor.holo + Math.min(40, r / 3), 0.5, r]; }
   if (vis.holo !== undefined) { const r = vis.rango ?? 360; holo.E = [vis.holo, 0.65, r]; holo.B = [vis.holo, 0.65, r]; }
+  // v0.35 · cosméticos «cósmicos» (Tienda de Layla): letra → brillo (1 = tono claro, menos = sombra)
+  const cosmos: Record<string, number> = {};
+  if (cape.cosmos) { cosmos.c = 1; cosmos.C = 0.55; }
+  if (armor.cosmos && !armor.mecha) { cosmos.l = 1.15; cosmos.g = 0.6; }
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
-  if (!Object.keys(holo).length) { makeTexture(scene, key, rows, ov); return pintarAccesorios(scene, key, av); }
+  if (!Object.keys(holo).length && !Object.keys(cosmos).length) { makeTexture(scene, key, rows, ov); return pintarAccesorios(scene, key, av); }
   const t0 = performance.now();
-  const draw = () => { makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8); pintarAccesorios(scene, key, av); };
+  const draw = () => { makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8, cosmos); pintarAccesorios(scene, key, av); };
   draw();
   (scene as unknown as Record<string, Phaser.Time.TimerEvent>)[`__holo_${key}`] = scene.time.addEvent({ delay: 90, loop: true, callback: draw });
 }
@@ -899,13 +903,30 @@ export function pintarAccesorios(scene: Phaser.Scene, key: string, av: HeroAvata
   tex.refresh();
 }
 
+/** Color de un pixel «cósmico»: nebulosa (azul noche → violeta → turquesa) que se mueve despacio y estrellas que titilan */
+function colorCosmico(x: number, y: number, t: number, brillo: number) {
+  const tt = t / 30;
+  const n = (Math.sin(x * 0.45 + tt * 0.15) + Math.sin(y * 0.35 - tt * 0.1) + Math.sin((x + y) * 0.25 + tt * 0.07)) / 3; // −1…1
+  const A = [12, 10, 42], B = [84, 32, 130], C = [36, 110, 170];
+  const m = (p: number[], q: number[], f: number) => p.map((v, i) => v + (q[i] - v) * f);
+  let c = n < 0 ? m(A, B, n + 1) : m(B, C, n);
+  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+  if (h % 11 === 0) {
+    const tw = 0.5 + 0.5 * Math.sin(tt * 0.9 + (h % 97));
+    c = m(c, [255, 250, 235], tw * 0.95);
+  }
+  return `rgb(${c.map((v) => Math.round(Math.min(255, v * brillo))).join(',')})`;
+}
+
 /** Como makeTexture, pero las letras de `holo` cambian de tono según su posición y el tiempo (efecto holograma) */
-export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number, number]>, t: number) {
+export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number, number]>, t: number, cosmos: Record<string, number> = {}) {
   makeTexture(scene, key, rows, overrides);
   const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
   const ctx = tex.getContext();
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
+      const k = cosmos[row[x]];
+      if (k !== undefined) { ctx.fillStyle = colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
       const h = holo[row[x]];
       if (!h) continue;
       // el tono va y viene dentro de su rango (rango 360 = arcoíris completo)

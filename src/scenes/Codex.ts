@@ -280,7 +280,10 @@ export class CodexScene extends Phaser.Scene {
     // lista en dos columnas
     let col = 0, y = 196;
     for (let n = 2; n <= NIVELES.length; n++) {
-      const items = DESBLOQUEOS.filter((d) => d.nivel === n);
+      const todos = DESBLOQUEOS.filter((d) => d.nivel === n);
+      // v0.35: los cosméticos de un mismo nivel van en una sola línea («Colores: …»)
+      const cos = todos.filter((d) => d.tipo === 'Cosmético').map((d) => d.nombre.replace(/^(Capa|Armadura|Visor|Brillo) (?=[A-ZÁÉÍÓÚ])/, ''));
+      const items = [...todos.filter((d) => d.tipo !== 'Cosmético'), ...(cos.length ? [{ nivel: n, tipo: 'Colores', nombre: cos.join(', '), detalle: '' }] : [])];
       if (!items.length) continue;
       if (y + 22 + items.length * 19 > 494) { col++; y = 196; }
       const x = 44 + col * 300;
@@ -289,7 +292,7 @@ export class CodexScene extends Phaser.Scene {
       y += 22;
       for (const d of items) {
         const t = txt(this, x + 12, y, `${d.tipo}: ${d.nombre}`, 16, got ? CSS.bone : '#5a5468');
-        if (t.width > 282) t.setScale(282 / t.width, 1);
+        if (t.width > 266) t.setScale(266 / t.width, 1);
         c.add(t);
         y += 19;
       }

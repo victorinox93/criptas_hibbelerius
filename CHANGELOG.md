@@ -2,6 +2,14 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.35.0 · Colores nuevos y colores cósmicos
+
+- **Por nivel de Conocimiento:** 7 capas (Rosa Mexicano, Cempasúchil, Jade Olmeca, Vino Tinto, Talavera, Verde Bandera, Bata de Laboratorio), 4 armaduras (Cobre Oxidado, Oro Rosa, Titanio Azul, Grafito) y 4 visores neón (Lima, Naranja, Rosa, Rojo Láser), repartidos entre los niveles 2 y 10.
+- **Capa UDEM** (amarillo y negro): regalo por completar el diagnóstico final (logro «Orgullo UDEM», no cuenta para el platino del mecha).
+- **Tienda de Layla → Colores:** Capa Cósmica y Armadura Nebulosa (15, nuevo efecto: nebulosa en movimiento con estrellas que titilan), Capa Aurora Boreal, Lava Volcánica y Arcoíris, Armadura Cromo Arcoíris (holográficas), Capa Rosa Chicle y Mezclilla, y visores Púlsar y Supernova.
+- Para agregar más: en `src/art/palette.ts` un color con `lock` sale por nivel; con `id` y `tienda: precio` se vende en la tienda; `holo` lo hace holográfico y `cosmos: true` lo hace cósmico.
+- Las muestras de capa en «Forjar héroe» van en dos filas de 16; en el Grimorio los colores de cada nivel van en una línea.
+
 ## v0.34.0 · Escudos chistosos
 
 - Nuevo espacio de accesorio **Escudo** y nueva categoría en la Tienda de Layla con 11 escudos: Pizza, Tortilla de Harina, Concha de Vainilla, Tapa de Olla Exprés, Señal de ALTO, El Hibbeler (14ª ed.), Vinilo de Synth Funk, Galleta Gigante, Rebanada de Sandía, Tupper de la Abuela y Cartón del Proyecto Final (3–9 de Momentum).

@@ -9,13 +9,14 @@
 //  · Los accesorios se dibujan sobre el héroe de cualquier clase
 //    (cabeza o mano); un accesorio de mano reemplaza al arma.
 // ════════════════════════════════════════════════════════════════
+import { ARMORS, CAPES, VISORS } from '../art/palette';
 
 export type Slot = 'cabeza' | 'cara' | 'mano' | 'pies' | 'escudo';
 export const SLOTS: { id: Slot; nombre: string }[] = [
   { id: 'cabeza', nombre: 'Cabeza' }, { id: 'cara', nombre: 'Cara' }, { id: 'mano', nombre: 'Mano' }, { id: 'pies', nombre: 'Pies' }, { id: 'escudo', nombre: 'Escudo' },
 ];
 
-export type Cat = 'clasicos' | 'armas' | 'udem' | 'mexico' | 'halloween' | 'muertos' | 'navidad' | 'scifi' | 'criptas' | 'escudos';
+export type Cat = 'clasicos' | 'armas' | 'udem' | 'mexico' | 'halloween' | 'muertos' | 'navidad' | 'scifi' | 'criptas' | 'escudos' | 'colores';
 export const CATEGORIAS: { id: Cat; nombre: string; color: string }[] = [
   { id: 'clasicos', nombre: 'Clásicos', color: '#c8b49a' },
   { id: 'armas', nombre: 'Armas', color: '#c8c4bc' },
@@ -27,6 +28,7 @@ export const CATEGORIAS: { id: Cat; nombre: string; color: string }[] = [
   { id: 'scifi', nombre: 'Ciencia ficción', color: '#3ad8d0' },
   { id: 'criptas', nombre: 'De las Criptas', color: '#b89ad0' },
   { id: 'escudos', nombre: 'Escudos', color: '#f0c050' },
+  { id: 'colores', nombre: 'Colores', color: '#c890ff' },
 ];
 export const NOMBRE_CAT = Object.fromEntries(CATEGORIAS.map((c) => [c.id, c.nombre])) as Record<Cat, string>;
 
@@ -40,6 +42,8 @@ export interface Accesorio {
   /** cabeza: centro inferior · cara: centro de los ojos · mano: punto de agarre · escudo: centro del escudo · pies: centro inferior de UNA bota (se dibujan dos) */
   ancla: [number, number];
   cat?: Cat; // categoría en la tienda (se completa en CAT_DE si falta)
+  /** v0.35 · el artículo es un color (capa, armadura o visor de src/art/palette.ts), no un accesorio */
+  color?: { parte: 'cape' | 'armor' | 'visor'; idx: number };
 }
 
 /** Colores de los accesorios (independientes de la capa y la armadura del héroe) */
@@ -336,6 +340,16 @@ export const ACCESORIOS: Accesorio[] = [
     rows: ["cccccTTccccc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cxkkxTTxkxkc", "cxkxkTTxkkxc", "cxkkxTTxkxkc", "cxkxxTTxkxkc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cxxxxTTxxxxc", "cccccTTccccc"], ancla: [5.5, 5.0],
   },
 ];
+
+// v0.35 · los colores con precio (campo tienda en src/art/palette.ts) también se venden
+const NOMBRE_PARTE = { cape: 'Capa', armor: 'Armadura', visor: 'Visor' } as const;
+for (const [parte, lista] of [['cape', CAPES], ['armor', ARMORS], ['visor', VISORS]] as const) {
+  lista.forEach((c, idx) => {
+    if (c.tienda === undefined || !c.id) return;
+    const efecto = c.cosmos ? ' Efecto cósmico: nebulosa en movimiento y estrellas que titilan.' : c.holo !== undefined ? ' Holográfico: cambia de color con el tiempo.' : '';
+    ACCESORIOS.push({ id: c.id, nombre: `${NOMBRE_PARTE[parte]} ${c.name}`, slot: 'cabeza', cat: 'colores', precio: c.tienda, desc: `Color de ${NOMBRE_PARTE[parte].toLowerCase()}.${efecto}`, rows: [], ancla: [0, 0], color: { parte, idx } });
+  });
+}
 
 export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Record<string, Accesorio>;
 

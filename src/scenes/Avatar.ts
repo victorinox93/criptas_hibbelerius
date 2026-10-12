@@ -15,9 +15,11 @@ import { button, dungeonBackground, embers, fadeTo, frame, panel, TextField, tit
 const cyc = (n: number, d: number, len: number) => (n + d + len) % len;
 /** Avanza en una lista saltando lo que aún está bloqueado por nivel */
 /** ¿Está bloqueado? (por nivel de Conocimiento, o hasta vencer a AM) */
-export const bloqueado = (c: Cosmetico, nivel: number) => (c.logro ? !logroHecho(c.logro) : (c.lock ?? 0) > nivel);
+export const bloqueado = (c: Cosmetico, nivel: number) =>
+  c.tienda !== undefined ? !(Game.codex.compras ?? []).includes(c.id!) : c.logro ? !logroHecho(c.logro) : (c.lock ?? 0) > nivel;
 /** Cómo se desbloquea (texto corto) */
-export const comoDesbloquear = (c: Cosmetico) => (c.logro ? LOGROS[c.logro]?.como ?? '' : `Conocimiento nivel ${c.lock}`);
+export const comoDesbloquear = (c: Cosmetico) =>
+  c.tienda !== undefined ? `Tienda de Layla (◈ ${c.tienda})` : c.logro ? LOGROS[c.logro]?.como ?? '' : `Conocimiento nivel ${c.lock}`;
 const cycOk = (list: Cosmetico[], n: number, d: number, nivel: number) => {
   let i = n;
   for (let k = 0; k < list.length; k++) {
@@ -99,13 +101,13 @@ export class AvatarScene extends Phaser.Scene {
     const n1 = this.children.list.length;
     const compras = Game.codex.compras ?? [];
     SLOTS.forEach((sl, i) => {
-      const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
+      const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => !a.color && a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
       selector(290 + i * 28, () => `${sl.nombre} (${opciones.length - 1})`, () => (acc[sl.id] ? ACC[acc[sl.id]!]?.nombre ?? 'Nada' : 'Nada'), (d) => {
         const k = Math.max(0, opciones.indexOf(acc[sl.id]));
         acc[sl.id] = opciones[(k + d + opciones.length) % opciones.length];
       });
     });
-    const totalAcc = ACCESORIOS.filter((a) => compras.includes(a.id)).length;
+    const totalAcc = ACCESORIOS.filter((a) => !a.color && compras.includes(a.id)).length;
     txt(this, 188, 426, totalAcc ? `Tienes ${totalAcc} accesorio${totalAcc === 1 ? '' : 's'}.\nLa mano reemplaza al arma.` : 'Aún no tienes accesorios.\nCómpralos con Momentum en la Tienda de Layla.', 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0);
     const grpB = this.children.list.slice(n1);
     grpB.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false));
@@ -124,8 +126,8 @@ export class AvatarScene extends Phaser.Scene {
     CAPES.forEach((c, i) => {
       const locked = bloqueado(c, nivel);
       const r = this.add
-        .rectangle(56 + (i % 10) * 30, 493 + Math.floor(i / 10) * 20, 24, 18, Phaser.Display.Color.HexStringToColor(c.c).color)
-        .setStrokeStyle(3, 0x0d0b10)
+        .rectangle(52 + (i % 16) * 18.6, 491 + Math.floor(i / 16) * 19, 15, 16, Phaser.Display.Color.HexStringToColor(c.c).color)
+        .setStrokeStyle(2, 0x0d0b10)
         .setInteractive({ useHandCursor: !locked });
       if (c.holo !== undefined) {
         // la muestra de la capa holográfica también cambia de color
@@ -135,14 +137,14 @@ export class AvatarScene extends Phaser.Scene {
       }
       if (locked) {
         r.setAlpha(0.35);
-        txt(this, 56 + (i % 10) * 30, 493 + Math.floor(i / 10) * 20, '🔒', 11, CSS.dim).setOrigin(0.5);
+        txt(this, 52 + (i % 16) * 18.6, 491 + Math.floor(i / 16) * 19, '🔒', 9, CSS.dim).setOrigin(0.5);
         r.on('pointerdown', () => capeT.setText(comoDesbloquear(c)));
         sw.push(r);
         return;
       }
       r.on('pointerdown', () => {
         st.cape = i;
-        sw.forEach((s, j) => s.setStrokeStyle(3, j === i ? UI.gold : 0x0d0b10));
+        sw.forEach((s, j) => s.setStrokeStyle(2, j === i ? UI.gold : 0x0d0b10));
         capeT.setText(c.name);
         redraw();
         audio.sfx('click');

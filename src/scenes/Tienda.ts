@@ -101,30 +101,32 @@ export class TiendaScene extends Phaser.Scene {
     const av = prof.avatar!;
     const L = (o: Phaser.GameObjects.GameObject) => this.layer.add(o);
     const tiene = (Game.codex.compras ?? []).includes(a.id);
-    const puesto = av[a.slot] === a.id;
+    const puesto = a.color ? (av[a.color.parte] ?? 0) === a.color.idx : av[a.slot] === a.id;
     const precio = precioHoy(a);
     const oferta = precio < a.precio;
     const alcanza = momentum() >= precio;
     const SLOT = { cabeza: 'Cabeza', cara: 'Cara', mano: 'Mano (en vez del arma)', pies: 'Pies', escudo: 'Escudo' }[a.slot];
+    const ETQ = a.color ? { cape: 'Color de capa', armor: 'Color de armadura', visor: 'Color de visor' }[a.color.parte] : SLOT;
     const g = this.add.graphics();
     frame(g, x, y, CW, CH, puesto ? 0x2a1e10 : 0x120e0a, puesto ? UI.gold : oferta ? 0xf070b0 : UI.border, 0.96);
     L(g);
     const key = `tnd_${a.id}`;
-    makeHeroFromAvatar(this, { ...av, [a.slot]: a.id }, key);
+    makeHeroFromAvatar(this, a.color ? { ...av, [a.color.parte]: a.color.idx } : { ...av, [a.slot]: a.id }, key);
     L(this.add.image(x + CW / 2, y + 84, key).setOrigin(0.5, 1).setScale(1.8));
     const n = txt(this, x + CW / 2, y + 86, a.nombre, 14, CSS.bone, { align: 'center' }).setOrigin(0.5, 0);
     if (n.width > CW - 8) n.setScale((CW - 8) / n.width, 1);
     L(n);
-    L(txt(this, x + CW / 2, y + 104, SLOT, 11, CSS.dim).setOrigin(0.5, 0));
+    L(txt(this, x + CW / 2, y + 104, ETQ, 11, CSS.dim).setOrigin(0.5, 0));
     // en la tienda sólo se compra; se equipa en «Forjar héroe» → Accesorios
     const label = tiene ? (puesto ? '✓ Puesto' : '✓ Es tuyo') : oferta ? `◈ ${precio} (${a.precio})` : `◈ ${precio}`;
     if (oferta && !tiene) L(txt(this, x + CW - 6, y + 6, '−' + Math.round(OFERTA * 100) + '%', 12, '#f070b0').setOrigin(1, 0));
     const b = button(this, x + CW / 2, y + CH - 20, CW - 16, 28, label, () => {
-      if (tiene) { this.globo.setText('«Ya es tuyo. Póntelo en «Forjar héroe» → Accesorios. Miau.»'); return; }
+      const donde = a.color ? '«Forjar héroe» o el Vestidor' : '«Forjar héroe» → Accesorios';
+      if (tiene) { this.globo.setText(`«Ya es tuyo. Póntelo en ${donde}. Miau.»`); return; }
       if (!comprar(a.id, precio)) { audio.sfx('wrong'); this.globo.setText('«Te falta Momentum, humano. Vence un jefe y vuelve.»'); return; }
       audio.sfx('coin');
       logEvent('tienda', '', '', { compra: a.id, precio, oferta });
-      this.globo.setText(`«${a.nombre}. Buena elección. Póntelo en «Forjar héroe» → Accesorios. Miau.»`);
+      this.globo.setText(`«${a.nombre}. Buena elección. Póntelo en ${donde}. Miau.»`);
       void prof; void enqueue; void saveLocal;
       this.draw();
     }, { size: 15, color: tiene ? UI.green : alcanza ? 0xc8864a : UI.border });
