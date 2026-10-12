@@ -429,3 +429,18 @@ Para que aparezca, agrégalo a `ENCOUNTERS`, `ENCOUNTERS_2` o `ENCOUNTERS_3`. Mu
 - **Cosmético desbloqueable:** agrega `lock: n` a un color en `CAPES`, `ARMORS` o `VISORS` (`src/art/palette.ts`).
 - **Pisos por acto:** `FLOORS` en `src/state.ts` (ahora 12 + el jefe).
 - **Música dungeon synth:** en `src/audio.ts` cada pista tiene `drone` (volumen del drone grave), `choir` (coro), `arp` (clavecín, 16 pasos), `tom` (tambor de guerra: 1 = golpe, 2 = fuerte) y `lead` (órgano, 64 pasos con notas MIDI). Para algo más oscuro: baja `bpm`, sube `drone`/`choir` y usa acordes menores o frigios.
+
+
+## 13. Arranque Relicario-93 (v0.37)
+
+Antes de la portada sale una consola ficticia: el alumno abre el estuche y mete el disco. Todo vive en `src/consola/`.
+
+| Quiero… | Dónde |
+|---|---|
+| Que salga siempre, una vez por sesión o nunca | `ARRANQUE` en `src/config.ts` (`'siempre'`, `'sesion'`, `'nunca'`) |
+| Cambiar los textos del BIOS | `lineas` dentro de `arrancar()` en `src/consola/arranque.ts` |
+| Cambiar el arte del disco o de la portada del estuche | `arteDisco()` y `artePortada()` en `arranque.ts` (se dibujan en canvas; la calavera usa el mismo truco que `mirrorHalf`) |
+| Cambiar colores, tamaños o la consola | `src/consola/arranque.css` (variables al inicio, en `#arranque`) |
+| Cambiar los sonidos | `sfx` en `arranque.ts` (`clack`, `whirr`, `acorde`) |
+
+Para verlo de nuevo en la misma pestaña mientras pruebas, pon `ARRANQUE = 'siempre'` o abre el juego en una pestaña nueva.

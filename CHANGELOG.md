@@ -2,6 +2,13 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.37.0 · Relicario-93
+
+- Nuevo **arranque estilo consola** (inspirado en UFO 50): antes de la portada aparece el Relicario-93. Abres el estuche, sacas el disco (arrastrándolo o tocándolo), lo metes en la consola, se lee con un BIOS de física y al presionar **Iniciar** aparece el juego.
+- Se puede **saltar** con el botón «Saltar» o con Esc. Por defecto sale una vez cada que se abre el juego (`ARRANQUE` en `src/config.ts`: `'sesion'`, `'siempre'` o `'nunca'`).
+- Se puede jugar sólo con teclado (Enter avanza cada paso) y respeta el volumen elegido en el juego.
+- Phaser carga por debajo y se pausa mientras el arranque está en pantalla, así no gasta CPU.
+
 ## v0.36.0 · Sets de la Tienda de Layla
 
 - Nueva pestaña **Sets**: piezas + una capa exclusiva con 25 % de descuento sobre lo que te falte (si ya tienes una pieza, no se cobra).

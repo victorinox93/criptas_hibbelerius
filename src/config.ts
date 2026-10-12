@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.36.0 · Sets de la Tienda de Layla';
+export const VERSION = '0.37.0 · Relicario-93';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
@@ -55,6 +55,10 @@ export const MUSIC_FILES: Record<string, string> = {
 export const ADMINS = ['237440'];
 
 /** Costo en Ergios de una pista en los altares y encuentros */
+// Arranque «Relicario-93» (abrir el estuche y meter el disco antes del juego):
+// 'sesion' = una vez cada que se abre el juego · 'siempre' · 'nunca'
+export const ARRANQUE: 'siempre' | 'sesion' | 'nunca' = 'sesion';
+
 export const PISTA_COSTO = 15;
 
 /**

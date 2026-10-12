@@ -41,6 +41,12 @@ import { DilemmaScene } from './scenes/Dilemma';
 import { DebugScene } from './scenes/Debug';
 import { TitleScene } from './scenes/Title';
 import { Game } from './state';
+import { mostrarArranque } from './consola/arranque';
+
+// Relicario-93: la consola ficticia sale encima mientras Phaser carga por debajo.
+// En cuanto la portada está lista, Phaser se pausa para no gastar CPU detrás del arranque.
+let enArranque = true;
+const arranque = mostrarArranque();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -68,8 +74,10 @@ game.events.once(Phaser.Core.Events.READY, () => {
     sc.sys.events.on(Phaser.Scenes.Events.CREATE, () => {
       sc.cameras.main.setOrigin(0, 0).setZoom(RES);
       sc.input.enabled = true;
+      if (enArranque && sc.sys.settings.key === 'Title') game.loop.sleep();
     });
   }
+  arranque.then(() => { enArranque = false; game.loop.wake(); });
 });
 
 // ── tiempo de juego ACTIVO: cuenta sólo con la pestaña visible y si hubo actividad en los últimos 2 min ──
