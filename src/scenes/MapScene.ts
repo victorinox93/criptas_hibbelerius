@@ -38,7 +38,7 @@ export class MapScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(300);
-    audio.play((Game.run?.acto ?? 1) >= 4 ? 'mapa4' : (Game.run?.acto ?? 1) === 3 ? 'mapa3' : (Game.run?.acto ?? 1) === 2 ? 'mapa2' : 'mapa');
+    audio.play((Game.run?.acto ?? 1) === 5 ? 'abismo' : (Game.run?.acto ?? 1) >= 4 ? 'mapa4' : (Game.run?.acto ?? 1) === 3 ? 'mapa3' : (Game.run?.acto ?? 1) === 2 ? 'mapa2' : 'mapa');
     const run = Game.run!;
     const tip = new Tooltip(this);
 
@@ -46,8 +46,26 @@ export class MapScene extends Phaser.Scene {
     const bg = this.add.graphics().setDepth(-10);
     const act2 = (run.acto ?? 1) === 2;
     const act3 = (run.acto ?? 1) === 3;
-    const act4 = (run.acto ?? 1) >= 4;
-    bg.fillStyle(act2 ? 0x020203 : act3 ? 0x050307 : act4 ? 0x070605 : 0x060508, 1).fillRect(0, 0, W, H);
+    const act4 = (run.acto ?? 1) === 4;
+    const act5 = (run.acto ?? 1) === 5; // El Abismo de los Ejes
+    bg.fillStyle(act2 ? 0x020203 : act3 ? 0x050307 : act4 ? 0x070605 : act5 ? 0x030a09 : 0x060508, 1).fillRect(0, 0, W, H);
+    if (act5) {
+      // carta náutica de una ciudad hundida: olas, sondeos y un triángulo que no cierra
+      for (let y = 70; y < H; y += 34) {
+        const ola = this.add.graphics().setDepth(-9);
+        ola.lineStyle(1, 0x123a30, 0.8);
+        ola.beginPath();
+        for (let x = 0; x <= W; x += 10) ola.lineTo(x, y + Math.sin(x / 50 + y) * 4);
+        ola.strokePath();
+        this.tweens.add({ targets: ola, x: ((y / 34) % 2 ? -1 : 1) * 20, duration: 5000 + y * 4, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+      bg.lineStyle(3, 0x1e2a40, 0.9).strokeTriangle(W / 2, 90, W / 2 - 220, 480, W / 2 + 220, 480);
+      const eqs = ['x̄ = ΣxA / ΣA', 'I = Σ m·r²', 'I = I₀ + m·d²', 'k = √(I/m)', 'ȳ = ΣyA / ΣA', 'I = ½·m·r²', 'I = ⅓·m·L²', 'ΣM = I·α'];
+      eqs.forEach((e, i) => {
+        const t = txt(this, 50 + (i % 4) * 240 + Math.random() * 40, 100 + Math.floor(i / 4) * 330 + Math.random() * 40, e, 24, '#1e4a3c').setDepth(-9);
+        this.tweens.add({ targets: t, alpha: 0.35, y: t.y - 6, duration: 2400 + i * 300, yoyo: true, repeat: -1 });
+      });
+    }
     if (act4) {
       // plano de la fábrica: engranes que giran detrás del mapa y fórmulas de cálculo
       const gears: [number, number, number][] = [[120, 200, 110], [W - 140, 360, 130], [W / 2 + 40, 470, 90], [W / 2 - 160, 90, 60]];
@@ -85,14 +103,14 @@ export class MapScene extends Phaser.Scene {
       for (let x = 0; x <= W; x += 96) bg.lineBetween(x, 44, x, H);
       for (let y = 44; y <= H; y += 96) bg.lineBetween(0, y, W, y);
     }
-    for (let i = 0; i < (act2 || act3 || act4 ? 0 : 260); i++) {
+    for (let i = 0; i < (act2 || act3 || act4 || act5 ? 0 : 260); i++) {
       bg.fillStyle(0x15111a, Math.random() * 0.7).fillRect(Math.random() * W, 44 + Math.random() * (H - 44), 3 + Math.random() * 10, 2 + Math.random() * 4);
     }
     embers(this);
     vignette(this);
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
-    title(this, W / 2, 66, act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
+    title(this, W / 2, 66, act5 ? 'El Abismo de los Ejes · Los Muelles Inclinados' : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
     const maxF = Math.max(...run.map.map((n) => n.floor)) || FLOORS;

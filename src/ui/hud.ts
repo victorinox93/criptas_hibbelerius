@@ -1,5 +1,6 @@
 import { fmtPuntos } from '../data/puntaje';
 import { ENTROPIA, nivelEntropia } from '../data/abismo';
+import { corduraDe, luzDe, SEMAFORO } from '../data/abismo_modo';
 import { ENCARGOS } from '../data/encargos';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
@@ -96,6 +97,10 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
     }));
   };
   const effRow = s.add.container(W - 36, 62).setDepth(401);
+  // El Abismo de los Ejes: semáforo de Cordura, siempre visible a la izquierda
+  const sema = s.add.container(22, 92).setDepth(401);
+  let semaPulse: Phaser.Tweens.Tween | null = null;
+  s.events.once('shutdown', () => semaPulse?.stop());
   const boonRow = s.add.container(26, 62).setDepth(401);
   if (opts.onMenu) D(button(s, W - 34, 20, 56, 30, T.hud.menu, opts.onMenu, { size: 20 }));
 
@@ -155,7 +160,33 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
           off++;
         }
       }
-      if ((r.entropia ?? 0) > 0) {
+      sema.removeAll(true);
+      semaPulse?.stop();
+      semaPulse = null;
+      if (r.modo === 'abismo') {
+        const cor = corduraDe(r.entropia);
+        const on = luzDe(cor);
+        const caja = s.add.graphics();
+        frame(caja, -16, -12, 32, 128, 0x07090a, 0x2a3a34, 0.95);
+        sema.add(caja);
+        SEMAFORO.forEach((l, i) => {
+          const y = 4 + i * 30;
+          const lit = i === on;
+          const halo = s.add.circle(0, y, 13, l.color, lit ? 0.25 : 0);
+          const bulb = s.add.circle(0, y, 9, l.color, lit ? 1 : 0.16).setStrokeStyle(2, 0x000000, 0.8);
+          sema.add([halo, bulb]);
+          if (lit) semaPulse = s.tweens.add({ targets: halo, scale: 1.35, alpha: 0.05, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        });
+        const luz = SEMAFORO[on];
+        const num = txt(s, 0, 124, `${cor}`, 20, luz.css).setOrigin(0.5, 0).setStroke('#000', 3);
+        const lab = txt(s, 0, 144, 'Cordura', 14, CSS.dim).setOrigin(0.5, 0);
+        sema.add([num, lab]);
+        const z = s.add.zone(0, 60, 40, 190).setInteractive();
+        sema.add(z);
+        tip.attach(z, `Cordura ${cor}/100 · ${luz.nombre}`,
+          `${SEMAFORO.map((l) => `${l.nombre} (${l.min === 61 ? '61–100' : l.min === 31 ? '31–60' : l.min === 1 ? '1–30' : '0'}): ${l.texto}`).join('\n')}\n\nSube al acertar preguntas y descansar; baja al fallar, al ver jefes y élites y con los Susurros.`, 20);
+      }
+      if ((r.entropia ?? 0) > 0 && r.modo !== 'abismo') {
         const ent = r.entropia ?? 0;
         const nv = nivelEntropia(ent);
         const x = -off * 52;

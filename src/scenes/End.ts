@@ -58,7 +58,7 @@ export class EndScene extends Phaser.Scene {
     layer.add(button(this, W / 2, y0 + h - 28, 180, 36, '¡Genial!', () => layer.destroy(), { size: 21, color: UI.gold }));
   }
 
-  create(data: { victory: boolean; by?: string; nucleo?: 'am' | 'caido'; primeraAM?: boolean }) {
+  create(data: { victory: boolean; by?: string; nucleo?: 'am' | 'caido'; primeraAM?: boolean; abismo?: boolean }) {
     this.cameras.main.fadeIn(500);
     audio.play('menu');
     const run = Game.run!;
@@ -117,7 +117,7 @@ export class EndScene extends Phaser.Scene {
     }
     if (data.victory) {
       const nuc = data.nucleo;
-      title(this, W / 2, 70, nuc === 'am' ? '¡AM ha caído!' : nuc === 'caido' ? 'Venciste a Hibbelerius…' : T.final.victoria, 54, nuc === 'caido' ? '#e0a070' : undefined);
+      title(this, W / 2, 70, data.abismo ? 'La figura por fin cierra' : nuc === 'am' ? '¡AM ha caído!' : nuc === 'caido' ? 'Venciste a Hibbelerius…' : T.final.victoria, 54, nuc === 'caido' ? '#e0a070' : undefined);
       if (data.primeraAM) {
         const u = txt(this, W / 2, 26, '¡Desbloqueaste: cartas de cálculo (Derivada, Integral, Límite), cosméticos de latón e insignia de AM!', 17, CSS.green, { align: 'center', wordWrap: { width: 900 } }).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: u, alpha: 1, duration: 800, delay: 1200 });
@@ -125,10 +125,11 @@ export class EndScene extends Phaser.Scene {
         const u = txt(this, W / 2, 30, '¡Desbloqueaste al Penitente del Empuje! (elígelo en tu avatar)', 20, CSS.green).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: u, alpha: 1, duration: 800, delay: 1200 });
       }
-      txt(this, W / 2, 112, nuc === 'am' ? 'Los engranes del Núcleo se detienen. Por primera vez, AM no calcula nada.'
+      txt(this, W / 2, 112, data.abismo ? 'El Geómetra se desarma. Algo más grande se mueve en el fondo… (fin de la capa 1)'
+        : nuc === 'am' ? 'Los engranes del Núcleo se detienen. Por primera vez, AM no calcula nada.'
         : nuc === 'caido' ? `…pero el Núcleo del Cálculo te consumió (${data.by ?? 'AM'}).` : T.final.victoriaTexto, 22, nuc === 'caido' ? CSS.dim : CSS.bone).setOrigin(0.5);
       const alma = run.aliado ? ALMAS[run.aliado] : null;
-      const wz = this.add.image(W - 170, nuc ? 330 : 300, nuc ? 'am_jefe' : 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
+      const wz = this.add.image(W - 170, nuc ? 330 : 300, data.abismo ? 'geometra' : nuc ? 'am_jefe' : 'hibbelerius').setScale(3.4).setAlpha(0).setTint(0x9a8aa8);
       this.tweens.add({ targets: wz, alpha: repaso ? 0.15 : alma ? 0.22 : 0.9, duration: 2500, delay: 800 });
       this.tweens.add({ targets: wz, y: 292, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       // epílogo ilustrado del alma aliada
@@ -136,7 +137,7 @@ export class EndScene extends Phaser.Scene {
       if (alma && !repaso) epilogoAlma(this, alma.id, W - 175, 412);
       if (nuc === 'am') wz.setTint(0x6a5a5a);
       if (!repaso && !alma) {
-        const cita = nuc === 'am' ? '«Odio… odio… od…»\n— AM, por última vez' : nuc === 'caido' ? '«Ahora eres mío.\nTenemos toda la eternidad\npara repasar.»\n— AM' : (Game.codex.hib ?? 0) === 1 && !run.debug ? `${T.final.cita}\n\nDetrás del tomo, algo hace tic-tac…` : T.final.cita;
+        const cita = data.abismo ? '«Lo único que te mantiene\ncuerdo allá abajo es una\nrespuesta correcta.»\n— Prof. Elías Arrieta' : nuc === 'am' ? '«Odio… odio… od…»\n— AM, por última vez' : nuc === 'caido' ? '«Ahora eres mío.\nTenemos toda la eternidad\npara repasar.»\n— AM' : (Game.codex.hib ?? 0) === 1 && !run.debug ? `${T.final.cita}\n\nDetrás del tomo, algo hace tic-tac…` : T.final.cita;
         const q = txt(this, W - 170, cita.split('\n').length > 5 ? 432 : 470, cita, 20, CSS.purple, { align: 'center' }).setOrigin(0.5).setAlpha(0);
         this.tweens.add({ targets: q, alpha: 1, duration: 1500, delay: 2600 });
       }
@@ -153,7 +154,7 @@ export class EndScene extends Phaser.Scene {
     const tip = new Tooltip(this);
     const F = T.final.filas;
     const rows: [string, string | number][] = [
-      [F[0], (run.acto ?? 1) >= 4 ? `${TOTAL_PISOS}/${TOTAL_PISOS} + Núcleo ${run.floor + 1}/${PISOS_NUCLEO + 1}` : `${((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor}/${TOTAL_PISOS}`],
+      [F[0], run.modo === 'abismo' ? `Abismo ${Math.min(run.floor + 1, PISOS_NUCLEO + 1)}/${PISOS_NUCLEO + 1}` : (run.acto ?? 1) >= 4 ? `${TOTAL_PISOS}/${TOTAL_PISOS} + Núcleo ${run.floor + 1}/${PISOS_NUCLEO + 1}` : `${((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor}/${TOTAL_PISOS}`],
       [F[1], run.stats.combates],
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],

@@ -6,9 +6,10 @@ import { cardName, CARDS } from '../data/cards';
 import { EFFECTS } from '../data/effects';
 import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
-import { CALCULO_CONCEPTS, checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
+import { ABISMO_CONCEPTS, CALCULO_CONCEPTS, checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
 import { multRacha, PUNTOS, sumar } from '../data/puntaje';
 import { ENTROPIA } from '../data/abismo';
+import { CORDURA } from '../data/abismo_modo';
 import { AM_ENTROPIA, PACTO_AM } from '../data/am';
 import { completarEncargo } from '../data/encargos';
 import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
@@ -108,7 +109,10 @@ export class RuneScene extends Phaser.Scene {
     const actC = acto >= 3 ? [...IMPULSE_CONCEPTS, 'Conservacion']
       : acto === 2 ? ['Trabajo', 'Energia cinetica', 'Energia potencial', 'Conservacion', 'Trabajo-energia', 'Friccion', 'Potencia'] : undefined;
     // en el Núcleo (Acto IV) todas las preguntas son de derivadas e integrales
-    this.p = randomProblem(acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
+    // en el Abismo: 60 % cuerpo rígido, 40 % repaso de los actos anteriores
+    const abismoC = Math.random() < 0.6 ? ABISMO_CONCEPTS
+      : ['2a ley', 'Friccion', 'Trabajo', 'Energia cinetica', 'Conservacion', 'Impulso', 'Cantidad de movimiento', 'Impulso angular'];
+    this.p = randomProblem(acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);
@@ -231,7 +235,13 @@ export class RuneScene extends Phaser.Scene {
     if (ok && !this.amUsado) tm.ok++;
     if (ok && !this.amUsado) {
       run.stats.runasOk++;
-      addEntropia(ENTROPIA.runa);
+      if (run.modo === 'abismo') {
+        // El Abismo: una respuesta correcta te devuelve cordura (Horror Lúcido: la mitad; Cantor: más)
+        const base = run.necro === 'lucido' ? Math.round(CORDURA.runaBien / 2) : CORDURA.runaBien;
+        const extra = 3 * boonLevel('ca_conjunto');
+        addEntropia(-(base + extra));
+        this.flash(`+${base + extra} de Cordura`, '#6ee08a', 132);
+      } else addEntropia(ENTROPIA.runa);
       run.stats.racha = (run.stats.racha ?? 0) + 1;
       run.stats.rachaMax = Math.max(run.stats.rachaMax ?? 0, run.stats.racha);
       const pts = sumar(run, 'Preguntas correctas', PUNTOS.runa * multRacha(run.stats.racha));
@@ -245,12 +255,17 @@ export class RuneScene extends Phaser.Scene {
       if (boonLevel('by_actualiza') >= 2 && this.d.source !== 'regateo') addErgios(10);
     } else {
       run.ultimoFallo = p.concept; // se escribe en tu lápida si caes
+      if (run.modo === 'abismo' && !this.amUsado) {
+        addEntropia(CORDURA.runaMal);
+        this.flash(`−${CORDURA.runaMal} de Cordura`, '#c88aff', 132);
+      }
       // Actualización Bayesiana (Bayes): un error no borra la evidencia acumulada
       if (!this.amUsado && !boonLevel('by_actualiza')) run.stats.racha = 0;
     }
     if (this.d.source !== 'regateo') run.floor = this.d.floor + 1;
     saveLocal();
     syncRun('en curso');
+    this.hud.refresh(); // el semáforo de Cordura cambia al instante
     this.showResult(ok);
   }
 

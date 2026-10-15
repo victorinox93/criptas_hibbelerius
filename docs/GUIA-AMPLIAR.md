@@ -444,3 +444,24 @@ Antes de la portada sale una consola ficticia: el alumno abre el estuche y mete 
 | Cambiar los sonidos | `sfx` en `arranque.ts` (`clack`, `whirr`, `acorde`) |
 
 Para verlo de nuevo en la misma pestaña mientras pruebas, pon `ARRANQUE = 'siempre'` o abre el juego en una pestaña nueva.
+
+---
+
+## 13. El Abismo de los Ejes (v0.38, beta)
+
+Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega como el «acto 5»: 8 pisos + el jefe.
+
+| Quiero agregar… | Dónde |
+|---|---|
+| Página del Necronomicón | `PAGINAS` en `src/data/abismo_modo.ts`; su efecto en `Combat.ts` (busca `this.necro('…')`) |
+| Pacto (mazo inicial) | `PACTOS` en `src/data/abismo_modo.ts`; su regla en `Combat.ts` (busca `this.pacto('…')`) |
+| Edición de carta | `EDICIONES` en `abismo_modo.ts` (probabilidad y texto), color en `src/ui/card.ts` y efecto en `playOn()` de `Combat.ts` |
+| Carta del Abismo | `src/data/cards.ts` con `abismo: true` (sólo sale en el Abismo) + su `case` en `playOn()` |
+| Enemigo del Abismo | `src/data/enemies.ts` con `act: 5` + `ENCOUNTERS_5`; el dibujo en `tools/arte/abismo.py` (corre `python3 tools/arte/abismo.py`) |
+| Eco Quebrado | `src/data/figures.ts` con `act: 5`; el retrato en `FIG_ABISMO` de `src/art/abismo.ts` |
+| Pregunta de cuerpo rígido | `ABISMO_GEN` en `src/data/runes.ts` o un bloque en `preguntas.ts` con los conceptos de `ABISMO_CONCEPTS` |
+| Texto del prólogo | `PROLOGO` en `abismo_modo.ts` |
+| Cordura (cuánto sube o baja) | `CORDURA` en `abismo_modo.ts` |
+
+Mecánicas nuevas de enemigos: `confusion: true` en una intención (te Confunde), `vuelco: true` (se vuelca con 2 golpes en el mismo turno) y `hueco: true` (los golpes a TODOS le hacen la mitad).
+

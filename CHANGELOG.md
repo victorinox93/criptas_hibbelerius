@@ -2,6 +2,21 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.38.0 · El Abismo de los Ejes (beta, sólo Modo profesor)
+
+- Nuevo modo de **horror cósmico** para quien ya venció a AM. Por ahora sólo se abre desde el **Modo profesor → Abismo (beta)** para probarlo.
+- **Prólogo:** el diario del profesor Elías Arrieta (1931), que encontró el *Necronomicón de Hibbelerius* y fue perdiendo la cordura. Se puede saltar.
+- **Una página del Necronomicón por expedición:** eliges 1 de 3 modificadores con poder y costo (Geometría Imposible, El Sueño Profundo, Ángulos que No Suman, El Mercader Velado, La Confusión, El Cristal, Página de Steiner y El Horror Lúcido).
+- **El Pacto:** eliges 1 de 3 mazos temáticos (Centroide, Excéntrico, Volante, Hueco, Inercia) o el **Pacto ciego** (mazo al azar y +15 de Cordura).
+- **Cordura con semáforo:** siempre visible a la izquierda (verde, amarillo, naranja, rojo). Es 100 − Locura: aciertas y sube 10, fallas y baja 8.
+- **Confusión** (como en Slay the Spire): las cartas robadas cuestan 0–3 J al azar; la gema se pinta de violeta.
+- **Ediciones** (como en Balatro): Lámina, Holográfica, Polícroma y **Cristal** (×2, un solo uso: se rompe y sale del mazo). Salen en las recompensas del Abismo.
+- **11 cartas del Abismo:** Golpe al Centroide, Momento de Inercia, Radio de Giro, Ejes Paralelos, Pirueta, Volante Abisal, Geometría Imposible, El Ojo que Gira, Teorema de Steiner y Despertar al Durmiente (legendarias), más el estado Susurro.
+- **Capa 1, los Muelles Inclinados:** Acólito Inclinado (se vuelca con 2 golpes), Pólipo Compuesto (se divide), Profundo Hueco (área negativa), Cultista del Eje (te Confunde), élites Vigía del Faro Hundido y Madre Hidra, y el jefe **El Geómetra No Euclidiano**.
+- **Ecos Quebrados:** Isaac Newton en 1693, Georg Cantor y Ludwig Boltzmann, presentados con respeto y con un mensaje sobre salud mental.
+- **Preguntas nuevas:** centroides, centro de masa, momento de inercia, ejes paralelos y radio de giro (numéricas con datos al azar y conceptuales). El 40 % repasa temas de los actos anteriores.
+- Música nueva (frigia, muy grave) y fondo de ciudad hundida. Sprites generados con `tools/arte/abismo.py`.
+
 ## v0.37.0 · Relicario-93
 
 - Nuevo **arranque estilo consola** (inspirado en UFO 50): antes de la portada aparece el Relicario-93. Abres el estuche, sacas el disco (arrastrándolo o tocándolo), lo metes en la consola, se lee con un BIOS de física y al presionar **Iniciar** aparece el juego.

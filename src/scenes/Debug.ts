@@ -10,6 +10,7 @@ import { EFFECTS } from '../data/effects';
 import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { ALMA_IDS } from '../data/almas';
+import { PAGINAS } from '../data/abismo_modo';
 
 /** Nombres cortos de las almas para el botón «Fin + alma» (cada clic pasa a la siguiente) */
 const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda', autocompleto: 'Autocomp.', manco: 'Dextro', histeresis: 'Histéresis', cebollin: 'Cebollín', helios: 'Helios', parches: 'Parches', hanbei: 'Hanbei', gough: 'Gough' };
@@ -81,10 +82,10 @@ export class DebugScene extends Phaser.Scene {
     btn(860, 108, 150, `Extras: ${OPTS.extras ? 'sí' : 'no'}`, () => { OPTS.extras = !OPTS.extras; this.draw(); }, OPTS.extras);
 
     label(50, 180, 'Empezar en');
-    [1, 2, 3, 4].forEach((a, i) => btn(170 + i * 190, 222, 176, a === 4 ? 'Acto IV (Núcleo)' : `Acto ${['I', 'II', 'III'][i]}`, () => this.go(a, 'Map'), a === 4));
+    [1, 2, 3, 4].forEach((a, i) => btn(150 + i * 170, 222, 160, a === 4 ? 'Acto IV (Núcleo)' : `Acto ${['I', 'II', 'III'][i]}`, () => this.go(a, 'Map'), a === 4));
 
     // ── saltos directos ──
-    label(50, 246, 'Ir directo a (en el acto de la partida actual, o Acto III si no hay; Jefe en el Acto IV = AM)');
+    label(50, 246, 'Ir directo a (en el acto de la partida actual, o Acto III si no hay; Jefe en el Acto IV = AM; en el Abismo = Geómetra)');
     const acto = () => (Game.run && !Game.run.done ? Game.run.acto : 3);
     const jumps: [string, () => void][] = [
       ['Combate', () => this.go(acto(), 'Combat', { kind: 'normal', floor: 3 })],
@@ -120,6 +121,9 @@ export class DebugScene extends Phaser.Scene {
     btn(520, 396, 260, `Dilema: ${dil.name}`, () => this.go(acto(), 'Dilemma', { floor: 2, id: dil.id }));
     btn(685, 396, 50, '▸', () => { OPTS.dilema = (OPTS.dilema + 1) % DILEMMAS.length; this.draw(); });
     btn(830, 396, 180, 'Transición II→III', () => this.go(2, 'ActTransition', { to: 3 }));
+
+    // ── El Abismo de los Ejes (beta: sólo en el Modo profesor) ──
+    btn(835, 222, 170, 'Abismo (beta)', () => fadeTo(this, 'Abismo', { clase: OPTS.clase, gravedad: OPTS.gravedad, debug: true, tanque: OPTS.vida === 'tanque' }), true, 17);
 
     // ── grimorio ──
     label(50, 418, 'Grimorio');
@@ -159,6 +163,14 @@ export class DebugScene extends Phaser.Scene {
     r.debug = true;
     r.acto = acto;
     r.map = generateMap(acto);
+    if (acto === 5) {
+      // saltos dentro del Abismo: conserva su página y su Pacto (o pone unos al azar)
+      const prev = Game.run?.modo === 'abismo' ? Game.run : null;
+      r.modo = 'abismo';
+      r.necro = prev?.necro ?? Phaser.Utils.Array.GetRandom(PAGINAS).id;
+      r.pacto = prev?.pacto ?? 'centroide';
+      r.entropia = prev?.entropia ?? 30;
+    }
     if (OPTS.vida === 'tanque') r.maxHp = r.hp = r.maxHp * 10;
     if (OPTS.mazo === 'fuerte' || acto > 1) {
       // un mazo razonable para el acto: mejoras y cartas de la clase

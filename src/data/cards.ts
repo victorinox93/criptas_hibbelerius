@@ -8,7 +8,11 @@ export interface CardInst {
   id: string;
   up: boolean; // mejorada
   evo?: number; // niveles de evolución extra (Darwin): +2 kg (Arcanista +0.5 kg) y +3 de Bloqueo por nivel
+  ed?: Edicion; // El Abismo de los Ejes: edición estilo Balatro (src/data/abismo_modo.ts)
 }
+
+/** Ediciones de carta (El Abismo de los Ejes): lámina, holográfica, polícroma y cristal (un solo uso) */
+export type Edicion = 'lamina' | 'holo' | 'poli' | 'cristal';
 
 /** Contexto de combate necesario para calcular números en vivo */
 export interface CalcCtx {
@@ -21,6 +25,7 @@ export interface CalcCtx {
   energy?: number; // Joules disponibles
   masa?: number; // masa actual del Penitente (= su vida, kg)
   ve?: number; // velocidad de escape de sus gases (m/s)
+  cordura?: number; // El Abismo de los Ejes: 100 − Locura
 }
 
 export interface CardStats {
@@ -45,6 +50,7 @@ export interface CardDef {
   act?: number; // sólo aparece como recompensa a partir de este acto
   lock?: number; // nivel de Conocimiento necesario para que aparezca (src/data/progreso.ts)
   am?: boolean; // sólo aparece en las recompensas después de vencer a AM (cartas de cálculo)
+  abismo?: boolean; // sólo sale en El Abismo de los Ejes (acto 5)
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -714,6 +720,77 @@ export const CARDS: Record<string, CardDef> = {
     text: () => `Si sigue en tu mano al\nterminar el turno, pierdes\n3 de vida. Jugarla la entrega.`,
     lore: '«Problema 15-23. Para el lunes.» — Hibbelerius',
   },
+  // ════════════ EL ABISMO DE LOS EJES (sólo salen en ese modo) ════════════
+  centroideGolpe: {
+    id: 'centroideGolpe', name: 'Golpe al Centroide', type: 'Ataque', icon: 'i_angle', concept: 'Centroide', rarity: 'común', target: 'enemy', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, m: 4, a: up ? 4 : 3 }),
+    text: (s, c) => `${fText(s, c)}\n×1.5 si el enemigo\nno tiene Bloqueo.`,
+    lore: 'El centroide es el «punto promedio» de una figura: x̄ = ΣxᵢAᵢ / ΣAᵢ. Un golpe ahí no hace girar al cuerpo: toda la fuerza lo traslada.',
+  },
+  momentoInercia: {
+    id: 'momentoInercia', name: 'Momento de Inercia', type: 'Defensa', icon: 'i_crystal', concept: 'Momento de inercia', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 2, block: up ? 15 : 10, extra: up ? 3 : 2 }),
+    text: (s) => `I = Σm·r² =\n${s.extra}·(1² + 2²) = ${s.block}\nGana ${s.block} de Bloqueo.`,
+    lore: 'El momento de inercia mide qué tanto se resiste un cuerpo a girar. La masa lejos del eje cuenta al cuadrado de la distancia.',
+  },
+  radioGiro: {
+    id: 'radioGiro', name: 'Radio de Giro', type: 'Defensa', icon: 'i_shield', concept: 'Radio de giro', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, block: up ? 8 : 6 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\n+4 si tienes 5 o más\ncartas en la mano.`,
+    lore: 'k = √(I/m): la distancia a la que tendrías que concentrar toda la masa para que gire igual. Mientras más extendido, más difícil de girar.',
+  },
+  ejesParalelos: {
+    id: 'ejesParalelos', name: 'Ejes Paralelos', type: 'Habilidad', icon: 'i_angle', concept: 'Ejes paralelos', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `I = I₀ + m·d²\nTu siguiente ataque\neste turno hace ×2.`,
+    lore: 'Teorema de Steiner: si mueves el eje una distancia d del centro de masa, el momento de inercia crece m·d². Lejos del eje, todo pesa más.',
+  },
+  pirueta: {
+    id: 'pirueta', name: 'Pirueta', type: 'Habilidad', icon: 'i_wind', concept: 'Momento angular', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: 0, extra: up ? 2 : 1 }),
+    text: (s) => `I₁ω₁ = I₂ω₂: recoges\nlos brazos y giras más.\nRobas 2 y ganas ${s.extra} J.\nSe agota.`,
+    lore: 'Sin par externo el momento angular H = I·ω se conserva. Si I baja a la mitad, ω se duplica: así gira una patinadora (o una bailarina ahogada).',
+  },
+  volanteAbisal: {
+    id: 'volanteAbisal', name: 'Volante Abisal', type: 'Poder', icon: 'i_pend', concept: 'Energía rotacional', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `K = ½·I·ω²\n+1 J al inicio de cada\nturno de este combate.`,
+    lore: 'Un volante guarda energía en su giro y la entrega poco a poco. Mientras más masa lejos del eje, más energía cabe.',
+  },
+  geometriaImposible: {
+    id: 'geometriaImposible', name: 'Geometría Imposible', type: 'Ataque', icon: 'i_fog', concept: 'Centroide', rarity: 'rara', target: 'all', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 2, m: up ? 6 : 5, a: 4 }),
+    text: (s, c) => `${fText(s, c)}\na TODOS. Los ángulos\nno suman 180°: quedas\nConfundido.`,
+    lore: 'En la ciudad sumergida los triángulos no suman 180° y las figuras no tienen centroide. Golpear ahí desordena también tu cabeza.',
+  },
+  ojoQueGira: {
+    id: 'ojoQueGira', name: 'El Ojo que Gira', type: 'Habilidad', icon: 'i_ojo', concept: 'Horror', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 0, extra: up ? 3 : 2 }),
+    text: (s) => `Miras al abismo:\n−10 de Cordura.\nRobas 3 y ganas ${s.extra} J.`,
+    lore: 'Hay cosas que se aprenden más rápido mirándolas de frente. El precio se paga en cordura.',
+  },
+  steiner: {
+    id: 'steiner', name: 'Teorema de Steiner', type: 'Poder', icon: 'i_anvil', concept: 'Ejes paralelos', rarity: 'legendaria', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2, extra: up ? 4 : 3 }),
+    text: (s) => `I = I₀ + m·d²\n+${s.extra} kg y +1 m/s² a tus\nataques el resto del\ncombate.`,
+    lore: 'Jakob Steiner demostró que basta conocer I respecto al centro de masa para calcularlo respecto a CUALQUIER eje paralelo.',
+  },
+  despertar: {
+    id: 'despertar', name: 'Despertar al Durmiente', type: 'Ataque', icon: 'i_necro', concept: '2ª ley', rarity: 'legendaria', target: 'enemy', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: up ? 1 : 2, m: 10 }),
+    text: (s, c) => {
+      const loc = Math.max(0, 100 - (c.cordura ?? 70));
+      const a = Math.max(1, Math.round(loc / 10));
+      return `m = ${r1((s.m ?? 0) + c.masaBonus)} kg\na = Locura/10 = ${a} m/s²\nMás loco, más fuerte.`;
+    },
+    lore: 'El Durmiente no sueña con nosotros: sueña con ecuaciones. Mientras menos cordura te queda, más de su fuerza pasa por ti.',
+  },
+  susurro: {
+    id: 'susurro', name: 'Susurro', type: 'Estado', icon: 'i_fog', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
+    stats: () => ({ cost: 1 }),
+    text: () => `Si sigue en tu mano al\nterminar el turno:\n−3 de Cordura.\nJugarla la calla.`,
+    lore: '«…los ejes están ahí, pero ellos no los ven…» — diario del profesor Arrieta',
+  },
 };
 
 export const STARTER_DECK = ['golpe', 'golpe', 'golpe', 'golpe', 'normal', 'normal', 'normal', 'normal', 'embestida', 'carrera'];
@@ -728,7 +805,7 @@ export function starterDeck(clase: string) {
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */
 export function rewardPool(clase: string, acto = 1, nivel = 99, am = false): string[] {
-  const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel && (!c.am || am);
+  const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel && (!c.am || am) && (!c.abismo || acto === 5);
   const own = Object.values(CARDS).filter((c) => ok(c) &&
     c.rarity !== 'estado' && c.rarity !== 'legendaria' && (c.cls ?? 'caballero') === (clase || 'caballero'));
   const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && c.rarity !== 'estado' && c.rarity !== 'legendaria' && ok(c));
@@ -744,16 +821,19 @@ export function limiteDano(umbral: number) {
 export const LEGENDARIAS = Object.values(CARDS).filter((c) => c.rarity === 'legendaria').map((c) => c.id);
 
 /** Legendarias que aún no tienes en el mazo (una copia por expedición) */
-export function legendariasDisponibles(deck: CardInst[], n = 3) {
+export function legendariasDisponibles(deck: CardInst[], n = 3, abismo = false) {
   const own = new Set(deck.map((c) => c.id));
-  return LEGENDARIAS.filter((id) => !own.has(id)).sort(() => Math.random() - 0.5).slice(0, n);
+  return LEGENDARIAS.filter((id) => !own.has(id) && !!CARDS[id].abismo === abismo).sort(() => Math.random() - 0.5).slice(0, n);
 }
+
+/** Nombre corto de cada edición */
+export const NOMBRE_EDICION: Record<Edicion, string> = { lamina: 'Lámina', holo: 'Holográfica', poli: 'Polícroma', cristal: 'Cristal' };
 
 /** Compatibilidad: pool del caballero */
 export const REWARD_POOL = rewardPool('caballero');
 
 export function cardName(ci: CardInst) {
-  return CARDS[ci.id].name + (ci.up ? '+' : '') + (ci.evo ? ` ✦${ci.evo}` : '');
+  return CARDS[ci.id].name + (ci.up ? '+' : '') + (ci.evo ? ` ✦${ci.evo}` : '') + (ci.ed ? ` (${NOMBRE_EDICION[ci.ed]})` : '');
 }
 
 /** Estadísticas de una carta concreta (mejora + evolución de Darwin) */

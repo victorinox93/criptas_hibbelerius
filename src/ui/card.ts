@@ -23,6 +23,17 @@ export interface CardView extends Phaser.GameObjects.Container {
 
 export const NO_CTX: CalcCtx = { masaBonus: 0, acelBonus: 0, friccion: 0 };
 
+/** Costos alterados en combate (Confusión, Pacto del Centroide): uid → J. El combate lo llena y lo limpia. */
+export const costOverride = new Map<number, number>();
+
+/** Colores de las ediciones del Abismo (src/data/abismo_modo.ts) */
+const ED_COLOR: Record<string, [number, string, string]> = {
+  lamina: [0x9ad8f0, '#9ad8f0', 'LÁMINA'],
+  holo: [0xc88aff, '#d0a0ff', 'HOLO'],
+  poli: [0xff8ad0, '#ff9ad8', 'POLÍCROMA'],
+  cristal: [0xe8fbff, '#e8fbff', 'CRISTAL'],
+};
+
 export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, ctx: CalcCtx = NO_CTX): CardView {
   const def = CARDS[inst.id];
   const c = s.add.container(x, y) as CardView;
@@ -52,6 +63,34 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   const cost = txt(s, -CW / 2 + 12, -CH / 2 + 10, '', 24, '#e8fbff').setOrigin(0.5);
   const unit = txt(s, -CW / 2 + 12, -CH / 2 + 30, 'J', 14, CSS.energy).setOrigin(0.5);
   c.add([g, art, name, type, body, gem, cost, unit]);
+  if (inst.ed && ED_COLOR[inst.ed]) {
+    // edición estilo Balatro: marco brillante que late y una etiqueta
+    const [col, css, label] = ED_COLOR[inst.ed];
+    const glow = s.add.graphics();
+    glow.lineStyle(3, col, 1).strokeRect(-CW / 2 + 2, -CH / 2 + 2, CW - 4, CH - 4);
+    glow.lineStyle(1, 0xffffff, 0.7).strokeRect(-CW / 2 + 6, -CH / 2 + 6, CW - 12, CH - 12);
+    if (inst.ed === 'cristal') {
+      // destellos diagonales sobre el arte
+      glow.fillStyle(0xffffff, 0.18).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
+      glow.lineStyle(2, 0xffffff, 0.6).lineBetween(-30, -CH / 2 + 88, 10, -CH / 2 + 36).lineBetween(-10, -CH / 2 + 88, 30, -CH / 2 + 36);
+    }
+    const tag = txt(s, CW / 2 - 16, -CH / 2 + 82, label, 14, css).setOrigin(1, 0.5).setStroke('#000', 3);
+    c.add([glow, tag]);
+    s.tweens.add({ targets: glow, alpha: 0.35, duration: 700 + Math.random() * 300, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const k = { h: Math.random() };
+    c.once('destroy', () => { s.tweens.killTweensOf(glow); s.tweens.killTweensOf(k); });
+    if (inst.ed === 'poli' || inst.ed === 'holo') {
+      // el color cambia como un holograma
+      s.tweens.add({ targets: k, h: k.h + 1, duration: inst.ed === 'poli' ? 1800 : 3200, repeat: -1, onUpdate: () => {
+        const rgb = Phaser.Display.Color.HSVToRGB(k.h % 1, 0.45, 1) as Phaser.Types.Display.ColorObject;
+        const hex = Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
+        glow.clear();
+        glow.lineStyle(3, hex, 1).strokeRect(-CW / 2 + 2, -CH / 2 + 2, CW - 4, CH - 4);
+        glow.lineStyle(1, 0xffffff, 0.7).strokeRect(-CW / 2 + 6, -CH / 2 + 6, CW - 12, CH - 12);
+        tag.setColor(`#${hex.toString(16).padStart(6, '0')}`);
+      } });
+    }
+  }
   c.setSize(CW, CH);
 
   c.refresh = (cx: CalcCtx, playable = true) => {
@@ -64,7 +103,8 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
     while ((body.height > maxH || body.width > maxW) && fs > 13) body.setFontSize(--fs);
     const k = Math.min(1, maxH / body.height, maxW / body.width);
     body.setScale(k);
-    cost.setText(String(st.cost));
+    const ov = costOverride.get(inst.uid);
+    cost.setText(String(ov ?? st.cost)).setColor(ov !== undefined && ov !== st.cost ? '#e0b0ff' : '#e8fbff');
     c.setAlpha(playable ? 1 : 0.55);
   };
   c.refresh(ctx);

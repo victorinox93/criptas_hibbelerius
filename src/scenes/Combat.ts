@@ -17,11 +17,13 @@ function umbralDe(st: EnemyState) {
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
 import { AddCards, danoDe, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
+import { enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
+import { CORDURA, corduraDe, EDICIONES } from '../data/abismo_modo';
+import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
 import { bonosFinales, JEFES, PUNTOS, sumar } from '../data/puntaje';
@@ -29,7 +31,7 @@ import { POCIONES } from '../data/pociones';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
-import { cardView, CardView, CH } from '../ui/card';
+import { cardView, CardView, CH, costOverride } from '../ui/card';
 import { deckOverlay, Hud, setPotionHandler, topBar } from '../ui/hud';
 import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, castleBackground, Tooltip, txt } from '../ui/widgets';
 
@@ -148,6 +150,13 @@ export class CombatScene extends Phaser.Scene {
   private resorteMul = 1.5;
   private fuegoAmigo = false; // los ataques enemigos se desvían
   private hondaV = new Map<number, number>(); // Honda de David: rapidez por carta (uid)
+  // ── El Abismo de los Ejes ──
+  private confusa = false; // Confusión: cada carta robada cuesta 0–3 J al azar (costos en costOverride)
+  private golpesTurno = new Map<EnemyState, number>(); // golpes recibidos este turno (Acólito: se vuelca con 2)
+  private curAll = false; // la carta en curso golpea a TODOS (Profundo Hueco recibe la mitad)
+  private steinerUsed = false; // Página de Steiner: primer ataque del combate ×2
+  private bonusJ1 = 0; // J extra en el primer turno (Boltzmann, Cantor)
+  private robo1 = 0; // cartas extra en el primer turno (Newton 1693, página de la Confusión)
 
   constructor() { super('Combat'); }
 
@@ -211,6 +220,66 @@ export class CombatScene extends Phaser.Scene {
     this.entropia = 0;
     this.extraDraw = 0;
     this.hpStart = Game.run?.hp ?? 0;
+    this.confusa = false;
+    costOverride.clear();
+    this.golpesTurno = new Map();
+    this.curAll = false;
+    this.steinerUsed = false;
+    this.bonusJ1 = 0;
+    this.robo1 = 0;
+    if (Game.run?.necro === 'sueno') this.maxEnergy += 1; // El Sueño Profundo
+    this.energy = this.maxEnergy;
+  }
+
+  private necro(id: string) {
+    return Game.run?.modo === 'abismo' && Game.run.necro === id;
+  }
+  private pacto(id: string) {
+    return Game.run?.modo === 'abismo' && Game.run.pacto === id;
+  }
+
+  /** Confusión (como en Slay the Spire): desde ahora cada carta robada cuesta 0–3 J al azar */
+  private confundir(fuente: string) {
+    if (this.confusa) return;
+    this.confusa = true;
+    for (const c of this.hand) costOverride.set(c.inst.uid, Phaser.Math.Between(0, 3));
+    this.calc(`${fuente}: ¡estás CONFUNDIDO! Tus cartas cuestan 0–3 J al azar`);
+    this.floatText(this.heroX, 190, '¿Confusión?', '#c88aff');
+    this.refreshPlayer();
+  }
+
+  /** Reglas del Abismo al iniciar el combate: página del Necronomicón, Pacto y Ecos Quebrados */
+  private abismoModoInicio() {
+    const run = Game.run!;
+    if (run.modo !== 'abismo') return;
+    const masaOVel = (n: number, fuente: string) => {
+      if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + n);
+      else this.masa += n;
+      this.calc(`${fuente}: +${n} ${this.usaVel ? 'm/s' : 'kg'}`);
+    };
+    if (this.necro('geometria')) masaOVel(2, 'Geometría Imposible');
+    if (this.pacto('excentrico')) masaOVel(2, 'Pacto Excéntrico');
+    if (this.pacto('inercia')) { this.block += 6; this.calc('Pacto de la Inercia: +6 de Bloqueo'); }
+    if (this.necro('angulos')) {
+      for (const e of this.alive()) { e.st.hp = e.st.maxHp = Math.round(e.st.maxHp * 1.15); this.refreshEnemy(e); }
+      this.calc('Ángulos que No Suman: los enemigos tienen +15 % de vida');
+    }
+    if (this.necro('sueno')) this.addStatus({ id: 'susurro', n: 1, to: 'draw' });
+    if (this.necro('confusion')) { this.robo1 += 1; this.time.delayedCall(400, () => this.confundir('La Confusión')); }
+    // Ecos Quebrados
+    const qa = boonLevel('qn_alquimia');
+    if (qa) masaOVel(qa, 'Mercurio del Alquimista (Newton)');
+    this.robo1 += boonLevel('qn_insomnio');
+    const be = boonLevel('bo_equiparticion');
+    if (be) this.block += 3 * be;
+    const bs = boonLevel('bo_entropia');
+    if (bs) {
+      const n = Math.floor((run.entropia ?? 0) / (bs === 2 ? 20 : 25));
+      if (n) { this.bonusJ1 += n; this.calc(`S = k·ln W (Boltzmann): Locura ${run.entropia} → +${n} J en tu primer turno`); }
+    }
+    const al = boonLevel('ca_aleph');
+    if (al === 2) this.jPerTurn += 1;
+    else if (al) this.bonusJ1 += 1;
   }
 
   private prohibido(id: string) {
@@ -225,8 +294,10 @@ export class CombatScene extends Phaser.Scene {
       for (const e of this.alive()) { e.st.hp = e.st.maxHp = Math.max(1, Math.round(e.st.maxHp * 0.7)); this.refreshEnemy(e); }
       this.calc('Primera expedición: los enemigos de los primeros pisos vienen más débiles');
     }
-    if (this.kind === 'boss') addEntropia(ENTROPIA.jefe);
-    else if (this.kind === 'elite') addEntropia(ENTROPIA.elite);
+    if (!this.necro('lucido')) {
+      if (this.kind === 'boss') addEntropia(ENTROPIA.jefe);
+      else if (this.kind === 'elite') addEntropia(ENTROPIA.elite);
+    }
     // primera vez con el Penitente: cómo se juega
     if (this.isPen && !(Game.codex.flags ?? []).includes('pen_tuto')) {
       codexFlag('pen_tuto');
@@ -244,7 +315,12 @@ export class CombatScene extends Phaser.Scene {
       this.calc('Problema Ω: el universo se contrae → los enemigos empiezan con 15 % menos vida');
     }
     const e = run.entropia ?? 0;
-    if (e >= ENTROPIA.max) {
+    const lapida = boonLevel('bo_lapida');
+    if (e >= ENTROPIA.max && lapida) {
+      // La Lápida (Boltzmann): S = k·log W te sostiene; no aparece la Sombra
+      run.entropia = lapida === 2 ? 30 : 50;
+      this.calc(`La Lápida (Boltzmann): S = k·log W te sostiene → tu Locura baja a ${run.entropia}`);
+    } else if (e >= ENTROPIA.max) {
       // Quiebre: aparece una Sombra que sólo tú ves
       const x = this.freeX(560);
       if (x !== null) {
@@ -271,7 +347,7 @@ export class CombatScene extends Phaser.Scene {
     return Game.run!.effects.some((e) => e.id === id && e.left > 0);
   }
   private ctx(): CalcCtx {
-    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy, masa: Game.run!.hp, ve: this.ve };
+    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy, masa: Game.run!.hp, ve: this.ve, cordura: corduraDe(Game.run!.entropia) };
   }
   private wait(ms: number) {
     return new Promise<void>((r) => this.time.delayedCall(ms, () => r()));
@@ -287,7 +363,10 @@ export class CombatScene extends Phaser.Scene {
     this.ve = VE_BASE;
     this.critica = false;
     this.grav = gravityOf(run.gravity);
-    if (this.acto >= 4) {
+    if (this.acto === 5) {
+      audio.play(this.kind === 'boss' ? 'jefe5' : 'combate6');
+      abismoBackground(this, 500 + this.floor * 7, this.kind === 'boss');
+    } else if (this.acto >= 4) {
       audio.play(this.kind === 'boss' ? 'jefe4' : 'combate5');
       nucleoBackground(this, 400 + this.floor * 7, this.kind === 'boss');
     } else if (this.acto === 3) {
@@ -407,11 +486,12 @@ export class CombatScene extends Phaser.Scene {
       if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + cm);
       else this.masa += cm;
     }
+    this.abismoModoInicio();
     this.showFamiliar();
     this.showAliado();
     this.showFantasma();
     this.refreshPlayer();
-    this.banner(this.kind === 'boss' ? T.combate.bannerJefes[Math.min(3, this.acto - 1)] : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+    this.banner(this.kind === 'boss' ? (this.acto === 5 ? 'El Geómetra No Euclidiano' : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
       if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
@@ -507,6 +587,7 @@ export class CombatScene extends Phaser.Scene {
     if (i.shieldAll) r.d += `\nDará ${i.shieldAll} de Bloqueo a todos sus aliados.`;
     if (i.heal) r.d += `\nSe curará ${i.heal} de vida.`;
     if (i.drain) r.d += `\nTe robará ${i.drain} J para tu siguiente turno.`;
+    if (i.confusion) r.d += '\nTe CONFUNDIRÁ: cada carta que robes costará 0–3 J al azar.';
     if (i.add) r.d += `\nMeterá ${i.add.n} «${CARDS[i.add.id].name}» a tu ${i.add.to === 'draw' ? 'mazo de robo' : 'descarte'}.`;
     return r;
   }
@@ -530,7 +611,8 @@ export class CombatScene extends Phaser.Scene {
         if (ii.summon) { ev.intentC.add(icon(this, ex, 0, 'i_skull', 3)); ex += 30; }
         if (ii.shieldAll) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3)); ex += 30; }
         if (ii.heal) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3)); ex += 30; }
-        if (ii.drain) ev.intentC.add(icon(this, ex, 0, 'i_bolt', 3));
+        if (ii.drain) { ev.intentC.add(icon(this, ex, 0, 'i_bolt', 3)); ex += 30; }
+        if (ii.confusion) ev.intentC.add(icon(this, ex, 0, 'i_ojo', 3).setTint(0xc88aff));
       }
       this.tip.attach(ic, 'Intención', it.d);
       this.tweens.add({ targets: ev.intentC, y: ev.intentC.y - 4, duration: 600, yoyo: true, repeat: 1 });
@@ -605,6 +687,7 @@ export class CombatScene extends Phaser.Scene {
       if (this.critica) items.push(['i_mass', '×1.5', 'Masa Crítica', 'Con menos de la mitad de tu masa máxima, tus ataques hacen ×1.5.']);
     }
     if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
+    if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema violeta).']);
     if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
     if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
     if (this.velPerTurn) items.push(['i_gaunt', `+${this.velPerTurn}`, 'Impulso Constante', `+${this.velPerTurn} m/s al inicio de cada turno.`]);
@@ -618,7 +701,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private cost(c: CardView) {
-    return statsOf(c.inst).cost;
+    return costOverride.get(c.inst.uid) ?? statsOf(c.inst).cost;
   }
 
   private drawCards(n: number) {
@@ -630,6 +713,8 @@ export class CombatScene extends Phaser.Scene {
       }
       if (this.hand.length >= 10) break;
       const inst = this.draw.pop()!;
+      if (this.confusa && CARDS[inst.id].rarity !== 'estado') costOverride.set(inst.uid, Phaser.Math.Between(0, 3));
+      else costOverride.delete(inst.uid);
       if (inst.id === 'errorSigno') {
         this.energy = Math.max(0, this.energy - 1);
         this.calc('Error de Signo: tu análisis se arruina → −1 J');
@@ -897,14 +982,16 @@ export class CombatScene extends Phaser.Scene {
     const inst = v.inst;
     const def = CARDS[inst.id];
     const st = statsOf(inst);
-    if (st.cost > this.energy) return;
+    const costo = this.cost(v);
+    if (costo > this.energy) return;
+    costOverride.delete(inst.uid);
     this.busy = true;
     this.selected = null;
     this.clearZones();
     this.hintT.setAlpha(0);
     this.tip.hide();
     audio.sfx('card');
-    this.energy -= st.cost;
+    this.energy -= costo;
     this.hand = this.hand.filter((c) => c !== v);
     v.disableInteractive();
     this.tweens.add({ targets: v, x: W / 2, y: 230, scale: 0.9, angle: 0, duration: 140 });
@@ -967,8 +1054,91 @@ export class CombatScene extends Phaser.Scene {
         this.calc('Palanca de Arquímedes: brazo doble → momento doble: ×2');
       }
     }
+    // ── El Abismo: ediciones (Balatro), Página de Steiner y área negativa ──
+    this.curAll = def.target === 'all';
+    const ed = inst.ed;
+    if (ed && def.type === 'Ataque') {
+      if (ed === 'lamina') { this.polonio += 5; this.calc('Lámina: +5 de daño'); }
+      if (ed === 'poli') { this.mult *= 1.5; this.calc('Polícroma: ×1.5'); }
+      if (ed === 'cristal') { this.mult *= 2; this.calc('Cristal: ×2'); }
+    }
+    if (ed === 'holo') { this.energy += 1; this.calc('Holográfica: +1 J'); }
+    if (def.type === 'Ataque' && this.necro('steiner') && !this.steinerUsed) {
+      this.steinerUsed = true;
+      this.mult *= 2;
+      this.calc('Página de Steiner: I = I₀ + m·d² → primer ataque ×2');
+    }
     const c = this.ctx();
     switch (def.id) {
+      // ── El Abismo de los Ejes ──
+      case 'centroideGolpe': {
+        const f = force(st, c);
+        const libre = !!target && target.st.block <= 0;
+        if (libre) this.mult *= 1.5;
+        this.calc(`Golpe al Centroide: F = ${r1(f.m)} kg × ${r1(f.a)} m/s² = ${f.F} N${libre ? ' · sin Bloqueo: ×1.5' : ''}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, f.F);
+        break;
+      }
+      case 'momentoInercia':
+        this.gainBlock(st.block ?? 10);
+        this.calc(`Momento de Inercia: I = Σm·r² = ${st.extra}·(1² + 2²) = ${st.block} → +${st.block} de Bloqueo`);
+        break;
+      case 'radioGiro': {
+        const extra = this.hand.length >= 4 ? 4 : 0;
+        this.gainBlock((st.block ?? 6) + extra);
+        this.calc(`Radio de Giro: k = √(I/m) → +${(st.block ?? 6) + extra} de Bloqueo${extra ? ' (mano extendida: +4)' : ''}`);
+        break;
+      }
+      case 'ejesParalelos':
+        this.palanca = true;
+        this.calc('Ejes Paralelos: I = I₀ + m·d² → tu siguiente ataque hace ×2');
+        break;
+      case 'pirueta':
+        this.drawCards(2);
+        this.energy += st.extra ?? 1;
+        this.calc(`Pirueta: I₁ω₁ = I₂ω₂ → robas 2 y +${st.extra} J`);
+        break;
+      case 'volanteAbisal':
+        this.jPerTurn += 1;
+        this.calc('Volante Abisal: K = ½Iω² → +1 J al inicio de cada turno');
+        break;
+      case 'geometriaImposible': {
+        const f = force(st, c);
+        this.calc(`Geometría Imposible: F = ${r1(f.m)} kg × ${r1(f.a)} m/s² = ${f.F} N a todos`);
+        await this.heroLunge();
+        for (const e of [...this.alive()]) await this.hitEnemy(e, f.F);
+        this.confundir('Geometría Imposible');
+        break;
+      }
+      case 'ojoQueGira':
+        addEntropia(CORDURA.ojo);
+        this.drawCards(3);
+        this.energy += st.extra ?? 2;
+        this.calc(`El Ojo que Gira: −${CORDURA.ojo} de Cordura → robas 3 y +${st.extra} J`);
+        this.cameras.main.flash(250, 60, 140, 60);
+        this.hud.refresh();
+        break;
+      case 'steiner':
+        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 1);
+        else { this.baseAcel += 1; this.acel += 1; }
+        this.masa += st.extra ?? 3;
+        this.calc(`Teorema de Steiner: +${st.extra} kg y +1 ${this.usaVel ? 'm/s' : 'm/s²'} el resto del combate`);
+        break;
+      case 'despertar': {
+        const loc = Math.max(0, 100 - (c.cordura ?? 70));
+        const a = Math.max(1, Math.round(loc / 10));
+        const m = (st.m ?? 10) + this.masa;
+        const F = Math.round(m * a);
+        this.calc(`Despertar al Durmiente: F = ${r1(m)} kg × ${a} m/s² (Locura ${loc}) = ${F} N`);
+        this.cameras.main.shake(300, 0.008);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, F);
+        break;
+      }
+      case 'susurro':
+        this.calc('Callas el Susurro. Por ahora.');
+        break;
       // ── v0.16 ──
       case 'normalRobo':
         this.gainBlock(st.block ?? 6);
@@ -1682,6 +1852,22 @@ export class CombatScene extends Phaser.Scene {
     }
     this.polonio = 0;
     this.mult = 1;
+    this.curAll = false;
+    if (ed && def.type !== 'Ataque') {
+      if (ed === 'lamina') { this.gainBlock(4); this.calc('Lámina: +4 de Bloqueo'); }
+      if (ed === 'poli') { this.drawCards(1); this.calc('Polícroma: robas 1'); }
+      if (ed === 'cristal') { this.gainBlock(10); this.calc('Cristal: +10 de Bloqueo'); }
+    }
+    if (ed === 'cristal') {
+      // un solo uso: el cristal se rompe y la carta sale de tu mazo para siempre
+      const run = Game.run!;
+      run.deck = run.deck.filter((x) => x.uid !== inst.uid);
+      this.discard = this.discard.filter((x) => x !== inst);
+      this.exhaust = this.exhaust.filter((x) => x !== inst);
+      this.calc(`¡El Cristal se rompe! ${def.name} sale de tu mazo`);
+      this.burst(W / 2, 220, 0xe8fbff, 30);
+      this.floatText(W / 2, 180, '¡Crash!', '#e8fbff');
+    }
     if (this.masaDef && def.type === 'Defensa') {
       this.masa += 1;
       this.calc(`Masa Inamovible: +1 kg (masa extra: ${this.masa} kg)`);
@@ -1741,6 +1927,10 @@ export class CombatScene extends Phaser.Scene {
     const st = ev.st;
     if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
     const cardHit = kind === 'golpe' || typeof kind === 'number';
+    if (cardHit && st.def.hueco && this.curAll) {
+      F = Math.round(F / 2);
+      this.calc(`${st.def.name}: área negativa → el golpe a todos le hace la mitad`);
+    }
     if (cardHit && this.mult !== 1) F = Math.round(F * this.mult);
     const ttest = boonLevel('tu_test');
     if (cardHit && ttest && st.def.act === 4) F += ttest === 2 ? 6 : 3; // Test de Turing: contra autómatas y AM
@@ -1760,6 +1950,16 @@ export class CombatScene extends Phaser.Scene {
     }
     st.hp -= dmg;
     if (dmg > 0) st.recibido = (st.recibido ?? 0) + dmg;
+    if (cardHit && st.def.vuelco && st.hp > 0) {
+      const n = (this.golpesTurno.get(st) ?? 0) + 1;
+      this.golpesTurno.set(st, n);
+      if (n === 2 && st.stunned === 0) {
+        st.stunned = 1;
+        st.intent = { kind: 'stunned' };
+        this.calc(`${st.def.name}: su centro de masa sale de la base → ¡se VUELCA!`);
+        this.floatText(ev.baseX, 140, '¡Volcado!', CSS.gold);
+      }
+    }
     if (dmg > 0) this.danoTurno += dmg;
     // efectos
     ev.sprite.setTintFill(0xffffff);
@@ -1923,6 +2123,7 @@ export class CombatScene extends Phaser.Scene {
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
     if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
+    if (from && dmg > 0 && this.necro('steiner')) dmg += 1; // Página de Steiner
     // el Autor Eterno lanza hoces giratorias
     if (from && from.st.def.id === 'hibbelerius' && dmg > 0) await this.hoces(from);
     if (from && from.st.def.id === 'am' && dmg > 0) await this.amRayo(from);
@@ -2037,6 +2238,8 @@ export class CombatScene extends Phaser.Scene {
       this.block = 0;
     }
     this.energy = Math.max(0, this.maxEnergy + this.jPerTurn + this.carry - this.drainNext);
+    this.golpesTurno.clear();
+    if (this.turn === 1 && this.bonusJ1) { this.energy += this.bonusJ1; this.calc(`Ecos Quebrados: +${this.bonusJ1} J en tu primer turno`); }
     const tm = boonLevel('tu_maquina');
     if (tm && this.turn > 1 && this.played - this.jugadasIni >= (tm === 2 ? 3 : 4)) {
       this.energy += 1;
@@ -2063,7 +2266,7 @@ export class CombatScene extends Phaser.Scene {
       this.gainBlock(this.blockPerTurn);
       this.calc(`Resistencia del Material: +${this.blockPerTurn} de Bloqueo`);
     }
-    if (this.carry) this.calc(`Simetría en el Tiempo (Noether): conservas ${this.carry} J`);
+    if (this.carry) this.calc(`${this.pacto('volante') ? 'Pacto del Volante' : this.has('volante') ? 'Volante' : 'Simetría en el Tiempo (Noether)'}: conservas ${this.carry} J`);
     this.carry = 0;
     this.attacksTurn = 0;
     const kres = boonLevel('k_resorte');
@@ -2101,6 +2304,10 @@ export class CombatScene extends Phaser.Scene {
       if (await this.checkEnd()) return;
     }
     let draw = 5 + this.extraDraw;
+    if (this.turn === 1) draw += this.robo1;
+    if (this.necro('angulos')) draw += 1; // Ángulos que No Suman
+    const cd = boonLevel('ca_diagonal'); // Cantor
+    if ((cd === 1 && this.turn % 2 === 1) || cd === 2) draw += 1;
     if (this.turn === 1) draw += boonLevel('as_fundacion'); // Psicohistoria (Asimov)
     if (this.turn === 1) draw += boonLevel('by_prior'); // Prior Informativo (Bayes)
     if (this.isoRobo) { draw += 1; this.isoRobo = false; }
@@ -2188,6 +2395,12 @@ export class CombatScene extends Phaser.Scene {
     this.restE = 0;
     this.played = 0;
     this.drawCards(draw);
+    if (this.turn === 1 && this.pacto('centroide') && this.hand.length) {
+      // Pacto del Centroide: la carta más cara de la primera mano cuesta 0
+      const cara = this.hand.reduce((a, b) => (this.cost(b) > this.cost(a) ? b : a));
+      costOverride.set(cara.inst.uid, 0);
+      this.calc(`Pacto del Centroide: ${CARDS[cara.inst.id].name} cuesta 0 J este turno`);
+    }
     this.refreshPlayer();
     this.hint(`${T.combate.turno} ${this.turn}`);
     // familiares que actúan al inicio de tu turno
@@ -2231,7 +2444,15 @@ export class CombatScene extends Phaser.Scene {
     this.endBtn.setEnabled(false);
     const yt = boonLevel('y_tiempo');
     this.carry = yt ? Math.min(this.energy, yt) : 0;
-    if (this.has('volante')) this.carry = Math.max(this.carry, Math.min(this.energy, 3));
+    if (this.has('volante') || this.pacto('volante')) this.carry = Math.max(this.carry, Math.min(this.energy, 3));
+    // Susurros en la mano: el Abismo te habla
+    const susurros = this.hand.filter((c) => c.inst.id === 'susurro').length;
+    if (susurros) {
+      addEntropia(CORDURA.susurro * susurros);
+      this.calc(`Susurro ×${susurros}: −${CORDURA.susurro * susurros} de Cordura`);
+      this.floatText(this.heroX, 210, `−${CORDURA.susurro * susurros} Cordura`, '#c88aff');
+      this.hud.refresh();
+    }
     this.desvioUsed = false;
     // tareas pendientes: si siguen en la mano, cuestan vida
     const tareas = this.hand.filter((c) => c.inst.id === 'tarea').length;
@@ -2371,6 +2592,7 @@ export class CombatScene extends Phaser.Scene {
           this.drainNext += it.drain;
           this.calc(`${st.def.name} te roba ${it.drain} J para tu siguiente turno`);
         }
+        if (it.confusion) this.confundir(st.def.name);
         {
           if (it.friccion) {
             if (this.has('botas')) this.calc('Botas de Agarre: el lodo no te afecta.');
@@ -2424,7 +2646,10 @@ export class CombatScene extends Phaser.Scene {
     if (this.kind === 'boss' && this.turn <= 6) this.encargo(completarEncargo('jefeRapido'));
     if (this.kind === 'boss') sumar(run, 'Actos superados', PUNTOS.acto * this.acto);
     if (this.kind === 'boss' && this.acto === 3) sumar(run, 'Victoria', PUNTOS.victoria);
-    if (this.kind === 'boss' && this.acto >= 4) sumar(run, 'AM derrotado', PUNTOS.victoria * 2);
+    if (this.kind === 'boss' && this.acto === 4) sumar(run, 'AM derrotado', PUNTOS.victoria * 2);
+    if (this.kind === 'boss' && this.acto === 5) sumar(run, 'Geómetra derrotado', PUNTOS.victoria);
+    const qc = boonLevel('qn_calma'); // Newton 1693: la calma después de la tormenta
+    if (qc) { addEntropia(-3 * qc); this.calc(`Calma tras la tormenta (Newton): +${3 * qc} de Cordura`); }
     if (this.kind === 'elite') run.stats.elites++;
     // los efectos pasajeros se consumen al terminar el combate
     const cons = boonLevel('c_conserva');
@@ -2464,7 +2689,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.kind === 'boss') (run.seen ??= []).push(`jefe_${this.acto}`);
     if (this.kind === 'boss') {
       // v0.30: dejas tu signo para tus compañeros y, si te ayudó un fantasma, se le avisa
-      dejarSigno(run, ['colossus', 'bruja', 'hibbelerius', 'am'][Math.min(3, this.acto - 1)]);
+      if (this.acto < 5) dejarSigno(run, ['colossus', 'bruja', 'hibbelerius', 'am'][Math.min(3, this.acto - 1)]);
       if (run.fantasma) { usarHuella(run.fantasma.id); this.calc(`${run.fantasma.alias} recibirá Momentum por ayudarte.`); run.fantasma = undefined; }
     }
     if (this.kind === 'boss' && this.acto === 1) {
@@ -2498,6 +2723,17 @@ export class CombatScene extends Phaser.Scene {
         fadeTo(this, 'ActTransition', { to: 4 });
         return true;
       }
+    }
+    if (this.kind === 'boss' && this.acto === 5) {
+      run.done = true;
+      if (!run.debug) codexFlag('abismo1');
+      logEvent('acto', '', true, { acto: 5, vida: run.hp, modo: 'abismo' });
+      bonosFinales(run);
+      saveLocal();
+      syncRun('victoria', 'Geómetra No Euclidiano derrotado');
+      await this.banner('La figura por fin cierra');
+      fadeTo(this, 'End', { victory: true, abismo: true });
+      return true;
     }
     if (this.kind === 'boss' && this.acto >= 4) {
       run.done = true;
@@ -2564,7 +2800,7 @@ export class CombatScene extends Phaser.Scene {
     bonosFinales(run);
     saveLocal();
     logEvent('derrota', '', false, { piso: this.floor, enemigo: by });
-    const nucleo = this.acto >= 4;
+    const nucleo = this.acto === 4;
     syncRun(nucleo ? 'victoria' : 'derrota', nucleo ? `Cayó en el Núcleo: ${by}` : by);
     audio.sfx('defeat');
     this.tweens.add({ targets: this.hero, alpha: 0.2, y: 290, duration: 900 });
@@ -2585,8 +2821,9 @@ export class CombatScene extends Phaser.Scene {
       this.enemies.forEach((e) => { e.st.calor += 3; this.refreshEnemy(e); });
     }
     const col = c.good === true ? CSS.green : c.good === false ? '#e08a8a' : CSS.gold;
-    const ic = icon(this, 34, 96, c.icon, 2.6);
-    const t = txt(this, 52, 84, c.name, 20, col);
+    const cx = enAbismo() ? 40 : 0; // en el Abismo, el semáforo de Cordura ocupa la orilla
+    const ic = icon(this, 34 + cx, 96, c.icon, 2.6);
+    const t = txt(this, 52 + cx, 84, c.name, 20, col);
     this.tip.attach(ic, `Condición: ${c.name}`, c.text);
     this.tip.attach(t, `Condición: ${c.name}`, c.text);
     this.calc(`Condición del piso · ${c.name}: ${c.text}`);

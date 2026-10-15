@@ -287,6 +287,53 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['Si ganas un combate con menos de la mitad de tu vida, +3 Vida máxima.', 'Si ganas con menos de la mitad de tu vida, +5 Vida máxima.'],
     lore: 'Lo que no te elimina te deja mejor adaptado.',
   },
+  // ════════ ECOS QUEBRADOS (sólo en El Abismo de los Ejes) ════════
+  // Científicos reales que vivieron crisis mentales graves. Se presentan con respeto.
+  qn_alquimia: {
+    id: 'qn_alquimia', figure: 'newton1693', name: 'Mercurio del Alquimista', icon: 'i_mass',
+    text: ['+1 kg a tus ataques (Arcanista y Penitente: +1 m/s al empezar cada combate).', '+2 kg a tus ataques (Arcanista y Penitente: +2 m/s).'],
+    lore: 'Newton pasó décadas haciendo experimentos de alquimia. En su cabello se encontró mucho mercurio.',
+  },
+  qn_insomnio: {
+    id: 'qn_insomnio', figure: 'newton1693', name: 'Insomnio', icon: 'i_ojo',
+    text: ['Robas 1 carta extra en el primer turno de cada combate.', 'Robas 2 cartas extra en el primer turno de cada combate.'],
+    lore: 'En 1693 escribió a sus amigos que llevaba semanas casi sin dormir.',
+  },
+  qn_calma: {
+    id: 'qn_calma', figure: 'newton1693', name: 'Calma tras la Tormenta', icon: 'i_heart',
+    text: ['Al ganar un combate recuperas 3 de Cordura.', 'Al ganar un combate recuperas 6 de Cordura.'],
+    lore: 'Se recuperó: después de 1693 dirigió la Casa de Moneda y la Royal Society durante décadas.',
+  },
+  ca_diagonal: {
+    id: 'ca_diagonal', figure: 'cantor', name: 'Argumento Diagonal', icon: 'i_angle',
+    text: ['Robas 1 carta extra en los turnos impares.', 'Robas 1 carta extra cada turno.'],
+    lore: 'Cantor demostró que hay infinitos más grandes que otros: los reales no se pueden enlistar.',
+  },
+  ca_aleph: {
+    id: 'ca_aleph', figure: 'cantor', name: 'Aleph', icon: 'i_bolt',
+    text: ['+1 J en el primer turno de cada combate.', '+1 J al inicio de cada turno.'],
+    lore: 'ℵ₀ es el tamaño de los números naturales: el más pequeño de los infinitos.',
+  },
+  ca_conjunto: {
+    id: 'ca_conjunto', figure: 'cantor', name: 'Teoría de Conjuntos', icon: 'i_book',
+    text: ['Las preguntas acertadas te devuelven +3 de Cordura extra.', 'Las preguntas acertadas te devuelven +6 de Cordura extra.'],
+    lore: 'Muchos matemáticos de su época rechazaron sus ideas. Hoy son la base de las matemáticas.',
+  },
+  bo_entropia: {
+    id: 'bo_entropia', figure: 'boltzmann', name: 'S = k·ln W', icon: 'i_entropia',
+    text: ['+1 J en tu primer turno por cada 25 de Locura.', '+1 J en tu primer turno por cada 20 de Locura.'],
+    lore: 'La entropía cuenta cuántas formas microscópicas (W) hay de lograr el mismo estado.',
+  },
+  bo_equiparticion: {
+    id: 'bo_equiparticion', figure: 'boltzmann', name: 'Equipartición', icon: 'i_shield',
+    text: ['Empiezas cada combate con 3 de Bloqueo.', 'Empiezas cada combate con 6 de Bloqueo.'],
+    lore: 'En equilibrio, la energía se reparte por igual entre todas las formas de moverse de las partículas.',
+  },
+  bo_lapida: {
+    id: 'bo_lapida', figure: 'boltzmann', name: 'La Lápida', icon: 'i_skull',
+    text: ['Al llegar al Quiebre no aparece la Sombra: tu Locura baja a 50.', 'Al llegar al Quiebre no aparece la Sombra: tu Locura baja a 30.'],
+    lore: 'Su fórmula S = k·log W está grabada en su tumba en Viena.',
+  },
 };
 
 /** Dones con efecto secundario de radiación (se marcan en verde en el santuario) */
@@ -405,6 +452,28 @@ export const FIGURES: FigureDef[] = [
     farewell: '«No te preguntes si fallarás: pregúntate cuánto cambia lo que sabes después de cada intento.»',
     concepts: ['2a ley', 'Friccion', 'Trabajo-energia'],
     boons: ['by_prior', 'by_actualiza', 'by_posterior'],
+  },
+  // ── Ecos Quebrados (El Abismo de los Ejes) ──
+  {
+    id: 'newton1693', name: 'Isaac Newton, 1693', years: 'El Año Negro', epithet: 'El Alquimista sin Sueño', sprite: 'fig_newton1693', act: 5,
+    intro: '«Hace semanas que no duermo. Mis cartas asustan a mis amigos… y no sé por qué las escribí.\nPregúntame por el centro de las cosas: eso todavía lo veo claro.»',
+    farewell: '«Me recuperé, ¿sabes? Pedir ayuda no me hizo menos Newton.»',
+    concepts: ['Centro de masa', 'Momento de inercia'],
+    boons: ['qn_alquimia', 'qn_insomnio', 'qn_calma'],
+  },
+  {
+    id: 'cantor', name: 'Georg Cantor', years: '1845–1918', epithet: 'El que Contó los Infinitos', sprite: 'fig_cantor', act: 5,
+    intro: '«Pasé temporadas en el sanatorio de Halle; la depresión iba y venía.\nNadie me creía que hubiera infinitos más grandes que otros. ¿Me creerás tú?»',
+    farewell: '«Mis ideas sobrevivieron a quienes se burlaban. Tu mente vale aunque a veces se nuble.»',
+    concepts: ['Centroide', 'Radio de giro'],
+    boons: ['ca_diagonal', 'ca_aleph', 'ca_conjunto'],
+  },
+  {
+    id: 'boltzmann', name: 'Ludwig Boltzmann', years: '1844–1906', epithet: 'El Contador de Átomos', sprite: 'fig_boltzmann', act: 5,
+    intro: '«Pocos creían que existieran los átomos. Viví con una depresión severa mientras discutía con todos.\nResuelve esto y te mostraré cómo el desorden se cuenta.»',
+    farewell: '«Poco después de mi muerte, Einstein y Perrin demostraron que yo tenía razón. Habla con alguien cuando el peso sea mucho.»',
+    concepts: ['Momento de inercia', 'Ejes paralelos'],
+    boons: ['bo_entropia', 'bo_equiparticion', 'bo_lapida'],
   },
 ];
 
