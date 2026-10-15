@@ -94,6 +94,10 @@ export interface Run {
   finalizado?: boolean; // ya se sumaron los bonos finales
   desglose?: Record<string, number>; // de dónde salió el puntaje (src/data/puntaje.ts)
   tiempo?: number; // segundos de juego activo (para la hoja «Resumen» y «Actividad»)
+  /** El Abismo de los Ejes (acto 5): modo aparte, por ahora sólo en el Modo profesor */
+  modo?: 'abismo';
+  necro?: string; // página del Necronomicón elegida al inicio (src/data/abismo_modo.ts)
+  pacto?: string; // mazo inicial elegido (Pacto)
 }
 
 export interface ShopItem {
@@ -230,7 +234,7 @@ export function isAdmin() {
 
 /** Total de pisos de la expedición (3 actos de 9) */
 export const TOTAL_PISOS = 3 * (FLOORS + 1);
-export const ROMAN = ['I', 'II', 'III', 'IV'];
+export const ROMAN = ['I', 'II', 'III', 'IV', 'Ab'];
 
 /** Victorias sobre Hibbelerius necesarias para que se abra el Núcleo del Cálculo (Acto IV) */
 export const NUCLEO_VICTORIAS = 2;
@@ -496,10 +500,15 @@ export function newRun(runId: string, gravity = 1, clase = 'caballero'): Run {
   };
 }
 
-export function addCard(id: string, up = false) {
+export function addCard(id: string, up = false, ed?: import('./data/cards').Edicion) {
   const r = Game.run!;
   unlock('cards', id);
-  r.deck.push({ uid: r.nextUid++, id, up });
+  r.deck.push(ed ? { uid: r.nextUid++, id, up, ed } : { uid: r.nextUid++, id, up });
+}
+
+/** ¿La partida actual es de El Abismo de los Ejes? */
+export function enAbismo() {
+  return Game.run?.modo === 'abismo';
 }
 
 // ── registro docente ──

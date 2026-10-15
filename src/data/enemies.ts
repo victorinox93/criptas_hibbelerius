@@ -12,6 +12,7 @@ interface IntentExtras {
   shieldAll?: number; // da Bloqueo a todos sus aliados (y a sí mismo)
   heal?: number; // se cura
   drain?: number; // te roba J para tu siguiente turno
+  confusion?: boolean; // El Abismo: te Confunde (tus cartas robadas cuestan 0–3 J al azar)
 
 }
 
@@ -56,6 +57,8 @@ export interface EnemyDef {
   split?: { id: string; n: number }; // al morir se divide (conservación de p)
   thorns?: number; // cada golpe que le das te regresa este daño
   explode?: number; // al morir explota y te hace este daño
+  vuelco?: boolean; // El Abismo: si lo golpeas 2 veces en el mismo turno, se vuelca (pierde su turno)
+  hueco?: boolean; // El Abismo: área negativa; los golpes a TODOS le hacen la mitad
   next: (e: EnemyState) => Intent;
 }
 
@@ -407,6 +410,80 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ════════════ EL ABISMO DE LOS EJES · capa 1: los Muelles Inclinados ════════════
+  acolito: {
+    id: 'acolito', name: 'Acólito Inclinado', sprite: 'acolito', scale: 5, hp: [30, 34], mass: 60, act: 5, vuelco: true,
+    desc: 'Su centro de masa está fuera de su base: vive a punto de caer. Si lo golpeas 2 veces en el mismo turno, se VUELCA y pierde su turno.',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 9, dmg: 5, label: 'Equilibrio precario' } : { kind: 'attack', dmg: 8, label: 'Caída controlada' }),
+  },
+  polipo: {
+    id: 'polipo', name: 'Pólipo Compuesto', sprite: 'polipo', scale: 5, hp: [42, 46], mass: 30, act: 5, split: { id: 'polipito', n: 2 },
+    desc: 'Una figura compuesta de tres partes. Al morir se separa: cada parte tiene su propio centroide.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6, hits: 2, label: 'Tentáculos' } : { kind: 'block', block: 8, add: { id: 'susurro', n: 1, to: 'discard' }, label: 'Murmullo' }),
+  },
+  polipito: {
+    id: 'polipito', name: 'Fragmento de Pólipo', sprite: 'polipito', scale: 4, hp: [12, 14], mass: 10, act: 5,
+    desc: 'Un pedazo del Pólipo. Su centroide ya no coincide con el del resto.',
+    next: () => ({ kind: 'attack', dmg: 5 }),
+  },
+  profundo: {
+    id: 'profundo', name: 'Profundo Hueco', sprite: 'profundo', scale: 5, hp: [36, 40], mass: 80, act: 5, hueco: true,
+    desc: 'Le falta un pedazo del pecho: un área negativa. Los golpes a TODOS le hacen la mitad; los golpes directos, completos.',
+    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 14, label: 'Arpón' } : { kind: 'attack', dmg: 7, friccion: 1, label: 'Red de algas' }),
+  },
+  cultistaEje: {
+    id: 'cultistaEje', name: 'Cultista del Eje', sprite: 'cultistaEje', scale: 5, hp: [34, 38], mass: 55, act: 5,
+    desc: 'Gira sin parar y gana rapidez angular ω cada turno. Su golpe vale ½·I·ω². Te CONFUNDE: tus cartas cuestan 0–3 J al azar.',
+    next: (e) => {
+      if (e.turn % 3 === 0) return { kind: 'block', block: 4, confusion: true, charge: true, label: 'Rezo del Eje' };
+      if (e.turn % 3 === 1) return { kind: 'block', block: 7, charge: true, label: 'ω aumenta' };
+      return { kind: 'attack', dmg: 5 + 4 * e.carga, release: true, label: '½·I·ω²' };
+    },
+  },
+  vigia: {
+    id: 'vigia', name: 'El Vigía del Faro Hundido', sprite: 'vigia', scale: 5, hp: [92, 100], mass: 140, umbral: 17, act: 5,
+    desc: 'Élite. Una armadura llena de agua que gira la luz del faro: te Confunde y acumula inercia. DETENLO con un golpe de F ≥ umbral.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'attack', dmg: 7, confusion: true, label: 'Haz del faro' };
+      if (p === 1) return { kind: 'attack', dmg: 10 + 2 * e.inercia, label: 'Ancla' };
+      return { kind: 'block', block: 14, dmg: 6, label: 'Marea' };
+    },
+  },
+  hidra: {
+    id: 'hidra', name: 'La Madre Hidra', sprite: 'hidra', scale: 4.4, hp: [88, 96], mass: 200, umbral: 16, act: 5,
+    desc: 'Élite. Invoca Pólipos y los protege. Su centro de masa cambia cada vez que nace una cabeza.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'buff', summon: 'polipito', shieldAll: 6, label: 'Gemación' };
+      if (p === 1) return { kind: 'attack', dmg: 8, hits: 2, label: 'Dos cabezas' };
+      return { kind: 'attack', dmg: 12 + 2 * e.inercia, add: { id: 'susurro', n: 1, to: 'draw' }, label: 'Canto abisal' };
+    },
+  },
+  vertice: {
+    id: 'vertice', name: 'Vértice Errante', sprite: 'vertice', scale: 4, hp: [16, 18], mass: 5, act: 5,
+    desc: 'Un vértice que se desprendió del Geómetra. Mientras exista, su figura no cierra.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6 } : { kind: 'block', block: 6, label: 'Ángulo agudo' }),
+  },
+  geometra: {
+    id: 'geometra', name: 'El Geómetra No Euclidiano', sprite: 'geometra', scale: 3.6, hp: [270, 270], mass: 0, umbral: 19, act: 5,
+    desc: 'Jefe de la capa 1. Una figura cuyos ángulos no suman 180°. Con menos de la mitad de vida suelta Vértices y te Confunde; su golpe crece con la distancia de su centroide.',
+    next: (e) => {
+      const fase2 = e.hp <= e.maxHp / 2;
+      if (fase2) {
+        switch (e.turn % 3) {
+          case 0: return { kind: 'buff', summon: 'vertice', confusion: true, label: 'Desprender un vértice' };
+          case 1: return { kind: 'attack', dmg: 9 + 3 * e.inercia, hits: 2, label: 'x̄ se aleja' };
+          default: return { kind: 'block', block: 16, dmg: 8, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Teorema imposible' };
+        }
+      }
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 13 + 2 * e.inercia, label: 'Ángulo de 200°' };
+        case 1: return { kind: 'block', block: 14, dmg: 6, label: 'Figura compuesta' };
+        default: return { kind: 'attack', dmg: 6, hits: 3, confusion: true, label: 'Líneas paralelas que se cruzan' };
+      }
+    },
+  },
   colossus: {
     id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
@@ -449,7 +526,16 @@ export const ENCOUNTERS_4 = {
   boss: [['am']],
 };
 
+export const ENCOUNTERS_5 = {
+  easy: [['acolito'], ['polipo'], ['cultistaEje'], ['profundo']],
+  normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
+    ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje']],
+  elite: [['vigia'], ['hidra']],
+  boss: [['geometra']],
+};
+
 export function encounters(acto: number) {
+  if (acto === 5) return ENCOUNTERS_5;
   return acto >= 4 ? ENCOUNTERS_4 : acto === 3 ? ENCOUNTERS_3 : acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
 }
 
@@ -458,26 +544,26 @@ export const VIDA_ENEMIGOS = 1.2;
 
 // ── Perillas de dificultad (v0.23.1). 1 = sin cambio. Ej.: VIDA_JEFES = 1.15 → jefes con 15 % más vida ──
 /** Por acto (según el «act» del enemigo; sin «act» = Acto I) */
-export const VIDA_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1 }; // v0.28: +15 %
+export const VIDA_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1, 5: 1.15 }; // v0.28: +15 %
 /** Jefes de acto */
 export const VIDA_JEFES = 1;
 /** Élites (enemigos con umbral que no son jefes) */
 export const VIDA_ELITES = 1;
 /** Daño de los ataques enemigos, por acto (v0.28: +15 %). Se aplica junto con la gravedad. */
-export const DANO_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1 };
+export const DANO_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1, 5: 1.15 };
 /** Multiplicador extra de daño para jefes y élites */
 export const DANO_JEFES = 1;
 export const DANO_ELITES = 1;
 /** Multiplicador total de daño para un enemigo */
 export function danoDe(def: EnemyDef) {
-  const grupos = [ENCOUNTERS, ENCOUNTERS_2, ENCOUNTERS_3, ENCOUNTERS_4];
+  const grupos = [ENCOUNTERS, ENCOUNTERS_2, ENCOUNTERS_3, ENCOUNTERS_4, ENCOUNTERS_5];
   const es = (k: 'boss' | 'elite') => grupos.some((g) => g[k].some((e) => e[0] === def.id));
   return (DANO_POR_ACTO[def.act ?? 1] ?? 1) * (es('boss') ? DANO_JEFES : es('elite') ? DANO_ELITES : 1);
 }
 
 export function spawn(id: string): EnemyState {
   const def = ENEMIES[id];
-  const grupos = [ENCOUNTERS, ENCOUNTERS_2, ENCOUNTERS_3, ENCOUNTERS_4];
+  const grupos = [ENCOUNTERS, ENCOUNTERS_2, ENCOUNTERS_3, ENCOUNTERS_4, ENCOUNTERS_5];
   const es = (k: 'boss' | 'elite') => grupos.some((g) => g[k].some((e) => e[0] === id));
   const tipo = es('boss') ? VIDA_JEFES : es('elite') ? VIDA_ELITES : 1;
   const hp = Math.round(rnd(def.hp[0], def.hp[1]) * VIDA_ENEMIGOS * (VIDA_POR_ACTO[def.act ?? 1] ?? 1) * tipo);

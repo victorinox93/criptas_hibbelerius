@@ -1,3 +1,4 @@
+import { EDICIONES, sortearEdicion } from '../data/abismo_modo';
 import Phaser from 'phaser';
 import { legendariasDisponibles } from '../data/cards';
 import { CSS, UI } from '../art/palette';
@@ -102,21 +103,26 @@ export class RewardScene extends Phaser.Scene {
     txt(this, W / 2, y0, T.botin.elige, 26, CSS.bone).setOrigin(0.5);
     // en el Acto III, las cartas de impulso salen el doble
     const base = rewardPool(Game.run!.clase, Game.run!.acto, nivelActual(), amVencido());
-    const weighted = Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
+    const abismo = Game.run!.modo === 'abismo';
+    // en el Abismo, las cartas del Abismo salen el triple
+    const weighted = abismo ? [...base, ...base.filter((id) => CARDS[id].abismo), ...base.filter((id) => CARDS[id].abismo)]
+      : Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
     const pool = Phaser.Utils.Array.Shuffle(weighted.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);
     // a veces una élite suelta una carta LEGENDARIA (una copia por expedición)
     if (data.kind === 'elite' && Math.random() < 0.15) {
-      const [leg] = legendariasDisponibles(Game.run!.deck, 1);
+      const [leg] = legendariasDisponibles(Game.run!.deck, 1, abismo);
       if (leg) picks[1] = leg;
     }
     picks.forEach((id, i) => {
       const up = Math.random() < (data.kind === 'elite' ? 0.35 : 0.1);
-      const v = cardView(this, W / 2 + (i - 1) * 190, y0 + 150, { uid: -1, id, up });
+      // El Abismo: ediciones estilo Balatro (las élites las sueltan el doble)
+      const ed = abismo ? sortearEdicion(data.kind === 'elite' ? 2 : 1) : undefined;
+      const v = cardView(this, W / 2 + (i - 1) * 190, y0 + 150, ed ? { uid: -1, id, up, ed } : { uid: -1, id, up });
       v.setInteractive({ useHandCursor: true });
       v.on('pointerover', () => {
         v.setScale(1.08);
-        tip.show(v.x + 85, v.y - 100, CARDS[id].concept, CARDS[id].lore);
+        tip.show(v.x + 85, v.y - 100, ed ? `${CARDS[id].concept} · ${EDICIONES[ed].nombre}` : CARDS[id].concept, ed ? `${EDICIONES[ed].texto}\n\n${CARDS[id].lore}` : CARDS[id].lore);
       });
       v.on('pointerout', () => {
         v.setScale(1);
@@ -124,7 +130,7 @@ export class RewardScene extends Phaser.Scene {
       });
       v.on('pointerdown', () => {
         audio.sfx('card');
-        addCard(id, up);
+        addCard(id, up, ed);
         this.done();
       });
     });

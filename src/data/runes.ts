@@ -518,6 +518,91 @@ for (const q of GRAFICAS) {
 }
 GENERATORS.push(...CALCULO);
 
+/** Temas de El Abismo de los Ejes (cuerpo rígido): sólo salen en ese modo */
+export const ABISMO_CONCEPTS = ['Centroide', 'Centro de masa', 'Momento de inercia', 'Ejes paralelos', 'Radio de giro'];
+
+const ABISMO_GEN: (() => Problem)[] = [
+  // centroide de una placa en L (dos rectángulos)
+  () => {
+    const a = ri(4, 8), t = ri(1, 2), b = ri(3, 6);
+    // rectángulo 1: base a×t sobre el eje x; rectángulo 2: t×b de pie en la esquina izquierda, encima del 1
+    const A1 = a * t, x1 = a / 2, A2 = t * b, x2 = t / 2;
+    const xb = (A1 * x1 + A2 * x2) / (A1 + A2);
+    return {
+      concept: 'Centroide', title: 'Runa del Muelle en L',
+      prompt: `Una placa en L está hecha de dos rectángulos:\n① base de ${a} m × ${t} m acostada sobre el eje x (desde x = 0)\n② columna de ${t} m × ${b} m de pie sobre su extremo izquierdo.\n¿Cuánto vale la coordenada x̄ del centroide?`,
+      unit: 'm', answer: xb, tol: 0.02,
+      solution: ['x̄ = ΣxᵢAᵢ / ΣAᵢ', `A₁ = ${a}·${t} = ${A1} m², x₁ = ${f2(x1)} m;  A₂ = ${t}·${b} = ${A2} m², x₂ = ${f2(x2)} m`, `x̄ = (${A1}·${f2(x1)} + ${A2}·${f2(x2)}) / (${A1} + ${A2}) = ${f2(xb)} m`],
+    };
+  },
+  // centro de masa de dos cuerpos en una barra sin masa
+  () => {
+    const m1 = ri(2, 9), m2 = ri(2, 9), L = ri(2, 6);
+    const xc = (m2 * L) / (m1 + m2);
+    return {
+      concept: 'Centro de masa', title: 'Runa de las Dos Anclas',
+      prompt: `Dos anclas de ${m1} kg y ${m2} kg cuelgan de los extremos de una barra de ${L} m (de masa despreciable).\nMidiendo desde el ancla de ${m1} kg, ¿a qué distancia está el centro de masa?`,
+      unit: 'm', answer: xc, tol: 0.02,
+      solution: ['x_cm = Σmᵢxᵢ / Σmᵢ', `x_cm = (${m1}·0 + ${m2}·${L}) / (${m1} + ${m2})`, `x_cm = ${f2(xc)} m`],
+    };
+  },
+  // momento de inercia: varilla por un extremo o disco por su centro
+  () => {
+    if (Math.random() < 0.5) {
+      const m = ri(2, 10), L = ri(1, 4);
+      const I = (m * L * L) / 3;
+      return {
+        concept: 'Momento de inercia', title: 'Runa de la Lanza que Gira',
+        prompt: `Una lanza (varilla delgada) de ${m} kg y ${L} m gira alrededor de uno de sus EXTREMOS.\n¿Cuál es su momento de inercia?`,
+        unit: 'kg·m²', answer: I, tol: 0.02,
+        solution: ['Varilla por un extremo: I = ⅓·m·L²', `I = ⅓·(${m})(${L})²`, `I = ${f2(I)} kg·m²`],
+      };
+    }
+    const m = ri(2, 20), r = f2(ri(2, 10) / 10);
+    const I = 0.5 * m * r * r;
+    return {
+      concept: 'Momento de inercia', title: 'Runa de la Rueda Hundida',
+      prompt: `Una rueda de molino (disco macizo) de ${m} kg y radio ${r} m gira alrededor de su centro.\n¿Cuál es su momento de inercia?`,
+      unit: 'kg·m²', answer: I, tol: 0.02,
+      solution: ['Disco macizo por su centro: I = ½·m·r²', `I = ½·(${m})(${r})²`, `I = ${f2(I)} kg·m²`],
+    };
+  },
+  // momento de inercia de masas puntuales
+  () => {
+    const m = ri(1, 5), r1 = ri(1, 3), r2 = r1 + ri(1, 3);
+    const I = m * r1 * r1 + m * r2 * r2;
+    return {
+      concept: 'Momento de inercia', title: 'Runa de los Dos Cálices',
+      prompt: `Dos cálices de ${m} kg cada uno están sobre una barra que gira, a ${r1} m y a ${r2} m del eje (la barra no pesa).\n¿Cuál es el momento de inercia del sistema?`,
+      unit: 'kg·m²', answer: I, tol: 0.02,
+      solution: ['Masas puntuales: I = Σ m·r²', `I = ${m}·${r1}² + ${m}·${r2}²`, `I = ${f2(I)} kg·m²`],
+    };
+  },
+  // ejes paralelos (Steiner)
+  () => {
+    const m = ri(2, 12), r = f2(ri(2, 8) / 10), d = f2(ri(1, 6) / 10);
+    const I0 = 0.5 * m * r * r, I = I0 + m * d * d;
+    return {
+      concept: 'Ejes paralelos', title: 'Runa del Eje Desplazado',
+      prompt: `Un disco macizo de ${m} kg y radio ${r} m gira alrededor de un eje paralelo al central, a ${d} m del centro.\n¿Cuál es su momento de inercia respecto a ese eje?`,
+      unit: 'kg·m²', answer: I, tol: 0.02,
+      solution: ['I = I₀ + m·d²  (teorema de ejes paralelos)', `I₀ = ½·${m}·${r}² = ${f2(I0)} kg·m²`, `I = ${f2(I0)} + ${m}·${d}² = ${f2(I)} kg·m²`],
+    };
+  },
+  // radio de giro
+  () => {
+    const m = ri(2, 10), k = f2(ri(2, 12) / 10);
+    const I = f2(m * k * k);
+    return {
+      concept: 'Radio de giro', title: 'Runa del Radio Oculto',
+      prompt: `Un ídolo de ${m} kg tiene un momento de inercia de ${I} kg·m² respecto a su eje.\n¿Cuál es su radio de giro k?`,
+      unit: 'm', answer: Math.sqrt(I / m), tol: 0.02,
+      solution: ['k = √(I / m)', `k = √(${I} / ${m})`, `k = ${f2(Math.sqrt(I / m))} m`],
+    };
+  },
+];
+GENERATORS.push(...ABISMO_GEN);
+
 /** Temas del Acto III: no salen en los altares de los actos anteriores */
 export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques', 'Impulso angular'];
 
@@ -526,7 +611,7 @@ export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques',
  * Con probabilidad MCQ_SHARE prefiere una pregunta de opción múltiple.
  */
 export function randomProblem(concepts?: string[]): Problem {
-  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept));
+  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept) && !ABISMO_CONCEPTS.includes(p.concept));
   const wantChoice = Math.random() < MCQ_SHARE;
   let fallback: Problem | null = null;
   for (let i = 0; i < 200; i++) {

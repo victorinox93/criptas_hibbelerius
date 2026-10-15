@@ -307,6 +307,49 @@ export const PREGUNTAS: MCQ[] = [
     wrong: ['Gira más lento.', 'Se detiene.', 'Su rapidez angular no cambia.'],
     solution: ['Sin par externo: I₁·ω₁ = I₂·ω₂', 'Si I disminuye, ω aumenta.'],
   },
+  // ── El Abismo de los Ejes (cuerpo rígido) ──
+  {
+    concept: 'Centroide', title: 'Runa de la Placa Agujerada',
+    prompt: 'A una placa cuadrada uniforme le cortas un círculo cerca de su orilla derecha. ¿Hacia dónde se mueve el centroide?',
+    correct: 'Hacia la izquierda: el hueco cuenta como área negativa.',
+    wrong: ['Hacia la derecha, hacia el hueco.', 'No se mueve: sigue en el centro del cuadrado.', 'Sube, porque se quitó material.'],
+    solution: ['x̄ = (A₁x₁ − A₂x₂)/(A₁ − A₂): el hueco resta.', 'Al quitar área de la derecha, el promedio se va a la izquierda.'],
+  },
+  {
+    concept: 'Centro de masa', title: 'Runa de la Torre Inclinada',
+    prompt: '¿Cuándo se vuelca un cuerpo apoyado sobre una base?',
+    correct: 'Cuando la vertical por su centro de masa sale de la base.',
+    wrong: ['Cuando es más alto que ancho.', 'Cuando su masa supera a la de la base.', 'Cuando su centroide queda arriba de su centro de masa.'],
+    solution: ['El peso actúa en el centro de masa.', 'Si su línea de acción cae fuera de la base, el peso produce un momento que lo hace girar.'],
+  },
+  {
+    concept: 'Centro de masa', title: 'Runa de la Barra de Dos Metales',
+    prompt: 'Una barra es mitad plomo y mitad madera. ¿Coinciden su centroide y su centro de masa?',
+    correct: 'No: el centro de masa se corre hacia el lado del plomo.',
+    wrong: ['Sí, siempre coinciden.', 'No: el centroide se corre hacia el plomo.', 'Sí, porque la barra es simétrica.'],
+    solution: ['El centroide sólo depende de la forma.', 'El centro de masa pondera con la densidad: sólo coinciden si el cuerpo es homogéneo.'],
+  },
+  {
+    concept: 'Momento de inercia', title: 'Runa de los Brazos Abiertos',
+    prompt: 'Dos cuerpos tienen la misma masa. ¿Cuál tiene MAYOR momento de inercia respecto a su eje?',
+    correct: 'El que tiene la masa más lejos del eje.',
+    wrong: ['El más pesado de los dos.', 'Los dos tienen el mismo, porque tienen la misma masa.', 'El que tiene la masa más cerca del eje.'],
+    solution: ['I = Σ m·r²: la distancia cuenta AL CUADRADO.', 'Un aro tiene más I que un disco de la misma masa y radio.'],
+  },
+  {
+    concept: 'Ejes paralelos', title: 'Runa de Steiner',
+    prompt: 'El teorema de ejes paralelos I = I₀ + m·d² sólo es válido si I₀ es respecto a…',
+    correct: 'Un eje que pasa por el centro de masa.',
+    wrong: ['Cualquier eje del cuerpo.', 'El eje más alejado del cuerpo.', 'Un eje perpendicular al buscado.'],
+    solution: ['I₀ debe calcularse respecto al eje centroidal.', 'Por eso I respecto al centro de masa es el MÍNIMO de todos los ejes paralelos.'],
+  },
+  {
+    concept: 'Radio de giro', title: 'Runa del Aro y el Disco',
+    prompt: 'Un aro delgado y un disco macizo tienen la misma masa y el mismo radio R. ¿Quién tiene mayor radio de giro?',
+    correct: 'El aro: k = R, contra k = R/√2 del disco.',
+    wrong: ['El disco, porque es macizo.', 'Los dos tienen k = R.', 'Ninguno: el radio de giro sólo depende de la masa.'],
+    solution: ['k = √(I/m)', 'Aro: I = mR² → k = R.  Disco: I = ½mR² → k = R/√2 ≈ 0.71R.'],
+  },
 ];
 
 /** Qué tan seguido sale una pregunta de opción múltiple en vez de un cálculo (0 a 1) */

@@ -6,7 +6,7 @@
 // ════════════════════════════════════════════════════════════════
 import { MUSIC_FILES } from './config';
 
-export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4' | 'funk';
+export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4' | 'funk' | 'abismo' | 'combate6' | 'jefe5';
 export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
 
 const LEVELS = [0, 0.3, 0.6, 1];
@@ -208,6 +208,52 @@ const TRACKS: Record<TrackId, TrackDef> = {
       70, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
       68, null, null, null, null, null, null, null, 63, null, null, null, null, null, null, null,
       69, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+    ],
+  },
+  // ── El Abismo de los Ejes · horror cósmico ──
+  // Frigio grave y muy lento: un drone que no resuelve, coro lejano, sonar de profundidad
+  // y una campana fúnebre. La melodía sube por segundas menores (como algo que respira bajo el agua).
+  abismo: {
+    bpm: 50,
+    chords: [[38, 41, 45], [39, 42, 46], [38, 41, 45], [36, 39, 43]],
+    drone: 0.11, choir: 0.05, sweep: 0.03,
+    knell: true,
+    sonar: '1...............',
+    leadLen: 12,
+    lead: [
+      62, null, null, null, null, null, null, null, 63, null, null, null, null, null, null, null,
+      62, null, null, null, null, null, null, null, null, null, null, null, 58, null, null, null,
+      57, null, null, null, null, null, null, null, 58, null, null, null, 61, null, null, null,
+      62, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+    ],
+  },
+  combate6: {
+    bpm: 72,
+    chords: [[38, 41, 45], [39, 42, 46], [41, 44, 48], [39, 42, 46]],
+    drone: 0.08, choir: 0.03, throb: 0.05,
+    kick: '1.....1.....1...',
+    tom: '....2.......1..1',
+    grit: 'x.....b.....x...', gritOct: -24,
+    sonar: '........1.......',
+    arp: '1..1..1..1..1...', arpOct: 12,
+  },
+  jefe5: {
+    // el Geómetra: compás que no cuadra (el patrón se siente de 7 sobre 16)
+    bpm: 80,
+    chords: [[38, 41, 44], [39, 42, 45], [38, 41, 44], [44, 47, 50]],
+    drone: 0.1, choir: 0.06, sweep: 0.05, throb: 0.06,
+    knell: true,
+    kick: '1......1......1.',
+    tom: '2......1......2.',
+    snare: '...1......1.....',
+    grit: 'x......t......x.', gritOct: -24,
+    glitch: 0.03,
+    leadLen: 6,
+    lead: [
+      62, null, null, 63, null, null, 62, null, null, null, 68, null, null, null, null, null,
+      62, null, null, 63, null, null, 65, null, null, null, 63, null, null, null, null, null,
+      62, null, null, 63, null, null, 62, null, null, null, 56, null, null, null, null, null,
+      57, null, null, 56, null, null, 57, null, null, null, 62, null, null, null, null, null,
     ],
   },
   // ── Tienda de Layla: funk synth (v0.29) ──
