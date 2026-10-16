@@ -184,18 +184,33 @@ function doGet() {
   return json_({ ok: true, msg: 'API de Las Criptas de Hibbelerius activa' });
 }
 
+// v0.41.1 · Candado más corto. Antes, CADA petición tomaba el candado del script mientras leía
+// hojas completas; con muchos alumnos jugando a la vez (y la hoja Eventos cada vez más grande)
+// algunas esperaban más de 20 s y Google respondía «Lock timeout: another process was holding
+// the lock for too long». Ahora:
+//   · las acciones que sólo leen no toman el candado (ACCIONES_LIBRES);
+//   · las que escriben lo sueltan en cuanto terminan de escribir (soltar_());
+//   · si de verdad está ocupado, se responde un mensaje claro y el juego reintenta solo.
+var ACCIONES_LIBRES = { leaderboard: true, huellas: true, avisos: true, estadisticas: true };
+var CANDADO_ = null;
+function soltar_() {
+  if (CANDADO_) { try { CANDADO_.releaseLock(); } catch (x) {} CANDADO_ = null; }
+}
+
 function doPost(e) {
-  var lock = LockService.getScriptLock();
   try {
     var req = JSON.parse(e.postData.contents);
-    lock.waitLock(20000);
     var fn = ACTIONS[req.action];
     if (!fn) throw new Error('Acción desconocida');
+    if (!ACCIONES_LIBRES[req.action]) {
+      CANDADO_ = LockService.getScriptLock();
+      if (!CANDADO_.tryLock(28000)) { CANDADO_ = null; throw new Error('OCUPADO: El servidor está muy ocupado. Intenta de nuevo en unos segundos.'); }
+    }
     return json_(fn(req));
   } catch (err) {
     return json_({ ok: false, error: String(err.message || err) });
   } finally {
-    try { lock.releaseLock(); } catch (x) {}
+    soltar_();
   }
 }
 
@@ -228,8 +243,8 @@ var ACTIONS = {
       sh.getRange(row, 5, 1, 2).setValues([[salt, sha_(salt + r.passHash)]]);
     } else if (sha_(v[4] + r.passHash) !== v[5]) throw new Error('Matrícula o contraseña incorrecta.');
     var token = Utilities.getUuid();
-    sh.getRange(row, 7).setValue(token);
-    sh.getRange(row, 9).setValue(new Date());
+    sh.getRange(row, 7, 1, 3).setValues([[token, v[7], new Date()]]);
+    soltar_(); // ya se guardó la sesión: contar expediciones no necesita el candado
     // v0.29: expediciones terminadas (para el menú y la Tienda de Layla)
     var exp = 0;
     rows_('Partidas').forEach(function (p) { if (p[1] === mat && p[11] && p[11] !== 'en curso') exp++; });
