@@ -36,6 +36,8 @@ export class AbismoScene extends Phaser.Scene {
   private pagina: PaginaDef | null = null;
   private elegido: PactoDef | null = null; // null = Pacto ciego
   private mazo: { id: string; up: boolean; ed?: CardInst['ed'] }[] = [];
+  private escritura: Phaser.Time.TimerEvent | null = null; // máquina de escribir del diario
+  private gen = 0; // cambia en cada pantalla: las animaciones de una pantalla vieja ya no tocan la nueva
 
   constructor() { super('Abismo'); }
 
@@ -44,6 +46,7 @@ export class AbismoScene extends Phaser.Scene {
     this.pagina = null;
     this.elegido = null;
     this.mazo = [];
+    this.escritura = null;
     this.cameras.main.fadeIn(700);
     audio.play('abismo');
     this.fondo();
@@ -74,6 +77,12 @@ export class AbismoScene extends Phaser.Scene {
   }
 
   private limpiar() {
+    // v0.39.1: detener la máquina de escribir antes de borrar la página. Si seguía escribiendo
+    // sobre un texto ya destruido, Phaser lanzaba un error y el juego se congelaba
+    // (pasaba al presionar «Saltar prólogo» mientras se escribía el diario).
+    this.escritura?.remove(false);
+    this.escritura = null;
+    this.gen++;
     this.layer.removeAll(true);
     this.tip.hide();
   }
@@ -114,8 +123,9 @@ export class AbismoScene extends Phaser.Scene {
     const t = L(txt(this, W / 2, 140, '', 24, '#d8c8a0', { align: 'center', wordWrap: { width: 580 }, lineSpacing: 6 }).setOrigin(0.5, 0));
     // se escribe letra por letra, como si alguien lo estuviera escribiendo ahora
     let n = 0;
-    const ev = this.time.addEvent({ delay: 22, repeat: pg.texto.length - 1, callback: () => t.setText(pg.texto.slice(0, ++n)) });
-    const sig = () => { if (n < pg.texto.length) { ev.remove(); t.setText(pg.texto); n = pg.texto.length; return; } this.prologo(i + 1); };
+    const ev = this.time.addEvent({ delay: 22, repeat: pg.texto.length - 1, callback: () => { if (t.active) t.setText(pg.texto.slice(0, ++n)); } });
+    this.escritura = ev;
+    const sig = () => { if (n < pg.texto.length) { ev.remove(false); t.setText(pg.texto); n = pg.texto.length; return; } this.prologo(i + 1); };
     L(button(this, W / 2 + 120, 450, 200, 40, i === PROLOGO.length - 1 ? 'Cerrar el diario' : 'Siguiente', sig, { color: UI.gold, size: 21 }));
     L(button(this, W / 2 - 120, 450, 200, 40, 'Saltar prólogo', () => this.prologo(PROLOGO.length), { size: 19 }));
   }
@@ -260,6 +270,7 @@ export class AbismoScene extends Phaser.Scene {
   /** Animación de abrir: el sobre tiembla, se rasga la tira de arriba y salen las cartas boca abajo */
   private rasgar(def: SobreDef, emp: Phaser.GameObjects.Container, n: number) {
     audio.sfx('card');
+    const gen = this.gen;
     this.tweens.killTweensOf(emp);
     this.tweens.add({ targets: emp, x: emp.x + 5, duration: 45, yoyo: true, repeat: 5, onComplete: () => {
       const tira = this.add.graphics().setPosition(emp.x, emp.y - 104);
@@ -267,7 +278,7 @@ export class AbismoScene extends Phaser.Scene {
       this.layer.add(tira);
       this.tweens.add({ targets: tira, y: tira.y - 120, angle: -25, alpha: 0, duration: 600, onComplete: () => tira.destroy() });
       this.cameras.main.flash(200, 255, 255, 255);
-      this.tweens.add({ targets: emp, y: emp.y + 160, alpha: 0, duration: 500, delay: 150, onComplete: () => this.revelar(def, n) });
+      this.tweens.add({ targets: emp, y: emp.y + 160, alpha: 0, duration: 500, delay: 150, onComplete: () => { if (gen === this.gen) this.revelar(def, n); } });
     } });
   }
 
@@ -279,6 +290,7 @@ export class AbismoScene extends Phaser.Scene {
     const aviso = L(txt(this, W / 2, 84, `Elige ${ELIGES_POR_SOBRE} cartas para tu mazo (clic para marcar o desmarcar).`, 19, CSS.bone).setOrigin(0.5, 0));
     this.botonGuia();
     const cartas = abrirSobre(def.id, this.d.clase);
+    const gen = this.gen;
     const elegidas = new Set<number>();
     const K = 0.82, y = 290;
     const ok = button(this, W / 2, 492, 300, 42, `Quedarme con estas (0/${ELIGES_POR_SOBRE})`, () => {
@@ -302,7 +314,9 @@ export class AbismoScene extends Phaser.Scene {
       L(dorso);
       this.tweens.add({ targets: dorso, x, y, scale: K, duration: 380, delay: i * 110, ease: 'Back.out', onComplete: () => {
         // se voltea (la brillante, al final y con destello)
+        if (gen !== this.gen) return; // ya se cambió de pantalla
         this.tweens.add({ targets: dorso, scaleX: 0, duration: 140, delay: 300 + i * 160 + (cs.brillante ? 300 : 0), onComplete: () => {
+          if (gen !== this.gen) return;
           dorso.destroy();
           const v = L(cardView(this, x, y, { uid: -100 - i, id: cs.id, up: cs.up, ed: cs.ed }).setScale(0, K));
           this.tweens.add({ targets: v, scaleX: K, duration: 160 });

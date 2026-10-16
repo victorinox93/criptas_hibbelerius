@@ -175,7 +175,7 @@ const DIBUJOS: Record<string, Dib> = {
     const t = txt(s, x - 50, y - 76, '', 18, '#f0e8ff');
     c.add(t);
     let i = 0;
-    s.time.addEvent({ delay: 110, startAt: 0, repeat: formula.length - 1, callback: () => t.setText(formula.slice(0, ++i)) });
+    s.time.addEvent({ delay: 110, startAt: 0, repeat: formula.length - 1, callback: () => { if (t.active) t.setText(formula.slice(0, ++i)); } });
     const firma = txt(s, x + 50, y - 36, '— D.', 16, '#e8c15a').setOrigin(1, 0).setAlpha(0);
     c.add(firma);
     s.tweens.add({ targets: firma, alpha: 1, duration: 500, delay: 3600 });
@@ -209,7 +209,7 @@ const DIBUJOS: Record<string, Dib> = {
       const t = txt(s, -42, -40 + i * 22, '', 15, '#2a2a3a');
       h.add(t);
       let k = 0;
-      s.time.addEvent({ delay: 90, startAt: 0, repeat: l.length - 1, callback: () => t.setText(l.slice(0, ++k)) });
+      s.time.addEvent({ delay: 90, startAt: 0, repeat: l.length - 1, callback: () => { if (t.active) t.setText(l.slice(0, ++k)); } });
       t.setData('d', i);
     });
     const firma = txt(s, 46, 32, '— lo verifiqué yo', 12, '#3a5a8a').setOrigin(1, 0).setAlpha(0);
@@ -237,7 +237,7 @@ const DIBUJOS: Record<string, Dib> = {
       const t = txt(s, x - 42, y - 128 + i * 20, '', 14, i < 3 ? '#e8e0d0' : '#7ad0ff');
       c.add(t);
       let k = 0;
-      s.time.addEvent({ delay: 80, startAt: 0, repeat: l.length - 1, callback: () => t.setText(l.slice(0, ++k)) });
+      s.time.addEvent({ delay: 80, startAt: 0, repeat: l.length - 1, callback: () => { if (t.active) t.setText(l.slice(0, ++k)); } });
     });
     // la flecha de r×F «sale del plano»: un punto que crece (⊙)
     const punto = s.add.circle(x + 82, y - 120, 8, 0x7ad0ff, 0.9).setScale(0);
