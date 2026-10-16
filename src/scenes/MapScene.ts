@@ -25,6 +25,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   santuario: { icon: 'i_shrine', color: 0x7fd8ff },
   taberna: { icon: 'i_jarra', color: 0xd89a4a },
   jefe: { icon: 'i_boss', color: 0xe8c15a },
+  boca: { icon: 'i_diente', color: 0xf0c8c8 },
 };
 const NODE_INFO = Object.fromEntries(
   Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),
@@ -246,7 +247,7 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
+    const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
     types.forEach((t, i) => {
       const x = 22 + i * 105;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
@@ -328,6 +329,8 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Sanctuary', { floor: n.floor });
       case 'taberna':
         return fadeTo(this, 'Taberna', { floor: n.floor });
+      case 'boca':
+        return fadeTo(this, 'Abismo', { clase: Game.run!.clase ?? 'caballero', fase: 'boca' });
     }
   }
 

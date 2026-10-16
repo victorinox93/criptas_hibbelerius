@@ -449,7 +449,7 @@ Para verlo de nuevo en la misma pestaña mientras pruebas, pon `ARRANQUE = 'siem
 
 ## 13. El Abismo de los Ejes (v0.38, beta)
 
-Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega como el «acto 5»: 8 pisos + el jefe.
+Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega como el «acto 5»: 2 tramos de 8 pisos (jefe al azar y Primigenio) y luego el modo infinito.
 
 | Quiero agregar… | Dónde |
 |---|---|
@@ -466,11 +466,16 @@ Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega c
 | Qué tan seguido se rompe el Cristal | `ROMPER_CRISTAL` en `abismo_modo.ts` |
 | Página de la Guía del Abismo | `PAGINAS_GUIA` en `src/ui/guiaAbismo.ts` |
 | Jefe nuevo del Abismo | su ficha en `JEFES` de `abismo_modo.ts` (nombre, tema, desventaja, origen) y en `JEFES_TRAMO` o `PRIMIGENIOS`; sus ataques en `src/data/enemies.ts` (con `act: 5`); su desventaja en `Combat.ts` (busca `jefeVivo('…')`); su dibujo en `tools/arte/abismo.py` |
-| Número de tramos, pisos o dificultad | `TRAMOS`, `PISOS_TRAMO`, `escalaTramo()` y `multPuntaje()` en `abismo_modo.ts` |
+| Número de tramos, pisos o dificultad | `TRAMOS`, `PISOS_TRAMO`, `escalaTramo()`, `escalaDano()` y `multPuntaje()` en `abismo_modo.ts` (si cambias los pisos, cambia también `PISOS_TRAMO_ABISMO` en `src/state.ts`) |
+| Diente (reliquia del Abismo) | `DIENTES` en `src/data/dientes.ts` (tipo `normal`, `astro` o `maldito`; `peso` = qué tan seguido sale); su efecto en `Combat.ts` (busca `this.diente('…')`, `dientesAtaque()` o `dientesNoAtaque()`); su dibujo en `dibujarDiente()` de `src/ui/dentadura.ts` |
+| Cuántos huecos, precio de volver a tirar, fuerza de la Alineación | `HUECOS`, `RETIRAR_DIENTES` y `ALINEACION` en `src/data/dientes.ts` |
+| Cuántos pactos ofrece el libro | `PACTOS_OFRECIDOS` en `abismo_modo.ts` |
 | Nombre de un tramo | `NOMBRE_TRAMO` en `abismo_modo.ts` |
 | Hoja del diario de Montemayor | `PROLOGO` en `abismo_modo.ts`; cuándo aparece, `paginasHasta()` en `src/ui/diario.ts` |
 | Ranking del Abismo | `leaderboard` en `apps-script/Code.gs` (las partidas con acto 5 son del Abismo) |
 | Cómo se ve una edición | `edicionVisual()` en `src/ui/card.ts` |
 
 Mecánicas nuevas de enemigos: `confusion: true` en una intención (te Confunde), `vuelco: true` (se vuelca con 2 golpes en el mismo turno) y `hueco: true` (los golpes a TODOS le hacen la mitad).
+
+Estados del Abismo en una intención (v0.42): `aturde: true` (si el golpe te hace daño pierdes tu siguiente turno), `hemorragia: N` (N turnos en que cada carta jugada te quita 1 de vida) y `vertigo: N` (robas N cartas menos el siguiente turno, máximo 3).
 

@@ -3,7 +3,9 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { Edicion } from '../data/cards';
-import { CORDURA, EDICIONES, ROMPER_CRISTAL, SEMAFORO } from '../data/abismo_modo';
+import { CORDURA, EDICIONES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
+import { DIENTES, HUECOS } from '../data/dientes';
+import { dibujarDiente } from './dentadura';
 import { codexFlag } from '../state';
 import { cardView, costConfusion, costOverride } from './card';
 import { button, frame, title, txt } from './widgets';
@@ -34,18 +36,19 @@ function muestra(s: Phaser.Scene, L: <T extends Phaser.GameObjects.GameObject>(o
 const PAGINAS_GUIA: PaginaGuia[] = [
   {
     titulo: 'El viaje',
-    texto: 'Arrancas una página del Necronomicón, firmas un Pacto y abres 3 sobres. Luego bajas 4 tramos de 6 pisos; cada tramo termina con un jefe al azar y el último con un Primigenio. Después puedes seguir bajando sin fin.',
+    texto: `Arrancas una página del Necronomicón, firmas un Pacto, eliges dientes y abres 3 sobres. Luego bajas ${TRAMOS} tramos de ${PISOS_TRAMO} pisos: el primero termina con un jefe al azar y el segundo con un Primigenio. Después puedes seguir bajando sin fin.`,
     dibujo: (s, L) => {
-      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', '3 sobres\n(+6 cartas)', '4 tramos\n+ Primigenio'];
-      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 3 mazos\no el Pacto ciego', 'De cada sobre te\nquedas con 2 cartas', 'Jefe al azar en cada\ntramo; luego, ¿infinito?'];
+      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', 'Dentadura\n(2 de 4 dientes)', '3 sobres\n(+6 cartas)', `${TRAMOS} tramos\n+ Primigenio`];
+      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 2 mazos\no el Pacto ciego', 'Reliquias: el orden\nimporta', 'De cada sobre te\nquedas con 2 cartas', 'Jefe al azar; luego,\n¿infinito?'];
+      const u = pasos.length - 1;
       pasos.forEach((p, i) => {
-        const x = 150 + i * 220, y = 300;
+        const x = 108 + i * 186, y = 300;
         const g = s.add.graphics();
-        frame(g, x - 90, y - 50, 180, 100, 0x0c1614, i === 3 ? UI.gold : 0x2c5a4e, 0.97);
+        frame(g, x - 80, y - 50, 160, 100, 0x0c1614, i === u ? UI.gold : 0x2c5a4e, 0.97);
         L(g);
-        L(txt(s, x, y, p, 20, i === 3 ? CSS.gold : '#9ad8c8', { align: 'center' }).setOrigin(0.5));
-        L(txt(s, x, y + 66, notas[i], 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0));
-        if (i < 3) L(txt(s, x + 110, y, '▶', 24, '#2c5a4e').setOrigin(0.5));
+        L(txt(s, x, y, p, 18, i === u ? CSS.gold : '#9ad8c8', { align: 'center' }).setOrigin(0.5));
+        L(txt(s, x, y + 66, notas[i], 14, CSS.dim, { align: 'center' }).setOrigin(0.5, 0));
+        if (i < u) L(txt(s, x + 93, y, '▶', 20, '#2c5a4e').setOrigin(0.5));
       });
     },
   },
@@ -66,12 +69,23 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     },
   },
   {
-    titulo: 'Confusión',
-    texto: 'Algunos enemigos y cartas te CONFUNDEN: desde ese momento, cada carta que robes cuesta entre 0 y 3 J al azar durante ese combate. Su gema de costo se vuelve NARANJA y aparece un «?» que tiembla.',
+    titulo: 'Estados alterados',
+    texto: 'Las criaturas te pueden dejar en mal estado. Fíjate en los íconos junto a su intención (pasa el mouse para leerlos) y prepárate.',
     dibujo: (s, L) => {
-      for (let k = 1; k <= 2; k++) costConfusion.add(UID_EJEMPLO - k);
-      muestra(s, L, [{ id: 'golpe' }, { id: 'golpe', conf: 0 }, { id: 'normal', conf: 3 }], ['Normal: cuesta 1 J', 'Confundido: ¡0 J!', 'Confundido: ¡3 J!'], 312, 0.8);
-      L(txt(s, W / 2, 448, 'Lo aplican el Cultista del Eje, el Vigía, el Geómetra, la carta Geometría Imposible y la página «La Confusión».', 16, CSS.dim, { align: 'center', wordWrap: { width: 760 } }).setOrigin(0.5, 0));
+      for (let k = 1; k <= 1; k++) costConfusion.add(UID_EJEMPLO - k);
+      muestra(s, L, [{ id: 'golpe' }, { id: 'golpe', conf: 3 }], ['Normal', 'Confundido'], 300, 0.62);
+      const estados: [string, number, string, string][] = [
+        ['i_ojo', 0xffa040, 'Confusión', 'Tus cartas cuestan 0–3 J al azar (gema naranja con «?»). La usan el Vigía y el Geómetra herido.'],
+        ['i_stun', 0xffd040, 'Aturdido', 'Golpe aturdidor: si te hace daño, PIERDES tu siguiente turno. Bloquéalo completo y no pasa nada.'],
+        ['i_heart', 0xb02020, 'Hemorragia', 'Durante unos turnos, cada carta que juegas te quita 1 de vida. Juega pocas y fuertes.'],
+        ['i_momentum', 0x9ad8f0, 'Vértigo', 'En tu siguiente turno robas cartas de menos. Lo causan los que giran.'],
+      ];
+      estados.forEach(([ic, tint, nom, d], i) => {
+        const y = 196 + i * 66;
+        L(s.add.image(W / 2 - 40, y + 14, ic).setScale(3.4).setTint(tint));
+        L(txt(s, W / 2 - 10, y, nom, 20, CSS.gold));
+        L(txt(s, W / 2 - 10, y + 24, d, 15, CSS.bone, { wordWrap: { width: 430 } }));
+      });
     },
   },
   {
@@ -81,6 +95,20 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       const eds: Edicion[] = ['lamina', 'holo', 'poli', 'cristal'];
       muestra(s, L, eds.map((ed) => ({ id: 'golpe', ed })), eds.map((ed) => `${EDICIONES[ed].nombre}\n${EDICIONES[ed].texto.replace(/\n.*/s, '')}`), 262, 0.68);
       L(txt(s, W / 2, 436, `El Cristal es frágil: cada vez que lo juegas hay ${Math.round(ROMPER_CRISTAL * 100)} % de probabilidad de que se rompa y salga de tu mazo.`, 16, '#c8f4ff', { align: 'center', wordWrap: { width: 780 } }).setOrigin(0.5, 0));
+    },
+  },
+  {
+    titulo: 'La Dentadura (reliquias)',
+    texto: `Las reliquias del Abismo son dientes. Al empezar eliges 2 de 4; consigues más con el Sacamuelas Ciego (ícono de diente en el mapa) y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
+    dibujo: (s, L) => {
+      const ej: [string, string][] = [['colmillo', 'Colmillo\n+2 a ataques'], ['espejo', 'Espejo: copia\nal de su izquierda'], ['marte', '✦ Marte\nAtaque nv +1'], ['luna', '✦ Luna\nDefensa nv +1'], ['saturno', '✦ Saturno\nAbismo nv +1']];
+      ej.forEach(([id, t], i) => {
+        const x = W / 2 + (i - 2) * 150;
+        L(dibujarDiente(s, x, 236, id, 1.4));
+        L(txt(s, x, 290, t, 15, DIENTES[id].tipo === 'astro' ? '#ffd060' : CSS.bone, { align: 'center' }).setOrigin(0.5, 0));
+      });
+      L(txt(s, W / 2, 350, 'EL COSMOS (como los planetas de Balatro): los Astros suben de nivel una constelación de cartas.\nTres Astros seguidos forman una ALINEACIÓN PLANETARIA: tus ataques hacen ×1.5.', 17, '#ffd060', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 420, 'En el Sacamuelas: toca un diente de tu dentadura y luego otro hueco para moverlo. Volver a tirar cuesta Ergios.', 15, CSS.dim, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {
@@ -96,10 +124,10 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     texto: 'Cada criatura es un concepto. Si entiendes la física, sabes cómo vencerla.',
     dibujo: (s, L) => {
       const bichos: [string, string, string][] = [
-        ['acolito', 'Acólito Inclinado', 'Su centro de masa está fuera de su base: con 2 golpes en un turno se VUELCA.'],
+        ['acolito', 'Acólito Inclinado', 'Su centro de masa está fuera de su base: con 2 golpes en un turno se VUELCA. Si se te cae encima, te aturde.'],
         ['polipo', 'Pólipo Compuesto', 'Figura compuesta: al morir se separa en partes.'],
-        ['profundo', 'Profundo Hueco', 'Área negativa: los golpes a TODOS le hacen la mitad.'],
-        ['cultistaEje', 'Cultista del Eje', 'Gira cada vez más rápido y te Confunde.'],
+        ['profundo', 'Profundo Hueco', 'Área negativa: los golpes a TODOS le hacen la mitad. Su arpón da Hemorragia.'],
+        ['cultistaEje', 'Cultista del Eje', 'Gira cada vez más rápido y te da Vértigo.'],
       ];
       bichos.forEach(([sp, nom, txt0], i) => {
         const x = 150 + i * 220;
@@ -107,7 +135,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(txt(s, x, 316, nom, 19, CSS.gold).setOrigin(0.5, 0));
         L(txt(s, x, 342, txt0, 16, CSS.bone, { align: 'center', wordWrap: { width: 200 } }).setOrigin(0.5, 0));
       });
-      L(txt(s, W / 2, 446, 'Antes de cada jefe verás quién es y su desventaja. En el tramo 4 te espera un Primigenio: Nyarlathotep, Cthulhu, Yog-Sothoth o Hastur.', 16, '#c8a8ff', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 446, 'Antes de cada jefe verás quién es y su desventaja. En el tramo 2 te espera un Primigenio: Nyarlathotep, Cthulhu, Yog-Sothoth o Hastur.', 16, '#c8a8ff', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {

@@ -5,8 +5,10 @@ import { W, H } from '../config';
 import { CardInst, CARDS } from '../data/cards';
 import {
   abrirSobre, ACTO_ABISMO, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
-  RARAS_ABISMO, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS,
+  RARAS_ABISMO, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
+import { DIENTES, HUECOS, ponerDiente, RETIRAR_DIENTES, sortearDientes } from '../data/dientes';
+import { dentaduraView, dibujarDiente, resumenCosmos } from '../ui/dentadura';
 import { ENEMIES } from '../data/enemies';
 import { bonosFinales } from '../data/puntaje';
 import { cardView, CW, CH } from '../ui/card';
@@ -30,7 +32,7 @@ export interface AbismoData {
   debug?: boolean;
   tanque?: boolean; // Modo profesor: vida ×10
   saltarPrologo?: boolean;
-  fase?: 'tramo'; // pantalla entre tramos (después de vencer al jefe de un tramo)
+  fase?: 'tramo' | 'boca'; // tramo = pantalla entre tramos; boca = el Sacamuelas Ciego (nodo del mapa)
 }
 
 export class AbismoScene extends Phaser.Scene {
@@ -40,6 +42,7 @@ export class AbismoScene extends Phaser.Scene {
   private pagina: PaginaDef | null = null;
   private elegido: PactoDef | null = null; // null = Pacto ciego
   private mazo: { id: string; up: boolean; ed?: CardInst['ed'] }[] = [];
+  private dientesIni: (string | null)[] = []; // la dentadura antes de que exista la expedición
   private escritura: Phaser.Time.TimerEvent | null = null; // máquina de escribir del diario
   private gen = 0;
   /** Sobre de premio entre tramos (te quedas con 1); null = los 3 sobres del inicio */
@@ -55,12 +58,14 @@ export class AbismoScene extends Phaser.Scene {
     this.mazo = [];
     this.escritura = null;
     this.premio = null;
+    this.dientesIni = [];
     this.cameras.main.fadeIn(700);
     audio.play('abismo');
     this.fondo();
     this.tip = new Tooltip(this);
     this.layer = this.add.container(0, 0);
     if (data.fase === 'tramo') this.entreTramos();
+    else if (data.fase === 'boca') this.sacamuelas('boca', () => fadeTo(this, 'Map'));
     else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);
   }
@@ -209,12 +214,12 @@ export class AbismoScene extends Phaser.Scene {
     this.limpiar();
     const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
     L(title(this, W / 2, 48, 'El Pacto', 44, '#9ad8c8'));
-    L(txt(this, W / 2, 86, `Página: ${this.pagina?.nombre ?? '—'}. Elige tu mazo base; después abrirás 3 sobres (+${SOBRES.length * ELIGES_POR_SOBRE} cartas).`, 19, CSS.bone).setOrigin(0.5));
+    L(txt(this, W / 2, 86, `Página: ${this.pagina?.nombre ?? '—'}. El libro te ofrece ${PACTOS_OFRECIDOS} pactos: firma uno. Luego eliges dientes y abres 3 sobres (+${SOBRES.length * ELIGES_POR_SOBRE} cartas).`, 19, CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5));
     this.botonGuia();
     const clase = this.d.clase;
-    const opciones = Phaser.Utils.Array.Shuffle([...PACTOS]).slice(0, 3);
+    const opciones = Phaser.Utils.Array.Shuffle([...PACTOS]).slice(0, PACTOS_OFRECIDOS);
     opciones.forEach((p, i) => {
-      const x = W / 2 + (i - 1) * 300, y = 118;
+      const x = W / 2 + (i - (opciones.length - 1) / 2) * 330, y = 118;
       const ids = p.mazo(clase);
       const c = this.add.container(x, y);
       const g = this.add.graphics();
@@ -250,7 +255,121 @@ export class AbismoScene extends Phaser.Scene {
     this.mazo = ids.map((id) => ({ id, up: false }));
     if (p?.id === 'hueco') this.mazo.push({ id: Phaser.Utils.Array.GetRandom(RARAS_ABISMO), up: false, ed: 'lamina' });
     this.cameras.main.flash(250, 20, 60, 50);
-    this.sobre(0);
+    this.dientesIni = Array(HUECOS).fill(null);
+    if (p?.id === 'estelar') ponerDiente(this.dientesIni, sortearDientes(1, [], 1000)[0]); // un Astro seguro
+    this.sacamuelas('inicio', () => this.sobre(0));
+  }
+
+  // ── La Dentadura de Montemayor (src/data/dientes.ts) ──
+  /**
+   * inicio: salen 4 dientes y te quedas con 2 (3 con el Pacto de la Sonrisa).
+   * boca:   el Sacamuelas Ciego (nodo del mapa): 3 dientes, te llevas 1; puedes pagar para volver a tirar.
+   * premio: al vencer a un jefe, 3 dientes y te llevas 1.
+   * En los tres puedes reacomodar la dentadura (clic en un diente y luego en otro hueco).
+   */
+  private sacamuelas(modo: 'inicio' | 'boca' | 'premio', alTerminar: () => void) {
+    this.limpiar();
+    const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
+    const run = Game.run;
+    const dent = modo === 'inicio' ? this.dientesIni : (run!.dientes ??= Array(HUECOS).fill(null));
+    while (dent.length < HUECOS) dent.push(null);
+    const astrosX = (modo === 'inicio' ? this.elegido?.id : run?.pacto) === 'estelar' ? 2 : 1;
+    const cuantos = modo === 'inicio' ? this.elegido?.dientes ?? 2 : 1;
+    const nOpc = modo === 'inicio' ? 4 : 3;
+    let opciones = sortearDientes(nOpc, dent.filter((x): x is string => !!x), astrosX);
+    let tomados = 0;
+    let sel = -1; // hueco marcado para mover
+    let pendiente: string | null = null; // diente elegido que espera hueco (dentadura llena)
+    let nota = ''; // mensaje de la última acción
+    const titulo = modo === 'inicio' ? 'La Dentadura de Montemayor' : modo === 'boca' ? 'El Sacamuelas Ciego' : 'Trofeo del jefe';
+    L(title(this, W / 2, 40, titulo, 38, '#f0c8c8'));
+    const sub = modo === 'inicio' ? `En la cueva encontraste la dentadura del erudito. Elige ${cuantos} de estos ${nOpc} dientes.`
+      : modo === 'boca' ? '«Dientes, dientes frescos… Llévate uno. Yo no los necesito: ya no tengo boca.»'
+        : 'Le arrancas un diente al jefe. Elige 1 de 3.';
+    L(txt(this, W / 2, 72, sub, 18, CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
+    const aviso = L(txt(this, W / 2, 98, '', 16, '#ffd060', { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
+    this.botonGuia();
+    const jaw = dentaduraView(this, W / 2, 196, this.tip, {
+      paso: 62, k: 0.85, dent: () => dent, marcado: () => sel,
+      onHueco: (i) => {
+        if (pendiente) {
+          // reemplaza el diente de ese hueco
+          const viejo = dent[i];
+          dent[i] = pendiente;
+          pendiente = null;
+          tomados++;
+          audio.sfx('coin');
+          nota = viejo ? `Tiraste ${DIENTES[viejo].nombre}.` : '';
+          return pintar();
+        }
+        if (sel < 0) { if (dent[i]) { sel = i; audio.sfx('click'); } }
+        else { [dent[sel], dent[i]] = [dent[i], dent[sel]]; sel = -1; audio.sfx('card'); }
+        pintar();
+      },
+    });
+    L(jaw.c);
+    const opc = this.add.container(0, 0);
+    L(opc);
+    const pie = this.add.container(0, 0);
+    L(pie);
+    const pintar = () => {
+      jaw.pintar();
+      opc.removeAll(true);
+      pie.removeAll(true);
+      const cos = resumenCosmos(dent);
+      aviso.setText(pendiente ? `Tu dentadura está llena: toca el diente que quieres cambiar por ${DIENTES[pendiente].nombre}.`
+        : sel >= 0 ? 'Ahora toca otro hueco para mover ahí ese diente.'
+          : [nota, cos ? `Cosmos: ${cos}` : 'Tip: toca un diente y luego otro hueco para moverlo. El orden importa.'].filter(Boolean).join('  ·  '));
+      nota = '';
+      const quedan = cuantos - tomados;
+      opciones.forEach((id, i) => {
+        const d = DIENTES[id];
+        const x = W / 2 + (i - (opciones.length - 1) / 2) * 220, y = 268;
+        const c = this.add.container(x, y);
+        const g = this.add.graphics();
+        const borde = d.tipo === 'astro' ? 0xffd060 : d.tipo === 'maldito' ? 0x8a6a3a : 0x8a3040;
+        frame(g, -100, 0, 200, 186, 0x140a0e, borde, 0.97);
+        c.add(g);
+        c.add(dibujarDiente(this, 0, 44, id, 1.1));
+        c.add(txt(this, 0, 86, d.nombre, 17, d.tipo === 'astro' ? '#ffd060' : '#f0c8c8', { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
+        c.add(txt(this, 0, 110, d.texto, 14, CSS.bone, { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
+        if (d.tipo !== 'normal') c.add(txt(this, 0, 6, d.tipo === 'astro' ? '✦ ASTRO' : '☠ MALDITO', 13, d.tipo === 'astro' ? '#ffd060' : '#c8a06a').setOrigin(0.5, 0));
+        c.setSize(200, 186).setInteractive(new Phaser.Geom.Rectangle(-100, 0, 200, 186), Phaser.Geom.Rectangle.Contains);
+        if (quedan > 0 && !pendiente) {
+          c.input!.cursor = 'pointer';
+          c.on('pointerover', () => this.tweens.add({ targets: c, y: y - 6, duration: 100 }));
+          c.on('pointerout', () => this.tweens.add({ targets: c, y, duration: 100 }));
+          c.on('pointerdown', () => {
+            opciones = opciones.filter((_, k) => k !== i);
+            if (ponerDiente(dent, id)) { tomados++; audio.sfx('coin'); nota = `${d.nombre} entra en tu dentadura.`; }
+            else { pendiente = id; audio.sfx('click'); }
+            this.cameras.main.flash(150, 240, 200, 200);
+            pintar();
+          });
+        } else c.setAlpha(0.45);
+        opc.add(c);
+      });
+      const listo = quedan <= 0 && !pendiente;
+      const etiqueta = modo === 'inicio' ? (listo ? 'Listo: abrir los sobres' : `Elige ${quedan} diente(s) más`) : listo ? 'Seguir' : 'Irme sin diente';
+      const b = button(this, W / 2, 500, 280, 40, etiqueta, () => { if (!pendiente) alTerminar(); }, { size: 19, color: listo ? UI.gold : UI.border });
+      if (modo === 'inicio' && !listo) b.setEnabled(false);
+      pie.add(b);
+      if (modo === 'boca' && quedan > 0 && run) {
+        const puede = run.ergios >= RETIRAR_DIENTES;
+        const rr = button(this, W / 2 + 290, 500, 230, 36, `Volver a tirar (${RETIRAR_DIENTES} ⛁)`, () => {
+          if (run.ergios < RETIRAR_DIENTES) return;
+          run.ergios -= RETIRAR_DIENTES;
+          opciones = sortearDientes(nOpc, dent.filter((x): x is string => !!x), astrosX);
+          audio.sfx('coin');
+          nota = `Pagaste ${RETIRAR_DIENTES} Ergios. Te quedan ${run.ergios}.`;
+          pintar();
+        }, { size: 16 });
+        rr.setEnabled(puede);
+        pie.add(rr);
+      }
+      if (run) saveLocal();
+    };
+    pintar();
   }
 
   // ── 4. Sobres: rasgas el empaque, se voltean 5 cartas y te quedas con 2 ──
@@ -409,9 +528,9 @@ export class AbismoScene extends Phaser.Scene {
       L(title(this, W / 2, 80, `¡Tramo ${tramo} superado!`, 52, '#9ad8c8'));
       L(txt(this, W / 2, 132, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 22, CSS.bone).setOrigin(0.5));
       L(txt(this, W / 2, 168, `Sigue: Tramo ${tramo + 1} · ${nombreTramo(tramo + 1)}${tramo + 1 === TRAMOS ? ' (ahí te espera un Primigenio)' : ''}`, 20, tramo + 1 === TRAMOS ? '#c8a8ff' : CSS.gold).setOrigin(0.5));
-      L(txt(this, W / 2, 250, 'Premio: abre un sobre y quédate con 1 carta.', 20, CSS.dim).setOrigin(0.5));
-      L(button(this, W / 2, 320, 260, 46, 'Abrir el sobre', () => this.sobrePremio(() => this.siguienteTramo()), { color: UI.gold, size: 22 }));
-      L(button(this, W / 2, 380, 260, 36, 'Seguir sin sobre', () => this.siguienteTramo(), { size: 18 }));
+      L(txt(this, W / 2, 250, 'Premio: abre un sobre (te quedas con 1 carta) y arráncale un diente al jefe.', 20, CSS.dim).setOrigin(0.5));
+      L(button(this, W / 2, 320, 260, 46, 'Abrir el sobre', () => this.sobrePremio(() => this.trofeo()), { color: UI.gold, size: 22 }));
+      L(button(this, W / 2, 380, 260, 36, 'Seguir sin sobre', () => this.trofeo(), { size: 18 }));
       return;
     }
     // tramo 4 (Primigenio) o más: victoria y la pregunta
@@ -430,8 +549,13 @@ export class AbismoScene extends Phaser.Scene {
     const sig = tramo + 1;
     L(txt(this, W / 2, 252, `¿Seguir bajando? Profundidad ${sig}: vida enemiga ×${escalaTramo(sig).toFixed(2)}, daño ×${escalaDano(sig).toFixed(2)} y puntaje ×${multPuntaje(sig).toFixed(1)}.`, 19, CSS.gold).setOrigin(0.5));
     L(txt(this, W / 2, 280, 'El modo infinito tiene su propio ranking. Si caes, conservas lo que llevas.', 17, CSS.dim).setOrigin(0.5));
-    L(button(this, W / 2, 340, 340, 46, 'Seguir bajando (abre un sobre)', () => this.sobrePremio(() => this.siguienteTramo()), { color: 0x9a6ad0, size: 21 }));
+    L(button(this, W / 2, 340, 340, 46, 'Seguir bajando (sobre y diente)', () => this.sobrePremio(() => this.trofeo()), { color: 0x9a6ad0, size: 21 }));
     L(button(this, W / 2, 402, 300, 40, 'Retirarte con tu gloria', () => this.retirarse(), { size: 19 }));
+  }
+
+  /** Después del sobre: un diente del jefe y luego el siguiente tramo */
+  private trofeo() {
+    this.sacamuelas('premio', () => this.siguienteTramo());
   }
 
   /** Un sobre de premio al azar (te quedas con 1) */
@@ -488,6 +612,8 @@ export class AbismoScene extends Phaser.Scene {
     r.deck = this.mazo.map((c) => (c.ed ? { uid: uid++, id: c.id, up: c.up, ed: c.ed } : { uid: uid++, id: c.id, up: c.up }));
     r.nextUid = uid;
     if (p?.vidaMax) { r.maxHp += p.vidaMax; r.hp = r.maxHp; }
+    r.dientes = [...this.dientesIni];
+    while (r.dientes.length < HUECOS) r.dientes.push(null);
     if (!p) r.entropia = Math.max(0, r.entropia - PACTO_CIEGO_CORDURA);
     // efectos iniciales de la página del Necronomicón
     switch (r.necro) {

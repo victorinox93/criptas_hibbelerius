@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CARDS, CardInst, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+import { CalcCtx, CardDef, CARDS, CardInst, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
 const VMAX_PEN = 14;
@@ -22,6 +22,7 @@ import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
+import { alineacion, ALINEACION, cuantosAstros, nivelDiente } from '../data/dientes';
 import { CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
@@ -152,6 +153,12 @@ export class CombatScene extends Phaser.Scene {
   private hondaV = new Map<number, number>(); // Honda de David: rapidez por carta (uid)
   // ── El Abismo de los Ejes ──
   private confusa = false; // Confusión: cada carta robada cuesta 0–3 J al azar (costos en costOverride)
+  // v0.42 · estados nuevos del Abismo (src/data/enemies.ts → hemorragia, aturde, vertigo)
+  private hemorragia = 0; // turnos: cada carta que juegas te quita 1 de vida
+  private aturdido = false; // pierdes tu siguiente turno
+  private trasAturdir = false; // justo después de perder un turno no te pueden volver a aturdir
+  private vertigo = 0; // robas N cartas menos en tu siguiente turno
+  private mercurioBono = 0; // Diente de Mercurio: daño guardado para tu siguiente ataque
   private golpesTurno = new Map<EnemyState, number>(); // golpes recibidos este turno (Acólito: se vuelca con 2)
   private curAll = false; // la carta en curso golpea a TODOS (Profundo Hueco recibe la mitad)
   private steinerUsed = false; // Página de Steiner: primer ataque del combate ×2
@@ -186,6 +193,11 @@ export class CombatScene extends Phaser.Scene {
     this.jPerTurn = 0;
     this.velPerTurn = 0;
     this.pCalor = 0;
+    this.hemorragia = 0;
+    this.aturdido = false;
+    this.trasAturdir = false;
+    this.vertigo = 0;
+    this.mercurioBono = 0;
     this.discardMode = 0;
     this.cond = null;
     this.marco = 0;
@@ -243,6 +255,40 @@ export class CombatScene extends Phaser.Scene {
   private pacto(id: string) {
     return Game.run?.modo === 'abismo' && Game.run.pacto === id;
   }
+  /** Nivel de un diente de la Dentadura (0 = no lo tienes; el Diente Espejo suma copias) */
+  private diente(id: string) {
+    return Game.run?.modo === 'abismo' ? nivelDiente(Game.run.dientes, id) : 0;
+  }
+
+  /** La Dentadura y el cosmos sobre un Ataque (se suman a this.polonio y se multiplican en this.mult) */
+  private dientesAtaque(def: CardDef) {
+    const run = Game.run!;
+    const col = this.diente('colmillo');
+    if (col) { this.polonio += 2 * col; this.calc(`Colmillo de Profundo: +${2 * col}`); }
+    const mar = this.diente('marte');
+    if (mar) { this.polonio += 3 * mar; this.calc(`✦ Marte · Ataque nv ${mar}: +${3 * mar}`); }
+    if (this.mercurioBono) { this.polonio += this.mercurioBono; this.calc(`✦ Mercurio: +${this.mercurioBono} guardado`); this.mercurioBono = 0; }
+    if (this.pacto('palanca') && this.attacksTurn === 1) { this.polonio += 4; this.calc('Pacto de la Palanca: brazo largo, +4 al primer ataque'); }
+    const sat = this.diente('saturno');
+    if (sat && def.abismo) { this.mult *= 1 + 0.25 * sat; this.calc(`✦ Saturno · Abismo nv ${sat}: ×${(1 + 0.25 * sat).toFixed(2)}`); }
+    const sol = this.diente('sol');
+    if (sol) {
+      const k = Math.pow(1.1, cuantosAstros(run.dientes) * sol);
+      this.mult *= k;
+      this.calc(`✦ Sol Negro: ×${k.toFixed(2)} (${cuantosAstros(run.dientes)} Astros)`);
+    }
+    if (alineacion(run.dientes)) { this.mult *= ALINEACION; this.calc(`✦ ALINEACIÓN PLANETARIA: ×${ALINEACION}`); }
+  }
+
+  /** La Dentadura y el cosmos sobre Defensas, Habilidades y Poderes */
+  private dientesNoAtaque(def: CardDef) {
+    const lun = this.diente('luna');
+    if (lun && def.type === 'Defensa') { this.gainBlock(3 * lun); this.calc(`✦ Luna · Defensa nv ${lun}: +${3 * lun} de Bloqueo`); }
+    const mer = this.diente('mercurio');
+    if (mer && def.type === 'Habilidad') { this.gainBlock(2 * mer); this.mercurioBono += 2 * mer; this.calc(`✦ Mercurio · Habilidad nv ${mer}: +${2 * mer} de Bloqueo y +${2 * mer} a tu siguiente ataque`); }
+    const sat = this.diente('saturno');
+    if (sat && def.abismo && def.rarity !== 'estado') { this.gainBlock(3 * sat); this.calc(`✦ Saturno · Abismo nv ${sat}: +${3 * sat} de Bloqueo`); }
+  }
 
   /** Confusión (como en Slay the Spire): desde ahora cada carta robada cuesta 0–3 J al azar */
   private confundir(fuente: string) {
@@ -269,6 +315,14 @@ export class CombatScene extends Phaser.Scene {
     if (this.necro('geometria')) masaOVel(2, 'Geometría Imposible');
     if (this.pacto('excentrico')) masaOVel(2, 'Pacto Excéntrico');
     if (this.pacto('inercia')) { this.block += 6; this.calc('Pacto de la Inercia: +6 de Bloqueo'); }
+    if (this.pacto('cafeina')) { this.bonusJ1 += 1; this.calc('Pacto de la Cafeína: +1 J en tu primer turno'); }
+    // la Dentadura
+    const mp = this.diente('muelaPlomo');
+    if (mp) { this.block += 6 * mp; this.calc(`Muela de Plomo: +${6 * mp} de Bloqueo`); }
+    const inc = this.diente('incisivo');
+    if (inc) this.robo1 += inc;
+    const jup = this.diente('jupiter');
+    if (jup) masaOVel(jup, `Diente de Júpiter (Gravedad nv ${jup})`);
     if (this.necro('angulos')) {
       for (const e of this.alive()) { e.st.hp = e.st.maxHp = Math.round(e.st.maxHp * 1.15); this.refreshEnemy(e); }
       this.calc('Ángulos que No Suman: los enemigos tienen +15 % de vida');
@@ -641,6 +695,9 @@ export class CombatScene extends Phaser.Scene {
     if (i.heal) r.d += `\nSe curará ${i.heal} de vida.`;
     if (i.drain) r.d += `\nTe robará ${i.drain} J para tu siguiente turno.`;
     if (i.confusion) r.d += '\nTe CONFUNDIRÁ: cada carta que robes costará 0–3 J al azar.';
+    if (i.aturde) r.d += '\nGOLPE ATURDIDOR: si te hace daño (no lo bloqueas completo), PIERDES tu siguiente turno.';
+    if (i.hemorragia) r.d += `\nHEMORRAGIA ${i.hemorragia}: durante ${i.hemorragia} turno(s), cada carta que juegues te quitará 1 de vida.`;
+    if (i.vertigo) r.d += `\nVÉRTIGO: en tu siguiente turno robarás ${i.vertigo} carta(s) menos.`;
     if (i.add) r.d += `\nMeterá ${i.add.n} «${CARDS[i.add.id].name}» a tu ${i.add.to === 'draw' ? 'mazo de robo' : 'descarte'}.`;
     return r;
   }
@@ -670,7 +727,10 @@ export class CombatScene extends Phaser.Scene {
         if (ii.shieldAll) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3)); ex += 30; }
         if (ii.heal) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3)); ex += 30; }
         if (ii.drain) { ev.intentC.add(icon(this, ex, 0, 'i_bolt', 3)); ex += 30; }
-        if (ii.confusion) ev.intentC.add(icon(this, ex, 0, 'i_ojo', 3).setTint(0xc88aff));
+        if (ii.confusion) { ev.intentC.add(icon(this, ex, 0, 'i_ojo', 3).setTint(0xffa040)); ex += 30; }
+        if (ii.aturde) { ev.intentC.add(icon(this, ex, 0, 'i_stun', 3).setTint(0xffd040)); ex += 30; }
+        if (ii.hemorragia) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3).setTint(0xb02020)); ex += 30; }
+        if (ii.vertigo) { ev.intentC.add(icon(this, ex, 0, 'i_momentum', 3).setTint(0x9ad8f0)); ex += 30; }
       }
       this.tip.attach(ic, 'Intención', it.d);
       this.tweens.add({ targets: ev.intentC, y: ev.intentC.y - 4, duration: 600, yoyo: true, repeat: 1 });
@@ -746,6 +806,9 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
     if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema naranja con «?»).']);
+    if (this.hemorragia) items.push(['i_heart', `${this.hemorragia}`, 'Hemorragia', `Cada carta que juegues te quita 1 de vida. Quedan ${this.hemorragia} turno(s).`]);
+    if (this.aturdido) items.push(['i_stun', '!', 'Aturdido', 'Pierdes tu siguiente turno.']);
+    if (this.vertigo) items.push(['i_momentum', `-${this.vertigo}`, 'Vértigo', `Robarás ${this.vertigo} carta(s) menos en tu siguiente turno.`]);
     if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
     if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
     if (this.velPerTurn) items.push(['i_gaunt', `+${this.velPerTurn}`, 'Impulso Constante', `+${this.velPerTurn} m/s al inicio de cada turno.`]);
@@ -1128,6 +1191,7 @@ export class CombatScene extends Phaser.Scene {
       this.mult *= 2;
       this.calc('Página de Steiner: I = I₀ + m·d² → primer ataque ×2');
     }
+    if (def.type === 'Ataque' && Game.run?.modo === 'abismo') this.dientesAtaque(def);
     const c = this.ctx();
     switch (def.id) {
       // ── El Abismo de los Ejes ──
@@ -1964,6 +2028,13 @@ export class CombatScene extends Phaser.Scene {
     this.acel -= plano;
     if (planoV) this.vel = Math.max(0, this.vel - planoV);
     this.played++;
+    const can = this.diente('canino');
+    if (can && (this.played - this.jugadasIni) % 3 === 0) { this.energy += can; this.calc(`Canino Giratorio: 3 cartas este turno → +${can} J`); }
+    if (this.hemorragia > 0 && Game.run!.hp > 0) {
+      Game.run!.hp -= 1;
+      this.floatText(this.heroX, 200, '-1 🩸', '#e05050');
+      if (Game.run!.hp <= 0 && (await this.dies('la Hemorragia'))) return;
+    }
     // Noether · Simetría de Rotación
     const yr = boonLevel('y_rotacion');
     if (yr && this.played % (yr === 2 ? 2 : 3) === 0) {
@@ -1977,6 +2048,7 @@ export class CombatScene extends Phaser.Scene {
     this.polonio = 0;
     this.mult = 1;
     this.curAll = false;
+    if (def.type !== 'Ataque' && Game.run?.modo === 'abismo') this.dientesNoAtaque(def);
     if (ed && def.type !== 'Ataque') {
       if (ed === 'lamina') { this.gainBlock(4); this.calc('Lámina: +4 de Bloqueo'); }
       if (ed === 'poli') { this.drawCards(1); this.calc('Polícroma: robas 1'); }
@@ -2197,6 +2269,10 @@ export class CombatScene extends Phaser.Scene {
     ev.dead = true;
     {
       const run = Game.run!;
+      const tib = this.diente('tiburon');
+      if (tib) { this.gainBlock(4 * tib); this.calc(`Diente de Tiburón: +${4 * tib} de Bloqueo`); }
+      const vam = this.diente('vampiro');
+      if (vam && run.hp > 0) { run.hp = Math.min(run.maxHp, run.hp + 3 * vam); this.calc(`Colmillo Vampiro: +${3 * vam} de vida`); }
       run.stats.kills = (run.stats.kills ?? 0) + 1;
       contarBaja(ev.st.def.id);
       const vv = boonLevel('duo_visviva'); // Châtelet + Coriolis
@@ -2373,6 +2449,14 @@ export class CombatScene extends Phaser.Scene {
       this.energy = Math.max(0, this.energy - 1);
       this.calc('El Color que Cayó del Cielo absorbe tu energía: −1 J');
     }
+    const pod = this.diente('podrido');
+    if (pod) {
+      this.energy += pod;
+      addEntropia(2 * pod);
+      this.calc(`Diente Podrido: +${pod} J y −${2 * pod} de Cordura`);
+      this.hud.refresh();
+    }
+    if (this.pacto('pendulo') && this.turn % 2 === 1) { this.energy += 1; this.calc('Pacto del Péndulo (ida): +1 J'); }
     if (this.jefeVivo('cthulhu')) {
       addEntropia(5);
       this.calc('Cthulhu sueña contigo: −5 de Cordura');
@@ -2535,6 +2619,13 @@ export class CombatScene extends Phaser.Scene {
     this.reflect = false;
     this.restE = 0;
     this.played = 0;
+    if (this.pacto('pendulo') && this.turn % 2 === 0) { draw += 1; this.calc('Pacto del Péndulo (vuelta): robas 1 carta más'); }
+    if (this.vertigo) {
+      draw = Math.max(1, draw - this.vertigo);
+      this.calc(`Vértigo: todo da vueltas, robas ${this.vertigo} carta(s) menos`);
+      this.floatText(this.heroX, 190, 'Vértigo', '#9ad8f0');
+      this.vertigo = 0;
+    }
     if (yog && draw > 4) { draw = 4; this.calc('Yog-Sothoth cierra la Puerta: sólo robas 4 cartas'); }
     const antesRobo = this.hand.length;
     this.drawCards(draw);
@@ -2557,6 +2648,18 @@ export class CombatScene extends Phaser.Scene {
     }
     this.refreshPlayer();
     this.hint(`${T.combate.turno} ${this.turn}`);
+    if (!this.aturdido) this.trasAturdir = false;
+    if (this.aturdido) {
+      // ATURDIDO: pierdes este turno (los enemigos vuelven a actuar, pero no te pueden aturdir otra vez seguido)
+      this.aturdido = false;
+      this.trasAturdir = true;
+      this.busy = true;
+      this.calc('¡ATURDIDO! El golpe te dejó viendo estrellas: pierdes este turno');
+      this.floatText(this.heroX, 170, '¡ATURDIDO!', '#ffd040');
+      this.cameras.main.shake(250, 0.006);
+      this.time.delayedCall(1400, () => { this.busy = false; void this.endTurn(); });
+      return;
+    }
     // familiares que actúan al inicio de tu turno
     if (fam?.id === 'tortuga') {
       this.famHop();
@@ -2631,6 +2734,7 @@ export class CombatScene extends Phaser.Scene {
     }
     this.hand = hondas;
     this.friccion = Math.max(0, this.friccion - 1);
+    if (this.hemorragia > 0) this.hemorragia--;
     this.acel = this.baseAcel;
     this.refreshPlayer();
     await this.wait(300);
@@ -2714,12 +2818,19 @@ export class CombatScene extends Phaser.Scene {
           }
           if (it.dmg) await this.hurtPlayer(it.dmg, ev);
         } else if (it.kind === 'attack') {
+          const hpAntes = Game.run!.hp;
           for (let h = 0; h < (it.hits ?? 1); h++) {
             await this.hurtPlayer(it.dmg, ev);
             if (Game.run!.hp <= 0 || ev.dead) break;
             await this.wait(140);
           }
           if (it.release) st.carga = 0;
+          if (it.aturde && Game.run!.hp > 0) {
+            if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
+            else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
+            else if (this.trasAturdir) this.calc('Sigues mareado del golpe anterior: este no te vuelve a aturdir');
+            else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.floatText(this.heroX, 170, '★ Aturdido ★', '#ffd040'); }
+          }
         }
         if (it.calor && Game.run!.hp > 0) {
           this.pCalor += it.calor;
@@ -2747,6 +2858,16 @@ export class CombatScene extends Phaser.Scene {
           this.calc(`${st.def.name} te roba ${it.drain} J para tu siguiente turno`);
         }
         if (it.confusion) this.confundir(st.def.name);
+        if (it.hemorragia && Game.run!.hp > 0) {
+          const n = this.diente('protector') ? Math.ceil(it.hemorragia / 2) : it.hemorragia;
+          this.hemorragia = Math.max(this.hemorragia, n);
+          this.calc(`${st.def.name}: HEMORRAGIA por ${n} turno(s) → cada carta que juegues te quita 1 de vida`);
+          this.floatText(this.heroX, 180, 'Hemorragia', '#e05050');
+        }
+        if (it.vertigo && Game.run!.hp > 0) {
+          this.vertigo = Math.min(3, this.vertigo + it.vertigo);
+          this.calc(`${st.def.name} te marea: VÉRTIGO, robas ${this.vertigo} carta(s) menos en tu siguiente turno`);
+        }
         {
           if (it.friccion) {
             if (this.has('botas')) this.calc('Botas de Agarre: el lodo no te afecta.');
@@ -2798,6 +2919,11 @@ export class CombatScene extends Phaser.Scene {
       if (this.kind === 'elite') this.encargo(completarEncargo('elitePerfecta'));
     }
     if (this.kind === 'boss' && this.turn <= 6) this.encargo(completarEncargo('jefeRapido'));
+    // la Dentadura: premios al ganar
+    const lec = this.diente('leche');
+    if (lec) { run.hp = Math.min(run.maxHp, run.hp + 4 * lec); this.floatText(this.heroX, 200, `+${4 * lec}`, CSS.green); }
+    const oro = this.diente('oro');
+    if (oro) { run.ergios += 20 * oro; this.floatText(W / 2, 210, `+${20 * oro} Ergios (Diente de Oro)`, CSS.gold); }
     if (this.kind === 'boss') sumar(run, 'Actos superados', PUNTOS.acto * this.acto);
     if (this.kind === 'boss' && this.acto === 3) sumar(run, 'Victoria', PUNTOS.victoria);
     if (this.kind === 'boss' && this.acto === 4) sumar(run, 'AM derrotado', PUNTOS.victoria * 2);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { nivelDiente } from '../data/dientes';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -238,7 +239,7 @@ export class RuneScene extends Phaser.Scene {
       if (run.modo === 'abismo') {
         // El Abismo: una respuesta correcta te devuelve cordura (Horror Lúcido: la mitad; Cantor: más)
         const base = run.necro === 'lucido' ? Math.round(CORDURA.runaBien / 2) : CORDURA.runaBien;
-        const extra = 3 * boonLevel('ca_conjunto');
+        const extra = 3 * boonLevel('ca_conjunto') + 5 * nivelDiente(run.dientes, 'juicio'); // Cantor y la Muela del Juicio
         addEntropia(-(base + extra));
         this.flash(`+${base + extra} de Cordura`, '#6ee08a', 132);
       } else addEntropia(ENTROPIA.runa);

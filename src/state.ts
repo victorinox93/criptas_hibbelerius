@@ -35,7 +35,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe';
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca'; // boca = el Sacamuelas Ciego (sólo en el Abismo)
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -103,6 +103,7 @@ export interface Run {
   tramo?: number; // El Descenso: tramo actual (1–4; 5+ = modo infinito)
   jefe?: string; // jefe del tramo actual (sacado al azar)
   jefesVistos?: string[]; // jefes que ya salieron en esta partida (para no repetir)
+  dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
 }
 
 export interface ShopItem {
@@ -250,7 +251,7 @@ export function pisosDe(acto = 1) {
   return acto === 5 ? PISOS_TRAMO_ABISMO : acto >= 4 ? PISOS_NUCLEO : FLOORS;
 }
 /** Pisos de cada tramo del Abismo (= PISOS_TRAMO de src/data/abismo_modo.ts) */
-export const PISOS_TRAMO_ABISMO = 6;
+export const PISOS_TRAMO_ABISMO = 8;
 /** Expediciones terminadas. Para cuentas anteriores a v0.29 (sin contador) se estima con lo que ya hay. */
 export function expediciones() {
   const c = Game.codex;
@@ -451,9 +452,9 @@ export function generateMap(acto = 1): MapNode[] {
   const tope: Partial<Record<NodeType, number>> = {
     santuario: 2 + (Math.random() < 0.35 ? 1 : 0),
     fogata: 2 + (Math.random() < 0.5 ? 1 : 0), // sin contar la fila de fogatas antes del jefe
-    mercader: 3,
+    mercader: acto === 5 ? 2 : 3,
     taberna: 2,
-    elite: acto >= 2 ? 5 : 4,
+    elite: acto === 5 ? 3 : acto >= 2 ? 5 : 4,
   };
   const cuenta = (t: NodeType) => list.filter((n) => n.type === t && !(t === 'fogata' && n.floor === FLOORS - 1)).length;
   for (const n of list) n.type = n.floor === FLOORS - 1 ? 'fogata' : 'combate';
@@ -477,13 +478,15 @@ export function generateMap(acto = 1): MapNode[] {
       if (!choca(n, type)) n.type = type;
     }
   };
-  if (FLOORS <= 6) {
-    // tramos cortos del Abismo: 6 pisos (combate, mezcla, fogatas antes del jefe)
-    ensure('elite', 1, [2, FLOORS - 2]);
+  if (acto === 5) {
+    // tramos del Abismo (8 pisos): sin taberna; en su lugar, el Sacamuelas Ciego (dientes)
+    for (const n of list) if (n.type === 'taberna') n.type = 'boca';
+    ensure('elite', 2, [3, FLOORS - 2]);
     ensure('runa', 1, [1, FLOORS - 3]);
-    ensure('evento', 1, [1, FLOORS - 2]);
+    ensure('evento', 2, [1, FLOORS - 2]);
     ensure('mercader', 1, [2, FLOORS - 2]);
     ensure('santuario', 1, [1, FLOORS - 3]);
+    ensure('boca', 1, [2, FLOORS - 2]);
     return [...list, boss];
   }
   ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);

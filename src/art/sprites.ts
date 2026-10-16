@@ -754,6 +754,18 @@ export const SPRITES: Record<string, string[]> = {
     '.n..ll...',
     'n........',
   ],
+  // v0.42 · el Sacamuelas Ciego (nodo del Abismo) y la Dentadura
+  i_diente: [
+    '.WWW.WWW.',
+    'WWWWWWWWW',
+    'WwWWWWWWW',
+    'WwWWWWWWW',
+    'WWWWWWWWW',
+    '.WWWWWWW.',
+    '.ww...ww.',
+    '.ww...ww.',
+    '..w...w..',
+  ],
   i_jarra: [
     '.wwwww...',
     'wwwwwww..',

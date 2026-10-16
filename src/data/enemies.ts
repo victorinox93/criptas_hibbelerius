@@ -13,6 +13,9 @@ interface IntentExtras {
   heal?: number; // se cura
   drain?: number; // te roba J para tu siguiente turno
   confusion?: boolean; // El Abismo: te Confunde (tus cartas robadas cuestan 0–3 J al azar)
+  aturde?: boolean; // El Abismo: si el golpe te hace daño, pierdes tu siguiente turno
+  hemorragia?: number; // El Abismo: N turnos en que cada carta que juegas te quita 1 de vida
+  vertigo?: number; // El Abismo: robas N cartas menos en tu siguiente turno
 
 }
 
@@ -414,8 +417,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
   // ════════════ EL ABISMO DE LOS EJES · capa 1: los Muelles Inclinados ════════════
   acolito: {
     id: 'acolito', name: 'Acólito Inclinado', sprite: 'acolito', scale: 5, hp: [30, 34], mass: 60, act: 5, vuelco: true,
-    desc: 'Su centro de masa está fuera de su base: vive a punto de caer. Si lo golpeas 2 veces en el mismo turno, se VUELCA y pierde su turno.',
-    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 9, dmg: 6, label: 'Equilibrio precario' } : { kind: 'attack', dmg: 11, label: 'Caída controlada' }),
+    desc: 'Su centro de masa está fuera de su base: vive a punto de caer. Si lo golpeas 2 veces en el mismo turno, se VUELCA y pierde su turno. Cuando se te cae encima te ATURDE (bloquéalo completo para evitarlo).',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 9, dmg: 6, label: 'Equilibrio precario' } : e.turn % 3 === 1 ? { kind: 'attack', dmg: 10, aturde: true, label: 'Se te cae encima' } : { kind: 'attack', dmg: 11, label: 'Caída controlada' }),
   },
   polipo: {
     id: 'polipo', name: 'Pólipo Compuesto', sprite: 'polipo', scale: 5, hp: [42, 46], mass: 30, act: 5, split: { id: 'polipito', n: 2 },
@@ -429,14 +432,14 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   profundo: {
     id: 'profundo', name: 'Profundo Hueco', sprite: 'profundo', scale: 5, hp: [36, 40], mass: 80, act: 5, hueco: true,
-    desc: 'Le falta un pedazo del pecho: un área negativa. Los golpes a TODOS le hacen la mitad; los golpes directos, completos.',
-    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 17, label: 'Arpón' } : { kind: 'attack', dmg: 8, friccion: 1, label: 'Red de algas' }),
+    desc: 'Le falta un pedazo del pecho: un área negativa. Los golpes a TODOS le hacen la mitad; los golpes directos, completos. Su arpón te deja con HEMORRAGIA.',
+    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 15, hemorragia: 2, label: 'Arpón' } : { kind: 'attack', dmg: 8, friccion: 1, label: 'Red de algas' }),
   },
   cultistaEje: {
     id: 'cultistaEje', name: 'Cultista del Eje', sprite: 'cultistaEje', scale: 5, hp: [34, 38], mass: 55, act: 5,
-    desc: 'Gira sin parar y gana rapidez angular ω cada turno. Su golpe vale ½·I·ω². Te CONFUNDE: tus cartas cuestan 0–3 J al azar.',
+    desc: 'Gira sin parar y gana rapidez angular ω cada turno. Su golpe vale ½·I·ω². Verlo girar te da VÉRTIGO: robas cartas de menos.',
     next: (e) => {
-      if (e.turn % 3 === 0) return { kind: 'block', block: 4, confusion: true, charge: true, label: 'Rezo del Eje' };
+      if (e.turn % 3 === 0) return { kind: 'block', block: 4, vertigo: 2, charge: true, label: 'Rezo del Eje' };
       if (e.turn % 3 === 1) return { kind: 'block', block: 7, charge: true, label: 'ω aumenta' };
       return { kind: 'attack', dmg: 6 + 5 * e.carga, release: true, label: '½·I·ω²' };
     },
@@ -457,7 +460,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => {
       const p = e.turn % 3;
       if (p === 0) return { kind: 'buff', summon: 'polipito', shieldAll: 6, label: 'Gemación' };
-      if (p === 1) return { kind: 'attack', dmg: 9, hits: 2, label: 'Dos cabezas' };
+      if (p === 1) return { kind: 'attack', dmg: 9, hits: 2, hemorragia: 2, label: 'Dos cabezas' };
       return { kind: 'attack', dmg: 19 + 3 * e.inercia, add: { id: 'susurro', n: 1, to: 'draw' }, label: 'Canto abisal' };
     },
   },
@@ -481,7 +484,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 21 + 3 * e.inercia, label: 'Ángulo de 200°' };
         case 1: return { kind: 'block', block: 14, dmg: 6, label: 'Figura compuesta' };
-        default: return { kind: 'attack', dmg: 7, hits: 3, confusion: true, label: 'Líneas paralelas que se cruzan' };
+        default: return { kind: 'attack', dmg: 7, hits: 3, vertigo: 1, label: 'Líneas paralelas que se cruzan' };
       }
     },
   },
@@ -492,7 +495,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 10 + 2 * e.turn + 2 * e.inercia, label: 'Presión P = ρ·g·h' };
-        case 1: return { kind: 'attack', dmg: 8, hits: 2, friccion: 1, label: 'Ola' };
+        case 1: return { kind: 'attack', dmg: 8, hits: 2, aturde: true, label: 'Ola que revuelca' };
         default: return { kind: 'block', block: 12, summon: 'polipito', label: 'Llamar a los Profundos' };
       }
     },
@@ -512,8 +515,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
     id: 'bailarina', name: 'La Bailarina Ahogada', sprite: 'bailarina', scale: 3.6, hp: [270, 270], mass: 55, umbral: 18, act: 5,
     desc: 'I₁·ω₁ = I₂·ω₂: con los brazos abiertos gira lento y pega fuerte; con los brazos recogidos gira rápido y golpea 4 veces.',
     next: (e) => (e.turn % 2 === 0
-      ? { kind: 'attack', dmg: 22 + 2 * e.inercia, label: 'Brazos abiertos (I grande, ω chica)' }
-      : { kind: 'attack', dmg: 6, hits: 4, label: 'Pirueta (I chica, ω grande)' }),
+      ? { kind: 'attack', dmg: 22 + 2 * e.inercia, aturde: true, label: 'Brazos abiertos (I grande, ω chica)' }
+      : { kind: 'attack', dmg: 6, hits: 4, vertigo: 1, label: 'Pirueta (I chica, ω grande)' }),
   },
   dunwich: {
     id: 'dunwich', name: 'El Engendro de Dunwich', sprite: 'dunwich', scale: 3.6, hp: [290, 290], mass: 4000, umbral: 19, act: 5, oculto: true,
@@ -521,7 +524,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 20 + 2 * e.inercia, label: 'Pisotón' };
-        case 1: return { kind: 'attack', dmg: 7, hits: 3, label: 'Tentáculos' };
+        case 1: return { kind: 'attack', dmg: 7, hits: 3, hemorragia: 2, label: 'Tentáculos' };
         default: return { kind: 'block', block: 16, dmg: 8, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Grito en las colinas' };
       }
     },
@@ -541,7 +544,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
       const f = e.hp / e.maxHp;
       if (f > 2 / 3) return e.turn % 2 === 0 ? { kind: 'attack', dmg: 14 + 4 * e.inercia, label: 'ΣM = I·α' } : { kind: 'block', block: 16, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Sueña' };
       if (f > 1 / 3) return e.turn % 2 === 0 ? { kind: 'buff', summon: 'cultistaEje', dmg: 10, label: "R'lyeh se alza" } : { kind: 'attack', dmg: 12, hits: 2, label: 'Garra' };
-      return e.turn % 2 === 0 ? { kind: 'attack', dmg: 30 + 3 * e.inercia, label: 'Ya no sueña' } : { kind: 'attack', dmg: 9, hits: 3, label: 'H = I·ω' };
+      return e.turn % 2 === 0 ? { kind: 'attack', dmg: 30 + 3 * e.inercia, aturde: true, label: 'Ya no sueña' } : { kind: 'attack', dmg: 9, hits: 3, label: 'H = I·ω' };
     },
   },
   yogSothoth: {
