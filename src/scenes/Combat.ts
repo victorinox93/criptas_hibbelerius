@@ -31,7 +31,7 @@ import { POCIONES } from '../data/pociones';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
-import { cardView, CardView, CH, costOverride } from '../ui/card';
+import { cardView, CardView, CH, costConfusion, costOverride } from '../ui/card';
 import { deckOverlay, Hud, setPotionHandler, topBar } from '../ui/hud';
 import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, castleBackground, Tooltip, txt } from '../ui/widgets';
 
@@ -222,6 +222,7 @@ export class CombatScene extends Phaser.Scene {
     this.hpStart = Game.run?.hp ?? 0;
     this.confusa = false;
     costOverride.clear();
+    costConfusion.clear();
     this.golpesTurno = new Map();
     this.curAll = false;
     this.steinerUsed = false;
@@ -242,9 +243,9 @@ export class CombatScene extends Phaser.Scene {
   private confundir(fuente: string) {
     if (this.confusa) return;
     this.confusa = true;
-    for (const c of this.hand) costOverride.set(c.inst.uid, Phaser.Math.Between(0, 3));
+    for (const c of this.hand) if (CARDS[c.inst.id].rarity !== 'estado') { costOverride.set(c.inst.uid, Phaser.Math.Between(0, 3)); costConfusion.add(c.inst.uid); }
     this.calc(`${fuente}: ¡estás CONFUNDIDO! Tus cartas cuestan 0–3 J al azar`);
-    this.floatText(this.heroX, 190, '¿Confusión?', '#c88aff');
+    this.floatText(this.heroX, 190, '¿¿CONFUSIÓN??', '#ffd040');
     this.refreshPlayer();
   }
 
@@ -687,7 +688,7 @@ export class CombatScene extends Phaser.Scene {
       if (this.critica) items.push(['i_mass', '×1.5', 'Masa Crítica', 'Con menos de la mitad de tu masa máxima, tus ataques hacen ×1.5.']);
     }
     if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
-    if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema violeta).']);
+    if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema naranja con «?»).']);
     if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
     if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
     if (this.velPerTurn) items.push(['i_gaunt', `+${this.velPerTurn}`, 'Impulso Constante', `+${this.velPerTurn} m/s al inicio de cada turno.`]);
@@ -713,8 +714,7 @@ export class CombatScene extends Phaser.Scene {
       }
       if (this.hand.length >= 10) break;
       const inst = this.draw.pop()!;
-      if (this.confusa && CARDS[inst.id].rarity !== 'estado') costOverride.set(inst.uid, Phaser.Math.Between(0, 3));
-      else costOverride.delete(inst.uid);
+      if (this.confusa && CARDS[inst.id].rarity !== 'estado') { costOverride.set(inst.uid, Phaser.Math.Between(0, 3)); costConfusion.add(inst.uid); } else { costOverride.delete(inst.uid); costConfusion.delete(inst.uid); }
       if (inst.id === 'errorSigno') {
         this.energy = Math.max(0, this.energy - 1);
         this.calc('Error de Signo: tu análisis se arruina → −1 J');
@@ -986,6 +986,7 @@ export class CombatScene extends Phaser.Scene {
     const costo = this.cost(v);
     if (costo > this.energy) return;
     costOverride.delete(inst.uid);
+    costConfusion.delete(inst.uid);
     this.busy = true;
     this.selected = null;
     this.clearZones();
@@ -1135,6 +1136,70 @@ export class CombatScene extends Phaser.Scene {
         this.cameras.main.shake(300, 0.008);
         await this.heroLunge();
         if (target) await this.hitEnemy(target, F);
+        break;
+      }
+      case 'calamarTorque': {
+        const f = force(st, c);
+        this.calc(`Calamar de Torque: τ = r × F → ${f.F} N, tres tentáculos`);
+        await this.heroLunge();
+        for (let k = 0; k < 3 && target && !target.dead; k++) await this.hitEnemy(target, f.F);
+        break;
+      }
+      case 'gatoSchrodinger':
+        if (Math.random() < 0.5) {
+          this.energy += 3;
+          this.calc('Gato de Schrödinger: abres la caja… ¡vivo! +3 J');
+          this.floatText(this.heroX, 190, '¡Miau! +3 J', CSS.green);
+        } else {
+          this.calc('Gato de Schrödinger: abres la caja… ¿muerto? Robas 3');
+          this.floatText(this.heroX, 190, '…miau', CSS.dim);
+          this.drawCards(3);
+        }
+        break;
+      case 'cafeAbismo':
+        this.energy += st.extra ?? 2;
+        this.addStatus({ id: 'susurro', n: 1, to: 'discard' });
+        this.calc(`Café del Abismo: +${st.extra} J (y algo empieza a susurrar)`);
+        break;
+      case 'llamadaPerdida': {
+        addEntropia(8);
+        this.hud.refresh();
+        const libres = this.alive().filter((e) => !JEFES.includes(e.st.def.id) && e.st.def.id !== 'geometra');
+        if (libres.length) {
+          const e = Phaser.Utils.Array.GetRandom(libres);
+          e.st.stunned = 1;
+          e.st.intent = { kind: 'stunned' };
+          this.refreshEnemy(e);
+          this.floatText(e.baseX, 150, '¿Bueno?', '#9ad8c8');
+          this.calc(`Llamada Perdida de R'lyeh: ${e.st.def.name} contesta y pierde su turno (−8 Cordura)`);
+        } else this.calc("Llamada Perdida de R'lyeh: nadie contesta… (−8 Cordura)");
+        break;
+      }
+      case 'dclTentaculos': {
+        const n = this.alive().length;
+        this.gainBlock((st.block ?? 4) * n);
+        this.calc(`Diagrama de Cuerpo Libre: ${n} enemigo(s) × ${st.block} = +${(st.block ?? 4) * n} de Bloqueo`);
+        break;
+      }
+      case 'enLibras': {
+        const f = force(st, c);
+        const dmg = Math.round(f.F * 2.2);
+        this.calc(`Lo Calculé en Libras: ${f.F} N × 2.2 = ${dmg} (¡revisa tus unidades!)`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, dmg);
+        break;
+      }
+      case 'manoArrieta': {
+        const n = Math.max(1, Math.min(4, Math.floor((Game.run!.stats.runasOk ?? 0) / 2)));
+        this.calc(`La Tercera Mano de Arrieta: ${Game.run!.stats.runasOk ?? 0} aciertos → robas ${n}`);
+        this.drawCards(n);
+        break;
+      }
+      case 'patoHule': {
+        const b = (st.block ?? 3) * (this.confusa ? 3 : 1);
+        this.gainBlock(b);
+        this.calc(`Pato de Hule Primigenio: flota → +${b} de Bloqueo${this.confusa ? ' (confundido: ×3)' : ''}. Cuac.`);
+        this.floatText(this.heroX, 190, 'Cuac', '#ffd040');
         break;
       }
       case 'susurro':

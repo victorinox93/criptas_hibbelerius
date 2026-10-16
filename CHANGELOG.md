@@ -2,6 +2,15 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.40.0 · Abismo más loco (beta, sólo Modo profesor)
+
+- **Fondo vivo:** en las pantallas de inicio del Abismo hay muchas más burbujas y siluetas de criaturas que nadan; de vez en cuando pasa algo enorme con un ojo que parpadea.
+- **8 cartas nuevas** más locas (y algunas chistosas): Calamar de Torque, Gato de Schrödinger Ahogado, Café del Abismo, Llamada Perdida de R'lyeh, DCL de un Tentáculo, Lo Calculé en Libras, La Tercera Mano de Arrieta y Pato de Hule Primigenio. Ahora hay 18 cartas del Abismo.
+- **Confusión más visible:** la gema de costo se vuelve naranja y aparece un «?» amarillo que tiembla (antes era un violeta difícil de ver).
+- **El diario por partes:** al empezar sólo lees la primera hoja; las otras 4 aparecen en el mapa conforme bajas (pisos 2, 4, 6 y antes del jefe).
+- **Enemigos más peligrosos:** las élites ya sueltan golpes de 20 a 30 (Ancla, Canto abisal) y el Geómetra abre con 24.
+- Guía: la página 4 ahora se llama «Tipos de carta» y explica rarezas y ediciones.
+
 ## v0.39.1 · Arreglo: el Abismo se congelaba
 
 - Corregido: si presionabas «Saltar prólogo» mientras el diario se estaba escribiendo, el juego se congelaba en la portada del Abismo y ningún botón respondía (la máquina de escribir seguía escribiendo sobre una página ya borrada).

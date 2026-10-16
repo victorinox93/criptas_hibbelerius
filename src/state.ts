@@ -98,6 +98,7 @@ export interface Run {
   modo?: 'abismo';
   necro?: string; // página del Necronomicón elegida al inicio (src/data/abismo_modo.ts)
   pacto?: string; // mazo inicial elegido (Pacto)
+  diario?: number; // hojas del diario de Arrieta ya leídas en esta expedición (src/ui/diario.ts)
 }
 
 export interface ShopItem {

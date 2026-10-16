@@ -5,7 +5,7 @@ import { W, H } from '../config';
 import { Edicion } from '../data/cards';
 import { CORDURA, EDICIONES, ROMPER_CRISTAL, SEMAFORO } from '../data/abismo_modo';
 import { codexFlag } from '../state';
-import { cardView, costOverride } from './card';
+import { cardView, costConfusion, costOverride } from './card';
 import { button, frame, title, txt } from './widgets';
 
 // ════════════════════════════════════════════════════════════════
@@ -67,15 +67,16 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'Confusión',
-    texto: 'Algunos enemigos y cartas te CONFUNDEN: desde ese momento, cada carta que robes cuesta entre 0 y 3 J al azar durante ese combate. La gema del costo se pinta de violeta.',
+    texto: 'Algunos enemigos y cartas te CONFUNDEN: desde ese momento, cada carta que robes cuesta entre 0 y 3 J al azar durante ese combate. Su gema de costo se vuelve NARANJA y aparece un «?» que tiembla.',
     dibujo: (s, L) => {
+      for (let k = 1; k <= 2; k++) costConfusion.add(UID_EJEMPLO - k);
       muestra(s, L, [{ id: 'golpe' }, { id: 'golpe', conf: 0 }, { id: 'normal', conf: 3 }], ['Normal: cuesta 1 J', 'Confundido: ¡0 J!', 'Confundido: ¡3 J!'], 312, 0.8);
       L(txt(s, W / 2, 448, 'Lo aplican el Cultista del Eje, el Vigía, el Geómetra, la carta Geometría Imposible y la página «La Confusión».', 16, CSS.dim, { align: 'center', wordWrap: { width: 760 } }).setOrigin(0.5, 0));
     },
   },
   {
-    titulo: 'Ediciones (como en Balatro)',
-    texto: 'Algunas cartas salen con una edición que las hace brillar y las vuelve más fuertes. Las encuentras en los sobres y en las recompensas.',
+    titulo: 'Tipos de carta',
+    texto: 'Cada carta tiene una rareza (Común, ★ Rara o ★★ Legendaria). Además, cualquier carta puede salir con una edición que la hace brillar y la vuelve más fuerte.',
     dibujo: (s, L) => {
       const eds: Edicion[] = ['lamina', 'holo', 'poli', 'cristal'];
       muestra(s, L, eds.map((ed) => ({ id: 'golpe', ed })), eds.map((ed) => `${EDICIONES[ed].nombre}\n${EDICIONES[ed].texto.replace(/\n.*/s, '')}`), 262, 0.68);
@@ -135,7 +136,7 @@ export function guiaAbismo(s: Phaser.Scene, onClose?: () => void, desde = 0) {
   capa.add(hoja);
   let i = desde;
   const cerrar = () => {
-    for (let k = 0; k < 10; k++) costOverride.delete(UID_EJEMPLO - k);
+    for (let k = 0; k < 10; k++) { costOverride.delete(UID_EJEMPLO - k); costConfusion.delete(UID_EJEMPLO - k); }
     capa.destroy();
     onClose?.();
   };
@@ -146,7 +147,7 @@ export function guiaAbismo(s: Phaser.Scene, onClose?: () => void, desde = 0) {
     const g = s.add.graphics();
     frame(g, 24, 16, W - 48, H - 32, 0x060c0b, 0x2c5a4e, 0.98);
     L(g);
-    for (let k = 0; k < 10; k++) costOverride.delete(UID_EJEMPLO - k); // cada página empieza sin costos alterados
+    for (let k = 0; k < 10; k++) { costOverride.delete(UID_EJEMPLO - k); costConfusion.delete(UID_EJEMPLO - k); } // cada página empieza sin costos alterados
     L(txt(s, 44, 28, `Guía del Abismo · ${i + 1}/${PAGINAS_GUIA.length}`, 17, '#5a8a7a'));
     L(title(s, W / 2, 70, pg.titulo, 38, '#9ad8c8'));
     L(txt(s, W / 2, 104, pg.texto, 19, CSS.bone, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));

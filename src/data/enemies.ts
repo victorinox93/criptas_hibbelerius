@@ -414,22 +414,22 @@ export const ENEMIES: Record<string, EnemyDef> = {
   acolito: {
     id: 'acolito', name: 'Acólito Inclinado', sprite: 'acolito', scale: 5, hp: [30, 34], mass: 60, act: 5, vuelco: true,
     desc: 'Su centro de masa está fuera de su base: vive a punto de caer. Si lo golpeas 2 veces en el mismo turno, se VUELCA y pierde su turno.',
-    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 9, dmg: 5, label: 'Equilibrio precario' } : { kind: 'attack', dmg: 8, label: 'Caída controlada' }),
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 9, dmg: 6, label: 'Equilibrio precario' } : { kind: 'attack', dmg: 11, label: 'Caída controlada' }),
   },
   polipo: {
     id: 'polipo', name: 'Pólipo Compuesto', sprite: 'polipo', scale: 5, hp: [42, 46], mass: 30, act: 5, split: { id: 'polipito', n: 2 },
     desc: 'Una figura compuesta de tres partes. Al morir se separa: cada parte tiene su propio centroide.',
-    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6, hits: 2, label: 'Tentáculos' } : { kind: 'block', block: 8, add: { id: 'susurro', n: 1, to: 'discard' }, label: 'Murmullo' }),
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 7, hits: 2, label: 'Tentáculos' } : { kind: 'block', block: 8, add: { id: 'susurro', n: 1, to: 'discard' }, label: 'Murmullo' }),
   },
   polipito: {
     id: 'polipito', name: 'Fragmento de Pólipo', sprite: 'polipito', scale: 4, hp: [12, 14], mass: 10, act: 5,
     desc: 'Un pedazo del Pólipo. Su centroide ya no coincide con el del resto.',
-    next: () => ({ kind: 'attack', dmg: 5 }),
+    next: () => ({ kind: 'attack', dmg: 6 }),
   },
   profundo: {
     id: 'profundo', name: 'Profundo Hueco', sprite: 'profundo', scale: 5, hp: [36, 40], mass: 80, act: 5, hueco: true,
     desc: 'Le falta un pedazo del pecho: un área negativa. Los golpes a TODOS le hacen la mitad; los golpes directos, completos.',
-    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 14, label: 'Arpón' } : { kind: 'attack', dmg: 7, friccion: 1, label: 'Red de algas' }),
+    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 17, label: 'Arpón' } : { kind: 'attack', dmg: 8, friccion: 1, label: 'Red de algas' }),
   },
   cultistaEje: {
     id: 'cultistaEje', name: 'Cultista del Eje', sprite: 'cultistaEje', scale: 5, hp: [34, 38], mass: 55, act: 5,
@@ -437,7 +437,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => {
       if (e.turn % 3 === 0) return { kind: 'block', block: 4, confusion: true, charge: true, label: 'Rezo del Eje' };
       if (e.turn % 3 === 1) return { kind: 'block', block: 7, charge: true, label: 'ω aumenta' };
-      return { kind: 'attack', dmg: 5 + 4 * e.carga, release: true, label: '½·I·ω²' };
+      return { kind: 'attack', dmg: 6 + 5 * e.carga, release: true, label: '½·I·ω²' };
     },
   },
   vigia: {
@@ -445,9 +445,9 @@ export const ENEMIES: Record<string, EnemyDef> = {
     desc: 'Élite. Una armadura llena de agua que gira la luz del faro: te Confunde y acumula inercia. DETENLO con un golpe de F ≥ umbral.',
     next: (e) => {
       const p = e.turn % 3;
-      if (p === 0) return { kind: 'attack', dmg: 7, confusion: true, label: 'Haz del faro' };
-      if (p === 1) return { kind: 'attack', dmg: 10 + 2 * e.inercia, label: 'Ancla' };
-      return { kind: 'block', block: 14, dmg: 6, label: 'Marea' };
+      if (p === 0) return { kind: 'attack', dmg: 9, confusion: true, label: 'Haz del faro' };
+      if (p === 1) return { kind: 'attack', dmg: 18 + 3 * e.inercia, label: 'Ancla' };
+      return { kind: 'block', block: 14, dmg: 8, label: 'Marea' };
     },
   },
   hidra: {
@@ -456,8 +456,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => {
       const p = e.turn % 3;
       if (p === 0) return { kind: 'buff', summon: 'polipito', shieldAll: 6, label: 'Gemación' };
-      if (p === 1) return { kind: 'attack', dmg: 8, hits: 2, label: 'Dos cabezas' };
-      return { kind: 'attack', dmg: 12 + 2 * e.inercia, add: { id: 'susurro', n: 1, to: 'draw' }, label: 'Canto abisal' };
+      if (p === 1) return { kind: 'attack', dmg: 9, hits: 2, label: 'Dos cabezas' };
+      return { kind: 'attack', dmg: 19 + 3 * e.inercia, add: { id: 'susurro', n: 1, to: 'draw' }, label: 'Canto abisal' };
     },
   },
   vertice: {
@@ -473,14 +473,14 @@ export const ENEMIES: Record<string, EnemyDef> = {
       if (fase2) {
         switch (e.turn % 3) {
           case 0: return { kind: 'buff', summon: 'vertice', confusion: true, label: 'Desprender un vértice' };
-          case 1: return { kind: 'attack', dmg: 9 + 3 * e.inercia, hits: 2, label: 'x̄ se aleja' };
-          default: return { kind: 'block', block: 16, dmg: 8, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Teorema imposible' };
+          case 1: return { kind: 'attack', dmg: 11 + 3 * e.inercia, hits: 2, label: 'x̄ se aleja' };
+          default: return { kind: 'block', block: 16, dmg: 10, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Teorema imposible' };
         }
       }
       switch (e.turn % 3) {
-        case 0: return { kind: 'attack', dmg: 13 + 2 * e.inercia, label: 'Ángulo de 200°' };
+        case 0: return { kind: 'attack', dmg: 21 + 3 * e.inercia, label: 'Ángulo de 200°' };
         case 1: return { kind: 'block', block: 14, dmg: 6, label: 'Figura compuesta' };
-        default: return { kind: 'attack', dmg: 6, hits: 3, confusion: true, label: 'Líneas paralelas que se cruzan' };
+        default: return { kind: 'attack', dmg: 7, hits: 3, confusion: true, label: 'Líneas paralelas que se cruzan' };
       }
     },
   },

@@ -1,3 +1,4 @@
+import { hojaDiario, paginasHasta } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
@@ -112,6 +113,13 @@ export class MapScene extends Phaser.Scene {
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
     if (act5) button(this, 66, 62, 100, 28, '? Guía', () => guiaAbismo(this), { size: 17, color: 0x2c5a4e }).setDepth(402);
+    // el diario de Arrieta: aparece una hoja nueva conforme bajas (pisos en PISO_DIARIO)
+    if (act5 && (run.diario ?? 1) < paginasHasta(run.floor)) {
+      const i = run.diario ?? 1;
+      run.diario = i + 1;
+      saveLocal();
+      this.time.delayedCall(500, () => hojaDiario(this, i));
+    }
     title(this, W / 2, 66, act5 ? 'El Abismo de los Ejes · Los Muelles Inclinados' : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
