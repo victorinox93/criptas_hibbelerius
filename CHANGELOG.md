@@ -2,6 +2,13 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.39.0 · Sobres y Guía del Abismo (beta, sólo Modo profesor)
+
+- **Sobres** (como Pokémon TCG): después del Pacto abres 3 sobres (de tu Clase, del Abismo y de los Ecos). Cada uno trae 5 cartas: 3 comunes, 1 rara (a veces legendaria) y 1 **brillante con edición garantizada**. Te quedas con 2 de cada uno, así que empiezas con unas 16 cartas en vez de 10.
+- **Guía del Abismo**: 7 páginas ilustradas con cartas y criaturas reales (el viaje, Cordura, Confusión, ediciones, cartas nuevas, criaturas y Ecos Quebrados). Sale la primera vez y luego con el botón «? Guía» en el inicio, en los sobres y en el mapa. Se navega con las flechas.
+- **Ediciones más visibles**: ahora tiñen toda la carta y tienen su propio brillo animado (Lámina con destello blanco, Holográfica con arcoíris suave, Polícroma con franjas de colores y Cristal helado con facetas y chispas), más una cinta con su nombre. El tooltip de la carta en combate explica la edición.
+- **Cristal menos castigador**: como en Balatro, sólo se rompe 1 de cada 4 veces que lo juegas (`ROMPER_CRISTAL` en `src/data/abismo_modo.ts`). Si resiste, regresa al descarte.
+
 ## v0.38.0 · El Abismo de los Ejes (beta, sólo Modo profesor)
 
 - Nuevo modo de **horror cósmico** para quien ya venció a AM. Por ahora sólo se abre desde el **Modo profesor → Abismo (beta)** para probarlo.

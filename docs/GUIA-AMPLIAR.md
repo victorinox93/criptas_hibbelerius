@@ -462,6 +462,10 @@ Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega c
 | Pregunta de cuerpo rígido | `ABISMO_GEN` en `src/data/runes.ts` o un bloque en `preguntas.ts` con los conceptos de `ABISMO_CONCEPTS` |
 | Texto del prólogo | `PROLOGO` en `abismo_modo.ts` |
 | Cordura (cuánto sube o baja) | `CORDURA` en `abismo_modo.ts` |
+| Sobre nuevo o sus probabilidades | `SOBRES`, `abrirSobre()` y `BRILLANTE` en `abismo_modo.ts` |
+| Qué tan seguido se rompe el Cristal | `ROMPER_CRISTAL` en `abismo_modo.ts` |
+| Página de la Guía del Abismo | `PAGINAS_GUIA` en `src/ui/guiaAbismo.ts` |
+| Cómo se ve una edición | `edicionVisual()` en `src/ui/card.ts` |
 
 Mecánicas nuevas de enemigos: `confusion: true` en una intención (te Confunde), `vuelco: true` (se vuelca con 2 golpes en el mismo turno) y `hueco: true` (los golpes a TODOS le hacen la mitad).
 

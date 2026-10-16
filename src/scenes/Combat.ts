@@ -22,7 +22,7 @@ import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
-import { CORDURA, corduraDe, EDICIONES } from '../data/abismo_modo';
+import { CORDURA, corduraDe, EDICIONES, ROMPER_CRISTAL } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
@@ -736,7 +736,8 @@ export class CombatScene extends Phaser.Scene {
       audio.sfx('hover');
       this.tweens.add({ targets: v, y: HAND_Y - 96, scale: 1.12, angle: 0, duration: 120 });
       const def = CARDS[v.inst.id];
-      this.tip.show(v.x + 100, HAND_Y - 300, def.concept, def.lore);
+      const ed = v.inst.ed ? EDICIONES[v.inst.ed] : null;
+      this.tip.show(v.x + 100, HAND_Y - 300, ed ? `${def.concept} · ${ed.nombre}` : def.concept, ed ? `${ed.texto}\n\n${def.lore}` : def.lore);
     });
     v.on('pointerout', () => {
       this.tip.hide();
@@ -1858,8 +1859,11 @@ export class CombatScene extends Phaser.Scene {
       if (ed === 'poli') { this.drawCards(1); this.calc('Polícroma: robas 1'); }
       if (ed === 'cristal') { this.gainBlock(10); this.calc('Cristal: +10 de Bloqueo'); }
     }
-    if (ed === 'cristal') {
-      // un solo uso: el cristal se rompe y la carta sale de tu mazo para siempre
+    if (ed === 'cristal' && Math.random() >= ROMPER_CRISTAL) {
+      this.calc('El Cristal resiste… por ahora');
+      this.floatText(W / 2, 180, 'Cristal intacto', '#c8f4ff');
+    } else if (ed === 'cristal') {
+      // frágil: esta vez se rompe y la carta sale de tu mazo para siempre (1 de cada 4, como en Balatro)
       const run = Game.run!;
       run.deck = run.deck.filter((x) => x.uid !== inst.uid);
       this.discard = this.discard.filter((x) => x !== inst);
