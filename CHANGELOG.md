@@ -2,6 +2,27 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.41.0 · El Descenso: tramos, Primigenios y modo infinito (beta, sólo Modo profesor)
+
+- **4 tramos de 6 pisos.** Cada tramo termina con un **jefe sacado al azar** (no se repiten en la misma partida): el Geómetra No Euclidiano, Padre Dagón, el Color que Cayó del Cielo, la Bailarina Ahogada o el Engendro de Dunwich. Cada tramo es 10 % más fuerte que el anterior.
+- **Primigenios en el tramo 4**, al azar: Nyarlathotep, Cthulhu, Yog-Sothoth o Hastur. Cada jefe tiene una **desventaja** que te estorba toda la pelea (marea que corta tu Bloqueo, −1 J por turno, intenciones invisibles, carta descartada, −5 Cordura por turno, sólo 4 cartas, Ataques +1 J).
+- **Resumen antes de cada jefe:** retrato, tema de física, desventaja y de qué cuento viene.
+- **Entre tramos:** recuperas 40 % de la vida perdida y abres un sobre de premio (te quedas con 1).
+- **¿Seguir bajando?** Al vencer al Primigenio puedes retirarte o entrar al **modo infinito**: cada profundidad extra hace a los enemigos ×1.2 más fuertes y multiplica tu puntaje.
+- **Ojo del Abismo:** vencer a un Primigenio da un ojo morado junto al nombre (al lado del rojo de AM), en el menú y el ranking.
+- **Ranking del Abismo:** botón «Abismo ◈» en el Ranking. Las partidas del Abismo ya no se mezclan con el ranking normal. *Requiere pegar la nueva versión de `apps-script/Code.gs` y publicar una nueva versión de la implementación.*
+- **Nueva historia:** el erudito **Ignacio Montemayor** encontró el tomo en una cueva del **Cerro de la Silla** (la primera hoja del diario trae un dibujo del cerro con la cueva). Ahora encuentras una hoja al empezar cada tramo y la última antes del Primigenio.
+- Modo profesor: botón «Jefe: …» para probar cualquier jefe del Abismo.
+
+## v0.40.0 · Abismo más loco (beta, sólo Modo profesor)
+
+- **Fondo vivo:** en las pantallas de inicio del Abismo hay muchas más burbujas y siluetas de criaturas que nadan; de vez en cuando pasa algo enorme con un ojo que parpadea.
+- **8 cartas nuevas** más locas (y algunas chistosas): Calamar de Torque, Gato de Schrödinger Ahogado, Café del Abismo, Llamada Perdida de R'lyeh, DCL de un Tentáculo, Lo Calculé en Libras, La Tercera Mano de Arrieta y Pato de Hule Primigenio. Ahora hay 18 cartas del Abismo.
+- **Confusión más visible:** la gema de costo se vuelve naranja y aparece un «?» amarillo que tiembla (antes era un violeta difícil de ver).
+- **El diario por partes:** al empezar sólo lees la primera hoja; las otras 4 aparecen en el mapa conforme bajas (pisos 2, 4, 6 y antes del jefe).
+- **Enemigos más peligrosos:** las élites ya sueltan golpes de 20 a 30 (Ancla, Canto abisal) y el Geómetra abre con 24.
+- Guía: la página 4 ahora se llama «Tipos de carta» y explica rarezas y ediciones.
+
 ## v0.39.1 · Arreglo: el Abismo se congelaba
 
 - Corregido: si presionabas «Saltar prólogo» mientras el diario se estaba escribiendo, el juego se congelaba en la portada del Abismo y ningún botón respondía (la máquina de escribir seguía escribiendo sobre una página ya borrada).

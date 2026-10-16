@@ -25,6 +25,9 @@ export const NO_CTX: CalcCtx = { masaBonus: 0, acelBonus: 0, friccion: 0 };
 
 /** Costos alterados en combate (Confusión, Pacto del Centroide): uid → J. El combate lo llena y lo limpia. */
 export const costOverride = new Map<number, number>();
+/** Cartas cuyo costo cambió por Confusión (gema naranja con «?»). El combate lo llena y lo limpia. */
+export const costConfusion = new Set<number>();
+const GEMA_CONFUSA = 0xe8781a;
 
 /** Ediciones del Abismo (src/data/abismo_modo.ts): color base, color del texto, nombre de la cinta */
 const ED_COLOR: Record<string, [number, string, string]> = {
@@ -136,12 +139,20 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   const body = txt(s, 0, -CH / 2 + 114, '', 20, CSS.bone, { align: 'center', lineSpacing: -4 }).setOrigin(0.5, 0);
   // gema de costo
   const gem = s.add.graphics();
-  gem.fillStyle(0x000000, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 16);
-  gem.fillStyle(0x1d4d5a, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 13);
-  gem.lineStyle(2, UI.energy, 1).strokeCircle(-CW / 2 + 12, -CH / 2 + 12, 13);
+  const pintaGema = (confusa: boolean) => {
+    gem.clear();
+    gem.fillStyle(0x000000, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 16);
+    gem.fillStyle(confusa ? GEMA_CONFUSA : 0x1d4d5a, 1).fillCircle(-CW / 2 + 12, -CH / 2 + 12, 13);
+    gem.lineStyle(2, confusa ? 0xfff0a0 : UI.energy, 1).strokeCircle(-CW / 2 + 12, -CH / 2 + 12, 13);
+  };
+  pintaGema(false);
+  // marca de Confusión: un «?» grande junto a la gema que tiembla
+  const duda = txt(s, -CW / 2 + 34, -CH / 2 + 4, '?', 26, '#ffd040').setOrigin(0.5).setStroke('#000', 5).setVisible(false);
+  const tiembla = s.tweens.add({ targets: duda, angle: { from: -14, to: 14 }, scale: { from: 0.9, to: 1.15 }, duration: 260, yoyo: true, repeat: -1, paused: true });
   const cost = txt(s, -CW / 2 + 12, -CH / 2 + 10, '', 24, '#e8fbff').setOrigin(0.5);
   const unit = txt(s, -CW / 2 + 12, -CH / 2 + 30, 'J', 14, CSS.energy).setOrigin(0.5);
-  c.add([g, art, name, type, body, gem, cost, unit]);
+  c.add([g, art, name, type, body, gem, cost, unit, duda]);
+  c.once('destroy', () => tiembla.stop());
   if (inst.ed && ED_COLOR[inst.ed]) edicionVisual(s, c, inst.ed);
   c.setSize(CW, CH);
 
@@ -156,7 +167,12 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
     const k = Math.min(1, maxH / body.height, maxW / body.width);
     body.setScale(k);
     const ov = costOverride.get(inst.uid);
-    cost.setText(String(ov ?? st.cost)).setColor(ov !== undefined && ov !== st.cost ? '#e0b0ff' : '#e8fbff');
+    const confusa = costConfusion.has(inst.uid);
+    pintaGema(confusa);
+    duda.setVisible(confusa);
+    if (confusa && tiembla.isPaused()) tiembla.resume(); else if (!confusa && !tiembla.isPaused()) tiembla.pause();
+    cost.setText(String(ov ?? st.cost)).setColor(confusa ? '#1a0e00' : ov !== undefined && ov !== st.cost ? '#ffd040' : '#e8fbff');
+    unit.setColor(confusa ? '#ffd040' : CSS.energy);
     c.setAlpha(playable ? 1 : 0.55);
   };
   c.refresh(ctx);

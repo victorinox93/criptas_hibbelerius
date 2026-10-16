@@ -20,6 +20,8 @@ export class RankingScene extends Phaser.Scene {
   private list: RankRow[] = [];
   private page = 0;
   private scope: 'grupo' | 'todos' = 'grupo';
+  private modo: 'normal' | 'abismo' = 'normal'; // v0.41: ranking propio del Abismo (modo infinito)
+  private modoBtn!: Btn;
   private rows!: Phaser.GameObjects.Container;
   private msg!: Phaser.GameObjects.Text;
   private tabs: Btn[] = [];
@@ -37,6 +39,11 @@ export class RankingScene extends Phaser.Scene {
       button(this, W / 2 - 90, 88, 170, 34, T.ranking.grupo, () => this.fetchRank('grupo'), { size: 21 }),
       button(this, W / 2 + 90, 88, 170, 34, T.ranking.todos, () => this.fetchRank('todos'), { size: 21 }),
     ];
+    this.modoBtn = button(this, W - 120, 88, 170, 34, 'Abismo ◈', () => {
+      this.modo = this.modo === 'normal' ? 'abismo' : 'normal';
+      this.modoBtn.label.setText(this.modo === 'abismo' ? 'Expedición' : 'Abismo ◈');
+      this.fetchRank(this.scope);
+    }, { size: 19, color: 0x6a3a9a });
     const g = this.add.graphics();
     frame(g, 30, 112, W - 60, 366, 0x0e0b12, UI.border, 0.92);
     const HX = [56, 150, 420, 560, 680, 800];
@@ -70,7 +77,8 @@ export class RankingScene extends Phaser.Scene {
     this.rows.removeAll(true);
     this.msg.setText(T.ranking.cargando);
     try {
-      const r = await api.leaderboard(Game.profile!.token, scope);
+      const r = await api.leaderboard(Game.profile!.token, scope, this.modo);
+      if (this.modo === 'abismo' && r.modo !== 'abismo') throw new Error('El ranking del Abismo necesita la versión nueva del servidor:\npega apps-script/Code.gs y publica una nueva versión.');
       if (!this.scene.isActive()) return;
       this.list = r.lista;
       const mine = this.list.findIndex((x) => x.yo);
@@ -104,7 +112,7 @@ export class RankingScene extends Phaser.Scene {
       const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
       R(txt(this, COLS[0], y + 8, `${p.lugar}`, 26, medal));
       // avatar dibujado con sus colores
-      let av: { insignia?: string; helm?: string; cape?: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number } = {};
+      let av: { insignia?: string; insignia2?: string; helm?: string; cape?: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number } = {};
       try { av = p.avatar ? JSON.parse(p.avatar) : {}; } catch { av = {}; }
       const key = `rk_${this.scope}_${this.page}_${i}`;
       makeHeroFromAvatar(this, { ...av, helm: av.helm ?? 'penacho', cape: av.cape ?? 0 }, key);
@@ -113,22 +121,33 @@ export class RankingScene extends Phaser.Scene {
       const name = txt(this, COLS[2], y + 6, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);
-      // insignia de quien venció a AM: el ojo rojo junto al nombre
+      // insignias: ojo rojo (venció a AM) y ojo morado (venció a un Primigenio del Abismo)
+      let ox = COLS[2] + name.displayWidth + 18;
       if (av.insignia === 'am') {
-        const ojo = this.add.image(COLS[2] + name.displayWidth + 18, y + 20, 'i_ojo').setScale(2).setTint(0xff3a3a);
+        const ojo = this.add.image(ox, y + 20, 'i_ojo').setScale(2).setTint(0xff3a3a);
         R(ojo);
         this.tweens.add({ targets: ojo, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+        ox += 26;
+      }
+      if (av.insignia2 === 'abismo') {
+        const ojo2 = this.add.image(ox, y + 20, 'i_ojo').setScale(2).setTint(0xb070ff);
+        R(ojo2);
+        this.tweens.add({ targets: ojo2, alpha: 0.5, duration: 1100, yoyo: true, repeat: -1 });
       }
       R(txt(this, COLS[3], y + 10, p.grupo, 20, CSS.dim));
       R(txt(this, COLS[4], y + 8, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
-      R(txt(this, COLS[5], y + 8, p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} +IV` : `${p.piso}/${TOTAL_PISOS}`, 24, p.piso > TOTAL_PISOS ? '#e0a860' : CSS.bone));
+      if (this.modo === 'abismo') {
+        // profundidad: tramo alcanzado (5+ = modo infinito)
+        const tramo = Math.floor(p.piso / 7) + 1;
+        R(txt(this, COLS[5], y + 8, tramo > 4 ? `∞ ${tramo}` : `Tramo ${tramo}`, 24, tramo > 4 ? '#c8a8ff' : CSS.bone));
+      } else R(txt(this, COLS[5], y + 8, p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} +IV` : `${p.piso}/${TOTAL_PISOS}`, 24, p.piso > TOTAL_PISOS ? '#e0a860' : CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));
     });
   }
 
   /** Ficha grande del héroe: el personaje en grande con su clase, cosméticos y logros */
-  private ficha(p: RankRow, av: { insignia?: string; cape?: number; armor?: number; visor?: number; clase?: string; cabeza?: string; cara?: string; mano?: string; pies?: string; escudo?: string }, key: string) {
+  private ficha(p: RankRow, av: { insignia?: string; insignia2?: string; cape?: number; armor?: number; visor?: number; clase?: string; cabeza?: string; cara?: string; mano?: string; pies?: string; escudo?: string }, key: string) {
     audio.sfx?.('click');
     const L = this.add.container(0, 0).setDepth(900);
     const fondo = this.add.rectangle(0, 0, W, H, 0x050407, 0.85).setOrigin(0).setInteractive();
@@ -168,6 +187,12 @@ export class RankingScene extends Phaser.Scene {
       const ojo = this.add.image(x + 10, y + 11, 'i_ojo').setScale(2).setTint(0xff3a3a);
       L.add([ojo, txt(this, x + 28, y, 'Venció a AM', 21, '#ff6a5a')]);
       this.tweens.add({ targets: ojo, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+      y += 30;
+    }
+    if (av.insignia2 === 'abismo') {
+      const ojo2 = this.add.image(x + 10, y + 11, 'i_ojo').setScale(2).setTint(0xb070ff);
+      L.add([ojo2, txt(this, x + 28, y, 'Venció a un Primigenio', 21, '#c8a8ff')]);
+      this.tweens.add({ targets: ojo2, alpha: 0.5, duration: 1100, yoyo: true, repeat: -1 });
       y += 30;
     }
     g.fillStyle(UI.border, 1).fillRect(x, y + 2, pw - 370, 2);

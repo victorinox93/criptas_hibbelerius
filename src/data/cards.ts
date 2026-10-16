@@ -785,11 +785,60 @@ export const CARDS: Record<string, CardDef> = {
     },
     lore: 'El Durmiente no sueña con nosotros: sueña con ecuaciones. Mientras menos cordura te queda, más de su fuerza pasa por ti.',
   },
+  // ── v0.40 · cartas más locas (y algunas chistosas) ──
+  calamarTorque: {
+    id: 'calamarTorque', name: 'Calamar de Torque', type: 'Ataque', icon: 'i_hoz', concept: 'Momento de una fuerza', rarity: 'común', target: 'enemy', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, m: 2, a: up ? 3 : 2 }),
+    text: (s, c) => { const { F } = force(s, c); return `Tres tentáculos golpean:\nF = ${F} N, tres veces.\n(Los otros 5 descansan.)`; },
+    lore: 'Tiene ocho brazos, pero sólo tres tienen ganas de trabajar. τ = r × F: con brazos tan largos, hasta un empujón gira mucho.',
+  },
+  gatoSchrodinger: {
+    id: 'gatoSchrodinger', name: 'Gato de Schrödinger Ahogado', type: 'Habilidad', icon: 'i_paw', concept: 'Probabilidad', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Abres la caja:\n50 %: +3 J\n50 %: robas 3 cartas.`,
+    lore: 'Mientras nadie abre la caja, está vivo y muerto a la vez. Y además, empapado. Muy molesto.',
+  },
+  cafeAbismo: {
+    id: 'cafeAbismo', name: 'Café del Abismo', type: 'Habilidad', icon: 'i_jarra', concept: 'Energía', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 0, extra: up ? 3 : 2 }),
+    text: (s) => `+${s.extra} J.\nMete 1 «Susurro»\na tu descarte.`,
+    lore: 'Huele a tinta de calamar. Te despierta… demasiado. Ahora escuchas cosas.',
+  },
+  llamadaPerdida: {
+    id: 'llamadaPerdida', name: "Llamada Perdida de R'lyeh", type: 'Habilidad', icon: 'i_note', concept: 'Ondas', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Un enemigo al azar (no\njefe) pierde su siguiente\nturno. −8 de Cordura.\nSe agota.`,
+    lore: '«Ph\'nglui… ¿bueno? ¿Bueno? Se cortó.» Las ondas tardan mucho en subir desde el fondo del mar.',
+  },
+  dclTentaculos: {
+    id: 'dclTentaculos', name: 'DCL de un Tentáculo', type: 'Defensa', icon: 'i_shield', concept: 'Diagrama de cuerpo libre', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, block: up ? 6 : 4 }),
+    text: (s) => `Gana ${s.block} de Bloqueo\npor cada enemigo vivo.`,
+    lore: 'Dibujar todas las fuerzas de un ser con 40 tentáculos lleva su tiempo. Mientras tanto, te cubres detrás del pizarrón.',
+  },
+  enLibras: {
+    id: 'enLibras', name: 'Lo Calculé en Libras', type: 'Ataque', icon: 'i_mass', concept: 'Unidades', rarity: 'común', target: 'enemy', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, m: 3, a: up ? 3 : 2 }),
+    text: (s, c) => { const { F } = force(s, c); return `F = ${F} N… pero en libras:\n×2.2 = ${Math.round(F * 2.2)} de daño.\nPor accidente, funciona.`; },
+    lore: '1 kg = 2.2 lb. Te equivocaste de unidades… y el enemigo también. En el examen no tendrás tanta suerte.',
+  },
+  manoMontemayor: {
+    id: 'manoMontemayor', name: 'La Tercera Mano de Montemayor', type: 'Habilidad', icon: 'i_book', concept: 'Estudio', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Robas 1 carta por cada 2\npreguntas que acertaste en\nesta expedición (1 a 4).\nSe agota.`,
+    lore: 'Escribía con la izquierda. Luego con las dos. Luego con una tercera mano que no recuerda haber tenido.',
+  },
+  patoHule: {
+    id: 'patoHule', name: 'Pato de Hule Primigenio', type: 'Defensa', icon: 'i_feather', concept: 'Flotación', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 0, block: up ? 5 : 3 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nSi estás Confundido: ×3.\nCuac.`,
+    lore: 'Principio de Arquímedes: desaloja su propio peso en agua y flota. Siempre flota. Incluso en el abismo. Nadie sabe de dónde salió.',
+  },
   susurro: {
     id: 'susurro', name: 'Susurro', type: 'Estado', icon: 'i_fog', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
     stats: () => ({ cost: 1 }),
     text: () => `Si sigue en tu mano al\nterminar el turno:\n−3 de Cordura.\nJugarla la calla.`,
-    lore: '«…los ejes están ahí, pero ellos no los ven…» — diario del profesor Arrieta',
+    lore: '«…los ejes están ahí, pero ellos no los ven…» — diario de Ignacio Montemayor',
   },
 };
 

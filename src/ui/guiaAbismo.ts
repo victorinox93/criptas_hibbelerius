@@ -5,7 +5,7 @@ import { W, H } from '../config';
 import { Edicion } from '../data/cards';
 import { CORDURA, EDICIONES, ROMPER_CRISTAL, SEMAFORO } from '../data/abismo_modo';
 import { codexFlag } from '../state';
-import { cardView, costOverride } from './card';
+import { cardView, costConfusion, costOverride } from './card';
 import { button, frame, title, txt } from './widgets';
 
 // ════════════════════════════════════════════════════════════════
@@ -34,10 +34,10 @@ function muestra(s: Phaser.Scene, L: <T extends Phaser.GameObjects.GameObject>(o
 const PAGINAS_GUIA: PaginaGuia[] = [
   {
     titulo: 'El viaje',
-    texto: 'Cada expedición al Abismo empieza igual: arrancas una página del Necronomicón, firmas un Pacto y abres 3 sobres. Luego bajas por 8 pisos hasta el jefe.',
+    texto: 'Arrancas una página del Necronomicón, firmas un Pacto y abres 3 sobres. Luego bajas 4 tramos de 6 pisos; cada tramo termina con un jefe al azar y el último con un Primigenio. Después puedes seguir bajando sin fin.',
     dibujo: (s, L) => {
-      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', '3 sobres\n(+6 cartas)', 'Mapa:\n8 pisos + jefe'];
-      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 3 mazos\no el Pacto ciego', 'De cada sobre te\nquedas con 2 cartas', 'Combates, runas,\necos y tiendas'];
+      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', '3 sobres\n(+6 cartas)', '4 tramos\n+ Primigenio'];
+      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 3 mazos\no el Pacto ciego', 'De cada sobre te\nquedas con 2 cartas', 'Jefe al azar en cada\ntramo; luego, ¿infinito?'];
       pasos.forEach((p, i) => {
         const x = 150 + i * 220, y = 300;
         const g = s.add.graphics();
@@ -67,15 +67,16 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'Confusión',
-    texto: 'Algunos enemigos y cartas te CONFUNDEN: desde ese momento, cada carta que robes cuesta entre 0 y 3 J al azar durante ese combate. La gema del costo se pinta de violeta.',
+    texto: 'Algunos enemigos y cartas te CONFUNDEN: desde ese momento, cada carta que robes cuesta entre 0 y 3 J al azar durante ese combate. Su gema de costo se vuelve NARANJA y aparece un «?» que tiembla.',
     dibujo: (s, L) => {
+      for (let k = 1; k <= 2; k++) costConfusion.add(UID_EJEMPLO - k);
       muestra(s, L, [{ id: 'golpe' }, { id: 'golpe', conf: 0 }, { id: 'normal', conf: 3 }], ['Normal: cuesta 1 J', 'Confundido: ¡0 J!', 'Confundido: ¡3 J!'], 312, 0.8);
       L(txt(s, W / 2, 448, 'Lo aplican el Cultista del Eje, el Vigía, el Geómetra, la carta Geometría Imposible y la página «La Confusión».', 16, CSS.dim, { align: 'center', wordWrap: { width: 760 } }).setOrigin(0.5, 0));
     },
   },
   {
-    titulo: 'Ediciones (como en Balatro)',
-    texto: 'Algunas cartas salen con una edición que las hace brillar y las vuelve más fuertes. Las encuentras en los sobres y en las recompensas.',
+    titulo: 'Tipos de carta',
+    texto: 'Cada carta tiene una rareza (Común, ★ Rara o ★★ Legendaria). Además, cualquier carta puede salir con una edición que la hace brillar y la vuelve más fuerte.',
     dibujo: (s, L) => {
       const eds: Edicion[] = ['lamina', 'holo', 'poli', 'cristal'];
       muestra(s, L, eds.map((ed) => ({ id: 'golpe', ed })), eds.map((ed) => `${EDICIONES[ed].nombre}\n${EDICIONES[ed].texto.replace(/\n.*/s, '')}`), 262, 0.68);
@@ -106,7 +107,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(txt(s, x, 316, nom, 19, CSS.gold).setOrigin(0.5, 0));
         L(txt(s, x, 342, txt0, 16, CSS.bone, { align: 'center', wordWrap: { width: 200 } }).setOrigin(0.5, 0));
       });
-      L(txt(s, W / 2, 452, 'Jefe: El Geómetra No Euclidiano. Con menos de la mitad de vida suelta vértices y te Confunde.', 17, '#c8a8ff', { align: 'center' }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 446, 'Antes de cada jefe verás quién es y su desventaja. En el tramo 4 te espera un Primigenio: Nyarlathotep, Cthulhu, Yog-Sothoth o Hastur.', 16, '#c8a8ff', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {
@@ -135,7 +136,7 @@ export function guiaAbismo(s: Phaser.Scene, onClose?: () => void, desde = 0) {
   capa.add(hoja);
   let i = desde;
   const cerrar = () => {
-    for (let k = 0; k < 10; k++) costOverride.delete(UID_EJEMPLO - k);
+    for (let k = 0; k < 10; k++) { costOverride.delete(UID_EJEMPLO - k); costConfusion.delete(UID_EJEMPLO - k); }
     capa.destroy();
     onClose?.();
   };
@@ -146,7 +147,7 @@ export function guiaAbismo(s: Phaser.Scene, onClose?: () => void, desde = 0) {
     const g = s.add.graphics();
     frame(g, 24, 16, W - 48, H - 32, 0x060c0b, 0x2c5a4e, 0.98);
     L(g);
-    for (let k = 0; k < 10; k++) costOverride.delete(UID_EJEMPLO - k); // cada página empieza sin costos alterados
+    for (let k = 0; k < 10; k++) { costOverride.delete(UID_EJEMPLO - k); costConfusion.delete(UID_EJEMPLO - k); } // cada página empieza sin costos alterados
     L(txt(s, 44, 28, `Guía del Abismo · ${i + 1}/${PAGINAS_GUIA.length}`, 17, '#5a8a7a'));
     L(title(s, W / 2, 70, pg.titulo, 38, '#9ad8c8'));
     L(txt(s, W / 2, 104, pg.texto, 19, CSS.bone, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));

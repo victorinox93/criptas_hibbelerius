@@ -10,6 +10,7 @@ import { nivelDe, nivelDeV1 } from './data/progreso';
 export interface Avatar {
   alias: string;
   insignia?: string; // 'am' = venció a AM (se ve en el ranking y el menú)
+  insignia2?: string; // 'abismo' = venció a un Primigenio en el Abismo (ojo morado junto al de AM)
   figura?: number; // 0 = masculina; 1–5 = femenina (color de cabello)
   cabeza?: string; // accesorio de cabeza (Tienda de Layla)
   mano?: string; // accesorio de mano (reemplaza al arma)
@@ -98,6 +99,10 @@ export interface Run {
   modo?: 'abismo';
   necro?: string; // página del Necronomicón elegida al inicio (src/data/abismo_modo.ts)
   pacto?: string; // mazo inicial elegido (Pacto)
+  diario?: number; // hojas del diario de Montemayor ya leídas en esta expedición (src/ui/diario.ts)
+  tramo?: number; // El Descenso: tramo actual (1–4; 5+ = modo infinito)
+  jefe?: string; // jefe del tramo actual (sacado al azar)
+  jefesVistos?: string[]; // jefes que ya salieron en esta partida (para no repetir)
 }
 
 export interface ShopItem {
@@ -242,8 +247,10 @@ export const NUCLEO_VICTORIAS = 2;
 export const PISOS_NUCLEO = 8;
 /** Pisos antes del jefe en cada acto */
 export function pisosDe(acto = 1) {
-  return acto >= 4 ? PISOS_NUCLEO : FLOORS;
+  return acto === 5 ? PISOS_TRAMO_ABISMO : acto >= 4 ? PISOS_NUCLEO : FLOORS;
 }
+/** Pisos de cada tramo del Abismo (= PISOS_TRAMO de src/data/abismo_modo.ts) */
+export const PISOS_TRAMO_ABISMO = 6;
 /** Expediciones terminadas. Para cuentas anteriores a v0.29 (sin contador) se estima con lo que ya hay. */
 export function expediciones() {
   const c = Game.codex;
@@ -322,6 +329,16 @@ export function otorgarInsigniaAM() {
   saveLocal();
   if (!p.offline) enqueue('saveProfile', { token: p.token, alias: p.avatar.alias, avatar: JSON.stringify(p.avatar) });
 }
+/** Ojo morado: venció a un Primigenio en el Abismo (viaja al ranking con el avatar) */
+export function otorgarInsigniaAbismo() {
+  codexFlag('abismo_primigenio');
+  const p = Game.profile;
+  if (!p?.avatar || p.avatar.insignia2 === 'abismo') return;
+  p.avatar.insignia2 = 'abismo';
+  saveLocal();
+  if (!p.offline) enqueue('saveProfile', { token: p.token, alias: p.avatar.alias, avatar: JSON.stringify(p.avatar) });
+}
+
 /** ¿Ya puede entrar al Núcleo? (venció a Hibbelerius al menos NUCLEO_VICTORIAS veces) */
 export function nucleoDisponible() {
   return (Game.codex.hib ?? 0) >= NUCLEO_VICTORIAS;
@@ -460,6 +477,15 @@ export function generateMap(acto = 1): MapNode[] {
       if (!choca(n, type)) n.type = type;
     }
   };
+  if (FLOORS <= 6) {
+    // tramos cortos del Abismo: 6 pisos (combate, mezcla, fogatas antes del jefe)
+    ensure('elite', 1, [2, FLOORS - 2]);
+    ensure('runa', 1, [1, FLOORS - 3]);
+    ensure('evento', 1, [1, FLOORS - 2]);
+    ensure('mercader', 1, [2, FLOORS - 2]);
+    ensure('santuario', 1, [1, FLOORS - 3]);
+    return [...list, boss];
+  }
   ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);
   ensure('runa', 2, [1, FLOORS - 3]);
   ensure('evento', 3, [1, FLOORS - 2]);
@@ -531,7 +557,7 @@ export function syncRun(resultado: 'en curso' | 'derrota' | 'victoria' | 'abando
     token: Game.profile.token,
     runId: r.runId,
     acto: r.acto,
-    piso: (r.acto - 1) * (FLOORS + 1) + r.floor,
+    piso: r.modo === 'abismo' ? ((r.tramo ?? 1) - 1) * (PISOS_TRAMO_ABISMO + 1) + r.floor : (r.acto - 1) * (FLOORS + 1) + r.floor,
     vida: r.hp,
     puntaje: r.score,
     resultado,

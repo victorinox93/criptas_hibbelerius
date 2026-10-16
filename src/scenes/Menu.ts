@@ -75,6 +75,14 @@ export class MenuScene extends Phaser.Scene {
       const lbl = txt(this, 80 + aliasT.width + 18, 398, 'Vencedor de AM', 16, '#ff8a7a').setOrigin(0.5).setStroke('#000', 4).setAlpha(0);
       ojo.on('pointerover', () => lbl.setAlpha(1)).on('pointerout', () => lbl.setAlpha(0));
     }
+    if (av.insignia2 === 'abismo' || (Game.codex.flags ?? []).includes('abismo_primigenio')) {
+      // v0.41 · el Ojo del Abismo (morado), junto al de AM
+      const x2 = 80 + aliasT.width + (av.insignia === 'am' || amVencido() ? 44 : 18);
+      const ojo2 = this.add.image(x2, 440, 'i_ojo').setScale(2).setTint(0xb070ff).setInteractive();
+      this.tweens.add({ targets: ojo2, alpha: 0.5, duration: 1100, yoyo: true, repeat: -1 });
+      const lbl2 = txt(this, x2, 398, 'Vencedor de un Primigenio', 16, '#c8a8ff').setOrigin(0.5).setStroke('#000', 4).setAlpha(0);
+      ojo2.on('pointerover', () => lbl2.setAlpha(1)).on('pointerout', () => lbl2.setAlpha(0));
+    }
     const xp = Game.codex.xp ?? 0;
     const sig = siguienteNivel(xp, nivelActual());
     txt(this, 494, 424, `Conocimiento: nivel ${nivelActual()}`, 18, '#9ad8f0').setOrigin(1, 0);

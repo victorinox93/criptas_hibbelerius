@@ -291,9 +291,12 @@ var ACTIONS = {
   },
 
   // Ranking: mejor partida de cada alumno (sólo alias, avatar y números; nunca matrícula)
+  // v0.41: modo 'abismo' = ranking propio de El Abismo de los Ejes (partidas con acto 5);
+  // el ranking normal ya no las cuenta.
   leaderboard: function (r) {
     var u = auth_(r.token);
     var soloGrupo = r.alcance !== 'todos';
+    var abismo = r.modo === 'abismo';
     var alumnos = rows_('Alumnos');
     var info = {};
     alumnos.forEach(function (a) { info[a[0]] = { grupo: a[1], alias: a[2], avatar: a[3] }; });
@@ -302,6 +305,7 @@ var ACTIONS = {
       var who = info[p[1]];
       if (!who || !who.alias) return;
       if (soloGrupo && who.grupo !== u.grupo) return;
+      if ((num_(p[7]) === 5) !== abismo) return; // acto 5 = Abismo
       var b = best[p[1]] || (best[p[1]] = { alias: who.alias, avatar: who.avatar, grupo: who.grupo, puntaje: 0, piso: 0, victorias: 0, gravedad: 0, partidas: 0, yo: p[1] === u.mat });
       b.partidas++;
       b.puntaje = Math.max(b.puntaje, num_(p[10]));
@@ -317,7 +321,7 @@ var ACTIONS = {
     list.forEach(function (x, i) { if (x.yo) mine = i; });
     var top = list.slice(0, 25);
     if (mine >= 25) top.push(list[mine]);
-    return { ok: true, grupo: u.grupo, total: list.length, lista: top.map(function (x) {
+    return { ok: true, modo: abismo ? 'abismo' : 'normal', grupo: u.grupo, total: list.length, lista: top.map(function (x) {
       return { alias: x.alias, avatar: x.avatar, grupo: x.grupo, puntaje: x.puntaje, piso: x.piso, victorias: x.victorias, gravedad: x.gravedad, partidas: x.partidas, yo: x.yo, lugar: list.indexOf(x) + 1 };
     }) };
   },
