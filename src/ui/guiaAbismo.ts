@@ -72,8 +72,6 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     titulo: 'Estados alterados',
     texto: 'Las criaturas te pueden dejar en mal estado. Fíjate en los íconos junto a su intención (pasa el mouse para leerlos) y prepárate.',
     dibujo: (s, L) => {
-      for (let k = 1; k <= 1; k++) costConfusion.add(UID_EJEMPLO - k);
-      muestra(s, L, [{ id: 'golpe' }, { id: 'golpe', conf: 3 }], ['Normal', 'Confundido'], 300, 0.62);
       const estados: [string, number, string, string][] = [
         ['i_ojo', 0xffa040, 'Confusión', 'Tus cartas cuestan 0–3 J al azar (gema naranja con «?»). La usan el Vigía y el Geómetra herido.'],
         ['i_stun', 0xffd040, 'Aturdido', 'Golpe aturdidor: si te hace daño, PIERDES tu siguiente turno. Bloquéalo completo y no pasa nada.'],
@@ -82,9 +80,9 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       ];
       estados.forEach(([ic, tint, nom, d], i) => {
         const y = 196 + i * 66;
-        L(s.add.image(W / 2 - 40, y + 14, ic).setScale(3.4).setTint(tint));
-        L(txt(s, W / 2 - 10, y, nom, 20, CSS.gold));
-        L(txt(s, W / 2 - 10, y + 24, d, 15, CSS.bone, { wordWrap: { width: 430 } }));
+        L(s.add.image(W / 2 - 300, y + 14, ic).setScale(3.4).setTint(tint));
+        L(txt(s, W / 2 - 266, y, nom, 20, CSS.gold));
+        L(txt(s, W / 2 - 266, y + 24, d, 16, CSS.bone, { wordWrap: { width: 600 } }));
       });
     },
   },
