@@ -28,7 +28,9 @@ export const PUNTOS = {
 };
 
 /** Jefes (para el multiplicador) */
-export const JEFES = ['colossus', 'bruja', 'hibbelerius'];
+export const JEFES = ['colossus', 'bruja', 'hibbelerius',
+  // El Abismo (v0.41): jefes de tramo y Primigenios
+  'geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur'];
 
 interface RunLike {
   score: number;

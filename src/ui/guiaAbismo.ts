@@ -34,10 +34,10 @@ function muestra(s: Phaser.Scene, L: <T extends Phaser.GameObjects.GameObject>(o
 const PAGINAS_GUIA: PaginaGuia[] = [
   {
     titulo: 'El viaje',
-    texto: 'Cada expedición al Abismo empieza igual: arrancas una página del Necronomicón, firmas un Pacto y abres 3 sobres. Luego bajas por 8 pisos hasta el jefe.',
+    texto: 'Arrancas una página del Necronomicón, firmas un Pacto y abres 3 sobres. Luego bajas 4 tramos de 6 pisos; cada tramo termina con un jefe al azar y el último con un Primigenio. Después puedes seguir bajando sin fin.',
     dibujo: (s, L) => {
-      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', '3 sobres\n(+6 cartas)', 'Mapa:\n8 pisos + jefe'];
-      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 3 mazos\no el Pacto ciego', 'De cada sobre te\nquedas con 2 cartas', 'Combates, runas,\necos y tiendas'];
+      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', '3 sobres\n(+6 cartas)', '4 tramos\n+ Primigenio'];
+      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 3 mazos\no el Pacto ciego', 'De cada sobre te\nquedas con 2 cartas', 'Jefe al azar en cada\ntramo; luego, ¿infinito?'];
       pasos.forEach((p, i) => {
         const x = 150 + i * 220, y = 300;
         const g = s.add.graphics();
@@ -107,7 +107,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(txt(s, x, 316, nom, 19, CSS.gold).setOrigin(0.5, 0));
         L(txt(s, x, 342, txt0, 16, CSS.bone, { align: 'center', wordWrap: { width: 200 } }).setOrigin(0.5, 0));
       });
-      L(txt(s, W / 2, 452, 'Jefe: El Geómetra No Euclidiano. Con menos de la mitad de vida suelta vértices y te Confunde.', 17, '#c8a8ff', { align: 'center' }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 446, 'Antes de cada jefe verás quién es y su desventaja. En el tramo 4 te espera un Primigenio: Nyarlathotep, Cthulhu, Yog-Sothoth o Hastur.', 16, '#c8a8ff', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {

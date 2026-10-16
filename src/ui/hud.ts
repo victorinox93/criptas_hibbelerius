@@ -112,7 +112,9 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
       const r = Game.run!;
       hud.setHp(r.hp, r.maxHp);
       const pf = pisosDe(r.acto ?? 1);
-      floorT.setText(`${ROMAN[(r.acto ?? 1) - 1] ?? 'I'}·${Math.min(r.floor + 1, pf + 1)}/${pf + 1}`);
+      // en el Abismo: T1–T4 = tramo; ∞5, ∞6… = modo infinito
+      const etiqueta = r.modo === 'abismo' ? ((r.tramo ?? 1) > 4 ? `∞${r.tramo}` : `T${r.tramo ?? 1}`) : ROMAN[(r.acto ?? 1) - 1] ?? 'I';
+      floorT.setText(`${etiqueta}·${Math.min(r.floor + 1, pf + 1)}/${pf + 1}`);
       scoreT.setText(`✦${fmtPuntos(r.score)}`);
       ergT.setText(`${r.ergios}`);
       deckBtn.label.setText(`${T.hud.mazo} ${r.deck.length}`);

@@ -193,7 +193,7 @@ export class AvatarScene extends Phaser.Scene {
         alias.focus();
         return;
       }
-      prof.avatar = { alias: name, clase, ...look(), ...(amVencido() ? { insignia: 'am' } : {}) };
+      prof.avatar = { alias: name, clase, ...look(), ...(amVencido() ? { insignia: 'am' } : {}), ...((Game.codex.flags ?? []).includes('abismo_primigenio') ? { insignia2: 'abismo' } : {}) };
       saveLocal();
       rememberSession();
       if (!prof.offline) api.saveProfile(prof.token, name, JSON.stringify(prof.avatar)).catch((e) => console.warn(e));

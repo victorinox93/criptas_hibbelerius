@@ -59,6 +59,7 @@ export interface EnemyDef {
   explode?: number; // al morir explota y te hace este daño
   vuelco?: boolean; // El Abismo: si lo golpeas 2 veces en el mismo turno, se vuelca (pierde su turno)
   hueco?: boolean; // El Abismo: área negativa; los golpes a TODOS le hacen la mitad
+  oculto?: boolean; // El Abismo: invisible, sus intenciones no se ven (Engendro de Dunwich)
   next: (e: EnemyState) => Intent;
 }
 
@@ -484,6 +485,87 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ════════ v0.41 · jefes del Descenso (src/data/abismo_modo.ts → JEFES) ════════
+  dagon: {
+    id: 'dagon', name: 'Padre Dagón', sprite: 'dagon', scale: 3.6, hp: [270, 270], mass: 900, umbral: 18, act: 5,
+    desc: 'Rey de los Profundos. Su presión crece con la profundidad: P = ρ·g·h. MAREA ALTA: cada 3 turnos tus Bloqueos dan la mitad.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 10 + 2 * e.turn + 2 * e.inercia, label: 'Presión P = ρ·g·h' };
+        case 1: return { kind: 'attack', dmg: 8, hits: 2, friccion: 1, label: 'Ola' };
+        default: return { kind: 'block', block: 12, summon: 'polipito', label: 'Llamar a los Profundos' };
+      }
+    },
+  },
+  colorCielo: {
+    id: 'colorCielo', name: 'El Color que Cayó del Cielo', sprite: 'colorCielo', scale: 3.4, hp: [260, 260], mass: 0, umbral: 17, act: 5,
+    desc: 'Un color que no existe. Se alimenta de energía: te roba 1 J al inicio de cada turno y se cura con lo que absorbe.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 9, calor: 3, label: 'Marchitar' };
+        case 1: return { kind: 'block', block: 10, heal: 15, drain: 1, label: 'Absorber' };
+        default: return { kind: 'attack', dmg: 20 + 2 * e.inercia, label: 'Rayo de un color imposible' };
+      }
+    },
+  },
+  bailarina: {
+    id: 'bailarina', name: 'La Bailarina Ahogada', sprite: 'bailarina', scale: 3.6, hp: [270, 270], mass: 55, umbral: 18, act: 5,
+    desc: 'I₁·ω₁ = I₂·ω₂: con los brazos abiertos gira lento y pega fuerte; con los brazos recogidos gira rápido y golpea 4 veces.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'attack', dmg: 22 + 2 * e.inercia, label: 'Brazos abiertos (I grande, ω chica)' }
+      : { kind: 'attack', dmg: 6, hits: 4, label: 'Pirueta (I chica, ω grande)' }),
+  },
+  dunwich: {
+    id: 'dunwich', name: 'El Engendro de Dunwich', sprite: 'dunwich', scale: 3.6, hp: [290, 290], mass: 4000, umbral: 19, act: 5, oculto: true,
+    desc: 'Invisible: no ves sus intenciones, sólo sus huellas. Encuentra su centro de masa por las huellas que deja.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 20 + 2 * e.inercia, label: 'Pisotón' };
+        case 1: return { kind: 'attack', dmg: 7, hits: 3, label: 'Tentáculos' };
+        default: return { kind: 'block', block: 16, dmg: 8, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Grito en las colinas' };
+      }
+    },
+  },
+  nyarlathotep: {
+    id: 'nyarlathotep', name: 'Nyarlathotep', sprite: 'nyarlathotep', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5,
+    desc: 'El Caos que Repta. Cambia de forma: compacto (I chica, muchos golpes) o extendido (I grande, un golpe enorme). La primera carta que robas cada turno se descarta.',
+    next: (e) => {
+      if (e.turn % 3 === 2) return { kind: 'block', block: 14, dmg: 6, confusion: true, label: 'Mil máscaras' };
+      return e.turn % 3 === 0 ? { kind: 'attack', dmg: 7, hits: 3, label: 'Forma compacta' } : { kind: 'attack', dmg: 26 + 3 * e.inercia, label: 'Forma extendida' };
+    },
+  },
+  cthulhu: {
+    id: 'cthulhu', name: 'Cthulhu', sprite: 'cthulhu', scale: 3.4, hp: [340, 340], mass: 99999, umbral: 22, act: 5,
+    desc: "El Durmiente de R'lyeh. Pierdes 5 de Cordura cada turno. Despierta en 3 fases: ΣM = I·α, R'lyeh se alza, y ya no sueña.",
+    next: (e) => {
+      const f = e.hp / e.maxHp;
+      if (f > 2 / 3) return e.turn % 2 === 0 ? { kind: 'attack', dmg: 14 + 4 * e.inercia, label: 'ΣM = I·α' } : { kind: 'block', block: 16, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Sueña' };
+      if (f > 1 / 3) return e.turn % 2 === 0 ? { kind: 'buff', summon: 'cultistaEje', dmg: 10, label: "R'lyeh se alza" } : { kind: 'attack', dmg: 12, hits: 2, label: 'Garra' };
+      return e.turn % 2 === 0 ? { kind: 'attack', dmg: 30 + 3 * e.inercia, label: 'Ya no sueña' } : { kind: 'attack', dmg: 9, hits: 3, label: 'H = I·ω' };
+    },
+  },
+  yogSothoth: {
+    id: 'yogSothoth', name: 'Yog-Sothoth', sprite: 'yogSothoth', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5,
+    desc: 'La Llave y la Puerta: un amontonamiento de esferas. Sólo robas 4 cartas por turno. Su golpe crece con la distancia al eje: I = I₀ + m·d².',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'block', block: 15, dmg: 8, shieldAll: 6, label: 'Todo en Uno' };
+        case 1: return { kind: 'attack', dmg: 8, hits: 3, label: 'Esferas' };
+        default: return { kind: 'attack', dmg: 26 + 3 * e.inercia, label: 'La Puerta' };
+      }
+    },
+  },
+  hastur: {
+    id: 'hastur', name: 'Hastur', sprite: 'hastur', scale: 3.4, hp: [320, 320], mass: 0, umbral: 20, act: 5,
+    desc: 'El Rey de Amarillo. Tus cartas de Ataque cuestan +1 J. Su Signo Amarillo llena tu mazo de Susurros.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 10, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'El Signo Amarillo' };
+        case 1: return { kind: 'attack', dmg: 11, hits: 2, label: 'Viento entre las estrellas' };
+        default: return { kind: 'attack', dmg: 28 + 3 * e.inercia, calor: 2, label: 'El Que No Debe Ser Nombrado' };
+      }
+    },
+  },
   colossus: {
     id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
@@ -531,7 +613,8 @@ export const ENCOUNTERS_5 = {
   normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
     ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje']],
   elite: [['vigia'], ['hidra']],
-  boss: [['geometra']],
+  // el jefe de cada tramo se sortea (run.jefe, src/data/abismo_modo.ts); esta lista sólo los marca como jefes
+  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur']],
 };
 
 export function encounters(acto: number) {

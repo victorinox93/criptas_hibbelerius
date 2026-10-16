@@ -5,17 +5,19 @@ import { W, H } from '../config';
 import { CardInst, CARDS } from '../data/cards';
 import {
   abrirSobre, ACTO_ABISMO, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
-  RARAS_ABISMO, rarezaDe, SobreDef, SOBRES,
+  RARAS_ABISMO, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS,
 } from '../data/abismo_modo';
+import { ENEMIES } from '../data/enemies';
+import { bonosFinales } from '../data/puntaje';
 import { cardView, CW, CH } from '../ui/card';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import { hojaDiario } from '../ui/diario';
-import { codexFlag, Game, generateMap, newRun, saveLocal, unlock } from '../state';
+import { addCard, codexFlag, Game, generateMap, logEvent, newRun, otorgarInsigniaAbismo, saveLocal, syncRun, unlock } from '../state';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
 /**
  * EL ABISMO DE LOS EJES · inicio de la expedición:
- *   1. Prólogo (el diario del profesor Arrieta; se puede saltar)
+ *   1. Prólogo (el diario de Montemayor; se puede saltar)
  *   2. Una página del Necronomicón (modificador para toda la expedición)
  *   3. El Pacto (mazo base) o el Pacto ciego (mazo al azar)
  *   4. Tres sobres (como Pokémon TCG): de cada uno te quedas con 2 cartas
@@ -28,6 +30,7 @@ export interface AbismoData {
   debug?: boolean;
   tanque?: boolean; // Modo profesor: vida ×10
   saltarPrologo?: boolean;
+  fase?: 'tramo'; // pantalla entre tramos (después de vencer al jefe de un tramo)
 }
 
 export class AbismoScene extends Phaser.Scene {
@@ -38,7 +41,10 @@ export class AbismoScene extends Phaser.Scene {
   private elegido: PactoDef | null = null; // null = Pacto ciego
   private mazo: { id: string; up: boolean; ed?: CardInst['ed'] }[] = [];
   private escritura: Phaser.Time.TimerEvent | null = null; // máquina de escribir del diario
-  private gen = 0; // cambia en cada pantalla: las animaciones de una pantalla vieja ya no tocan la nueva
+  private gen = 0;
+  /** Sobre de premio entre tramos (te quedas con 1); null = los 3 sobres del inicio */
+  private premio: { def: SobreDef; alTerminar: () => void } | null = null;
+  private elige() { return this.premio ? 1 : ELIGES_POR_SOBRE; } // cambia en cada pantalla: las animaciones de una pantalla vieja ya no tocan la nueva
 
   constructor() { super('Abismo'); }
 
@@ -48,12 +54,14 @@ export class AbismoScene extends Phaser.Scene {
     this.elegido = null;
     this.mazo = [];
     this.escritura = null;
+    this.premio = null;
     this.cameras.main.fadeIn(700);
     audio.play('abismo');
     this.fondo();
     this.tip = new Tooltip(this);
     this.layer = this.add.container(0, 0);
-    if (data.saltarPrologo) this.necronomicon();
+    if (data.fase === 'tramo') this.entreTramos();
+    else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);
   }
 
@@ -142,7 +150,7 @@ export class AbismoScene extends Phaser.Scene {
     if (i >= 1) {
       codexFlag('abismo_prologo');
       L(title(this, W / 2, 200, 'El Abismo de los Ejes', 64, '#9ad8c8'));
-      L(txt(this, W / 2, 258, 'Bajas a la ciudad hundida que el profesor Arrieta vio en sueños.', 22, CSS.bone).setOrigin(0.5));
+      L(txt(this, W / 2, 258, 'Bajas por la cueva del Cerro de la Silla, tras los pasos de Ignacio Montemayor.', 22, CSS.bone).setOrigin(0.5));
       L(txt(this, W / 2, 290, 'Una respuesta correcta te devuelve la cordura. Un error te la quita.', 20, CSS.dim).setOrigin(0.5));
       L(txt(this, W / 2, 318, `Las otras ${PROLOGO.length - 1} hojas del diario están perdidas allá abajo.`, 18, '#8a7a5a').setOrigin(0.5));
       const primera = !(Game.codex.flags ?? []).includes('abismo_guia');
@@ -247,12 +255,13 @@ export class AbismoScene extends Phaser.Scene {
 
   // ── 4. Sobres: rasgas el empaque, se voltean 5 cartas y te quedas con 2 ──
   private sobre(n: number) {
-    if (n >= SOBRES.length) return this.empezar();
+    if (!this.premio && n >= SOBRES.length) return this.empezar();
     this.limpiar();
     const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
-    const def = SOBRES[n];
-    L(title(this, W / 2, 46, `Sobre ${n + 1} de ${SOBRES.length}`, 40, '#9ad8c8'));
-    L(txt(this, W / 2, 84, `${def.nombre}: ${def.texto} Trae 5 cartas; te quedas con ${ELIGES_POR_SOBRE}. Tu mazo: ${this.mazo.length} cartas.`, 18, CSS.bone, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+    const def = this.premio ? this.premio.def : SOBRES[n];
+    const enMazo = this.premio ? Game.run!.deck.length : this.mazo.length;
+    L(title(this, W / 2, 46, this.premio ? 'Premio del tramo' : `Sobre ${n + 1} de ${SOBRES.length}`, 40, '#9ad8c8'));
+    L(txt(this, W / 2, 84, `${def.nombre}: ${def.texto} Trae 5 cartas; te quedas con ${this.elige()}. Tu mazo: ${enMazo} cartas.`, 18, CSS.bone, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     this.botonGuia();
     const emp = L(this.empaque(def, W / 2, 300));
     this.tweens.add({ targets: emp, y: 292, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -316,16 +325,22 @@ export class AbismoScene extends Phaser.Scene {
     this.limpiar();
     const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
     L(title(this, W / 2, 46, def.nombre, 40, '#9ad8c8'));
-    const aviso = L(txt(this, W / 2, 84, `Elige ${ELIGES_POR_SOBRE} cartas para tu mazo (clic para marcar o desmarcar).`, 19, CSS.bone).setOrigin(0.5, 0));
+    const elige = this.elige();
+    const aviso = L(txt(this, W / 2, 84, `Elige ${elige === 1 ? '1 carta' : `${elige} cartas`} para tu mazo (clic para marcar o desmarcar).`, 19, CSS.bone).setOrigin(0.5, 0));
     this.botonGuia();
     const cartas = abrirSobre(def.id, this.d.clase);
     const gen = this.gen;
     const elegidas = new Set<number>();
     const K = 0.82, y = 290;
-    const ok = button(this, W / 2, 492, 300, 42, `Quedarme con estas (0/${ELIGES_POR_SOBRE})`, () => {
-      if (elegidas.size < ELIGES_POR_SOBRE) return;
-      for (const i of elegidas) this.mazo.push({ id: cartas[i].id, up: cartas[i].up, ed: cartas[i].ed });
+    const ok = button(this, W / 2, 492, 300, 42, `Quedarme con estas (0/${elige})`, () => {
+      if (elegidas.size < elige) return;
       audio.sfx('coin');
+      if (this.premio) {
+        for (const i of elegidas) addCard(cartas[i].id, cartas[i].up, cartas[i].ed);
+        saveLocal();
+        return this.premio.alTerminar();
+      }
+      for (const i of elegidas) this.mazo.push({ id: cartas[i].id, up: cartas[i].up, ed: cartas[i].ed });
       this.sobre(n + 1);
     }, { size: 19, color: UI.gold });
     ok.setEnabled(false);
@@ -362,27 +377,102 @@ export class AbismoScene extends Phaser.Scene {
           v.on('pointerout', () => this.tip.hide());
           v.on('pointerdown', () => {
             if (elegidas.has(i)) elegidas.delete(i);
-            else if (elegidas.size < ELIGES_POR_SOBRE) elegidas.add(i);
+            else if (elegidas.size < elige) elegidas.add(i);
             else return void this.tweens.add({ targets: v, x: x + 6, duration: 40, yoyo: true, repeat: 3 });
             audio.sfx('click');
             const sel = elegidas.has(i);
             this.tweens.add({ targets: v, y: sel ? y - 18 : y, duration: 120 });
             marco.clear();
             if (sel) marco.lineStyle(4, 0xe8c15a, 1).strokeRect(x - (CW * K) / 2 - 6, y - 18 - (CH * K) / 2 - 6, CW * K + 12, CH * K + 12);
-            ok.label.setText(`Quedarme con estas (${elegidas.size}/${ELIGES_POR_SOBRE})`);
-            ok.setEnabled(elegidas.size === ELIGES_POR_SOBRE);
-            aviso.setText(elegidas.size === ELIGES_POR_SOBRE ? '¡Listo! Confirma con el botón de abajo.' : `Elige ${ELIGES_POR_SOBRE - elegidas.size} carta(s) más.`);
+            ok.label.setText(`Quedarme con ${elige === 1 ? 'esta' : 'estas'} (${elegidas.size}/${elige})`);
+            ok.setEnabled(elegidas.size === elige);
+            aviso.setText(elegidas.size === elige ? '¡Listo! Confirma con el botón de abajo.' : `Elige ${elige - elegidas.size} carta(s) más.`);
           });
         } });
       } });
     });
   }
 
+  // ── Entre tramos: curación, premio y (tras el Primigenio) ¿seguir bajando? ──
+  private entreTramos() {
+    this.limpiar();
+    const run = Game.run!;
+    const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
+    const tramo = run.tramo ?? 1;
+    const info = JEFES[run.jefe ?? 'geometra'];
+    const jefe = L(this.add.image(W - 170, 330, ENEMIES[run.jefe ?? 'geometra'].sprite).setOrigin(0.5, 1).setScale(3).setTint(0x4a5a58).setAlpha(0.6));
+    this.tweens.add({ targets: jefe, alpha: 0.15, y: 350, angle: 8, duration: 2600 });
+    // curación: 40 % de la vida perdida
+    const cura = Math.ceil((run.maxHp - run.hp) * 0.4);
+    if (!(run.seen ?? []).includes(`curaT${tramo}`)) { run.hp = Math.min(run.maxHp, run.hp + cura); (run.seen ??= []).push(`curaT${tramo}`); saveLocal(); }
+    if (tramo < TRAMOS) {
+      L(title(this, W / 2, 80, `¡Tramo ${tramo} superado!`, 52, '#9ad8c8'));
+      L(txt(this, W / 2, 132, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 22, CSS.bone).setOrigin(0.5));
+      L(txt(this, W / 2, 168, `Sigue: Tramo ${tramo + 1} · ${nombreTramo(tramo + 1)}${tramo + 1 === TRAMOS ? ' (ahí te espera un Primigenio)' : ''}`, 20, tramo + 1 === TRAMOS ? '#c8a8ff' : CSS.gold).setOrigin(0.5));
+      L(txt(this, W / 2, 250, 'Premio: abre un sobre y quédate con 1 carta.', 20, CSS.dim).setOrigin(0.5));
+      L(button(this, W / 2, 320, 260, 46, 'Abrir el sobre', () => this.sobrePremio(() => this.siguienteTramo()), { color: UI.gold, size: 22 }));
+      L(button(this, W / 2, 380, 260, 36, 'Seguir sin sobre', () => this.siguienteTramo(), { size: 18 }));
+      return;
+    }
+    // tramo 4 (Primigenio) o más: victoria y la pregunta
+    if (tramo === TRAMOS && info.primigenio) {
+      if (!run.debug) otorgarInsigniaAbismo();
+      L(title(this, W / 2, 70, `¡Venciste a ${info.nombre}!`, info.nombre.length > 12 ? 44 : 52, '#d8b8ff'));
+      L(txt(this, W / 2, 118, 'Un Primigenio cae. Ganas el Ojo del Abismo: un ojo morado junto a tu nombre.', 20, CSS.bone).setOrigin(0.5));
+      // el ojo morado (como el rojo de AM)
+      const ojo = L(this.add.image(W / 2, 178, 'i_ojo').setScale(5).setTint(0xb070ff));
+      this.tweens.add({ targets: ojo, scale: 5.6, alpha: 0.6, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      if (run.debug) L(txt(this, W / 2, 214, '(Modo profesor: la insignia no se guarda)', 15, '#e08a8a').setOrigin(0.5));
+    } else {
+      L(title(this, W / 2, 80, `Profundidad ${tramo} superada`, 48, '#d8b8ff'));
+      L(txt(this, W / 2, 130, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 21, CSS.bone).setOrigin(0.5));
+    }
+    const sig = tramo + 1;
+    L(txt(this, W / 2, 252, `¿Seguir bajando? Profundidad ${sig}: vida enemiga ×${escalaTramo(sig).toFixed(2)}, daño ×${escalaDano(sig).toFixed(2)} y puntaje ×${multPuntaje(sig).toFixed(1)}.`, 19, CSS.gold).setOrigin(0.5));
+    L(txt(this, W / 2, 280, 'El modo infinito tiene su propio ranking. Si caes, conservas lo que llevas.', 17, CSS.dim).setOrigin(0.5));
+    L(button(this, W / 2, 340, 340, 46, 'Seguir bajando (abre un sobre)', () => this.sobrePremio(() => this.siguienteTramo()), { color: 0x9a6ad0, size: 21 }));
+    L(button(this, W / 2, 402, 300, 40, 'Retirarte con tu gloria', () => this.retirarse(), { size: 19 }));
+  }
+
+  /** Un sobre de premio al azar (te quedas con 1) */
+  private sobrePremio(alTerminar: () => void) {
+    this.premio = { def: Phaser.Utils.Array.GetRandom(SOBRES), alTerminar: () => { this.premio = null; alTerminar(); } };
+    this.sobre(0);
+  }
+
+  /** Pasa al siguiente tramo: nuevo mapa y nuevo jefe al azar */
+  private siguienteTramo() {
+    const run = Game.run!;
+    run.tramo = (run.tramo ?? 1) + 1;
+    run.jefe = elegirJefe(run.tramo, run.jefesVistos ?? []);
+    (run.jefesVistos ??= []).push(run.jefe);
+    run.map = generateMap(ACTO_ABISMO);
+    run.pos = -1;
+    run.visited = [];
+    run.floor = 0;
+    saveLocal();
+    syncRun('en curso');
+    this.cameras.main.flash(400, 20, 60, 50);
+    fadeTo(this, 'Map');
+  }
+
+  /** Termina la expedición después de vencer a un Primigenio */
+  private retirarse() {
+    const run = Game.run!;
+    run.done = true;
+    bonosFinales(run);
+    logEvent('acto', '', true, { acto: 5, tramo: run.tramo, modo: 'abismo', retiro: true });
+    saveLocal();
+    syncRun('victoria', `Se retiró en la profundidad ${run.tramo}`);
+    fadeTo(this, 'End', { victory: true, abismo: true });
+  }
+
   /** Crea la expedición del Abismo y baja al mapa */
   private empezar() {
     const p = this.elegido;
     const d = this.d;
-    const r = newRun(`${d.debug ? 'DBG' : 'ABI'}-${Date.now().toString(36)}`, d.gravedad ?? 1, d.clase);
+    // «L-» hace que el servidor la registre aunque no se haya iniciado en línea (src/backend.ts → updateRun)
+    const r = newRun(`${d.debug ? 'DBG' : 'L-ABI'}-${Date.now().toString(36)}`, d.gravedad ?? 1, d.clase);
     r.debug = d.debug ?? true;
     r.modo = 'abismo';
     r.acto = ACTO_ABISMO;
@@ -390,6 +480,9 @@ export class AbismoScene extends Phaser.Scene {
     r.necro = this.pagina?.id;
     r.pacto = p?.id ?? 'ciego';
     r.diario = 1; // la primera hoja se leyó al empezar
+    r.tramo = 1;
+    r.jefe = elegirJefe(1);
+    r.jefesVistos = [r.jefe];
     r.entropia = 100 - CORDURA.inicial;
     let uid = 1;
     r.deck = this.mazo.map((c) => (c.ed ? { uid: uid++, id: c.id, up: c.up, ed: c.ed } : { uid: uid++, id: c.id, up: c.up }));

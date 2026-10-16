@@ -1,3 +1,4 @@
+import { JEFES as JEFES_ABISMO, nombreTramo, TRAMOS } from '../data/abismo_modo';
 import { hojaDiario, paginasHasta } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
@@ -113,20 +114,25 @@ export class MapScene extends Phaser.Scene {
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
     if (act5) button(this, 66, 62, 100, 28, '? Guía', () => guiaAbismo(this), { size: 17, color: 0x2c5a4e }).setDepth(402);
-    // el diario de Arrieta: aparece una hoja nueva conforme bajas (pisos en PISO_DIARIO)
-    if (act5 && (run.diario ?? 1) < paginasHasta(run.floor)) {
+    // el diario de Montemayor: aparece una hoja nueva conforme bajas (pisos en PISO_DIARIO)
+    if (act5 && (run.diario ?? 1) < paginasHasta(run.tramo ?? 1, run.floor)) {
       const i = run.diario ?? 1;
       run.diario = i + 1;
       saveLocal();
       this.time.delayedCall(500, () => hojaDiario(this, i));
     }
-    title(this, W / 2, 66, act5 ? 'El Abismo de los Ejes · Los Muelles Inclinados' : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
+    title(this, W / 2, 66, act5 ? `${(run.tramo ?? 1) > TRAMOS ? 'Abismo sin fondo' : `Tramo ${run.tramo ?? 1} de ${TRAMOS}`} · ${nombreTramo(run.tramo ?? 1).replace(/^El Abismo sin Fondo · /, '')}` : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
     const maxF = Math.max(...run.map.map((n) => n.floor)) || FLOORS;
     const nodeXY = (n: MapNode) => nodeAt(n, maxF);
     const current = run.pos >= 0 ? byId.get(run.pos)! : null;
     // si la partida se cerró en el nodo del jefe: retoma la pelea o el paso al siguiente acto
+    if (current?.type === 'jefe' && !run.done && act5) {
+      // el Abismo: si se cerró el juego en el nodo del jefe, retoma la pelea o la pantalla entre tramos
+      if (!(run.seen ?? []).includes(`jefeT${run.tramo ?? 1}`)) return void fadeTo(this, 'Combat', { kind: 'boss', floor: current.floor });
+      return void fadeTo(this, 'Abismo', { fase: 'tramo', clase: run.clase });
+    }
     if (current?.type === 'jefe' && !run.done) {
       const acto = run.acto ?? 1;
       if (!(run.seen ?? []).includes(`jefe_${acto}`)) return void fadeTo(this, 'Combat', { kind: 'boss', floor: current.floor });
@@ -194,18 +200,19 @@ export class MapScene extends Phaser.Scene {
     };
 
     // el jefe del acto se ve en el mapa: ya cuenta para el Bestiario
-    unlock('enemies', act5 ? 'geometra' : act4 ? 'am' : act3 ? 'hibbelerius' : act2 ? 'bruja' : 'colossus');
+    unlock('enemies', act5 ? run.jefe ?? 'geometra' : act4 ? 'am' : act3 ? 'hibbelerius' : act2 ? 'bruja' : 'colossus');
     // nodos
     for (const n of run.map) {
       const { x, y } = nodeXY(n);
-      const jt = act5 ? ['El Geómetra No Euclidiano', 'Jefe de los Muelles Inclinados. Una figura cuyos ángulos no suman 180°.'] : act4 ? T.mapa.jefe4 : act3 ? T.mapa.jefe3 : T.mapa.jefe2;
+      const jA = JEFES_ABISMO[run.jefe ?? 'geometra'];
+      const jt = act5 ? [jA.nombre, `${jA.titulo}. Desventaja: ${jA.desventaja}`] : act4 ? T.mapa.jefe4 : act3 ? T.mapa.jefe3 : T.mapa.jefe2;
       const info = n.type === 'jefe' && (act2 || act3 || act4 || act5) ? { ...NODE_INFO.jefe, name: jt[0], desc: jt[1] } : NODE_INFO[n.type];
       const size = n.type === 'jefe' ? 76 : 42;
       const g = this.add.graphics();
       const isAvail = available.has(n.id);
       const isPast = n.floor < (current ? current.floor : 0) || (current && n.id === current.id);
       frame(g, x - size / 2, y - size / 2, size, size, isAvail ? 0x261e2c : 0x141017, isAvail ? info.color : 0x3a3244);
-      const im = n.type === 'jefe' && act5 ? this.add.image(x, y, 'geometra').setScale(1.5) : n.type === 'jefe' && act4 ? this.add.image(x, y, 'am_jefe').setScale(1.05) : n.type === 'jefe' && act3 ? this.add.image(x, y, 'hibbelerius').setScale(1.1) : this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.1);
+      const im = n.type === 'jefe' && act5 ? this.add.image(x, y, ENEMIES[run.jefe ?? 'geometra'].sprite).setScale(Math.min(1.6, 64 / this.textures.get(ENEMIES[run.jefe ?? 'geometra'].sprite).getSourceImage().height)) : n.type === 'jefe' && act4 ? this.add.image(x, y, 'am_jefe').setScale(1.05) : n.type === 'jefe' && act3 ? this.add.image(x, y, 'hibbelerius').setScale(1.1) : this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.1);
       if (!isAvail && !(current && n.id === current.id)) im.setAlpha(isPast ? 0.3 : 0.75);
       if (visited.has(n.id)) {
         const mark = this.add.graphics();
@@ -243,7 +250,7 @@ export class MapScene extends Phaser.Scene {
     types.forEach((t, i) => {
       const x = 22 + i * 105;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
-      const lt = txt(this, x + 16, H - 33, t === 'jefe' && act5 ? 'El Geómetra' : t === 'jefe' && act4 ? 'AM' : t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
+      const lt = txt(this, x + 16, H - 33, t === 'jefe' && act5 ? JEFES_ABISMO[run.jefe ?? 'geometra'].nombre.replace(/^(El|La) /, '') : t === 'jefe' && act4 ? 'AM' : t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
       if (lt.width > 84) lt.setScale(84 / lt.width, 1);
     });
 

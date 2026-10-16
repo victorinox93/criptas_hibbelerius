@@ -10,7 +10,7 @@ import { EFFECTS } from '../data/effects';
 import { ENEMIES } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { ALMA_IDS } from '../data/almas';
-import { PAGINAS } from '../data/abismo_modo';
+import { JEFES as JEFES_ABISMO, JEFES_TRAMO, PAGINAS, PRIMIGENIOS } from '../data/abismo_modo';
 
 /** Nombres cortos de las almas para el botón «Fin + alma» (cada clic pasa a la siguiente) */
 const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda', autocompleto: 'Autocomp.', manco: 'Dextro', histeresis: 'Histéresis', cebollin: 'Cebollín', helios: 'Helios', parches: 'Parches', hanbei: 'Hanbei', gough: 'Gough' };
@@ -32,6 +32,7 @@ const OPTS = {
   extras: false,
   figura: 0,
   dilema: 0,
+  jefeAbismo: 0, // jefe del Abismo para probar (ver JEFES en src/data/abismo_modo.ts)
 };
 
 export class DebugScene extends Phaser.Scene {
@@ -123,6 +124,18 @@ export class DebugScene extends Phaser.Scene {
     btn(830, 396, 180, 'Transición II→III', () => this.go(2, 'ActTransition', { to: 3 }));
 
     // ── El Abismo de los Ejes (beta: sólo en el Modo profesor) ──
+    // probar un jefe del Abismo directamente (Primigenios en el tramo 4)
+    const JA = [...JEFES_TRAMO, ...PRIMIGENIOS];
+    const ja = JA[OPTS.jefeAbismo % JA.length];
+    btn(790, 438, 190, `Jefe: ${JEFES_ABISMO[ja].nombre.replace(/^(El|La) /, '')}`, () => {
+      this.go(5, 'Combat', { kind: 'boss', floor: 6 });
+      const r = Game.run!;
+      r.jefe = ja;
+      r.tramo = PRIMIGENIOS.includes(ja) ? 4 : 1;
+      r.jefesVistos = [ja];
+      saveLocal();
+    }, false, 14);
+    btn(910, 438, 40, '▸', () => { OPTS.jefeAbismo++; this.draw(); });
     btn(835, 222, 170, 'Abismo (beta)', () => fadeTo(this, 'Abismo', { clase: OPTS.clase, gravedad: OPTS.gravedad, debug: true, tanque: OPTS.vida === 'tanque' }), true, 17);
 
     // ── grimorio ──
@@ -170,6 +183,10 @@ export class DebugScene extends Phaser.Scene {
       r.necro = prev?.necro ?? Phaser.Utils.Array.GetRandom(PAGINAS).id;
       r.pacto = prev?.pacto ?? 'centroide';
       r.entropia = prev?.entropia ?? 30;
+      r.tramo = prev?.tramo ?? 1;
+      r.jefe = prev?.jefe ?? 'geometra';
+      r.jefesVistos = [r.jefe];
+      r.diario = prev?.diario ?? 1;
     }
     if (OPTS.vida === 'tanque') r.maxHp = r.hp = r.maxHp * 10;
     if (OPTS.mazo === 'fuerte' || acto > 1) {

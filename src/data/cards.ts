@@ -822,8 +822,8 @@ export const CARDS: Record<string, CardDef> = {
     text: (s, c) => { const { F } = force(s, c); return `F = ${F} N… pero en libras:\n×2.2 = ${Math.round(F * 2.2)} de daño.\nPor accidente, funciona.`; },
     lore: '1 kg = 2.2 lb. Te equivocaste de unidades… y el enemigo también. En el examen no tendrás tanta suerte.',
   },
-  manoArrieta: {
-    id: 'manoArrieta', name: 'La Tercera Mano de Arrieta', type: 'Habilidad', icon: 'i_book', concept: 'Estudio', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+  manoMontemayor: {
+    id: 'manoMontemayor', name: 'La Tercera Mano de Montemayor', type: 'Habilidad', icon: 'i_book', concept: 'Estudio', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
     stats: (up) => ({ cost: up ? 0 : 1 }),
     text: () => `Robas 1 carta por cada 2\npreguntas que acertaste en\nesta expedición (1 a 4).\nSe agota.`,
     lore: 'Escribía con la izquierda. Luego con las dos. Luego con una tercera mano que no recuerda haber tenido.',
@@ -838,7 +838,7 @@ export const CARDS: Record<string, CardDef> = {
     id: 'susurro', name: 'Susurro', type: 'Estado', icon: 'i_fog', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
     stats: () => ({ cost: 1 }),
     text: () => `Si sigue en tu mano al\nterminar el turno:\n−3 de Cordura.\nJugarla la calla.`,
-    lore: '«…los ejes están ahí, pero ellos no los ven…» — diario del profesor Arrieta',
+    lore: '«…los ejes están ahí, pero ellos no los ven…» — diario de Ignacio Montemayor',
   },
 };
 

@@ -22,7 +22,7 @@ import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
-import { CORDURA, corduraDe, EDICIONES, ROMPER_CRISTAL } from '../data/abismo_modo';
+import { CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
@@ -33,7 +33,7 @@ import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH, costConfusion, costOverride } from '../ui/card';
 import { deckOverlay, Hud, setPotionHandler, topBar } from '../ui/hud';
-import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, castleBackground, Tooltip, txt } from '../ui/widgets';
+import { bar, button, Btn, dungeonBackground, fadeTo, frame, icon, nucleoBackground, towerBackground, castleBackground, title, Tooltip, txt } from '../ui/widgets';
 
 type Kind = 'easy' | 'normal' | 'elite' | 'boss';
 
@@ -232,6 +232,11 @@ export class CombatScene extends Phaser.Scene {
     this.energy = this.maxEnergy;
   }
 
+  /** ¿Está vivo este jefe del Abismo? (para sus desventajas) */
+  private jefeVivo(id: string) {
+    return this.acto === 5 && this.alive().some((e) => e.st.def.id === id);
+  }
+
   private necro(id: string) {
     return Game.run?.modo === 'abismo' && Game.run.necro === id;
   }
@@ -243,7 +248,10 @@ export class CombatScene extends Phaser.Scene {
   private confundir(fuente: string) {
     if (this.confusa) return;
     this.confusa = true;
-    for (const c of this.hand) if (CARDS[c.inst.id].rarity !== 'estado') { costOverride.set(c.inst.uid, Phaser.Math.Between(0, 3)); costConfusion.add(c.inst.uid); }
+    for (const c of this.hand) if (CARDS[c.inst.id].rarity !== 'estado') {
+      costOverride.set(c.inst.uid, Phaser.Math.Between(0, 3) + (this.jefeVivo('hastur') && CARDS[c.inst.id].type === 'Ataque' ? 1 : 0));
+      costConfusion.add(c.inst.uid);
+    }
     this.calc(`${fuente}: ¡estás CONFUNDIDO! Tus cartas cuestan 0–3 J al azar`);
     this.floatText(this.heroX, 190, '¿¿CONFUSIÓN??', '#ffd040');
     this.refreshPlayer();
@@ -401,7 +409,8 @@ export class CombatScene extends Phaser.Scene {
     this.pStatus = this.add.container(this.heroX - 70, 371);
 
     // ── Enemigos ──
-    const enc = pick(encounters(this.acto)[this.kind]);
+    // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
+    const enc = this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
 
@@ -492,17 +501,55 @@ export class CombatScene extends Phaser.Scene {
     this.showAliado();
     this.showFantasma();
     this.refreshPlayer();
-    this.banner(this.kind === 'boss' ? (this.acto === 5 ? 'El Geómetra No Euclidiano' : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+    const jefeA = this.acto === 5 && this.kind === 'boss' ? JEFES_ABISMO[run.jefe ?? 'geometra'] : null;
+    const arrancar = () => this.banner(this.kind === 'boss' ? (jefeA ? jefeA.nombre : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
       if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
     });
+    // El Abismo: antes de cada jefe, un resumen de quién es y cuál es su desventaja
+    if (jefeA) this.resumenJefe(run.jefe ?? 'geometra', arrancar);
+    else arrancar();
+  }
+
+  /** Pantalla de presentación de un jefe del Abismo: retrato, tema físico, desventaja y origen */
+  private resumenJefe(id: string, seguir: () => void) {
+    const info = JEFES_ABISMO[id];
+    const run = Game.run!;
+    this.busy = true;
+    const capa = this.add.container(0, 0).setDepth(960);
+    capa.add(this.add.rectangle(0, 0, W, H, 0x020606, 0.93).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, 70, 40, W - 140, H - 80, 0x080d0c, info.primigenio ? 0x9a6ad0 : 0x2c5a4e, 0.98);
+    capa.add(g);
+    const tramo = run.tramo ?? 1;
+    capa.add(txt(this, 96, 56, tramo > TRAMOS ? `Abismo sin fondo · profundidad ${tramo}` : `Tramo ${tramo} de ${TRAMOS} · ${nombreTramo(tramo)}`, 17, '#5a8a7a'));
+    capa.add(txt(this, W / 2 + 70, 92, info.titulo, 20, info.primigenio ? '#c8a8ff' : '#9ad8c8').setOrigin(0.5));
+    capa.add(title(this, W / 2 + 70, 132, info.nombre, info.nombre.length > 22 ? 34 : 42, info.primigenio ? '#d8b8ff' : '#9ad8c8'));
+    const img = this.add.image(230, 330, ENEMIES[id].sprite).setOrigin(0.5, 1).setScale(Math.min(4.6, 190 / this.textures.get(ENEMIES[id].sprite).getSourceImage().height));
+    if (ENEMIES[id].oculto) { img.setAlpha(0.4); this.tweens.add({ targets: img, alpha: 0.12, duration: 900, yoyo: true, repeat: -1 }); }
+    this.tweens.add({ targets: img, y: 322, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    capa.add(img);
+    capa.add(txt(this, 230, 346, info.origen, 15, CSS.dim, { align: 'center', wordWrap: { width: 260 } }).setOrigin(0.5, 0));
+    const x0 = 420;
+    capa.add(txt(this, x0, 176, 'Tema de física', 17, CSS.dim));
+    capa.add(txt(this, x0, 198, info.tema, 22, CSS.gold, { wordWrap: { width: 440 } }));
+    capa.add(txt(this, x0, 250, 'Desventaja', 17, CSS.dim));
+    capa.add(txt(this, x0, 272, info.desventaja, 21, '#ff9a7a', { wordWrap: { width: 440 }, lineSpacing: 2 }));
+    const esc = escalaTramo(tramo);
+    if (esc > 1) capa.add(txt(this, x0, 380, `Fuerza del tramo: ×${esc.toFixed(2)} de vida y ×${escalaDano(tramo).toFixed(2)} de daño`, 17, '#e08a8a'));
+    capa.add(button(this, W / 2 + 70, 450, 240, 44, 'Enfrentarlo', () => {
+      capa.destroy();
+      this.busy = false;
+      seguir();
+    }, { color: UI.gold, size: 22 }));
+    audio.sfx('stop');
   }
 
   // ───────────────────────── ENEMIGOS ─────────────────────────
   /** Ajusta el daño de una intención según el nivel de gravedad */
   private scaleIntent(i: Intent, st?: EnemyState): Intent {
-    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1);
+    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1) * (this.acto === 5 ? escalaDano(Game.run!.tramo ?? 1) : 1);
     if (m === 1) return i;
     if (i.kind === 'attack') return { ...i, dmg: Math.round(i.dmg * m) };
     if (i.kind === 'block' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
@@ -515,6 +562,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.grav.hpMul !== 1) {
       st.maxHp = st.hp = Math.round(st.hp * this.grav.hpMul);
     }
+    // El Abismo: cada tramo es más fuerte (y en el infinito, mucho más)
+    if (this.acto === 5) st.maxHp = st.hp = Math.round(st.hp * escalaTramo(Game.run!.tramo ?? 1));
     st.intent = this.scaleIntent(st.intent, st);
     const root = this.add.container(x, 0);
     const sprite = this.add.image(0, 330, st.def.sprite).setOrigin(0.5, 1).setScale(st.def.scale);
@@ -527,6 +576,9 @@ export class CombatScene extends Phaser.Scene {
     } else if (st.def.id === 'bat') {
       sprite.y = 260;
       this.tweens.add({ targets: sprite, y: 248, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    } else if (st.def.oculto) {
+      sprite.setAlpha(0.35);
+      this.tweens.add({ targets: sprite, alpha: 0.1, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     } else {
       this.tweens.add({ targets: sprite, scaleY: st.def.scale * 1.04, duration: 800 + Math.random() * 300, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
@@ -598,7 +650,12 @@ export class CombatScene extends Phaser.Scene {
     ev.hp.set(st.hp, st.maxHp, st.block);
     ev.blockT.setText(st.block > 0 ? `🛡${st.block}` : '');
     ev.intentC.removeAll(true);
-    if (!ev.dead) {
+    if (!ev.dead && st.def.oculto && st.intent.kind !== 'stunned') {
+      // invisible: no se ve qué hará, sólo sus huellas
+      const ic = icon(this, -14, 0, 'i_fog', 3.2);
+      ev.intentC.add([ic, txt(this, 2, -12, '???', 26, '#9a93a8')]);
+      this.tip.attach(ic, 'Intención', 'Es invisible: no puedes saber qué hará. Guarda Bloqueo por si acaso.');
+    } else if (!ev.dead) {
       const it = this.intentText(st.intent);
       const ic = icon(this, -14, 0, it.ic, 3.2);
       const tt = txt(this, 2, -12, it.t, 26, st.intent.kind === 'attack' ? '#e0a070' : CSS.bone);
@@ -715,6 +772,7 @@ export class CombatScene extends Phaser.Scene {
       if (this.hand.length >= 10) break;
       const inst = this.draw.pop()!;
       if (this.confusa && CARDS[inst.id].rarity !== 'estado') { costOverride.set(inst.uid, Phaser.Math.Between(0, 3)); costConfusion.add(inst.uid); } else { costOverride.delete(inst.uid); costConfusion.delete(inst.uid); }
+      if (this.jefeVivo('hastur') && CARDS[inst.id].type === 'Ataque') costOverride.set(inst.uid, (costOverride.get(inst.uid) ?? statsOf(inst).cost) + 1); // Hastur: Ataques +1 J
       if (inst.id === 'errorSigno') {
         this.energy = Math.max(0, this.energy - 1);
         this.calc('Error de Signo: tu análisis se arruina → −1 J');
@@ -1189,9 +1247,9 @@ export class CombatScene extends Phaser.Scene {
         if (target) await this.hitEnemy(target, dmg);
         break;
       }
-      case 'manoArrieta': {
+      case 'manoMontemayor': {
         const n = Math.max(1, Math.min(4, Math.floor((Game.run!.stats.runasOk ?? 0) / 2)));
-        this.calc(`La Tercera Mano de Arrieta: ${Game.run!.stats.runasOk ?? 0} aciertos → robas ${n}`);
+        this.calc(`La Tercera Mano de Montemayor: ${Game.run!.stats.runasOk ?? 0} aciertos → robas ${n}`);
         this.drawCards(n);
         break;
       }
@@ -1980,6 +2038,10 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private gainBlock(n: number) {
+    if (this.jefeVivo('dagon') && this.turn % 3 === 0 && n > 0) {
+      n = Math.floor(n / 2);
+      this.calc(`MAREA ALTA (Padre Dagón): tu Bloqueo da la mitad (${n})`);
+    }
     this.block += n;
     audio.sfx('block');
     const t = txt(this, this.heroX, 220, `+${n} 🛡`, 30, CSS.block).setOrigin(0.5).setDepth(700);
@@ -2307,6 +2369,15 @@ export class CombatScene extends Phaser.Scene {
       this.block = 0;
     }
     this.energy = Math.max(0, this.maxEnergy + this.jPerTurn + this.carry - this.drainNext);
+    if (this.jefeVivo('colorCielo')) {
+      this.energy = Math.max(0, this.energy - 1);
+      this.calc('El Color que Cayó del Cielo absorbe tu energía: −1 J');
+    }
+    if (this.jefeVivo('cthulhu')) {
+      addEntropia(5);
+      this.calc('Cthulhu sueña contigo: −5 de Cordura');
+      this.hud.refresh();
+    }
     this.golpesTurno.clear();
     if (this.turn === 1 && this.bonusJ1) { this.energy += this.bonusJ1; this.calc(`Ecos Quebrados: +${this.bonusJ1} J en tu primer turno`); }
     const tm = boonLevel('tu_maquina');
@@ -2373,6 +2444,7 @@ export class CombatScene extends Phaser.Scene {
       if (await this.checkEnd()) return;
     }
     let draw = 5 + this.extraDraw;
+    const yog = this.jefeVivo('yogSothoth');
     if (this.turn === 1) draw += this.robo1;
     if (this.necro('angulos')) draw += 1; // Ángulos que No Suman
     const cd = boonLevel('ca_diagonal'); // Cantor
@@ -2463,7 +2535,20 @@ export class CombatScene extends Phaser.Scene {
     this.reflect = false;
     this.restE = 0;
     this.played = 0;
+    if (yog && draw > 4) { draw = 4; this.calc('Yog-Sothoth cierra la Puerta: sólo robas 4 cartas'); }
+    const antesRobo = this.hand.length;
     this.drawCards(draw);
+    if (this.jefeVivo('nyarlathotep') && this.hand.length > antesRobo) {
+      // la primera carta que robas se descarta
+      const v = this.hand[antesRobo];
+      if (v) {
+        this.hand = this.hand.filter((c) => c !== v);
+        this.discard.push(v.inst);
+        this.tweens.add({ targets: v, x: W - 62, y: 510, scale: 0.1, alpha: 0, duration: 260, onComplete: () => v.destroy() });
+        this.calc(`Nyarlathotep te arrebata ${CARDS[v.inst.id].name}: se descarta`);
+        this.layoutHand();
+      }
+    }
     if (this.turn === 1 && this.pacto('centroide') && this.hand.length) {
       // Pacto del Centroide: la carta más cara de la primera mano cuesta 0
       const cara = this.hand.reduce((a, b) => (this.cost(b) > this.cost(a) ? b : a));
@@ -2794,14 +2879,17 @@ export class CombatScene extends Phaser.Scene {
       }
     }
     if (this.kind === 'boss' && this.acto === 5) {
-      run.done = true;
-      if (!run.debug) codexFlag('abismo1');
-      logEvent('acto', '', true, { acto: 5, vida: run.hp, modo: 'abismo' });
-      bonosFinales(run);
+      // El Descenso: el jefe del tramo cayó → pantalla entre tramos (src/scenes/Abismo.ts, fase 'tramo')
+      const tramo = run.tramo ?? 1;
+      const info = JEFES_ABISMO[run.jefe ?? 'geometra'];
+      (run.seen ??= []).push(`jefeT${tramo}`);
+      if (!run.debug) codexFlag(`abismo_t${Math.min(tramo, TRAMOS)}`);
+      sumar(run, 'Tramos del Abismo', Math.round(PUNTOS.acto * tramo * multPuntaje(tramo)));
+      logEvent('tramo', '', true, { tramo, jefe: run.jefe, vida: run.hp, modo: 'abismo' });
       saveLocal();
-      syncRun('victoria', 'Geómetra No Euclidiano derrotado');
-      await this.banner('La figura por fin cierra');
-      fadeTo(this, 'End', { victory: true, abismo: true });
+      syncRun('en curso', `Tramo ${tramo}: ${info.nombre} derrotado`);
+      await this.banner(info.primigenio ? `¡${info.nombre} ha caído!` : '¡Tramo superado!');
+      fadeTo(this, 'Abismo', { fase: 'tramo', clase: run.clase });
       return true;
     }
     if (this.kind === 'boss' && this.acto >= 4) {
@@ -2870,7 +2958,8 @@ export class CombatScene extends Phaser.Scene {
     saveLocal();
     logEvent('derrota', '', false, { piso: this.floor, enemigo: by });
     const nucleo = this.acto === 4;
-    syncRun(nucleo ? 'victoria' : 'derrota', nucleo ? `Cayó en el Núcleo: ${by}` : by);
+    const infinito = this.acto === 5 && (run.tramo ?? 1) > TRAMOS; // ya había vencido a un Primigenio
+    syncRun(nucleo || infinito ? 'victoria' : 'derrota', nucleo ? `Cayó en el Núcleo: ${by}` : infinito ? `Cayó en la profundidad ${run.tramo}: ${by}` : by);
     audio.sfx('defeat');
     this.tweens.add({ targets: this.hero, alpha: 0.2, y: 290, duration: 900 });
     await this.banner(T.combate.derrota, '#b8a8c8');

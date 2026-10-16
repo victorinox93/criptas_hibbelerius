@@ -41,13 +41,14 @@ export function luzDe(cordura: number) {
   return SEMAFORO.findIndex((l) => cordura >= l.min);
 }
 
-// ── Prólogo: el diario del profesor Arrieta ──
-export const PROLOGO: { fecha: string; texto: string }[] = [
-  { fecha: '12 de marzo de 1931', texto: 'En el sótano de la biblioteca encontré un tratado sin fecha ni portada. En el lomo, a mano: «Necronomicón de Hibbelerius».\nSus problemas no traen respuestas al final del libro.' },
-  { fecha: '19 de marzo', texto: 'Resolví el primero. Esa noche soñé con una ciudad bajo el mar cuyos muros no tenían centroide.\nAl despertar, mi lápiz había seguido escribiendo solo.' },
-  { fecha: '2 de abril', texto: 'Mis alumnos dicen que en clase dibujo ejes donde no hay nada.\nTienen razón a medias: los ejes están ahí. Son ellos quienes no los ven.' },
-  { fecha: '30 de abril', texto: 'Ya no sé si el libro me enseña o me reescribe.\nCada problema resuelto me devuelve un poco de mí. Cada error me quita algo.' },
-  { fecha: 'Sin fecha', texto: 'Si alguien encuentra este diario: no bajes sin entender la física.\nAllá abajo, lo único que te mantiene cuerdo es una respuesta correcta.\n\n— Último registro del profesor Elías Arrieta' },
+// ── Prólogo: el diario del erudito Ignacio Montemayor (una hoja por tramo, src/ui/diario.ts) ──
+export const AUTOR = 'Ignacio Montemayor';
+export const PROLOGO: { fecha: string; texto: string; dibujo?: 'cerro' }[] = [
+  { fecha: '12 de marzo de 1931', dibujo: 'cerro', texto: 'Subí al Cerro de la Silla buscando fósiles. Entre las peñas de la silla hallé una cueva que no aparece en ningún mapa.\nAdentro, sobre una piedra seca, un tomo sin portada: «Necronomicón de Hibbelerius».' },
+  { fecha: '19 de marzo', texto: 'Resolví el primer problema del tomo. Esa noche soñé con una ciudad bajo el mar cuyos muros no tenían centroide.\nAl despertar, mi lápiz había seguido escribiendo solo.' },
+  { fecha: '2 de abril', texto: 'Volví a la cueva. El fondo ya no es de piedra: es agua negra, y baja más de lo que el cerro mide.\nMis alumnos dicen que en clase dibujo ejes donde no hay nada. Los ejes están ahí. Son ellos quienes no los ven.' },
+  { fecha: '30 de abril', texto: 'Ya no sé si el libro me enseña o me reescribe.\nCada problema resuelto me devuelve un poco de mí. Cada error me quita algo. Abajo, algo enorme da vueltas sobre un eje que no veo.' },
+  { fecha: 'Sin fecha', texto: 'Si alguien encuentra este diario: no bajes sin entender la física.\nAllá abajo, lo único que te mantiene cuerdo es una respuesta correcta.\n\n— Último registro del erudito Ignacio Montemayor' },
 ];
 
 // ── Páginas del Necronomicón: un modificador para toda la expedición ──
@@ -189,3 +190,57 @@ export function rarezaDe(id: string) {
   const r = CARDS[id].rarity;
   return r === 'legendaria' ? { t: '★★ Legendaria', css: '#e8c15a' } : r === 'rara' ? { t: '★ Rara', css: '#c8a8ff' } : { t: 'Común', css: '#9a93a8' };
 }
+
+// ════════════════════════════════════════════════════════════════
+//  EL DESCENSO (v0.41): 4 tramos de 6 pisos. Cada tramo termina con un jefe
+//  sacado al azar; en el tramo 4 te toca un Primigenio. Después: ¿seguir bajando?
+//  (modo infinito, ranking propio). Criaturas de cuentos de dominio público
+//  (Lovecraft antes de 1929 y R. W. Chambers, 1895); los diseños son nuestros.
+// ════════════════════════════════════════════════════════════════
+export const TRAMOS = 4;
+export const PISOS_TRAMO = 6;
+export const NOMBRE_TRAMO = ['Los Muelles Inclinados', 'La Catedral del Volante', "R'lyeh Invertida", 'El Trono de los Primigenios'];
+export const nombreTramo = (t: number) => (t <= TRAMOS ? NOMBRE_TRAMO[t - 1] : `El Abismo sin Fondo · profundidad ${t}`);
+
+export interface JefeInfo {
+  nombre: string;
+  titulo: string;
+  tema: string; // concepto físico de la pelea
+  desventaja: string; // la regla que te estorba toda la pelea (como las «boss blinds» de Balatro)
+  origen: string; // de dónde viene la criatura
+  primigenio?: boolean;
+}
+export const JEFES: Record<string, JefeInfo> = {
+  geometra: { nombre: 'El Geómetra No Euclidiano', titulo: 'Jefe del tramo', tema: 'Centroides', desventaja: 'Con menos de la mitad de vida suelta Vértices y te CONFUNDE.', origen: 'Original de este juego' },
+  dagon: { nombre: 'Padre Dagón', titulo: 'Jefe del tramo', tema: 'Presión y flotación (P = ρ·g·h)', desventaja: 'MAREA ALTA: cada 3 turnos tus cartas de Bloqueo dan la mitad.', origen: '«Dagon», H. P. Lovecraft (1919)' },
+  colorCielo: { nombre: 'El Color que Cayó del Cielo', titulo: 'Jefe del tramo', tema: 'Trabajo y energía', desventaja: 'Te roba 1 J al inicio de cada turno.', origen: '«The Colour Out of Space», H. P. Lovecraft (1927)' },
+  bailarina: { nombre: 'La Bailarina Ahogada', titulo: 'Jefe del tramo', tema: 'Momento angular (I₁ω₁ = I₂ω₂)', desventaja: 'Cuando recoge los brazos gira más rápido y golpea 4 veces seguidas.', origen: 'Original de este juego' },
+  dunwich: { nombre: 'El Engendro de Dunwich', titulo: 'Jefe del tramo', tema: 'Centro de masa', desventaja: 'Es INVISIBLE: no ves sus intenciones, sólo sus huellas.', origen: '«The Dunwich Horror», H. P. Lovecraft (1929)' },
+  nyarlathotep: { nombre: 'Nyarlathotep', titulo: 'Primigenio · el Caos que Repta', tema: 'Momento de inercia', desventaja: 'La primera carta que robas cada turno se descarta. Cambia de forma: compacto (muchos golpes) o extendido (un golpe enorme).', origen: '«Nyarlathotep», H. P. Lovecraft (1920)', primigenio: true },
+  cthulhu: { nombre: 'Cthulhu', titulo: "Primigenio · el Durmiente de R'lyeh", tema: 'ΣM = I·α y H = I·ω', desventaja: 'Pierdes 5 de Cordura cada turno. Despierta en 3 fases.', origen: '«The Call of Cthulhu», H. P. Lovecraft (1928)', primigenio: true },
+  yogSothoth: { nombre: 'Yog-Sothoth', titulo: 'Primigenio · la Llave y la Puerta', tema: 'Ejes paralelos (I = I₀ + m·d²)', desventaja: 'Sólo robas 4 cartas por turno.', origen: '«The Dunwich Horror», H. P. Lovecraft (1929)', primigenio: true },
+  hastur: { nombre: 'Hastur', titulo: 'Primigenio · el Rey de Amarillo', tema: 'Impulso y cantidad de movimiento', desventaja: 'Tus cartas de Ataque cuestan +1 J.', origen: '«El Rey de Amarillo», R. W. Chambers (1895)', primigenio: true },
+};
+export const JEFES_TRAMO = ['geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich'];
+export const PRIMIGENIOS = ['nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur'];
+
+/** Elige el jefe de un tramo sin repetir los ya vistos en la partida (si se acaban, se repiten) */
+export function elegirJefe(tramo: number, vistos: string[] = []): string {
+  const lista = tramo < TRAMOS ? JEFES_TRAMO : tramo === TRAMOS ? PRIMIGENIOS : [...JEFES_TRAMO, ...PRIMIGENIOS];
+  const libres = lista.filter((j) => !vistos.includes(j));
+  const de = libres.length ? libres : lista;
+  return de[Math.floor(Math.random() * de.length)];
+}
+
+/** Dificultad por tramo: +10 % por tramo hasta el 4; en el infinito, ×1.2 por cada tramo extra */
+export function escalaTramo(t = 1) {
+  return t <= TRAMOS ? 1 + 0.1 * (t - 1) : 1.3 * Math.pow(1.2, t - TRAMOS);
+}
+/** Daño por tramo: sube más despacio que la vida (+5 % por tramo; en el infinito, ×1.15 por tramo extra) */
+export function escalaDano(t = 1) {
+  return t <= TRAMOS ? 1 + 0.05 * (t - 1) : 1.15 * Math.pow(1.15, t - TRAMOS);
+}
+/** Multiplicador de puntaje en el infinito (crece con la profundidad) */
+export const multPuntaje = (t = 1) => (t <= TRAMOS ? 1 : 1 + 0.5 * (t - TRAMOS));
+/** Profundidad total (para el ranking): pisos de todos los tramos */
+export const profundidad = (tramo = 1, piso = 0) => (tramo - 1) * (PISOS_TRAMO + 1) + piso;

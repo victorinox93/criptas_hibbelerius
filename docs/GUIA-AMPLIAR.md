@@ -465,6 +465,11 @@ Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega c
 | Sobre nuevo o sus probabilidades | `SOBRES`, `abrirSobre()` y `BRILLANTE` en `abismo_modo.ts` |
 | Qué tan seguido se rompe el Cristal | `ROMPER_CRISTAL` en `abismo_modo.ts` |
 | Página de la Guía del Abismo | `PAGINAS_GUIA` en `src/ui/guiaAbismo.ts` |
+| Jefe nuevo del Abismo | su ficha en `JEFES` de `abismo_modo.ts` (nombre, tema, desventaja, origen) y en `JEFES_TRAMO` o `PRIMIGENIOS`; sus ataques en `src/data/enemies.ts` (con `act: 5`); su desventaja en `Combat.ts` (busca `jefeVivo('…')`); su dibujo en `tools/arte/abismo.py` |
+| Número de tramos, pisos o dificultad | `TRAMOS`, `PISOS_TRAMO`, `escalaTramo()` y `multPuntaje()` en `abismo_modo.ts` |
+| Nombre de un tramo | `NOMBRE_TRAMO` en `abismo_modo.ts` |
+| Hoja del diario de Montemayor | `PROLOGO` en `abismo_modo.ts`; cuándo aparece, `paginasHasta()` en `src/ui/diario.ts` |
+| Ranking del Abismo | `leaderboard` en `apps-script/Code.gs` (las partidas con acto 5 son del Abismo) |
 | Cómo se ve una edición | `edicionVisual()` en `src/ui/card.ts` |
 
 Mecánicas nuevas de enemigos: `confusion: true` en una intención (te Confunde), `vuelco: true` (se vuelca con 2 golpes en el mismo turno) y `hueco: true` (los golpes a TODOS le hacen la mitad).
