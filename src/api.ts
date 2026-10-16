@@ -2,16 +2,34 @@ import { API_URL } from './backend';
 
 export const isOnline = () => API_URL.trim().length > 0;
 
+/** ¿Es un error pasajero del servidor (ocupado, candado, red)? Entonces vale la pena reintentar. */
+function pasajero(msg: string) {
+  return /OCUPADO|lock|timeout|tiempo|ocupado|Failed to fetch|NetworkError|Load failed|Service invoked too many times/i.test(msg);
+}
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function call<T = any>(action: string, payload: Record<string, unknown>): Promise<T> {
-  // text/plain evita la verificación CORS "preflight" que Apps Script no soporta
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, ...payload }),
-  });
-  const j = await res.json();
-  if (!j.ok) throw new Error(j.error || 'Error del servidor');
-  return j as T;
+  // v0.41.1: si el servidor está ocupado (muchos alumnos a la vez), reintenta solo hasta 3 veces
+  let ultimo = '';
+  for (let intento = 0; intento < 3; intento++) {
+    if (intento) await esperar(1500 * 2 ** (intento - 1) + Math.random() * 800);
+    try {
+      // text/plain evita la verificación CORS "preflight" que Apps Script no soporta
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      const j = await res.json();
+      if (j.ok) return j as T;
+      ultimo = String(j.error || 'Error del servidor');
+    } catch (e) {
+      ultimo = (e as Error).message || 'Sin conexión';
+    }
+    if (!pasajero(ultimo)) break;
+  }
+  if (pasajero(ultimo)) throw new Error('El servidor está muy ocupado (muchos jugadores a la vez). Espera unos segundos e inténtalo de nuevo.');
+  throw new Error(ultimo);
 }
 
 export async function hashPass(matricula: string, pass: string): Promise<string> {

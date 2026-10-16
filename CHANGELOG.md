@@ -2,6 +2,13 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.41.1 · Arreglo: «Lock timeout» al entrar
+
+- Corregido: al entrar (o al guardar), a veces salía «Lock timeout: another process was holding the lock for too long». Cada petición tomaba el candado del servidor mientras leía hojas completas; con muchos alumnos jugando a la vez, algunas esperaban demasiado.
+- El servidor (`apps-script/Code.gs`) ahora: no toma el candado en las consultas que sólo leen (ranking, huellas, avisos, estadísticas); al entrar lo suelta en cuanto guarda la sesión; y si está ocupado responde un mensaje claro.
+- El juego reintenta solo hasta 3 veces cuando el servidor está ocupado, antes de mostrar un aviso en español.
+- *Requiere pegar la nueva versión de `apps-script/Code.gs` y publicar una nueva versión de la implementación* (el mismo paso sirve para el ranking del Abismo).
+
 ## v0.41.0 · El Descenso: tramos, Primigenios y modo infinito (beta, sólo Modo profesor)
 
 - **4 tramos de 6 pisos.** Cada tramo termina con un **jefe sacado al azar** (no se repiten en la misma partida): el Geómetra No Euclidiano, Padre Dagón, el Color que Cayó del Cielo, la Bailarina Ahogada o el Engendro de Dunwich. Cada tramo es 10 % más fuerte que el anterior.
