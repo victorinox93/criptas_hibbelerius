@@ -16,6 +16,9 @@ import { CardInst, CARDS, Edicion, rewardPool, starterDeck } from './cards';
 export const ACTO_ABISMO = 5;
 
 /** Ajustes de Cordura en el Abismo (Cordura = 100 − Locura) */
+/** Probabilidad de que una carta de Cristal se rompa al jugarla (en Balatro, 1 de cada 4) */
+export const ROMPER_CRISTAL = 0.25;
+
 export const CORDURA = {
   inicial: 70,
   runaBien: 10, // + Cordura al acertar una pregunta
@@ -61,7 +64,7 @@ export const PAGINAS: PaginaDef[] = [
   { id: 'angulos', nombre: 'Ángulos que No Suman', poder: 'Robas 1 carta más cada turno.', costo: 'Los enemigos tienen +15 % de vida.', lore: 'Un triángulo de 200°. Lo dibujaste tú.' },
   { id: 'mercader', nombre: 'El Mercader Velado', poder: '+100 Ergios al empezar.', costo: '−15 de Cordura inicial.', lore: 'Paga bien. No preguntes con qué.' },
   { id: 'confusion', nombre: 'La Confusión', poder: 'Robas 1 carta extra al inicio de cada combate y una carta de tu mazo se vuelve Polícroma.', costo: 'Todos tus combates empiezan con Confusión (costos al azar).', lore: 'Los números de la página cambian cada vez que parpadeas.' },
-  { id: 'cristal', nombre: 'El Cristal', poder: '3 cartas al azar de tu mazo se vuelven de Cristal (×2).', costo: 'El Cristal se rompe: cada una sirve una sola vez.', lore: 'Translúcidas, frías y perfectas. Hasta que las usas.' },
+  { id: 'cristal', nombre: 'El Cristal', poder: '3 cartas al azar de tu mazo se vuelven de Cristal (×2).', costo: 'Cada vez que juegas una, 1 de cada 4 veces se rompe y sale de tu mazo.', lore: 'Translúcidas, frías y perfectas. Hasta que las usas.' },
   { id: 'steiner', nombre: 'Página de Steiner', poder: 'Tu primer ataque de cada combate hace ×2 (I = I₀ + m·d²).', costo: 'Recibes +1 de daño de cada golpe.', lore: 'Lejos del eje todo pesa más. También lo que te golpea.' },
   { id: 'lucido', nombre: 'El Horror Lúcido', poder: 'Ver jefes y élites no te quita Cordura.', costo: 'Las preguntas acertadas devuelven la mitad de Cordura.', lore: 'Ya nada te sorprende. Tampoco te alivia.' },
 ];
@@ -110,7 +113,7 @@ export const EDICIONES: Record<Edicion, EdicionDef> = {
   lamina: { nombre: 'Lámina', texto: 'Ataque: +5 de daño. Otras cartas: +4 de Bloqueo.', color: 0x9ad8f0, css: '#9ad8f0', prob: 0.08 },
   holo: { nombre: 'Holográfica', texto: 'Recuperas 1 J al jugarla.', color: 0xc88aff, css: '#d0a0ff', prob: 0.05 },
   poli: { nombre: 'Polícroma', texto: 'Ataque: ×1.5. Otras cartas: robas 1.', color: 0xff8ad0, css: '#ff9ad8', prob: 0.03 },
-  cristal: { nombre: 'Cristal', texto: 'Ataque: ×2. Otras cartas: +10 de Bloqueo.\nUn solo uso: se rompe y sale de tu mazo.', color: 0xe8fbff, css: '#e8fbff', prob: 0.04 },
+  cristal: { nombre: 'Cristal', texto: 'Ataque: ×2. Otras cartas: +10 de Bloqueo.\nFrágil: 1 de cada 4 veces se rompe y sale de tu mazo.', color: 0xe8fbff, css: '#e8fbff', prob: 0.04 },
 };
 /** Sortea una edición para una carta de recompensa (la mayoría de las veces, ninguna) */
 export function sortearEdicion(bonus = 1): Edicion | undefined {
@@ -128,4 +131,61 @@ export function editarAlAzar(deck: CardInst[], ed: Edicion, n: number) {
     const c = libres.splice(Math.floor(Math.random() * libres.length), 1)[0];
     c.ed = ed;
   }
+}
+
+// ── Sobres (como en Pokémon TCG): al empezar abres 3 y te quedas con 2 cartas de cada uno ──
+export interface SobreDef {
+  id: string;
+  nombre: string;
+  texto: string;
+  color: number; // color del empaque
+  brillo: number; // color del metalizado
+  icono: string;
+}
+export const SOBRES: SobreDef[] = [
+  { id: 'clase', nombre: 'Sobre de tu Clase', texto: 'Cartas de tu clase para reforzar tu estilo.', color: 0x5a1e2a, brillo: 0xe8c15a, icono: 'i_sword' },
+  { id: 'abismo', nombre: 'Sobre del Abismo', texto: 'Cartas que sólo existen aquí: centroides, inercia y horror.', color: 0x1c3a4a, brillo: 0x7fe8d8, icono: 'i_ojo' },
+  { id: 'ecos', nombre: 'Sobre de los Ecos', texto: 'Cartas neutrales de todos los actos.', color: 0x3a2458, brillo: 0xc8a8ff, icono: 'i_shrine' },
+];
+/** Cartas por sobre y cuántas te quedas */
+export const CARTAS_POR_SOBRE = 5;
+export const ELIGES_POR_SOBRE = 2;
+/** Edición del espacio brillante de cada sobre (siempre trae una) */
+const BRILLANTE: [Edicion, number][] = [['lamina', 0.45], ['holo', 0.35], ['poli', 0.12], ['cristal', 0.08]];
+
+export interface CartaSobre { id: string; up: boolean; ed?: Edicion; brillante?: boolean }
+
+/** Arma un sobre: 3 comunes, 1 rara (a veces legendaria) y 1 brillante con edición */
+export function abrirSobre(tipo: string, clase: string): CartaSobre[] {
+  const pool = rewardPool(clase, ACTO_ABISMO, 99, true);
+  const propia = (id: string) => (CARDS[id].cls ?? 'caballero') === (clase || 'caballero');
+  const filtro = tipo === 'clase' ? (id: string) => propia(id) && !CARDS[id].abismo
+    : tipo === 'abismo' ? (id: string) => !!CARDS[id].abismo
+      : (id: string) => CARDS[id].cls === 'neutral' && !CARDS[id].abismo;
+  const del = pool.filter(filtro);
+  const comunes = del.filter((id) => CARDS[id].rarity !== 'rara');
+  const raras = del.filter((id) => CARDS[id].rarity === 'rara');
+  const usadas = new Set<string>();
+  const saca = (lista: string[]) => {
+    const libres = lista.filter((id) => !usadas.has(id));
+    const id = (libres.length ? libres : lista.length ? lista : del)[Math.floor(Math.random() * (libres.length || lista.length || del.length))];
+    usadas.add(id);
+    return id;
+  };
+  const out: CartaSobre[] = [];
+  for (let i = 0; i < 3; i++) out.push({ id: saca(comunes), up: Math.random() < 0.15 });
+  // espacio raro: 12 % legendaria (del Abismo en su sobre; de las demás en los otros)
+  const legs = Object.values(CARDS).filter((c) => c.rarity === 'legendaria' && !!c.abismo === (tipo === 'abismo') && (tipo !== 'clase' || propia(c.id))).map((c) => c.id);
+  out.push({ id: legs.length && Math.random() < 0.12 ? saca(legs) : saca(raras.length ? raras : comunes), up: false });
+  // espacio brillante: cualquier carta del sobre con edición garantizada
+  let r = Math.random(), ed: Edicion = 'lamina';
+  for (const [e, p] of BRILLANTE) { if (r < p) { ed = e; break; } r -= p; }
+  out.push({ id: saca(Math.random() < 0.4 ? raras.length ? raras : del : del), up: false, ed, brillante: true });
+  return out;
+}
+
+/** Texto corto de rareza para mostrar debajo de una carta */
+export function rarezaDe(id: string) {
+  const r = CARDS[id].rarity;
+  return r === 'legendaria' ? { t: '★★ Legendaria', css: '#e8c15a' } : r === 'rara' ? { t: '★ Rara', css: '#c8a8ff' } : { t: 'Común', css: '#9a93a8' };
 }

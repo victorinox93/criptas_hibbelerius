@@ -26,13 +26,92 @@ export const NO_CTX: CalcCtx = { masaBonus: 0, acelBonus: 0, friccion: 0 };
 /** Costos alterados en combate (Confusión, Pacto del Centroide): uid → J. El combate lo llena y lo limpia. */
 export const costOverride = new Map<number, number>();
 
-/** Colores de las ediciones del Abismo (src/data/abismo_modo.ts) */
+/** Ediciones del Abismo (src/data/abismo_modo.ts): color base, color del texto, nombre de la cinta */
 const ED_COLOR: Record<string, [number, string, string]> = {
-  lamina: [0x9ad8f0, '#9ad8f0', 'LÁMINA'],
-  holo: [0xc88aff, '#d0a0ff', 'HOLO'],
-  poli: [0xff8ad0, '#ff9ad8', 'POLÍCROMA'],
-  cristal: [0xe8fbff, '#e8fbff', 'CRISTAL'],
+  lamina: [0x7fc8ff, '#bfe6ff', 'LÁMINA'],
+  holo: [0xc88aff, '#e6c8ff', 'HOLOGRÁFICA'],
+  poli: [0xff6ac8, '#ffc0e8', 'POLÍCROMA'],
+  cristal: [0xc8f4ff, '#f0fcff', 'CRISTAL'],
 };
+
+const hue = (h: number, sat = 0.75, v = 1) => {
+  const c = Phaser.Display.Color.HSVToRGB(((h % 1) + 1) % 1, sat, v) as Phaser.Types.Display.ColorObject;
+  return Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+};
+
+/** Segmento de la recta x = x0 + k·y recortado a la carta (para los brillos diagonales) */
+function rayo(g: Phaser.GameObjects.Graphics, x0: number, k: number, ancho: number, color: number, alpha: number) {
+  const m = ancho / 2 + 3; // margen: el trazo grueso no debe salirse de la carta
+  let ya = -CH / 2 + m, yb = CH / 2 - m;
+  // x dentro de [−CW/2, CW/2]  →  y dentro de un intervalo
+  const lim = [(-CW / 2 + m - x0) / k, (CW / 2 - m - x0) / k].sort((a, b) => a - b);
+  ya = Math.max(ya, lim[0]); yb = Math.min(yb, lim[1]);
+  if (yb <= ya) return;
+  g.lineStyle(ancho, color, alpha).lineBetween(x0 + k * ya, ya, x0 + k * yb, yb);
+}
+
+/**
+ * Dibuja la edición sobre la carta (estilo Balatro) y la anima:
+ *  · Lámina: tinte azul acero y un destello blanco que barre la carta
+ *  · Holográfica: arcoíris suave que se mueve y líneas de escaneo
+ *  · Polícroma: franjas de todos los colores que corren y borde arcoíris grueso
+ *  · Cristal: carta helada y translúcida con facetas y chispas
+ */
+function edicionVisual(s: Phaser.Scene, c: Phaser.GameObjects.Container, ed: string) {
+  const [col, css, label] = ED_COLOR[ed];
+  const tinte = s.add.graphics();
+  const brillo = s.add.graphics();
+  const borde = s.add.graphics();
+  const x0 = -CW / 2, y0 = -CH / 2;
+  const t = { v: Math.random() };
+  // cinta con el nombre, en la parte de abajo de la caja de arte (no tapa el texto de la carta)
+  const cinta = s.add.graphics();
+  const wl = label.length * 8 + 20;
+  cinta.fillStyle(0x000000, 0.75).fillRect(CW / 2 - wl - 6, y0 + 74, wl, 18);
+  cinta.lineStyle(2, col, 1).strokeRect(CW / 2 - wl - 6, y0 + 74, wl, 18);
+  const tag = txt(s, CW / 2 - 6 - wl / 2, y0 + 83, `◆ ${label}`, 15, css).setOrigin(0.5);
+  const pinta = () => {
+    tinte.clear(); brillo.clear(); borde.clear();
+    if (ed === 'holo' || ed === 'poli') tag.setColor(`#${hue(t.v + 0.1, 0.35).toString(16).padStart(6, '0')}`);
+    if (ed === 'lamina') {
+      tinte.fillStyle(col, 0.16).fillRect(x0, y0, CW, CH);
+      const pos = -CW + ((t.v * 2) % 1) * CW * 2.4; // un destello que cruza cada ~2 s
+      rayo(brillo, pos, 0.55, 18, 0xffffff, 0.22);
+      rayo(brillo, pos + 16, 0.55, 5, 0xffffff, 0.45);
+      borde.lineStyle(4, col, 1).strokeRect(x0 + 2, y0 + 2, CW - 4, CH - 4);
+    } else if (ed === 'holo') {
+      const a = hue(t.v), b = hue(t.v + 0.33), d = hue(t.v + 0.66);
+      tinte.fillGradientStyle(a, b, d, a, 0.22).fillRect(x0, y0, CW, CH);
+      for (let y = y0 + 6; y < CH / 2; y += 6) brillo.lineStyle(1, 0xffffff, 0.06).lineBetween(x0 + 4, y, CW / 2 - 4, y);
+      borde.lineStyle(4, hue(t.v), 1).strokeRect(x0 + 2, y0 + 2, CW - 4, CH - 4);
+    } else if (ed === 'poli') {
+      const n = 7;
+      for (let i = 0; i < n; i++) tinte.fillStyle(hue(t.v * 2 + i / n, 0.8), 0.2).fillRect(x0 + (i * CW) / n, y0, CW / n + 1, CH);
+      rayo(brillo, -CW + ((t.v * 3) % 1) * CW * 2.4, 0.55, 10, 0xffffff, 0.3);
+      for (let i = 0; i < 4; i++) borde.lineStyle(2, hue(t.v * 2 + i / 4), 1).strokeRect(x0 + 1 + i * 2, y0 + 1 + i * 2, CW - 2 - i * 4, CH - 2 - i * 4);
+    } else {
+      // cristal: hielo translúcido con facetas fijas y chispas que titilan
+      tinte.fillStyle(col, 0.2).fillRect(x0, y0, CW, CH);
+      tinte.lineStyle(1, 0xffffff, 0.35);
+      const f: [number, number, number, number][] = [[-86, -40, -10, -120], [-10, -120, 40, 10], [40, 10, 86, -60], [-86, 60, 20, 120], [20, 120, 40, 10], [-40, -10, 40, 10]];
+      f.forEach(([a, b, cc, d]) => tinte.lineBetween(a, b, cc, d));
+      const pos = -CW + ((t.v * 1.5) % 1) * CW * 2.4;
+      rayo(brillo, pos, -0.7, 22, 0xffffff, 0.18);
+      rayo(brillo, pos + 18, -0.7, 4, 0xffffff, 0.55);
+      const k = Math.floor(t.v * 40);
+      for (let i = 0; i < 5; i++) {
+        const sx = ((k * 37 + i * 61) % (CW - 20)) - CW / 2 + 10, sy = ((k * 53 + i * 97) % (CH - 20)) - CH / 2 + 10;
+        brillo.fillStyle(0xffffff, 0.9).fillRect(sx - 1, sy - 4, 2, 8).fillRect(sx - 4, sy - 1, 8, 2);
+      }
+      borde.lineStyle(4, 0xffffff, 0.9).strokeRect(x0 + 2, y0 + 2, CW - 4, CH - 4);
+      borde.lineStyle(2, col, 1).strokeRect(x0 + 6, y0 + 6, CW - 12, CH - 12);
+    }
+  };
+  pinta();
+  c.add([tinte, brillo, borde, cinta, tag]);
+  const tw = s.tweens.add({ targets: t, v: t.v + 1, duration: ed === 'holo' ? 4000 : ed === 'poli' ? 3000 : 2600, repeat: -1, onUpdate: pinta });
+  c.once('destroy', () => tw.stop());
+}
 
 export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, ctx: CalcCtx = NO_CTX): CardView {
   const def = CARDS[inst.id];
@@ -63,34 +142,7 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
   const cost = txt(s, -CW / 2 + 12, -CH / 2 + 10, '', 24, '#e8fbff').setOrigin(0.5);
   const unit = txt(s, -CW / 2 + 12, -CH / 2 + 30, 'J', 14, CSS.energy).setOrigin(0.5);
   c.add([g, art, name, type, body, gem, cost, unit]);
-  if (inst.ed && ED_COLOR[inst.ed]) {
-    // edición estilo Balatro: marco brillante que late y una etiqueta
-    const [col, css, label] = ED_COLOR[inst.ed];
-    const glow = s.add.graphics();
-    glow.lineStyle(3, col, 1).strokeRect(-CW / 2 + 2, -CH / 2 + 2, CW - 4, CH - 4);
-    glow.lineStyle(1, 0xffffff, 0.7).strokeRect(-CW / 2 + 6, -CH / 2 + 6, CW - 12, CH - 12);
-    if (inst.ed === 'cristal') {
-      // destellos diagonales sobre el arte
-      glow.fillStyle(0xffffff, 0.18).fillRect(-CW / 2 + 12, -CH / 2 + 34, CW - 24, 56);
-      glow.lineStyle(2, 0xffffff, 0.6).lineBetween(-30, -CH / 2 + 88, 10, -CH / 2 + 36).lineBetween(-10, -CH / 2 + 88, 30, -CH / 2 + 36);
-    }
-    const tag = txt(s, CW / 2 - 16, -CH / 2 + 82, label, 14, css).setOrigin(1, 0.5).setStroke('#000', 3);
-    c.add([glow, tag]);
-    s.tweens.add({ targets: glow, alpha: 0.35, duration: 700 + Math.random() * 300, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    const k = { h: Math.random() };
-    c.once('destroy', () => { s.tweens.killTweensOf(glow); s.tweens.killTweensOf(k); });
-    if (inst.ed === 'poli' || inst.ed === 'holo') {
-      // el color cambia como un holograma
-      s.tweens.add({ targets: k, h: k.h + 1, duration: inst.ed === 'poli' ? 1800 : 3200, repeat: -1, onUpdate: () => {
-        const rgb = Phaser.Display.Color.HSVToRGB(k.h % 1, 0.45, 1) as Phaser.Types.Display.ColorObject;
-        const hex = Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
-        glow.clear();
-        glow.lineStyle(3, hex, 1).strokeRect(-CW / 2 + 2, -CH / 2 + 2, CW - 4, CH - 4);
-        glow.lineStyle(1, 0xffffff, 0.7).strokeRect(-CW / 2 + 6, -CH / 2 + 6, CW - 12, CH - 12);
-        tag.setColor(`#${hex.toString(16).padStart(6, '0')}`);
-      } });
-    }
-  }
+  if (inst.ed && ED_COLOR[inst.ed]) edicionVisual(s, c, inst.ed);
   c.setSize(CW, CH);
 
   c.refresh = (cx: CalcCtx, playable = true) => {
