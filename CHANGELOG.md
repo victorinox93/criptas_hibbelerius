@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.39.1 · Arreglo: el Abismo se congelaba
+
+- Corregido: si presionabas «Saltar prólogo» mientras el diario se estaba escribiendo, el juego se congelaba en la portada del Abismo y ningún botón respondía (la máquina de escribir seguía escribiendo sobre una página ya borrada).
+- Misma protección para las animaciones de los sobres y para los epílogos de las almas en pena.
+
 ## v0.39.0 · Sobres y Guía del Abismo (beta, sólo Modo profesor)
 
 - **Sobres** (como Pokémon TCG): después del Pacto abres 3 sobres (de tu Clase, del Abismo y de los Ecos). Cada uno trae 5 cartas: 3 comunes, 1 rara (a veces legendaria) y 1 **brillante con edición garantizada**. Te quedas con 2 de cada uno, así que empiezas con unas 16 cartas en vez de 10.
