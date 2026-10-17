@@ -109,7 +109,7 @@ export class RelatoScene extends Phaser.Scene {
     const run = Game.run!;
     const rel = RELATO(data.id)!;
     this.cameras.main.fadeIn(500);
-    audio.play('abismo');
+    audio.play('abismo2');
     this.add.rectangle(0, 0, W, H, 0x04080a).setOrigin(0);
     const niebla = this.add.graphics();
     for (let i = 0; i < 10; i++) niebla.fillStyle(0x0c1a18, 0.25).fillEllipse(Math.random() * W, 380 + Math.random() * 120, 300, 40);

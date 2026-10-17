@@ -508,7 +508,7 @@ export class CombatScene extends Phaser.Scene {
     this.critica = false;
     this.grav = gravityOf(run.gravity);
     if (this.acto === 5) {
-      audio.play(this.kind === 'boss' ? 'jefe5' : 'combate6');
+      audio.play(this.kind === 'boss' ? 'jefe5' : Math.random() < 0.5 ? 'combate6' : 'combate7');
       abismoBackground(this, 500 + this.floor * 7, this.kind === 'boss');
     } else if (this.acto >= 4) {
       audio.play(this.kind === 'boss' ? 'jefe4' : 'combate5');

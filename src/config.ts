@@ -45,6 +45,13 @@ export const MUSIC_FILES: Record<string, string> = {
   jefe4: '',
   // Tienda de Layla: «Kitty Paw» de Shook (álbum «Synth Funk», 2024) · https://shook.bandcamp.com/album/synth-funk
   funk: 'kitty-paw.mp3',
+  // El Abismo de los Ejes (v0.48): «Dark Ambient of 2024» de Cryo Chamber (con permiso de los autores)
+  // https://cryochamber.bandcamp.com/album/dark-ambient-of-2024 · cortadas en pistas de ~4–6 min
+  abismo: 'abismo-uncertain-direction.mp3', // Tineidae & Sole Massif · Uncertain Direction
+  combate6: 'abismo-after-annihilation.mp3', // Void Stasis · After the Annihilation
+  combate7: 'abismo-onboard-errors.mp3', // Sabled Sun · Onboard Errors
+  jefe5: 'abismo-kingdom-parasites.mp3', // Caldon Glover · In the Kingdom of Parasites
+  abismo2: 'abismo-cerulean-depths.mp3', // Atrium Carceri & Kammarheit · Cerulean Depths
 };
 
 // ─────────────────────────────────────────────────────────────

@@ -15,6 +15,12 @@ Lo más reciente primero. El resumen del juego está en el [README](README.md).
   - «El sabueso»: un amuleto que da un diente legendario y la maldición **El Sabueso te sigue** (−5 de vida al empezar cada combate, 4 combates); o una pregunta en la que, si fallas, pierdes un diente.
   - «La declaración de Randolph Carter»: si fallas la pregunta pierdes 2 dientes y 10 de vida; si te quedas arriba, −10 de Cordura y Niebla Mental.
   - «Los gatos de Ulthar»: si los espantas, 50 % de que te roben 2 dientes y te dejen Fatiga.
+- **Música del Abismo:** pistas de «Dark Ambient of 2024» de Cryo Chamber (con permiso de los autores), cortadas y comprimidas (≈12 MB en total):
+  - Mapa e inicio: «Uncertain Direction» (Tineidae & Sole Massif).
+  - Combates (al azar): «After the Annihilation» (Void Stasis) y «Onboard Errors» (Sabled Sun).
+  - Jefes: «In the Kingdom of Parasites» (Caldon Glover).
+  - Relatos y Observatorio: «Cerulean Depths» (Atrium Carceri & Kammarheit).
+  - Están en el Soundtrack y en Créditos (con enlace a cryochamber.bandcamp.com).
 
 ## v0.47.0 · Cosméticos del mito de Lovecraft (beta)
 
