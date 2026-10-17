@@ -24,7 +24,7 @@ import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
 import { alineacion, ALINEACION, cuantosAstros, gastarCristal, nivelDiente } from '../data/dientes';
 import { cumplirCarta } from '../data/lovecraft';
-import { PROLOGO, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
+import { HOJAS_DEBILIDAD, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
@@ -661,7 +661,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.acto === 5) {
       const base = this.kind === 'boss' && JEFES_ABISMO[st.def.id] ? VIDA_ABISMO.jefe : this.kind === 'elite' ? VIDA_ABISMO.elite : VIDA_ABISMO.normal;
       // la última hoja del diario de Montemayor anota el punto débil del Primigenio: −15 % de vida
-      const debil = JEFES_ABISMO[st.def.id]?.primigenio && (Game.run!.diario ?? 1) >= PROLOGO.length ? 0.85 : 1;
+      const debil = JEFES_ABISMO[st.def.id]?.primigenio && (Game.run!.diario ?? 0) >= HOJAS_DEBILIDAD ? 0.85 : 1;
       st.maxHp = st.hp = Math.round(st.hp * base * debil * escalaTramo(Game.run!.tramo ?? 1));
       if (debil < 1) this.time.delayedCall(900, () => this.calc(`Diario de Montemayor: conoces el punto débil de ${st.def.name} (−15 % de vida)`));
     }

@@ -475,7 +475,7 @@ Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega c
 | Constelaciones del Observatorio | `observatorio()` en `src/scenes/Abismo.ts` (los niveles se guardan en `run.cosmos`) |
 | Cuántos pactos ofrece el libro | `PACTOS_OFRECIDOS` en `abismo_modo.ts` |
 | Nombre de un tramo | `NOMBRE_TRAMO` en `abismo_modo.ts` |
-| Hoja del diario de Montemayor | `PROLOGO` en `abismo_modo.ts`; cuándo aparece, `paginasHasta()` en `src/ui/diario.ts` |
+| Hoja del diario de Montemayor | `PROLOGO` en `abismo_modo.ts` (en orden; se guardan en `Game.codex.diario`); qué tan seguido salen, `PROB_HOJA`, `HOJAS_POR_EXPEDICION` y `HOJAS_DEBILIDAD` en el mismo archivo |
 | Ranking del Abismo | `leaderboard` en `apps-script/Code.gs` (las partidas con acto 5 son del Abismo) |
 | Cómo se ve una edición | `edicionVisual()` en `src/ui/card.ts` |
 

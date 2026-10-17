@@ -41,15 +41,34 @@ export function luzDe(cordura: number) {
   return SEMAFORO.findIndex((l) => cordura >= l.min);
 }
 
-// ── Prólogo: el diario del erudito Ignacio Montemayor (una hoja por tramo, src/ui/diario.ts) ──
+// ── El diario del erudito Ignacio Montemayor (src/ui/diario.ts) ──
+// v0.45: 16 hojas. La primera se lee al empezar; las demás son RARAS: aparecen al azar
+// después de algunos nodos y se guardan para siempre (Game.codex.diario), en orden,
+// así que la historia de su descenso se completa a lo largo de varias expediciones.
 export const AUTOR = 'Ignacio Montemayor';
 export const PROLOGO: { fecha: string; texto: string; dibujo?: 'cerro' }[] = [
   { fecha: '12 de marzo de 1931', dibujo: 'cerro', texto: 'Subí al Cerro de la Silla buscando fósiles. Entre las peñas de la silla hallé una cueva que no aparece en ningún mapa.\nAdentro, sobre una piedra seca, un tomo sin portada: «Necronomicón de Hibbelerius».' },
-  { fecha: '19 de marzo', texto: 'Resolví el primer problema del tomo. Esa noche soñé con una ciudad bajo el mar cuyos muros no tenían centroide.\nAl despertar, mi lápiz había seguido escribiendo solo.' },
-  { fecha: '2 de abril', texto: 'Volví a la cueva. El fondo ya no es de piedra: es agua negra, y baja más de lo que el cerro mide.\nMis alumnos dicen que en clase dibujo ejes donde no hay nada. Los ejes están ahí. Son ellos quienes no los ven.' },
-  { fecha: '30 de abril', texto: 'Ya no sé si el libro me enseña o me reescribe.\nCada problema resuelto me devuelve un poco de mí. Cada error me quita algo. Abajo, algo enorme da vueltas sobre un eje que no veo.' },
+  { fecha: 'Registro 2 · 14 de marzo', texto: 'Volví con cuerda y lámpara de carburo. La cueva baja en espiral.\nMedí la pendiente del túnel: 30° exactos, como en los problemas del libro. Demasiado exactos.' },
+  { fecha: 'Registro 3 · 19 de marzo', texto: 'Resolví el primer problema del tomo. Esa noche soñé con una ciudad bajo el mar cuyos muros no tenían centroide.\nAl despertar, mi lápiz había seguido escribiendo solo.' },
+  { fecha: 'Registro 4 · 22 de marzo', texto: 'En el suelo de la cueva hay dientes acomodados en fila. Los conté: ocho. Ninguno es humano.\nMe llevé uno en el bolsillo. Esta mañana estaba caliente.' },
+  { fecha: 'Registro 5 · 27 de marzo', texto: 'Las piedras de aquí abajo tienen su centro de masa fuera de la base y aun así no se caen.\nEmpujé una. Me empujó de vuelta. «Tercera ley», me dije. No me convencí.' },
+  { fecha: 'Registro 6 · 2 de abril', texto: 'El fondo de la cueva ya no es de piedra: es agua negra, y baja más de lo que el cerro mide.\nMis alumnos dicen que en clase dibujo ejes donde no hay nada. Los ejes están ahí. Son ellos quienes no los ven.' },
+  { fecha: 'Registro 7 · 9 de abril', texto: 'Dejé de dar clases. El rector me mandó una carta.\nLa usé para calcular el área de una figura del libro. Me salió negativa. La figura sigue ahí.' },
+  { fecha: 'Registro 8 · 15 de abril', texto: 'Abajo hay un muelle de piedra inclinado. Unos acólitos le rezan a un eje.\nCuando me vieron, preguntaron si traía la respuesta. Respondí bien. Me dejaron pasar.' },
+  { fecha: 'Registro 9 · 20 de abril', texto: 'Un astrónomo aficionado de Providence contestó mi carta. Dice que las estrellas que le describo no existen.\nLe mandé sus coordenadas. Ya no me contesta.' },
+  { fecha: 'Registro 10 · 24 de abril', texto: 'Me dolía una muela y me la saqué. En su lugar puse el diente caliente de la cueva.\nYa no me duele nada. Ya no siento frío.' },
+  { fecha: 'Registro 11 · 30 de abril', texto: 'Ya no sé si el libro me enseña o me reescribe.\nCada problema resuelto me devuelve un poco de mí. Cada error me quita algo.' },
+  { fecha: 'Registro 12 · 5 de mayo', texto: 'Mi reloj se atrasa una hora por cada piso que bajo. Hice la gráfica: es una recta.\nLa pendiente tiene unidades que no conozco.' },
+  { fecha: 'Registro 13 · 11 de mayo', texto: 'Vi algo enorme girar allá abajo, sobre un eje que no veo. Calculé su momento de inercia con lo poco que alcancé a ver.\nEl número no cupo en el cuaderno. Seguí escribiendo en la pared.' },
+  { fecha: 'Registro 14 · 18 de mayo', texto: 'Ya no subo. Por las noches los dientes de la dentadura hablan entre ellos.\nLos de cristal hablan más fuerte, pero se cansan pronto.' },
+  { fecha: 'Registro 15 · 25 de mayo', texto: 'Hoy le respondí al libro sin abrirlo. Acerté.\nAquí abajo, acertar es lo único que me mantiene entero.' },
   { fecha: 'Sin fecha', texto: 'Si alguien encuentra este diario: no bajes sin entender la física.\nAllá abajo, lo único que te mantiene cuerdo es una respuesta correcta.\n\n— Último registro del erudito Ignacio Montemayor' },
 ];
+/** Probabilidad de encontrar una hoja después de cada tipo de nodo (son raras) */
+export const PROB_HOJA: Record<string, number> = { combate: 0.07, elite: 0.3, evento: 0.18, runa: 0.15, santuario: 0.1, mercader: 0.04, fogata: 0.1, boca: 0.05, observatorio: 0.12, jefe: 0.5 };
+/** Máximo de hojas por expedición, y con cuántas conoces el punto débil del Primigenio */
+export const HOJAS_POR_EXPEDICION = 3;
+export const HOJAS_DEBILIDAD = 2;
 
 // ── Páginas del Necronomicón: un modificador para toda la expedición ──
 export interface PaginaDef {
@@ -208,7 +227,7 @@ export function rarezaDe(id: string) {
 // ════════════════════════════════════════════════════════════════
 export const TRAMOS = 2;
 /** Pisos de cada tramo (sin contar al jefe). También en src/state.ts → PISOS_TRAMO_ABISMO */
-export const PISOS_TRAMO = 8;
+export const PISOS_TRAMO = 10; // v0.45: +2 pisos por tramo
 export const NOMBRE_TRAMO = ['Los Muelles Inclinados', "R'lyeh Invertida · el Trono de los Primigenios"];
 export const nombreTramo = (t: number) => (t <= TRAMOS ? NOMBRE_TRAMO[t - 1] : `El Abismo sin Fondo · profundidad ${t}`);
 

@@ -4,7 +4,7 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { CardInst, CARDS } from '../data/cards';
 import {
-  abrirSobre, ACTO_ABISMO, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
+  abrirSobre, ACTO_ABISMO, AUTOR, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
   RARAS_ABISMO, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
 import { ARRANCAR_PARASITO, cristalDe, defDiente, esParasito, HUECOS, nivelDiente, NOMBRE_RAREZA, PROB_PARASITO_SACAMUELAS, ponerDiente, RETIRAR_DIENTES, sortearDientes, sortearParasito } from '../data/dientes';
@@ -159,21 +159,43 @@ export class AbismoScene extends Phaser.Scene {
       codexFlag('abismo_prologo');
       L(title(this, W / 2, 200, 'El Abismo de los Ejes', 64, '#9ad8c8'));
       L(txt(this, W / 2, 258, 'Bajas por la cueva del Cerro de la Silla, tras los pasos de Ignacio Montemayor.', 22, CSS.bone).setOrigin(0.5));
-      L(txt(this, W / 2, 344, 'Cada hoja del diario que encuentres te da un apunte (pista gratis) y Cordura.', 17, '#9ad8c8').setOrigin(0.5));
       L(txt(this, W / 2, 290, 'Una respuesta correcta te devuelve la cordura. Un error te la quita.', 20, CSS.dim).setOrigin(0.5));
-      L(txt(this, W / 2, 318, `Las otras ${PROLOGO.length - 1} hojas del diario están perdidas allá abajo.`, 18, '#8a7a5a').setOrigin(0.5));
+      const hallas = (Game.codex.diario ?? 0) + 1;
+      L(txt(this, W / 2, 320, `Diario de Montemayor: ${hallas} de ${PROLOGO.length} hojas. Las demás están perdidas allá abajo (son raras).`, 18, '#8a7a5a').setOrigin(0.5));
+      L(txt(this, W / 2, 344, 'Cada hoja que encuentras te da un apunte (pista gratis) y Cordura.', 17, '#9ad8c8').setOrigin(0.5));
       const primera = !(Game.codex.flags ?? []).includes('abismo_guia');
       if (primera) {
         // la primera vez se explican las reglas antes de abrir el libro
-        L(button(this, W / 2, 380, 340, 44, 'Aprender las reglas del Abismo', () => guiaAbismo(this, () => this.necronomicon()), { color: UI.gold, size: 22 }));
-        L(button(this, W / 2, 436, 260, 36, 'Ya las conozco', () => this.necronomicon(), { size: 18 }));
+        L(button(this, W / 2, 392, 340, 44, 'Aprender las reglas del Abismo', () => guiaAbismo(this, () => this.necronomicon()), { color: UI.gold, size: 22 }));
+        L(button(this, W / 2, 444, 260, 36, 'Ya las conozco', () => this.necronomicon(), { size: 18 }));
       } else {
-        L(button(this, W / 2, 380, 260, 44, 'Abrir el Necronomicón', () => this.necronomicon(), { color: UI.gold, size: 22 }));
-        L(button(this, W / 2, 436, 260, 36, 'Repasar las reglas', () => guiaAbismo(this), { size: 18 }));
+        L(button(this, W / 2, 392, 260, 44, 'Abrir el Necronomicón', () => this.necronomicon(), { color: UI.gold, size: 22 }));
+        L(button(this, W / 2, 444, 260, 36, 'Repasar las reglas', () => guiaAbismo(this), { size: 18 }));
       }
+      L(button(this, W / 2, 492, 260, 36, `Leer el diario (${hallas}/${PROLOGO.length})`, () => this.leerDiario(), { size: 18, color: 0x5a4a2e }));
       return;
     }
     L(hojaDiario(this, 0, () => L(hojaPresente(this, () => this.prologo(1))), false));
+  }
+
+  /** El diario de Montemayor: las hojas que ya encontraste (se guardan entre expediciones) */
+  private leerDiario() {
+    const capa = this.add.container(0, 0).setDepth(930);
+    capa.add(this.add.rectangle(0, 0, W, H, 0x020606, 0.9).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, W / 2 - 360, 60, 720, 420, 0x16130e, 0x5a4a2e, 0.97);
+    capa.add(g);
+    capa.add(txt(this, W / 2, 76, `El diario de ${AUTOR}`, 28, '#d8c8a0').setOrigin(0.5, 0));
+    const hasta = Game.codex.diario ?? 0;
+    capa.add(txt(this, W / 2, 112, `${hasta + 1} de ${PROLOGO.length} hojas encontradas`, 17, '#8a7a5a').setOrigin(0.5, 0));
+    PROLOGO.forEach((pg, i) => {
+      const x = W / 2 - 255 + (i % 4) * 170, y = 166 + Math.floor(i / 4) * 66;
+      const ok = i <= hasta;
+      const b = button(this, x, y, 156, 52, ok ? pg.fecha.replace(/^Registro /, 'Reg. ').replace(/ de /, ' ') : '? ? ?', () => { if (ok) capa.add(hojaDiario(this, i, undefined, false)); }, { size: 14, color: ok ? 0x5a4a2e : 0x2a2420 });
+      if (!ok) b.setEnabled(false);
+      capa.add(b);
+    });
+    capa.add(button(this, W / 2, 452, 200, 36, 'Cerrar', () => capa.destroy(), { size: 18 }));
   }
 
   // ── 2. Necronomicón: elige una página ──
@@ -735,7 +757,7 @@ export class AbismoScene extends Phaser.Scene {
     r.map = generateMap(ACTO_ABISMO);
     r.necro = this.pagina?.id;
     r.pacto = p?.id ?? 'ciego';
-    r.diario = 1; // la primera hoja se leyó al empezar
+    r.diario = 0; // hojas encontradas en ESTA expedición (la del cerro se lee siempre al empezar)
     r.tramo = 1;
     r.jefe = elegirJefe(1);
     r.jefesVistos = [r.jefe];
