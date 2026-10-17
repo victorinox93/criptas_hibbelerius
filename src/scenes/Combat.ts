@@ -3232,7 +3232,7 @@ export class CombatScene extends Phaser.Scene {
       const tramo = run.tramo ?? 1;
       const info = JEFES_ABISMO[run.jefe ?? 'geometra'];
       (run.seen ??= []).push(`jefeT${tramo}`);
-      if (!run.debug) codexFlag(`abismo_t${Math.min(tramo, TRAMOS)}`);
+      if (!run.debug) { codexFlag(`abismo_t${Math.min(tramo, TRAMOS)}`); codexFlag(`abismo_vence_${run.jefe ?? 'geometra'}`); } // v0.47: cosméticos del mito
       sumar(run, 'Tramos del Abismo', Math.round(PUNTOS.acto * tramo * multPuntaje(tramo)));
       logEvent('tramo', '', true, { tramo, jefe: run.jefe, vida: run.hp, modo: 'abismo' });
       saveLocal();

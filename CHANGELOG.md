@@ -2,6 +2,25 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.47.0 · Cosméticos del mito de Lovecraft (beta)
+
+Un premio en el Vestidor por **vencer a cada jefe del Abismo** (llegan solos, con letrero dorado; no se venden):
+
+| Jefe | Premio |
+|---|---|
+| El Geómetra No Euclidiano | Necronomicón de Hibbelerius (en la mano) |
+| Padre Dagón | Tridente de Dagón |
+| El Color que Cayó del Cielo | capa holográfica Color que Cayó del Cielo |
+| La Bailarina Ahogada | capa holográfica Velo de la Bailarina |
+| El Engendro de Dunwich | ojos Ojo de Dunwich |
+| Nyarlathotep | Tocado del Faraón Negro |
+| Cthulhu | Máscara de Cthulhu |
+| Yog-Sothoth | Esferas de Yog-Sothoth |
+| Hastur | Máscara Pálida, Corona del Rey de Amarillo y capa El Signo Amarillo |
+| Los 4 Primigenios | armadura cósmica Coraza de los Primigenios |
+
+Las máscaras (Cthulhu y la Máscara Pálida) cubren toda la cara para que se distingan; la corona, el tocado y las esferas también son más grandes.
+
 ## v0.46.0 · Balance de dientes, mutadores, la Rueda de la Fortuna y premios en el Vestidor (beta, sólo Modo profesor)
 
 - **Balance de los dientes:**
