@@ -16,8 +16,10 @@ Un premio en el Vestidor por **vencer a cada jefe del Abismo** (llegan solos, co
 | Nyarlathotep | Tocado del Faraón Negro |
 | Cthulhu | Máscara de Cthulhu |
 | Yog-Sothoth | Esferas de Yog-Sothoth |
-| Hastur | Corona del Rey de Amarillo y capa El Signo Amarillo |
+| Hastur | Máscara Pálida, Corona del Rey de Amarillo y capa El Signo Amarillo |
 | Los 4 Primigenios | armadura cósmica Coraza de los Primigenios |
+
+Las máscaras (Cthulhu y la Máscara Pálida) cubren toda la cara para que se distingan; la corona, el tocado y las esferas también son más grandes.
 
 ## v0.46.0 · Balance de dientes, mutadores, la Rueda de la Fortuna y premios en el Vestidor (beta, sólo Modo profesor)
 
