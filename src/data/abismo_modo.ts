@@ -242,13 +242,18 @@ export function elegirJefe(tramo: number, vistos: string[] = []): string {
   return de[Math.floor(Math.random() * de.length)];
 }
 
-/** Vida enemiga por tramo: tramo 2 ×1.2; en el infinito, ×1.2 más por cada profundidad extra */
+/**
+ * v0.44 · Vida extra de TODO enemigo del Abismo (con dientes y cartas nuevas era muy fácil).
+ * Se multiplica además por escalaTramo().
+ */
+export const VIDA_ABISMO = { normal: 1.5, elite: 1.45, jefe: 1.3 };
+/** Vida enemiga por tramo: tramo 2 ×1.3; en el infinito, ×1.25 más por cada profundidad extra */
 export function escalaTramo(t = 1) {
-  return t <= TRAMOS ? 1 + 0.2 * (t - 1) : 1.2 * Math.pow(1.2, t - TRAMOS);
+  return t <= TRAMOS ? 1 + 0.3 * (t - 1) : 1.3 * Math.pow(1.25, t - TRAMOS);
 }
-/** Daño por tramo: sube más despacio que la vida (tramo 2 ×1.1; en el infinito, ×1.15 por profundidad extra) */
+/** Daño por tramo: sube más despacio que la vida (tramo 2 ×1.15; en el infinito, ×1.15 por profundidad extra) */
 export function escalaDano(t = 1) {
-  return t <= TRAMOS ? 1 + 0.1 * (t - 1) : 1.1 * Math.pow(1.15, t - TRAMOS);
+  return t <= TRAMOS ? 1 + 0.15 * (t - 1) : 1.15 * Math.pow(1.15, t - TRAMOS);
 }
 /** Multiplicador de puntaje en el infinito (crece con la profundidad) */
 export const multPuntaje = (t = 1) => (t <= TRAMOS ? 1 : 1 + 0.5 * (t - TRAMOS));

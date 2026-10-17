@@ -14,7 +14,7 @@ import { ENEMIES } from '../data/enemies';
 import { bonosFinales } from '../data/puntaje';
 import { cardView, CW, CH } from '../ui/card';
 import { guiaAbismo } from '../ui/guiaAbismo';
-import { hojaDiario } from '../ui/diario';
+import { hojaDiario, hojaPresente } from '../ui/diario';
 import { addCard, aplicarSarro, codexFlag, Game, generateMap, logEvent, newRun, otorgarInsigniaAbismo, saveLocal, syncRun, unlock } from '../state';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
@@ -33,7 +33,7 @@ export interface AbismoData {
   debug?: boolean;
   tanque?: boolean; // Modo profesor: vida ×10
   saltarPrologo?: boolean;
-  fase?: 'tramo' | 'boca' | 'observatorio'; // tramo = entre tramos; boca = Sacamuelas Ciego; observatorio = el Astrónomo de Providence
+  fase?: 'tramo' | 'boca' | 'observatorio' | 'colocar'; // tramo = entre tramos; boca = Sacamuelas Ciego; observatorio = el Astrónomo de Providence
 }
 
 export class AbismoScene extends Phaser.Scene {
@@ -68,6 +68,7 @@ export class AbismoScene extends Phaser.Scene {
     if (data.fase === 'tramo') this.entreTramos();
     else if (data.fase === 'boca') this.sacamuelas('boca', () => fadeTo(this, 'Map'));
     else if (data.fase === 'observatorio') this.observatorio();
+    else if (data.fase === 'colocar') this.sacamuelas('colocar', () => fadeTo(this, 'Map'));
     else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);
   }
@@ -158,6 +159,7 @@ export class AbismoScene extends Phaser.Scene {
       codexFlag('abismo_prologo');
       L(title(this, W / 2, 200, 'El Abismo de los Ejes', 64, '#9ad8c8'));
       L(txt(this, W / 2, 258, 'Bajas por la cueva del Cerro de la Silla, tras los pasos de Ignacio Montemayor.', 22, CSS.bone).setOrigin(0.5));
+      L(txt(this, W / 2, 344, 'Cada hoja del diario que encuentres te da un apunte (pista gratis) y Cordura.', 17, '#9ad8c8').setOrigin(0.5));
       L(txt(this, W / 2, 290, 'Una respuesta correcta te devuelve la cordura. Un error te la quita.', 20, CSS.dim).setOrigin(0.5));
       L(txt(this, W / 2, 318, `Las otras ${PROLOGO.length - 1} hojas del diario están perdidas allá abajo.`, 18, '#8a7a5a').setOrigin(0.5));
       const primera = !(Game.codex.flags ?? []).includes('abismo_guia');
@@ -171,7 +173,7 @@ export class AbismoScene extends Phaser.Scene {
       }
       return;
     }
-    L(hojaDiario(this, 0, () => this.prologo(1), false));
+    L(hojaDiario(this, 0, () => L(hojaPresente(this, () => this.prologo(1))), false));
   }
 
   // ── 2. Necronomicón: elige una página ──
@@ -269,7 +271,7 @@ export class AbismoScene extends Phaser.Scene {
    * premio: al vencer a un jefe, 3 dientes y te llevas 1.
    * En los tres puedes reacomodar la dentadura (clic en un diente y luego en otro hueco).
    */
-  private sacamuelas(modo: 'inicio' | 'boca' | 'premio' | 'acomodar', alTerminar: () => void) {
+  private sacamuelas(modo: 'inicio' | 'boca' | 'premio' | 'acomodar' | 'colocar', alTerminar: () => void) {
     this.limpiar();
     const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
     const run = Game.run;
@@ -277,7 +279,7 @@ export class AbismoScene extends Phaser.Scene {
     while (dent.length < HUECOS) dent.push(null);
     const astrosX = (modo === 'inicio' ? this.elegido?.id : run?.pacto) === 'estelar' ? 2 : 1;
     const cuantos = modo === 'inicio' ? this.elegido?.dientes ?? 2 : modo === 'acomodar' ? 0 : 1;
-    const nOpc = modo === 'inicio' ? 4 : modo === 'acomodar' ? 0 : 3;
+    const nOpc = modo === 'inicio' ? 4 : modo === 'acomodar' || modo === 'colocar' ? 0 : 3;
     const tengo = () => dent.filter((x): x is string => !!x);
     // la carta del Astrónomo cumplida: el trofeo del jefe trae 3 legendarios
     const carta = run?.carta;
@@ -295,20 +297,22 @@ export class AbismoScene extends Phaser.Scene {
     if (cartaPremio) { carta!.cobrada = true; saveLocal(); }
     let tomados = 0;
     let sel = -1; // hueco marcado para mover
-    let pendiente: string | null = null; // diente elegido que espera hueco (dentadura llena)
+    let pendiente: string | null = modo === 'colocar' ? run?.dientePendiente ?? null : null; // diente elegido que espera hueco (dentadura llena)
     let arrancando = false; // modo «arrancar un parásito» (Sacamuelas)
     let nota = ''; // mensaje de la última acción
-    const titulo = { inicio: 'La Dentadura de Montemayor', boca: 'El Sacamuelas Ciego', premio: 'Trofeo del jefe', acomodar: 'Acomodar la dentadura' }[modo];
+    const titulo = { inicio: 'La Dentadura de Montemayor', boca: 'El Sacamuelas Ciego', premio: 'Trofeo del jefe', acomodar: 'Acomodar la dentadura', colocar: 'Un diente nuevo' }[modo];
     L(title(this, W / 2, 40, titulo, 38, '#f0c8c8'));
     const sub = modo === 'inicio' ? `En la cueva encontraste la dentadura del erudito. Elige ${cuantos} de estos ${nOpc} dientes.`
       : modo === 'boca' ? '«Dientes, dientes frescos… Llévate uno. Y si traes un parásito, te lo arranco. Cobro, claro.»'
         : modo === 'acomodar' ? '«Los astros se ven mejor en fila», dice el astrónomo. Toca un diente y luego otro hueco.'
+          : modo === 'colocar' ? 'Ganaste un diente, pero tu dentadura está llena. Toca el diente (marcado) que quieres cambiar, o tíralo.'
           : cartaPremio ? '¡Carta de Providence cumplida! El Astrónomo te manda 3 dientes LEGENDARIOS: elige 1.' : 'Le arrancas un diente al jefe. Elige 1 de 3.';
     L(txt(this, W / 2, 72, sub, 18, cartaPremio ? '#ffd060' : CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
     const aviso = L(txt(this, W / 2, 98, '', 16, '#ffd060', { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
     this.botonGuia();
     const jaw = dentaduraView(this, W / 2, 196, this.tip, {
       paso: 62, k: 0.85, dent: () => dent, marcado: () => sel,
+      resaltar: (i) => !!pendiente && !!dent[i] && !esParasito(dent[i]),
       onHueco: (i) => {
         if (arrancando) {
           if (!esParasito(dent[i])) { nota = 'Ese no es un parásito.'; return pintar(); }
@@ -326,6 +330,7 @@ export class AbismoScene extends Phaser.Scene {
           if (esParasito(viejo)) { nota = 'El parásito no se suelta: sólo el Sacamuelas lo arranca.'; return pintar(); }
           dent[i] = pendiente;
           pendiente = null;
+          if (run) delete run.dientePendiente;
           tomados++;
           audio.sfx('coin');
           nota = viejo ? `Tiraste ${defDiente(viejo).nombre}.` : '';
@@ -352,7 +357,7 @@ export class AbismoScene extends Phaser.Scene {
             : [nota, cos ? `Cosmos: ${cos}` : 'Tip: toca un diente y luego otro hueco para moverlo. El orden importa.'].filter(Boolean).join('  ·  '));
       nota = '';
       const quedan = cuantos - tomados;
-      opciones.forEach((id, i) => {
+      if (!pendiente) opciones.forEach((id, i) => {
         const d = defDiente(id);
         const rz = NOMBRE_RAREZA[d.rareza];
         const x = W / 2 + (i - (opciones.length - 1) / 2) * 220, y = 262;
@@ -381,11 +386,33 @@ export class AbismoScene extends Phaser.Scene {
         } else c.setAlpha(0.45);
         opc.add(c);
       });
+      if (pendiente) {
+        // el diente que espera hueco, a la vista
+        const g = this.add.graphics();
+        frame(g, W / 2 - 150, 262, 300, 190, 0x1a1408, 0xffd060, 0.97);
+        opc.add(g);
+        opc.add(txt(this, W / 2, 270, 'Por colocar', 15, '#ffd060').setOrigin(0.5, 0));
+        opc.add(dibujarDiente(this, W / 2, 324, pendiente, 1.1));
+        const dp = defDiente(pendiente);
+        opc.add(txt(this, W / 2, 364, dp.nombre, 18, NOMBRE_RAREZA[dp.rareza].css).setOrigin(0.5, 0));
+        opc.add(txt(this, W / 2, 388, dp.texto, 13, CSS.bone, { align: 'center', wordWrap: { width: 280 } }).setOrigin(0.5, 0));
+        const pd = pendiente;
+        pie.add(button(this, W / 2 - 290, 500, 220, 36, 'Tirar este diente', () => {
+          pendiente = null;
+          if (run) delete run.dientePendiente;
+          tomados = cuantos;
+          nota = `Dejaste ${defDiente(pd).nombre} en el camino.`;
+          pintar();
+        }, { size: 16 }));
+      }
       const listo = quedan <= 0 && !pendiente;
       const etiqueta = modo === 'inicio' ? (listo ? 'Listo: abrir los sobres' : `Elige ${quedan} diente(s) más`) : listo ? 'Seguir' : 'Irme sin diente';
-      const b = button(this, W / 2, 500, 280, 40, etiqueta, () => { if (!pendiente) alTerminar(); }, { size: 19, color: listo ? UI.gold : UI.border });
-      if (modo === 'inicio' && !listo) b.setEnabled(false);
-      pie.add(b);
+      // mientras hay un diente por colocar, sólo se puede colocar (tocando un hueco) o tirarlo
+      if (!pendiente) {
+        const b = button(this, W / 2, 500, 280, 40, etiqueta, () => alTerminar(), { size: 19, color: listo ? UI.gold : UI.border });
+        if (modo === 'inicio' && !listo) b.setEnabled(false);
+        pie.add(b);
+      }
       if (modo === 'boca' && quedan > 0 && run) {
         const rr = button(this, W / 2 + 290, 500, 230, 36, `Volver a tirar (${RETIRAR_DIENTES} ⛁)`, () => {
           if (run.ergios < RETIRAR_DIENTES) return;
@@ -398,7 +425,7 @@ export class AbismoScene extends Phaser.Scene {
         rr.setEnabled(run.ergios >= RETIRAR_DIENTES);
         pie.add(rr);
       }
-      if (modo === 'boca' && run && dent.some(esParasito)) {
+      if (modo === 'boca' && run && !pendiente && dent.some(esParasito)) {
         const ar = button(this, W / 2 - 290, 500, 230, 36, arrancando ? 'Cancelar' : `Arrancar parásito (${ARRANCAR_PARASITO} ⛁)`, () => {
           arrancando = !arrancando;
           pintar();

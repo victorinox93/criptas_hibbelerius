@@ -636,7 +636,7 @@ export const VIDA_JEFES = 1;
 /** Élites (enemigos con umbral que no son jefes) */
 export const VIDA_ELITES = 1;
 /** Daño de los ataques enemigos, por acto (v0.28: +15 %). Se aplica junto con la gravedad. */
-export const DANO_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1, 5: 1.15 };
+export const DANO_POR_ACTO: Record<number, number> = { 1: 1.15, 2: 1.15, 3: 1.15, 4: 1.1, 5: 1.25 }; // v0.44: el Abismo pega un poco más
 /** Multiplicador extra de daño para jefes y élites */
 export const DANO_JEFES = 1;
 export const DANO_ELITES = 1;

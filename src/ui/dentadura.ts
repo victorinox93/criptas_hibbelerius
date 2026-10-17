@@ -86,13 +86,14 @@ export function posHueco(i: number, cx: number, cy: number, paso = 70) {
  * La dentadura completa. onHueco (opcional) se llama al hacer clic en un hueco.
  * Regresa el contenedor y una función para volver a pintarla.
  */
-export function dentaduraView(s: Phaser.Scene, cx: number, cy: number, tip: Tooltip, opts: { paso?: number; k?: number; onHueco?: (i: number) => void; marcado?: () => number; dent?: () => (string | null)[] } = {}) {
+export function dentaduraView(s: Phaser.Scene, cx: number, cy: number, tip: Tooltip, opts: { paso?: number; k?: number; onHueco?: (i: number) => void; marcado?: () => number; dent?: () => (string | null)[]; resaltar?: (i: number) => boolean } = {}) {
   const c = s.add.container(0, 0);
   const paso = opts.paso ?? 70, k = opts.k ?? 1;
   let brillo: Phaser.Tweens.Tween | null = null;
   const pintar = () => {
     brillo?.stop();
     brillo = null;
+    c.list.forEach((o) => s.tweens.killTweensOf(o));
     c.removeAll(true);
     const dent = opts.dent?.() ?? Game.run?.dientes ?? [];
     // encía
@@ -117,7 +118,19 @@ export function dentaduraView(s: Phaser.Scene, cx: number, cy: number, tip: Tool
         m.lineStyle(3, 0xe8c15a, 1).strokeRoundedRect(p.x - 26 * k, p.y - 46 * k, 52 * k, 86 * k, 8);
         c.add(m);
       }
-      const z = s.add.zone(p.x, p.y, 56 * k, 80 * k).setInteractive({ useHandCursor: !!opts.onHueco });
+      // v0.44: zona de clic más grande (todo el ancho del hueco) y un marco al pasar el mouse
+      const zw = paso - 4, zh = 104 * k;
+      if (opts.resaltar?.(i)) {
+        const rs = s.add.graphics();
+        rs.lineStyle(3, 0xffd060, 1).strokeRoundedRect(p.x - zw / 2 + 2, p.y - 50 * k, zw - 4, zh - 4, 8);
+        c.add(rs);
+        s.tweens.add({ targets: rs, alpha: 0.25, duration: 450, yoyo: true, repeat: -1 });
+      }
+      const hover = s.add.graphics().setVisible(false);
+      hover.lineStyle(2, 0xffffff, 0.7).strokeRoundedRect(p.x - zw / 2 + 2, p.y - 50 * k, zw - 4, zh - 4, 8);
+      c.add(hover);
+      const z = s.add.zone(p.x, p.y + 2 * k, zw, zh).setInteractive({ useHandCursor: !!opts.onHueco });
+      if (opts.onHueco) { z.on('pointerover', () => hover.setVisible(true)); z.on('pointerout', () => hover.setVisible(false)); }
       if (id) {
         const d = defDiente(id);
         const copia = d.id === 'espejo' ? izq : null;

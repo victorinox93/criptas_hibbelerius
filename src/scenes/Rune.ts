@@ -188,12 +188,15 @@ export class RuneScene extends Phaser.Scene {
     }
     // ── Pista a cambio de Ergios ──
     if (run) {
-      const hint: Btn = button(this, W - 72, 360, 124, 48, `Pista\n−${PISTA_COSTO} ${T.moneda}`, () => {
-        if (run.ergios < PISTA_COSTO) {
+      // v0.44: los apuntes del diario de Montemayor dan pistas gratis en el Abismo
+      const gratis = (run.apuntes ?? 0) > 0;
+      const hint: Btn = button(this, W - 72, 360, 124, 48, gratis ? `Apunte de\nMontemayor (${run.apuntes})` : `Pista\n−${PISTA_COSTO} ${T.moneda}`, () => {
+        if (gratis) run.apuntes = (run.apuntes ?? 1) - 1;
+        else if (run.ergios < PISTA_COSTO) {
           this.flash(`Necesitas ${PISTA_COSTO} ${T.moneda} para una pista.`, CSS.blood);
           return;
         }
-        addErgios(-PISTA_COSTO);
+        if (!gratis) addErgios(-PISTA_COSTO);
         sumar(run, 'Pistas usadas', PUNTOS.pista);
         this.hud.refresh();
         audio.sfx('coin');
@@ -213,7 +216,7 @@ export class RuneScene extends Phaser.Scene {
         }
       }, { size: 18, color: UI.gold, silent: true });
       this.answerUi.push(hint);
-      if (run.ergios < PISTA_COSTO) hint.label.setColor('#6a5a5a');
+      if (!gratis && run.ergios < PISTA_COSTO) hint.label.setColor('#6a5a5a');
     }
   }
 

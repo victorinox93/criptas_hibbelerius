@@ -42,7 +42,8 @@ function darDiente(tipo: string): string {
     dent[i] = id;
     return `☣ ${d.nombre} se pega a tu dentadura y empuja fuera a ${viejo}.`;
   }
-  return `Tu dentadura está llena: ${d.nombre} se queda en el camino (ve al Sacamuelas para hacer espacio).`;
+  r.dientePendiente = id;
+  return `Tu dentadura está llena: al volver al mapa decides qué diente cambiar por ${d.nombre}.`;
 }
 
 /** Aplica el efecto de un relato y devuelve el texto de lo que pasó */

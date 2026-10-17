@@ -1,4 +1,4 @@
-import { JEFES as JEFES_ABISMO, nombreTramo, TRAMOS } from '../data/abismo_modo';
+import { JEFES as JEFES_ABISMO, nombreTramo, PROLOGO, TRAMOS } from '../data/abismo_modo';
 import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
 import { hojaDiario, paginasHasta } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
@@ -7,7 +7,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { addErgios, FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
+import { addEntropia, addErgios, FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { cargarHuellas, datosDe, HONRA_ERGIOS, MAX_LAPIDAS, usarHuella } from '../huellas';
 import { ENEMIES } from '../data/enemies';
@@ -34,8 +34,8 @@ const NODE_INFO = Object.fromEntries(
 ) as Record<NodeType, { icon: string; color: number; name: string; desc: string }>;
 
 /** Posición de un nodo; el ancho entre pisos se ajusta a cuántos pisos tiene el mapa */
-export const nodeAt = (n: MapNode, maxFloor = FLOORS) => ({
-  x: n.type === 'jefe' ? 884 : 60 + n.floor * (790 / maxFloor),
+export const nodeAt = (n: MapNode, maxFloor = FLOORS, izq = 60) => ({
+  x: n.type === 'jefe' ? 884 : izq + n.floor * ((850 - izq) / maxFloor),
   y: n.type === 'jefe' ? 280 : 112 + n.lane * 82,
 });
 
@@ -116,19 +116,30 @@ export class MapScene extends Phaser.Scene {
     vignette(this);
 
     topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
-    if (act5) button(this, 66, 62, 100, 28, '? Guía', () => guiaAbismo(this), { size: 17, color: 0x2c5a4e }).setDepth(402);
+    // un diente ganado con la dentadura llena: primero hay que acomodarlo
+    if (act5 && run.dientePendiente) this.time.delayedCall(250, () => fadeTo(this, 'Abismo', { clase: run.clase ?? 'caballero', fase: 'colocar' }));
+    // la Guía va arriba a la derecha (a la izquierda están los dones de los Ecos)
+    if (act5) button(this, W - 62, 62, 100, 28, '? Guía', () => guiaAbismo(this), { size: 17, color: 0x2c5a4e }).setDepth(402);
     // el diario de Montemayor: aparece una hoja nueva conforme bajas (pisos en PISO_DIARIO)
-    if (act5 && (run.diario ?? 1) < paginasHasta(run.tramo ?? 1, run.floor)) {
+    const hayHoja = act5 && (run.diario ?? 1) < paginasHasta(run.tramo ?? 1, run.floor);
+    if (hayHoja) {
       const i = run.diario ?? 1;
       run.diario = i + 1;
+      // v0.44: cada hoja es útil: un apunte (pista gratis en una pregunta) y +6 de Cordura;
+      // la última anota el punto débil del Primigenio (empieza con 15 % menos vida)
+      run.apuntes = (run.apuntes ?? 0) + 1;
+      addEntropia(-6);
       saveLocal();
-      this.time.delayedCall(500, () => hojaDiario(this, i));
+      const ultima = i + 1 >= PROLOGO.length;
+      this.time.delayedCall(500, () => hojaDiario(this, i, () => this.scene.restart(), true,
+        `Apunte de Montemayor: +1 pista gratis (tienes ${run.apuntes}) · +6 de Cordura${ultima ? '\nAnotó el punto débil del Primigenio: empezará con 15 % menos vida.' : ''}`));
     }
     title(this, W / 2, 66, act5 ? `${(run.tramo ?? 1) > TRAMOS ? 'Abismo sin fondo' : `Tramo ${run.tramo ?? 1} de ${TRAMOS}`} · ${nombreTramo(run.tramo ?? 1).replace(/^El Abismo sin Fondo · /, '')}` : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
     const maxF = Math.max(...run.map.map((n) => n.floor)) || FLOORS;
-    const nodeXY = (n: MapNode) => nodeAt(n, maxF);
+    // en el Abismo se deja espacio a la izquierda para el semáforo, la dentadura y la carta
+    const nodeXY = (n: MapNode) => nodeAt(n, maxF, act5 ? 128 : 60);
     const current = run.pos >= 0 ? byId.get(run.pos)! : null;
     // si la partida se cerró en el nodo del jefe: retoma la pelea o el paso al siguiente acto
     if (current?.type === 'jefe' && !run.done && act5) {
@@ -244,7 +255,7 @@ export class MapScene extends Phaser.Scene {
     else void cargarHuellas(() => { if (this.scene.isActive()) lapidas(); });
 
     // héroe en el mapa
-    const hp = current ? nodeXY(current) : { x: 30, y: 280 };
+    const hp = current ? nodeXY(current) : { x: act5 ? 84 : 30, y: 280 };
     const hero = this.add.image(hp.x, hp.y - 46, 'hero').setScale(1);
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
@@ -262,7 +273,8 @@ export class MapScene extends Phaser.Scene {
     if (run.pos === -1) {
       if (act5) {
         // en el Abismo, en lugar del tablón: una carta del Astrónomo de Providence por tramo
-        if (!run.carta || run.carta.tramo !== (run.tramo ?? 1)) this.time.delayedCall(700, () => this.cartaProvidence(nuevaCarta()));
+        // (si hay hoja del diario, la carta sale después, cuando la escena se reinicia al cerrar la hoja)
+        if (hayHoja) { /* nada */ } else if (!run.carta || run.carta.tramo !== (run.tramo ?? 1)) this.time.delayedCall(700, () => this.cartaProvidence(nuevaCarta()));
         else this.consejo();
       } else if (!run.encargo || run.encargo.acto !== (run.acto ?? 1)) this.tablon(() => this.consejo());
       else this.consejo();
