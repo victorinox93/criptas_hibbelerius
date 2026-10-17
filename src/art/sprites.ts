@@ -766,6 +766,17 @@ export const SPRITES: Record<string, string[]> = {
     '.ww...ww.',
     '..w...w..',
   ],
+  i_telescopio: [
+    '.......WW',
+    '.....WWWw',
+    '...wwWWw.',
+    '.wwwwww..',
+    'Wwwww....',
+    '..kk.....',
+    '.k..k....',
+    'k....k...',
+    'k....k...',
+  ],
   i_jarra: [
     '.wwwww...',
     'wwwwwww..',

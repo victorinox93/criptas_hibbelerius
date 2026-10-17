@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import { nivelDiente } from '../data/dientes';
+import { cumplirCarta } from '../data/lovecraft';
+import { RELATO } from '../data/relatos';
+import { aplicarEfecto } from './Relato';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -22,7 +25,7 @@ import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, panel, TextField, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
 
-export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario';
+export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario' | 'relato';
 
 export interface RuneData {
   floor: number;
@@ -30,6 +33,8 @@ export interface RuneData {
   eventId?: string;
   figureId?: string;
   reto?: boolean; // eco molesto: reto de reconciliación (si fallas, se va)
+  relatoId?: string; // v0.43 · Relato del Abismo (src/data/relatos.ts)
+  opcion?: number;
 }
 
 /** Aplica el resultado de un encuentro y devuelve una descripción */
@@ -113,12 +118,18 @@ export class RuneScene extends Phaser.Scene {
     // en el Abismo: 60 % cuerpo rígido, 40 % repaso de los actos anteriores
     const abismoC = Math.random() < 0.6 ? ABISMO_CONCEPTS
       : ['2a ley', 'Friccion', 'Trabajo', 'Energia cinetica', 'Conservacion', 'Impulso', 'Cantidad de movimiento', 'Impulso angular'];
-    this.p = randomProblem(acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
+    const rel = data.relatoId ? RELATO(data.relatoId) : undefined;
+    const relP = rel && data.opcion !== undefined ? rel.opciones[data.opcion]?.pregunta : undefined;
+    this.p = randomProblem(relP ? relP.concepts : acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);
       this.tweens.add({ targets: por, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, fig.name, 34, '#9ad8f0');
+    } else if (rel) {
+      const im = this.add.image(62, 150, rel.icono).setScale(6).setTint(rel.tinte);
+      this.tweens.add({ targets: im, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      title(this, W / 2, 86, rel.titulo, 34, '#9ad8c8');
     } else if (ev) {
       const npc = this.add.image(62, 150, ev.npc).setScale(4);
       this.tweens.add({ targets: npc, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -133,6 +144,7 @@ export class RuneScene extends Phaser.Scene {
       evento: ev ? `${T.evento.siAciertas}: ${describeOutcome(ev.bless)}` : '',
       regateo: '«Resuélvelo y te rebajo los precios.»',
       santuario: T.santuario.siAciertas,
+      relato: relP ? `Si aciertas: ${relP.bien.texto.split('.')[0]}.` : '',
     };
     txt(this, W / 2, 156, sub[data.source], 20, CSS.dim).setOrigin(0.5);
 
@@ -245,6 +257,7 @@ export class RuneScene extends Phaser.Scene {
       } else addEntropia(ENTROPIA.runa);
       run.stats.racha = (run.stats.racha ?? 0) + 1;
       run.stats.rachaMax = Math.max(run.stats.rachaMax ?? 0, run.stats.racha);
+      if (run.stats.racha >= 2 && cumplirCarta('racha2')) this.flash('✉ ¡Carta de Providence cumplida!', '#ffd060', 160);
       const pts = sumar(run, 'Preguntas correctas', PUNTOS.runa * multRacha(run.stats.racha));
       if (run.stats.racha > 1) this.flash(`Racha ×${run.stats.racha}: +${pts} puntos`, CSS.gold);
       if (run.stats.racha >= 3) {
@@ -257,8 +270,9 @@ export class RuneScene extends Phaser.Scene {
     } else {
       run.ultimoFallo = p.concept; // se escribe en tu lápida si caes
       if (run.modo === 'abismo' && !this.amUsado) {
-        addEntropia(CORDURA.runaMal);
-        this.flash(`−${CORDURA.runaMal} de Cordura`, '#c88aff', 132);
+        const mal = CORDURA.runaMal * (1 + nivelDiente(run.dientes, 'lombriz')); // ☣ Lombriz de Yuggoth: el doble
+        addEntropia(mal);
+        this.flash(`−${mal} de Cordura`, '#c88aff', 132);
       }
       // Actualización Bayesiana (Bayes): un error no borra la evidencia acumulada
       if (!this.amUsado && !boonLevel('by_actualiza')) run.stats.racha = 0;
@@ -325,6 +339,21 @@ export class RuneScene extends Phaser.Scene {
       c.add(button(this, W - 210, 496, 220, 40, reto && !ok ? T.runa.continuar : T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
         floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok, reto,
       }), { size: 22, color: ok ? UI.gold : UI.border }));
+      return;
+    }
+
+    if (this.d.source === 'relato') {
+      const rel = RELATO(this.d.relatoId)!;
+      const pr = rel.opciones[this.d.opcion ?? 0].pregunta!;
+      const e = ok ? pr.bien : pr.mal;
+      const res = aplicarEfecto(e);
+      this.hud.refresh();
+      logEvent('relato', p.concept, ok, { id: rel.id, resultado: res });
+      this.apilar(c, [
+        txt(this, 0, 0, e.texto, 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 300 } }),
+        txt(this, 0, 0, res, 18, CSS.gold, { wordWrap: { width: 300 } }),
+      ]);
+      contBtn();
       return;
     }
 

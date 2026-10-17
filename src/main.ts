@@ -40,6 +40,7 @@ import { ActTransitionScene } from './scenes/ActTransition';
 import { DilemmaScene } from './scenes/Dilemma';
 import { DebugScene } from './scenes/Debug';
 import { AbismoScene } from './scenes/Abismo';
+import { RelatoScene } from './scenes/Relato';
 import { TitleScene } from './scenes/Title';
 import { Game } from './state';
 import { mostrarArranque } from './consola/arranque';
@@ -66,7 +67,7 @@ const game = new Phaser.Game({
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
   scene: [BootScene, TitleScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, VestidorScene, TiendaScene, MyriamScene, EstadisticasScene, DiagnosticoScene, MusicaScene, AMScene, TabernaScene, TiroBlancoScene, TiraAflojaScene, MasMenosScene, DebugScene, AbismoScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, VestidorScene, TiendaScene, MyriamScene, EstadisticasScene, DiagnosticoScene, MusicaScene, AMScene, TabernaScene, TiroBlancoScene, TiraAflojaScene, MasMenosScene, DebugScene, AbismoScene, RelatoScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda

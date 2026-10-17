@@ -469,6 +469,10 @@ Por ahora se abre sólo desde el **Modo profesor → Abismo (beta)**. Se juega c
 | Número de tramos, pisos o dificultad | `TRAMOS`, `PISOS_TRAMO`, `escalaTramo()`, `escalaDano()` y `multPuntaje()` en `abismo_modo.ts` (si cambias los pisos, cambia también `PISOS_TRAMO_ABISMO` en `src/state.ts`) |
 | Diente (reliquia del Abismo) | `DIENTES` en `src/data/dientes.ts` (tipo `normal`, `astro` o `maldito`; `peso` = qué tan seguido sale); su efecto en `Combat.ts` (busca `this.diente('…')`, `dientesAtaque()` o `dientesNoAtaque()`); su dibujo en `dibujarDiente()` de `src/ui/dentadura.ts` |
 | Cuántos huecos, precio de volver a tirar, fuerza de la Alineación | `HUECOS`, `RETIRAR_DIENTES` y `ALINEACION` en `src/data/dientes.ts` |
+| Rareza, Cristal, parásitos | `PROB_RAREZA`, `PROB_CRISTAL`, `CRISTAL_COMBATES`, `PROB_PARASITO_SACAMUELAS` y `ARRANCAR_PARASITO` en `src/data/dientes.ts` |
+| Relato del Abismo (cuento de Lovecraft) | `RELATOS` en `src/data/relatos.ts` (opciones con pregunta o con azar); la escena es `src/scenes/Relato.ts` |
+| Carta del Astrónomo de Providence | `CARTAS` en `src/data/lovecraft.ts`; dónde se cumple: busca `cartaLovecraft(` en `Combat.ts` y `cumplirCarta(` en `Rune.ts` |
+| Constelaciones del Observatorio | `observatorio()` en `src/scenes/Abismo.ts` (los niveles se guardan en `run.cosmos`) |
 | Cuántos pactos ofrece el libro | `PACTOS_OFRECIDOS` en `abismo_modo.ts` |
 | Nombre de un tramo | `NOMBRE_TRAMO` en `abismo_modo.ts` |
 | Hoja del diario de Montemayor | `PROLOGO` en `abismo_modo.ts`; cuándo aparece, `paginasHasta()` en `src/ui/diario.ts` |

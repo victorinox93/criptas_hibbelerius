@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { nivelDiente } from './data/dientes';
 import { CardInst, starterDeck } from './data/cards';
 import { CLASSES } from './data/classes';
 import { enqueue, isOnline } from './api';
@@ -35,7 +36,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca'; // boca = el Sacamuelas Ciego (sólo en el Abismo)
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio'; // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -103,6 +104,10 @@ export interface Run {
   tramo?: number; // El Descenso: tramo actual (1–4; 5+ = modo infinito)
   jefe?: string; // jefe del tramo actual (sacado al azar)
   jefesVistos?: string[]; // jefes que ya salieron en esta partida (para no repetir)
+  cosmos?: Record<string, number>; // v0.43 · niveles de constelación del Observatorio (astro → niveles extra)
+  carta?: { id: string; tramo: number; hecho?: boolean; cobrada?: boolean }; // v0.43 · carta del Astrónomo de Providence
+  bonoDientesHp?: number; // v0.43 · vida máxima que dan los dientes (Sarro, Branquia), para ajustarla al cambiar la dentadura
+  cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
 }
 
@@ -487,6 +492,7 @@ export function generateMap(acto = 1): MapNode[] {
     ensure('mercader', 1, [2, FLOORS - 2]);
     ensure('santuario', 1, [1, FLOORS - 3]);
     ensure('boca', 1, [2, FLOORS - 2]);
+    ensure('observatorio', 1, [3, FLOORS - 2]);
     return [...list, boss];
   }
   ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);
@@ -498,6 +504,16 @@ export function generateMap(acto = 1): MapNode[] {
   ensure('santuario', 1, [2, FLOORS - 3]);
   ensure('fogata', 1, [5, FLOORS - 3]);
   return [...list, boss];
+}
+
+/** v0.43 · Ajusta la Vida máxima según los dientes que la cambian (Diente con Sarro +8, Branquia del Profundo +12) */
+export function aplicarSarro(r: Run) {
+  const quiere = 8 * nivelDiente(r.dientes, 'sarro') + 12 * nivelDiente(r.dientes, 'branquia');
+  const delta = quiere - (r.bonoDientesHp ?? 0);
+  if (!delta) return;
+  r.bonoDientesHp = quiere;
+  r.maxHp += delta;
+  r.hp = Math.max(1, Math.min(r.maxHp, r.hp + Math.max(0, delta)));
 }
 
 export function newRun(runId: string, gravity = 1, clase = 'caballero'): Run {
