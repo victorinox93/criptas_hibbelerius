@@ -24,7 +24,7 @@ import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
 import { alineacion, ALINEACION, cuantosAstros, defDiente, esAstro, esParasito, gastarCristal, MULT_DIENTES_MAX, nivelDiente } from '../data/dientes';
 import { cumplirCarta } from '../data/lovecraft';
-import { HOJAS_DEBILIDAD, MORDIDAS_JEFE, MORDIDAS_PRIMIGENIO, MUTADOR, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
+import { CONDICION_JEFE, CONDICIONES_JEFE, HOJAS_DEBILIDAD, MORDIDAS_JEFE, MORDIDAS_PRIMIGENIO, MUTADOR, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
@@ -167,6 +167,8 @@ export class CombatScene extends Phaser.Scene {
   private steinerUsed = false; // Página de Steiner: primer ataque del combate ×2
   private rlyehUsado = false; // Diente de R'lyeh: primer ataque del combate ×3
   private jugoDefensa = false; // carta de Providence «sin Defensas»
+  private condJefe = ''; // v0.48 · condición del jefe del Abismo (CONDICIONES_JEFE)
+  private cartaTipo = ''; // tipo de la carta que se está resolviendo (para «Sin Defensa»)
   private mordidos: number[] = []; // v0.46 · huecos de la dentadura que el jefe mordió (no funcionan en esta pelea)
   private bonusJ1 = 0; // J extra en el primer turno (Boltzmann, Cantor)
   private robo1 = 0; // cartas extra en el primer turno (Newton 1693, página de la Confusión)
@@ -249,6 +251,8 @@ export class CombatScene extends Phaser.Scene {
     this.rlyehUsado = false;
     this.jugoDefensa = false;
     this.mordidos = [];
+    this.condJefe = '';
+    this.cartaTipo = '';
     this.bonusJ1 = 0;
     this.robo1 = 0;
     if (Game.run?.necro === 'sueno') this.maxEnergy += 1; // El Sueño Profundo
@@ -276,6 +280,7 @@ export class CombatScene extends Phaser.Scene {
   /** La dentadura sin los dientes que el jefe mordió (v0.46) */
   private dentEfectiva() {
     const d = Game.run?.dientes ?? [];
+    if (this.condJefe === 'sinDientes') return d.map(() => null);
     return this.mordidos.length ? d.map((x, i) => (this.mordidos.includes(i) ? null : x)) : d;
   }
 
@@ -371,8 +376,12 @@ export class CombatScene extends Phaser.Scene {
     // los jefes del Abismo muerden la dentadura: 1 diente (2 los Primigenios) no funciona en esta pelea
     if (this.kind === 'boss' && JEFES_ABISMO[this.alive()[0]?.st.def.id ?? '']) {
       const prim = !!JEFES_ABISMO[this.alive()[0].st.def.id].primigenio;
-      const libres = (run.dientes ?? []).map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
-      this.mordidos = Phaser.Utils.Array.Shuffle(libres).slice(0, prim ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE);
+      // v0.48: cada jefe impone una condición al azar (la mordida es una de ellas)
+      this.condJefe = Phaser.Utils.Array.GetRandom(CONDICIONES_JEFE).id;
+      if (this.condJefe === 'mordida') {
+        const libres = (run.dientes ?? []).map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
+        this.mordidos = Phaser.Utils.Array.Shuffle(libres).slice(0, prim ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE);
+      }
     }
     // la Dentadura
     const mp = this.diente('muelaPlomo');
@@ -660,10 +669,15 @@ export class CombatScene extends Phaser.Scene {
     const x0 = 420;
     capa.add(txt(this, x0, 176, 'Tema de física', 17, CSS.dim));
     capa.add(txt(this, x0, 198, info.tema, 22, CSS.gold, { wordWrap: { width: 440 } }));
-    capa.add(txt(this, x0, 250, 'Desventaja', 17, CSS.dim));
-    capa.add(txt(this, x0, 272, info.desventaja, 21, '#ff9a7a', { wordWrap: { width: 440 }, lineSpacing: 2 }));
+    capa.add(txt(this, x0, 236, 'Desventaja', 17, CSS.dim));
+    capa.add(txt(this, x0, 256, info.desventaja, 19, '#ff9a7a', { wordWrap: { width: 440 }, lineSpacing: 2 }));
+    const cj = CONDICION_JEFE(this.condJefe);
+    if (cj) {
+      capa.add(txt(this, x0, 326, `Condición de hoy (al azar): ${cj.nombre}`, 17, '#ff9aa8'));
+      capa.add(txt(this, x0, 348, cj.texto(!!info.primigenio), 17, CSS.bone, { wordWrap: { width: 440 } }));
+    }
     const esc = escalaTramo(tramo);
-    if (esc > 1) capa.add(txt(this, x0, 380, `Fuerza del tramo: ×${esc.toFixed(2)} de vida y ×${escalaDano(tramo).toFixed(2)} de daño`, 17, '#e08a8a'));
+    if (esc > 1) capa.add(txt(this, x0, 396, `Fuerza del tramo: ×${esc.toFixed(2)} de vida y ×${escalaDano(tramo).toFixed(2)} de daño`, 17, '#e08a8a'));
     capa.add(button(this, W / 2 + 70, 450, 240, 44, 'Enfrentarlo', () => {
       capa.destroy();
       this.busy = false;
@@ -821,7 +835,7 @@ export class CombatScene extends Phaser.Scene {
       const ic = icon(this, sx + 8, 0, 'i_momentum', 2.4);
       const t = txt(this, sx + 20, -11, `${st.inercia}`, 20, '#e0a070');
       this.tip.attach(ic, `Inercia ×${st.inercia}`,
-        `1ª ley: mientras nadie lo detenga, sigue avanzando y su golpe crece cada turno.\nDetenlo con un golpe de F ≥ ${umbralDe(st)} N.`);
+        st.def.imparable ? '¡IMPARABLE! Su golpe crece cada turno y NINGUNA fuerza lo detiene: mátalo rápido o aguanta con Bloqueo.' : `1ª ley: mientras nadie lo detenga, sigue avanzando y su golpe crece cada turno.\nDetenlo con un golpe de F ≥ ${umbralDe(st)} N.`);
       ev.statusC.add([ic, t]);
       sx += 44;
     }
@@ -899,7 +913,7 @@ export class CombatScene extends Phaser.Scene {
       this.tip.attach(im, h, b);
       this.pStatus.add([im, tt]);
     });
-    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && this.cost(c) <= this.energy));
+    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && !(this.condJefe === 'sinHabilidades' && CARDS[c.inst.id].type === 'Habilidad') && this.cost(c) <= this.energy));
   }
 
   private cost(c: CardView) {
@@ -991,6 +1005,11 @@ export class CombatScene extends Phaser.Scene {
     if (this.busy) return;
     this.tip.hide();
     if (this.discardMode > 0) return this.discardFromHand(v);
+    if (this.condJefe === 'sinHabilidades' && CARDS[v.inst.id].type === 'Habilidad') {
+      this.hint('MENTE EN BLANCO: no puedes jugar Habilidades en esta pelea.');
+      this.tweens.add({ targets: v, x: v.x + 6, duration: 40, yoyo: true, repeat: 3 });
+      return;
+    }
     if (CARDS[v.inst.id].unplayable) {
       this.hint('Esta carta no se puede jugar.');
       this.tweens.add({ targets: v, x: v.x + 6, duration: 40, yoyo: true, repeat: 3 });
@@ -1184,6 +1203,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.busy) return;
     const inst = v.inst;
     const def = CARDS[inst.id];
+    this.cartaTipo = def.type;
     const st = statsOf(inst);
     const costo = this.cost(v);
     if (costo > this.energy) return;
@@ -1260,7 +1280,7 @@ export class CombatScene extends Phaser.Scene {
     }
     // ── El Abismo: ediciones (Balatro), Página de Steiner y área negativa ──
     this.curAll = def.target === 'all';
-    const ed = inst.ed;
+    const ed = this.condJefe === 'sinEdiciones' ? undefined : inst.ed; // v0.48 · «Opacidad»
     if (ed && def.type === 'Ataque') {
       if (ed === 'lamina') { this.polonio += 5; this.calc('Lámina: +5 de daño'); }
       if (ed === 'poli') { this.mult *= 1.5; this.calc('Polícroma: ×1.5'); }
@@ -2135,6 +2155,7 @@ export class CombatScene extends Phaser.Scene {
       if (ed === 'poli') { this.drawCards(1); this.calc('Polícroma: robas 1'); }
       if (ed === 'cristal') { this.gainBlock(10); this.calc('Cristal: +10 de Bloqueo'); }
     }
+    this.cartaTipo = ''; // v0.48: la carta ya se resolvió
     if (ed === 'cristal') {
       const rompe = Math.random() < ROMPER_CRISTAL;
       await this.animarCristal(inst, rompe);
@@ -2192,6 +2213,11 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private gainBlock(n: number) {
+    if (this.condJefe === 'sinDefensa' && this.cartaTipo === 'Defensa' && n > 0) {
+      this.calc('SIN DEFENSA: esta carta no da Bloqueo en esta pelea');
+      this.floatText(this.heroX, 220, 'Sin Defensa', '#ff9aa8');
+      return;
+    }
     if (this.jefeVivo('dagon') && this.turn % 3 === 0 && n > 0) {
       n = Math.floor(n / 2);
       this.calc(`MAREA ALTA (Padre Dagón): tu Bloqueo da la mitad (${n})`);
@@ -2260,7 +2286,11 @@ export class CombatScene extends Phaser.Scene {
     let stopped = false;
     const umbral = umbralDe(st);
     if (umbral && !st.detenido && st.hp > 0 && kind !== 'calor' && kind !== 'res') {
-      if (F >= umbral) {
+      if (F >= umbral && st.def.imparable) {
+        // v0.48 · IMPARABLE: ninguna fuerza lo detiene
+        this.calc(`F = ${F} N ≥ ${umbral} N… pero ${st.def.name} es IMPARABLE: no se detiene`);
+        this.floatText(ev.baseX, 140, '¡IMPARABLE!', '#ff7a5a');
+      } else if (F >= umbral) {
         stopped = true;
         st.detenido = true;
         st.stunned = 1;
@@ -2641,6 +2671,12 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.pacto('pendulo') && this.turn % 2 === 1) { this.energy += 1; this.calc('Pacto del Péndulo (ida): +1 J'); }
     if (this.turn === 1 && Game.run?.mutador === 'agua') { this.energy = Math.max(0, this.energy - 1); this.calc('Fricción del Agua: −1 J en tu primer turno'); }
+    if (this.turn === 1 && this.condJefe && this.condJefe !== 'mordida') {
+      const cj = CONDICION_JEFE(this.condJefe)!;
+      const jefe = this.alive()[0]?.st.def.name ?? 'El jefe';
+      this.calc(`${jefe} impone: ${cj.nombre.toUpperCase()} · ${cj.texto(false)}`);
+      this.anunciarEstado(`¡${cj.nombre.toUpperCase()}!`, cj.texto(false), 0xa83a4a, '#ff9aa8');
+    }
     if (this.turn === 1 && this.mordidos.length) {
       const nombres = this.mordidos.map((i) => defDiente(Game.run!.dientes![i]!).nombre).join(' y ');
       const jefe = this.alive()[0]?.st.def.name ?? 'El jefe';
@@ -3362,6 +3398,13 @@ export class CombatScene extends Phaser.Scene {
     const vm = boonLevel('m_vidamedia');
     if (vm && !(await this.radiate(vm === 2 ? 2 : 3, 'Vida Media'))) return false;
     if (this.hasFx('radiacion') && !(await this.radiate(4, 'Radiación'))) return false;
+    if (this.hasFx('sabueso')) {
+      // v0.48 · maldición del Relato «El sabueso»
+      const run = Game.run!;
+      run.hp = Math.max(1, run.hp - 5);
+      this.calc('El Sabueso te sigue: −5 de vida');
+      this.floatText(this.heroX, 200, '−5 (el Sabueso)', '#e08a8a');
+    }
     // Asimov y Turing (ecos del Núcleo)
     this.ley3 = false;
     this.jugadasIni = this.played;

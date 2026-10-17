@@ -22,6 +22,8 @@ export interface Efecto {
   reanimar?: boolean;
   retrato?: boolean;
   retratoMalo?: boolean;
+  pierdeDiente?: number; // v0.48 · pierdes N dientes al azar (no parásitos)
+  maldicion?: [string, number]; // v0.48 · maldición de src/data/effects.ts por N combates
 }
 
 export interface OpcionRelato {
@@ -170,4 +172,57 @@ export const RELATOS: RelatoDef[] = [
     ],
   },
 ];
+// v0.48 · relatos con castigos: perder dientes y maldiciones
+RELATOS.push(
+  {
+    id: 'sabueso', titulo: 'La tumba holandesa', obra: 'El sabueso', anio: 1924, icono: 'i_skull', tinte: 0x7ad88a,
+    intro: 'En una tumba abierta, sobre un esqueleto, brilla un amuleto de jade verde con forma de perro alado. A lo lejos, algo aúlla. El amuleto pesa más de lo que debería.',
+    opciones: [
+      { label: 'Llevarte el amuleto', risk: 'Un diente LEGENDARIO… y la maldición «El Sabueso te sigue» (−5 de vida al empezar cada combate, 4 combates)', salidas: [
+        { p: 1, e: { texto: 'El jade está tibio. El aullido ya no se oye lejano.', diente: 'legendario', maldicion: ['sabueso', 4] } },
+      ] },
+      {
+        label: 'Calcular si la losa aguanta', risk: 'Pregunta de equilibrio. Si aciertas: +40 Ergios. Si fallas: la losa te cae encima y pierdes un diente.',
+        pregunta: {
+          concepts: ['Fuerza normal', 'Peso'],
+          bien: { texto: 'La losa aguanta. Entre las piedras hay monedas viejas.', ergios: 40 },
+          mal: { texto: 'La losa cae. Te levantas escupiendo un diente.', hp: -8, pierdeDiente: 1 },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'carter', titulo: 'El cementerio del pantano', obra: 'La declaración de Randolph Carter', anio: 1920, icono: 'i_note', tinte: 0x9a9ab8,
+    intro: 'Tu compañero bajó por una escalera bajo una lápida y se lleva el teléfono de campo. Desde abajo, su voz se oye cada vez más rara. Luego, otra voz contesta.',
+    opciones: [
+      {
+        label: 'Bajar a buscarlo', risk: 'Pregunta de energía. Si aciertas: un diente raro. Si fallas: pierdes 2 dientes y 10 de vida.',
+        pregunta: {
+          concepts: ['Energia potencial', 'Conservacion'],
+          bien: { texto: 'Lo sacas a tiempo. Al subir, tu bolsillo pesa un diente más.', diente: 'raro' },
+          mal: { texto: 'Algo te muerde en la oscuridad. Sales con la boca sangrando.', hp: -10, pierdeDiente: 2 },
+        },
+      },
+      { label: 'Quedarte arriba con el teléfono', risk: '−10 de Cordura y la maldición «Niebla Mental» (2 combates)', salidas: [
+        { p: 1, e: { texto: '«¡Estás loco, Warren está muerto!», dice la voz. No era Warren.', cordura: -10, maldicion: ['niebla', 2] } },
+      ] },
+      IRSE,
+    ],
+  },
+  {
+    id: 'ulthar', titulo: 'Las calles de Ulthar', obra: 'Los gatos de Ulthar', anio: 1920, icono: 'i_paw', tinte: 0xd8b878,
+    intro: 'En Ulthar está prohibido matar gatos. Una pareja de ancianos los odia, y desde que llegaste, cien gatos te siguen en silencio. Esperan algo de ti.',
+    opciones: [
+      { label: 'Darles de comer', risk: '−20 Ergios: +15 de vida y +8 de Cordura', need: { ergios: 20 }, salidas: [
+        { p: 1, e: { texto: 'Los gatos ronronean. Esa noche duermes como nunca.', ergios: -20, hp: 15, cordura: 8 } },
+      ] },
+      { label: 'Espantarlos', risk: '50 %: no pasa nada · 50 %: se llevan 2 dientes y te dejan Fatiga (3 combates)', salidas: [
+        { p: 0.5, e: { texto: 'Los gatos se van, ofendidos.' } },
+        { p: 0.5, e: { texto: 'En la mañana te faltan dos dientes. Los gatos te miran desde el tejado.', pierdeDiente: 2, maldicion: ['fatiga', 3] } },
+      ] },
+      IRSE,
+    ],
+  },
+);
 export const RELATO = (id?: string) => RELATOS.find((r) => r.id === id);

@@ -6,7 +6,8 @@ import { RARAS_ABISMO } from '../data/abismo_modo';
 import { CARDS } from '../data/cards';
 import { base, cristalDe, defDiente, esParasito, HUECOS, ponerDiente, sortearDientes, sortearParasito } from '../data/dientes';
 import { Efecto, OpcionRelato, RELATO } from '../data/relatos';
-import { addCard, addEntropia, aplicarSarro, Game, logEvent, saveLocal, syncRun } from '../state';
+import { EFFECTS } from '../data/effects';
+import { addCard, addEffect, addEntropia, aplicarSarro, Game, logEvent, saveLocal, syncRun } from '../state';
 import { topBar } from '../ui/hud';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
@@ -77,6 +78,17 @@ export function aplicarEfecto(e: Efecto): string {
         partes.push(`${CARDS[x.id].name} → 2 Susurros`);
       }
     }
+  }
+  if (e.pierdeDiente) {
+    // v0.48 · pierdes dientes al azar (los parásitos no se sueltan)
+    const dent = r.dientes ?? [];
+    const idx = Phaser.Utils.Array.Shuffle(dent.map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0)).slice(0, e.pierdeDiente);
+    if (idx.length) { partes.push(`Pierdes: ${idx.map((i) => defDiente(dent[i]!).nombre).join(', ')}`); idx.forEach((i) => { dent[i] = null; }); }
+    else partes.push('No tenías dientes que perder.');
+  }
+  if (e.maldicion) {
+    addEffect(e.maldicion[0], e.maldicion[1]);
+    partes.push(`Maldición: ${EFFECTS[e.maldicion[0]].name} (${e.maldicion[1]} combates)`);
   }
   aplicarSarro(r);
   saveLocal();
