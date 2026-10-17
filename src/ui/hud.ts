@@ -1,6 +1,8 @@
 import { fmtPuntos } from '../data/puntaje';
 import { ENTROPIA, nivelEntropia } from '../data/abismo';
-import { corduraDe, luzDe, SEMAFORO } from '../data/abismo_modo';
+import { corduraDe, luzDe, SEMAFORO, TRAMOS } from '../data/abismo_modo';
+import { alineacion, DIENTES, HUECOS } from '../data/dientes';
+import { dentaduraOverlay, resumenCosmos } from './dentadura';
 import { ENCARGOS } from '../data/encargos';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
@@ -113,7 +115,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
       hud.setHp(r.hp, r.maxHp);
       const pf = pisosDe(r.acto ?? 1);
       // en el Abismo: T1–T4 = tramo; ∞5, ∞6… = modo infinito
-      const etiqueta = r.modo === 'abismo' ? ((r.tramo ?? 1) > 4 ? `∞${r.tramo}` : `T${r.tramo ?? 1}`) : ROMAN[(r.acto ?? 1) - 1] ?? 'I';
+      const etiqueta = r.modo === 'abismo' ? ((r.tramo ?? 1) > TRAMOS ? `∞${r.tramo}` : `T${r.tramo ?? 1}`) : ROMAN[(r.acto ?? 1) - 1] ?? 'I';
       floorT.setText(`${etiqueta}·${Math.min(r.floor + 1, pf + 1)}/${pf + 1}`);
       scoreT.setText(`✦${fmtPuntos(r.score)}`);
       ergT.setText(`${r.ergios}`);
@@ -183,6 +185,18 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         const num = txt(s, 0, 124, `${cor}`, 20, luz.css).setOrigin(0.5, 0).setStroke('#000', 3);
         const lab = txt(s, 0, 144, 'Cordura', 14, CSS.dim).setOrigin(0.5, 0);
         sema.add([num, lab]);
+        // la Dentadura (reliquias del Abismo): clic para verla
+        const dent = r.dientes ?? [];
+        const nd = dent.filter(Boolean).length;
+        const bd = s.add.graphics();
+        frame(bd, -20, 172, 40, 50, 0x1a080c, alineacion(dent) ? 0xffd060 : 0x8a3040, 0.95);
+        const di = s.add.image(0, 190, 'i_diente').setScale(2.4);
+        const dn = txt(s, 0, 204, `${nd}/${HUECOS}`, 13, '#f0c8c8').setOrigin(0.5, 0);
+        const dz = s.add.zone(0, 197, 40, 50).setInteractive({ useHandCursor: true });
+        dz.on('pointerdown', () => { tip.hide(); dentaduraOverlay(s); });
+        const cos = resumenCosmos(dent);
+        tip.attach(dz, 'La Dentadura', `${nd ? dent.filter((x): x is string => !!x).map((id) => `· ${DIENTES[id].nombre}`).join('\n') : 'Sin dientes todavía.'}${cos ? `\n\nCosmos: ${cos}` : ''}\n(clic para verla)`, 20);
+        sema.add([bd, di, dn, dz]);
         const z = s.add.zone(0, 60, 40, 190).setInteractive();
         sema.add(z);
         tip.attach(z, `Cordura ${cor}/100 · ${luz.nombre}`,

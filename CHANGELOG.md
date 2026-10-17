@@ -2,6 +2,17 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.42.0 · La Dentadura: dientes, cosmos y estados nuevos (beta, sólo Modo profesor)
+
+- **La Dentadura de Montemayor (reliquias):** las reliquias del Abismo son dientes que se ponen en una dentadura de 8 huecos (idea de *Sol Cesto*). Al empezar salen 4 y te quedas con 2. Se consiguen más en el nuevo nodo **Sacamuelas Ciego** (ícono de diente en el mapa; eliges 1 de 3 o pagas 25 Ergios para volver a tirar) y al vencer a un jefe. **El orden importa:** el Diente Espejo copia al de su izquierda. Se ve con el botón de diente bajo el semáforo.
+- **El cosmos (como los planetas de Balatro):** los dientes Astro suben de nivel una «constelación»: Marte (Ataques +3 por nivel), Luna (Defensas +3), Mercurio (Habilidades), Saturno (cartas del Abismo ×1.25), Júpiter (masa al empezar) y el Sol Negro (×1.1 por cada Astro). **Tres Astros seguidos = Alineación planetaria: tus ataques ×1.5.**
+- **18 dientes** en total, incluido un diente maldito (Diente Podrido: +1 J por turno a cambio de Cordura).
+- **Pactos:** ahora son 10 (nuevos: Péndulo, Sonrisa, Estelar, Palanca y Cafeína) y el libro te ofrece **2** para elegir 1.
+- **Estados nuevos** y menos Confusión: **Aturdido** (si un golpe aturdidor te hace daño, pierdes tu siguiente turno; bloquéalo completo para evitarlo), **Hemorragia** (cada carta que juegas te quita 1 de vida durante unos turnos) y **Vértigo** (robas cartas de menos). La Confusión queda en el Vigía, el Geómetra herido, Nyarlathotep y la página «La Confusión».
+- **Más corto antes del infinito:** 2 tramos de 8 pisos (antes 4 de 6). El tramo 1 termina con un jefe al azar y el tramo 2 con un Primigenio. El diario aparece a mitad de cada tramo, al empezar el tramo 2 y antes del Primigenio.
+- **Arreglado:** con poca Cordura, las cartas de los sobres se veían como una raya ilegible (el efecto de «letras borradas» fallaba con las cartas de muestra y reemplazaba todo el texto).
+- La Guía del Abismo tiene una página nueva («La Dentadura») y «Estados alterados» en lugar de «Confusión».
+
 ## v0.41.1 · Arreglo: «Lock timeout» al entrar
 
 - Corregido: al entrar (o al guardar), a veces salía «Lock timeout: another process was holding the lock for too long». Cada petición tomaba el candado del servidor mientras leía hojas completas; con muchos alumnos jugando a la vez, algunas esperaban demasiado.

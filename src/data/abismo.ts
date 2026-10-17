@@ -92,7 +92,9 @@ export function nivelEntropia(e: number) {
 export function borrarTexto(s: string, e: number, semilla = 1) {
   if (e < ENTROPIA.inquieto) return s;
   const p = Math.min(0.35, (e - ENTROPIA.inquieto + 10) / 200);
-  let x = (semilla * 9301 + 49297) % 233280; // azar fijo por carta (no parpadea)
+  // azar fijo por carta (no parpadea). v0.42: las cartas de sobres y recompensas tienen uid negativo;
+  // sin el «+ 233280» el azar salía negativo y TODA la carta se volvía basura ilegible.
+  let x = (((Math.round(semilla) * 9301 + 49297) % 233280) + 233280) % 233280;
   const rnd = () => (x = (x * 9301 + 49297) % 233280) / 233280;
   return s.replace(/[^\s\n]/g, (c) => (rnd() < p ? GLIFOS[Math.floor(rnd() * GLIFOS.length)] : c));
 }

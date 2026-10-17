@@ -1,4 +1,5 @@
 import { ENEMIES } from '../data/enemies';
+import { PISOS_TRAMO, TRAMOS } from '../data/abismo_modo';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { FORM_URL, W, H } from '../config';
@@ -155,7 +156,7 @@ export class EndScene extends Phaser.Scene {
     const tip = new Tooltip(this);
     const F = T.final.filas;
     const rows: [string, string | number][] = [
-      [F[0], run.modo === 'abismo' ? `${(run.tramo ?? 1) > 4 ? `Profundidad ${run.tramo}` : `Tramo ${run.tramo ?? 1}/4`} · piso ${Math.min(run.floor + 1, 7)}/7` : (run.acto ?? 1) >= 4 ? `${TOTAL_PISOS}/${TOTAL_PISOS} + Núcleo ${run.floor + 1}/${PISOS_NUCLEO + 1}` : `${((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor}/${TOTAL_PISOS}`],
+      [F[0], run.modo === 'abismo' ? `${(run.tramo ?? 1) > TRAMOS ? `Profundidad ${run.tramo}` : `Tramo ${run.tramo ?? 1}/${TRAMOS}`} · piso ${Math.min(run.floor + 1, PISOS_TRAMO + 1)}/${PISOS_TRAMO + 1}` : (run.acto ?? 1) >= 4 ? `${TOTAL_PISOS}/${TOTAL_PISOS} + Núcleo ${run.floor + 1}/${PISOS_NUCLEO + 1}` : `${((run.acto ?? 1) - 1) * (FLOORS + 1) + run.floor}/${TOTAL_PISOS}`],
       [F[1], run.stats.combates],
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],

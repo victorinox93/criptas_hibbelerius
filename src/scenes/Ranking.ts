@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { TRAMOS } from '../data/abismo_modo';
 import { api, isOnline, RankRow } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -139,7 +140,7 @@ export class RankingScene extends Phaser.Scene {
       if (this.modo === 'abismo') {
         // profundidad: tramo alcanzado (5+ = modo infinito)
         const tramo = Math.floor(p.piso / 7) + 1;
-        R(txt(this, COLS[5], y + 8, tramo > 4 ? `∞ ${tramo}` : `Tramo ${tramo}`, 24, tramo > 4 ? '#c8a8ff' : CSS.bone));
+        R(txt(this, COLS[5], y + 8, tramo > TRAMOS ? `∞ ${tramo}` : `Tramo ${tramo}`, 24, tramo > TRAMOS ? '#c8a8ff' : CSS.bone));
       } else R(txt(this, COLS[5], y + 8, p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} +IV` : `${p.piso}/${TOTAL_PISOS}`, 24, p.piso > TOTAL_PISOS ? '#e0a860' : CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
       R(txt(this, COLS[6], y + 10, `${p.victorias}${g}`, 20, p.victorias ? CSS.green : CSS.dim));

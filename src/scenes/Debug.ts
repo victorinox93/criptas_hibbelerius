@@ -124,14 +124,14 @@ export class DebugScene extends Phaser.Scene {
     btn(830, 396, 180, 'Transición II→III', () => this.go(2, 'ActTransition', { to: 3 }));
 
     // ── El Abismo de los Ejes (beta: sólo en el Modo profesor) ──
-    // probar un jefe del Abismo directamente (Primigenios en el tramo 4)
+    // probar un jefe del Abismo directamente (Primigenios en el tramo 2)
     const JA = [...JEFES_TRAMO, ...PRIMIGENIOS];
     const ja = JA[OPTS.jefeAbismo % JA.length];
     btn(790, 438, 190, `Jefe: ${JEFES_ABISMO[ja].nombre.replace(/^(El|La) /, '')}`, () => {
-      this.go(5, 'Combat', { kind: 'boss', floor: 6 });
+      this.go(5, 'Combat', { kind: 'boss', floor: 8 });
       const r = Game.run!;
       r.jefe = ja;
-      r.tramo = PRIMIGENIOS.includes(ja) ? 4 : 1;
+      r.tramo = PRIMIGENIOS.includes(ja) ? 2 : 1;
       r.jefesVistos = [ja];
       saveLocal();
     }, false, 14);

@@ -78,6 +78,7 @@ export interface PactoDef {
   regla: string;
   mazo: (clase: string) => string[];
   vidaMax?: number; // cambio de Vida máxima
+  dientes?: number; // cuántos dientes te quedas al empezar (normal: 2 de 4)
 }
 const sinDefensas = (clase: string, n: number) => {
   const d = [...starterDeck(clase)];
@@ -93,7 +94,15 @@ export const PACTOS: PactoDef[] = [
   { id: 'volante', nombre: 'Pacto del Volante', regla: 'Los Joules que no uses se guardan para el siguiente turno (máx. 3).', mazo: (c) => [...starterDeck(c), 'radioGiro'] },
   { id: 'hueco', nombre: 'Pacto Hueco', regla: 'Mazo de 8 cartas con una carta rara de Lámina, pero −8 de Vida máxima.', mazo: (c) => [...sinDefensas(c, 2)], vidaMax: -8 },
   { id: 'inercia', nombre: 'Pacto de la Inercia', regla: 'Empiezas cada combate con 6 de Bloqueo y tu mazo trae Momento de Inercia.', mazo: (c) => [...starterDeck(c), 'momentoInercia'] },
+  // v0.42
+  { id: 'pendulo', nombre: 'Pacto del Péndulo', regla: 'Va y viene: en tus turnos impares +1 J; en los pares robas 1 carta más.', mazo: (c) => [...starterDeck(c), 'ejesParalelos'] },
+  { id: 'sonrisa', nombre: 'Pacto de la Sonrisa', regla: 'Al empezar te quedas con 3 dientes en lugar de 2, pero −10 de Vida máxima.', mazo: (c) => [...starterDeck(c), 'dclTentaculos'], vidaMax: -10, dientes: 3 },
+  { id: 'estelar', nombre: 'Pacto Estelar', regla: 'Empiezas con un Astro en tu dentadura y los Astros te salen el doble de seguido.', mazo: (c) => [...starterDeck(c), 'calamarTorque'] },
+  { id: 'palanca', nombre: 'Pacto de la Palanca', regla: 'Brazo largo: tu primer Ataque de cada turno hace +4 de daño.', mazo: (c) => [...starterDeck(c), 'enLibras'] },
+  { id: 'cafeina', nombre: 'Pacto de la Cafeína', regla: '+1 J en tu primer turno de cada combate. Tu mazo trae 2 Cafés del Abismo.', mazo: (c) => [...starterDeck(c), 'cafeAbismo', 'cafeAbismo'] },
 ];
+/** Cuántos Pactos te ofrece el libro (eliges 1) */
+export const PACTOS_OFRECIDOS = 2;
 export const PACTO = (id?: string) => PACTOS.find((p) => p.id === id);
 /** Cordura extra por el Pacto ciego (mazo al azar) */
 export const PACTO_CIEGO_CORDURA = 15;
@@ -192,14 +201,15 @@ export function rarezaDe(id: string) {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  EL DESCENSO (v0.41): 4 tramos de 6 pisos. Cada tramo termina con un jefe
-//  sacado al azar; en el tramo 4 te toca un Primigenio. Después: ¿seguir bajando?
+//  EL DESCENSO (v0.42): 2 tramos de 8 pisos. El tramo 1 termina con un jefe
+//  sacado al azar; en el tramo 2 te toca un Primigenio. Después: ¿seguir bajando?
 //  (modo infinito, ranking propio). Criaturas de cuentos de dominio público
 //  (Lovecraft antes de 1929 y R. W. Chambers, 1895); los diseños son nuestros.
 // ════════════════════════════════════════════════════════════════
-export const TRAMOS = 4;
-export const PISOS_TRAMO = 6;
-export const NOMBRE_TRAMO = ['Los Muelles Inclinados', 'La Catedral del Volante', "R'lyeh Invertida", 'El Trono de los Primigenios'];
+export const TRAMOS = 2;
+/** Pisos de cada tramo (sin contar al jefe). También en src/state.ts → PISOS_TRAMO_ABISMO */
+export const PISOS_TRAMO = 8;
+export const NOMBRE_TRAMO = ['Los Muelles Inclinados', "R'lyeh Invertida · el Trono de los Primigenios"];
 export const nombreTramo = (t: number) => (t <= TRAMOS ? NOMBRE_TRAMO[t - 1] : `El Abismo sin Fondo · profundidad ${t}`);
 
 export interface JefeInfo {
@@ -212,12 +222,12 @@ export interface JefeInfo {
 }
 export const JEFES: Record<string, JefeInfo> = {
   geometra: { nombre: 'El Geómetra No Euclidiano', titulo: 'Jefe del tramo', tema: 'Centroides', desventaja: 'Con menos de la mitad de vida suelta Vértices y te CONFUNDE.', origen: 'Original de este juego' },
-  dagon: { nombre: 'Padre Dagón', titulo: 'Jefe del tramo', tema: 'Presión y flotación (P = ρ·g·h)', desventaja: 'MAREA ALTA: cada 3 turnos tus cartas de Bloqueo dan la mitad.', origen: '«Dagon», H. P. Lovecraft (1919)' },
+  dagon: { nombre: 'Padre Dagón', titulo: 'Jefe del tramo', tema: 'Presión y flotación (P = ρ·g·h)', desventaja: 'MAREA ALTA: cada 3 turnos tus cartas de Bloqueo dan la mitad. Su Ola te ATURDE si te alcanza.', origen: '«Dagon», H. P. Lovecraft (1919)' },
   colorCielo: { nombre: 'El Color que Cayó del Cielo', titulo: 'Jefe del tramo', tema: 'Trabajo y energía', desventaja: 'Te roba 1 J al inicio de cada turno.', origen: '«The Colour Out of Space», H. P. Lovecraft (1927)' },
-  bailarina: { nombre: 'La Bailarina Ahogada', titulo: 'Jefe del tramo', tema: 'Momento angular (I₁ω₁ = I₂ω₂)', desventaja: 'Cuando recoge los brazos gira más rápido y golpea 4 veces seguidas.', origen: 'Original de este juego' },
+  bailarina: { nombre: 'La Bailarina Ahogada', titulo: 'Jefe del tramo', tema: 'Momento angular (I₁ω₁ = I₂ω₂)', desventaja: 'Con los brazos abiertos su golpe te ATURDE (pierdes un turno si no lo bloqueas); con los brazos recogidos golpea 4 veces y te da Vértigo.', origen: 'Original de este juego' },
   dunwich: { nombre: 'El Engendro de Dunwich', titulo: 'Jefe del tramo', tema: 'Centro de masa', desventaja: 'Es INVISIBLE: no ves sus intenciones, sólo sus huellas.', origen: '«The Dunwich Horror», H. P. Lovecraft (1929)' },
   nyarlathotep: { nombre: 'Nyarlathotep', titulo: 'Primigenio · el Caos que Repta', tema: 'Momento de inercia', desventaja: 'La primera carta que robas cada turno se descarta. Cambia de forma: compacto (muchos golpes) o extendido (un golpe enorme).', origen: '«Nyarlathotep», H. P. Lovecraft (1920)', primigenio: true },
-  cthulhu: { nombre: 'Cthulhu', titulo: "Primigenio · el Durmiente de R'lyeh", tema: 'ΣM = I·α y H = I·ω', desventaja: 'Pierdes 5 de Cordura cada turno. Despierta en 3 fases.', origen: '«The Call of Cthulhu», H. P. Lovecraft (1928)', primigenio: true },
+  cthulhu: { nombre: 'Cthulhu', titulo: "Primigenio · el Durmiente de R'lyeh", tema: 'ΣM = I·α y H = I·ω', desventaja: 'Pierdes 5 de Cordura cada turno. Despierta en 3 fases; en la última, su golpe te ATURDE.', origen: '«The Call of Cthulhu», H. P. Lovecraft (1928)', primigenio: true },
   yogSothoth: { nombre: 'Yog-Sothoth', titulo: 'Primigenio · la Llave y la Puerta', tema: 'Ejes paralelos (I = I₀ + m·d²)', desventaja: 'Sólo robas 4 cartas por turno.', origen: '«The Dunwich Horror», H. P. Lovecraft (1929)', primigenio: true },
   hastur: { nombre: 'Hastur', titulo: 'Primigenio · el Rey de Amarillo', tema: 'Impulso y cantidad de movimiento', desventaja: 'Tus cartas de Ataque cuestan +1 J.', origen: '«El Rey de Amarillo», R. W. Chambers (1895)', primigenio: true },
 };
@@ -232,13 +242,13 @@ export function elegirJefe(tramo: number, vistos: string[] = []): string {
   return de[Math.floor(Math.random() * de.length)];
 }
 
-/** Dificultad por tramo: +10 % por tramo hasta el 4; en el infinito, ×1.2 por cada tramo extra */
+/** Vida enemiga por tramo: tramo 2 ×1.2; en el infinito, ×1.2 más por cada profundidad extra */
 export function escalaTramo(t = 1) {
-  return t <= TRAMOS ? 1 + 0.1 * (t - 1) : 1.3 * Math.pow(1.2, t - TRAMOS);
+  return t <= TRAMOS ? 1 + 0.2 * (t - 1) : 1.2 * Math.pow(1.2, t - TRAMOS);
 }
-/** Daño por tramo: sube más despacio que la vida (+5 % por tramo; en el infinito, ×1.15 por tramo extra) */
+/** Daño por tramo: sube más despacio que la vida (tramo 2 ×1.1; en el infinito, ×1.15 por profundidad extra) */
 export function escalaDano(t = 1) {
-  return t <= TRAMOS ? 1 + 0.05 * (t - 1) : 1.15 * Math.pow(1.15, t - TRAMOS);
+  return t <= TRAMOS ? 1 + 0.1 * (t - 1) : 1.1 * Math.pow(1.15, t - TRAMOS);
 }
 /** Multiplicador de puntaje en el infinito (crece con la profundidad) */
 export const multPuntaje = (t = 1) => (t <= TRAMOS ? 1 : 1 + 0.5 * (t - TRAMOS));
