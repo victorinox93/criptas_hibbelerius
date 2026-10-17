@@ -361,9 +361,9 @@ export class AbismoScene extends Phaser.Scene {
         frame(g, -100, 0, 200, 200, d.tipo === 'parasito' ? 0x0e140a : 0x140a0e, cristalDe(id) !== undefined ? 0xe8fbff : rz.borde, 0.97);
         c.add(g);
         c.add(txt(this, 0, 6, etiquetaDiente(id), 13, rz.css).setOrigin(0.5, 0));
-        c.add(dibujarDiente(this, 0, 52, id, 1.1));
-        c.add(txt(this, 0, 92, d.nombre, 17, rz.css, { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
-        c.add(txt(this, 0, 116, d.texto + (cristalDe(id) !== undefined ? `\n💎 Doble efecto · se rompe en ${cristalDe(id)} combates` : ''), 13, CSS.bone, { align: 'center', wordWrap: { width: 188 } }).setOrigin(0.5, 0));
+        c.add(dibujarDiente(this, 0, 62, id, 1.0));
+        c.add(txt(this, 0, 100, d.nombre, 17, rz.css, { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
+        c.add(txt(this, 0, 122, d.texto + (cristalDe(id) !== undefined ? `\n💎 Doble efecto · se rompe en ${cristalDe(id)} combates` : ''), 13, CSS.bone, { align: 'center', wordWrap: { width: 188 } }).setOrigin(0.5, 0));
         c.setSize(200, 200).setInteractive(new Phaser.Geom.Rectangle(-100, 0, 200, 200), Phaser.Geom.Rectangle.Contains);
         c.on('pointerover', () => this.tip.show(x < W / 2 ? x + 110 : x - 420, 160, d.nombre, `${d.texto}${textoCristal(id)}\n${d.lore}`));
         c.on('pointerout', () => this.tip.hide());
@@ -719,6 +719,7 @@ export class AbismoScene extends Phaser.Scene {
     if (p?.vidaMax) { r.maxHp += p.vidaMax; r.hp = r.maxHp; }
     r.dientes = [...this.dientesIni];
     while (r.dientes.length < HUECOS) r.dientes.push(null);
+    aplicarSarro(r);
     if (!p) r.entropia = Math.max(0, r.entropia - PACTO_CIEGO_CORDURA);
     // efectos iniciales de la página del Necronomicón
     switch (r.necro) {
