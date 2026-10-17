@@ -160,6 +160,7 @@ export interface Codex {
   expediciones?: number; // expediciones terminadas (muerte o victoria); abre la Tienda de Layla
   bajas?: Record<string, number>; // v0.31.2: enemigos vencidos por id (pantalla de Estadísticas)
   diag?: { pre?: number; post?: number; total?: number; version?: number }; // v0.32: diagnóstico inicial y final (aciertos)
+  diario?: number; // v0.45: última hoja del diario de Montemayor encontrada (índice en PROLOGO; la 0 se lee al empezar)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
 
@@ -258,7 +259,7 @@ export function pisosDe(acto = 1) {
   return acto === 5 ? PISOS_TRAMO_ABISMO : acto >= 4 ? PISOS_NUCLEO : FLOORS;
 }
 /** Pisos de cada tramo del Abismo (= PISOS_TRAMO de src/data/abismo_modo.ts) */
-export const PISOS_TRAMO_ABISMO = 8;
+export const PISOS_TRAMO_ABISMO = 10;
 /** Expediciones terminadas. Para cuentas anteriores a v0.29 (sin contador) se estima con lo que ya hay. */
 export function expediciones() {
   const c = Game.codex;
@@ -321,6 +322,15 @@ export function sumarAfinidad(fig: string) {
   codexDirty = true;
 }
 /** Cuenta una victoria sobre Hibbelerius (los que lo vencieron antes de v0.20 cuentan como 1) */
+/** v0.45 · Siguiente hoja del diario que falta encontrar (null si ya están todas) y la marca como encontrada */
+export function encontrarHoja(total: number): number | null {
+  const i = (Game.codex.diario ?? 0) + 1;
+  if (i >= total) return null;
+  Game.codex.diario = i;
+  codexDirty = true;
+  return i;
+}
+
 export function contarHib() {
   Game.codex.hib = (Game.codex.hib ?? ((Game.codex.flags ?? []).includes('acto3') ? 1 : 0)) + 1;
   codexDirty = true;
@@ -461,7 +471,7 @@ export function generateMap(acto = 1): MapNode[] {
     fogata: 2 + (Math.random() < 0.5 ? 1 : 0), // sin contar la fila de fogatas antes del jefe
     mercader: acto === 5 ? 2 : 3,
     taberna: 2,
-    elite: acto === 5 ? 3 : acto >= 2 ? 5 : 4,
+    elite: acto === 5 ? 4 : acto >= 2 ? 5 : 4,
   };
   const cuenta = (t: NodeType) => list.filter((n) => n.type === t && !(t === 'fogata' && n.floor === FLOORS - 1)).length;
   for (const n of list) n.type = n.floor === FLOORS - 1 ? 'fogata' : 'combate';
@@ -488,9 +498,9 @@ export function generateMap(acto = 1): MapNode[] {
   if (acto === 5) {
     // tramos del Abismo (8 pisos): sin taberna; en su lugar, el Sacamuelas Ciego (dientes)
     for (const n of list) if (n.type === 'taberna') n.type = 'boca';
-    ensure('elite', 2, [3, FLOORS - 2]);
-    ensure('runa', 1, [1, FLOORS - 3]);
-    ensure('evento', 2, [1, FLOORS - 2]);
+    ensure('elite', 3, [3, FLOORS - 2]);
+    ensure('runa', 2, [1, FLOORS - 3]);
+    ensure('evento', 3, [1, FLOORS - 2]);
     ensure('mercader', 1, [2, FLOORS - 2]);
     ensure('santuario', 1, [1, FLOORS - 3]);
     ensure('boca', 1, [2, FLOORS - 2]);

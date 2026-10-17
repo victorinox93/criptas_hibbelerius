@@ -1,13 +1,13 @@
-import { JEFES as JEFES_ABISMO, nombreTramo, PROLOGO, TRAMOS } from '../data/abismo_modo';
+import { HOJAS_DEBILIDAD, HOJAS_POR_EXPEDICION, JEFES as JEFES_ABISMO, nombreTramo, PROB_HOJA, PROLOGO, TRAMOS } from '../data/abismo_modo';
 import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
-import { hojaDiario, paginasHasta } from '../ui/diario';
+import { hojaDiario } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { addEntropia, addErgios, FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
+import { addEntropia, encontrarHoja, addErgios, FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { cargarHuellas, datosDe, HONRA_ERGIOS, MAX_LAPIDAS, usarHuella } from '../huellas';
 import { ENEMIES } from '../data/enemies';
@@ -120,19 +120,26 @@ export class MapScene extends Phaser.Scene {
     if (act5 && run.dientePendiente) this.time.delayedCall(250, () => fadeTo(this, 'Abismo', { clase: run.clase ?? 'caballero', fase: 'colocar' }));
     // la Guía va arriba a la derecha (a la izquierda están los dones de los Ecos)
     if (act5) button(this, W - 62, 62, 100, 28, '? Guía', () => guiaAbismo(this), { size: 17, color: 0x2c5a4e }).setDepth(402);
-    // el diario de Montemayor: aparece una hoja nueva conforme bajas (pisos en PISO_DIARIO)
-    const hayHoja = act5 && (run.diario ?? 1) < paginasHasta(run.tramo ?? 1, run.floor);
-    if (hayHoja) {
-      const i = run.diario ?? 1;
-      run.diario = i + 1;
-      // v0.44: cada hoja es útil: un apunte (pista gratis en una pregunta) y +6 de Cordura;
-      // la última anota el punto débil del Primigenio (empieza con 15 % menos vida)
-      run.apuntes = (run.apuntes ?? 0) + 1;
-      addEntropia(-6);
+    // el diario de Montemayor (v0.45): al volver de un nodo, a veces encuentras una hoja (son raras;
+    // se guardan para siempre y salen en orden). Cada hoja: +1 apunte (pista gratis) y +6 de Cordura.
+    let hayHoja = false;
+    const clave = `hoja:${run.tramo ?? 1}:${run.pos}`;
+    if (act5 && run.pos >= 0 && !(run.seen ?? []).includes(clave)) {
+      (run.seen ??= []).push(clave);
+      const tipo = run.map.find((n) => n.id === run.pos)?.type ?? 'combate';
+      if ((run.diario ?? 0) < HOJAS_POR_EXPEDICION && Math.random() < (PROB_HOJA[tipo] ?? 0.05)) {
+        const i = encontrarHoja(PROLOGO.length);
+        if (i !== null) {
+          hayHoja = true;
+          run.diario = (run.diario ?? 0) + 1;
+          run.apuntes = (run.apuntes ?? 0) + 1;
+          addEntropia(-6);
+          const debil = run.diario === HOJAS_DEBILIDAD;
+          this.time.delayedCall(500, () => hojaDiario(this, i, () => this.scene.restart(), true,
+            `Apunte de Montemayor: +1 pista gratis (tienes ${run.apuntes}) · +6 de Cordura${debil ? `\n${HOJAS_DEBILIDAD} hojas en esta expedición: conoces el punto débil del Primigenio (−15 % de vida).` : ''}`));
+        }
+      }
       saveLocal();
-      const ultima = i + 1 >= PROLOGO.length;
-      this.time.delayedCall(500, () => hojaDiario(this, i, () => this.scene.restart(), true,
-        `Apunte de Montemayor: +1 pista gratis (tienes ${run.apuntes}) · +6 de Cordura${ultima ? '\nAnotó el punto débil del Primigenio: empezará con 15 % menos vida.' : ''}`));
     }
     title(this, W / 2, 66, act5 ? `${(run.tramo ?? 1) > TRAMOS ? 'Abismo sin fondo' : `Tramo ${run.tramo ?? 1} de ${TRAMOS}`} · ${nombreTramo(run.tramo ?? 1).replace(/^El Abismo sin Fondo · /, '')}` : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 

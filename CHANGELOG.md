@@ -2,6 +2,14 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.45.0 · El diario completo y tramos más largos (beta, sólo Modo profesor)
+
+- **16 hojas del diario de Montemayor** (antes 5): son registros de lo que encontró en el Cerro de la Silla y de su descenso a la locura (los dientes en fila, el muelle de los acólitos, la carta al astrónomo de Providence, el reloj que se atrasa…).
+- **Son raras:** después de cada nodo hay una probabilidad pequeña de encontrar una (7 % en combates, 30 % en élites, 18 % en encuentros…), con un máximo de 3 por expedición. Se guardan **para siempre** y salen en orden, así que la historia se completa a lo largo de varias expediciones.
+- Cada hoja sigue dando un apunte (pista gratis) y +6 de Cordura. Con 2 hojas en la misma expedición conoces el punto débil del Primigenio (−15 % de vida).
+- En la pantalla de inicio del Abismo se ve cuántas hojas llevas y hay un botón **«Leer el diario»** para releerlas.
+- **Tramos más largos:** 10 pisos antes del jefe (antes 8), con al menos 3 élites, 3 encuentros y 2 altares por tramo.
+
 ## v0.44.0 · Más reto, estados visibles y el diario útil (beta, sólo Modo profesor)
 
 - **Más difícil:** los enemigos del Abismo tienen +50 % de vida (élites +45 %, jefes +30 %), el tramo 2 suma otro 30 % y pegan un poco más fuerte (daño ×1.25).

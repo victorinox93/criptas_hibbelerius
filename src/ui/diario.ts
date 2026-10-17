@@ -7,21 +7,9 @@ import { button, frame, txt } from './widgets';
 
 // ════════════════════════════════════════════════════════════════
 //  EL DIARIO DEL ERUDITO MONTEMAYOR, por partes.
-//  La hoja 1 se lee al empezar; las otras aparecen en el mapa a
-//  mitad de cada tramo, al empezar el tramo 2 y antes del Primigenio (paginasHasta). El texto
-//  está en PROLOGO (src/data/abismo_modo.ts).
+//  La hoja 1 se lee al empezar; las otras 15 son raras: aparecen al azar en el mapa
+//  (src/scenes/MapScene.ts, PROB_HOJA) y se guardan en el códice. El texto está en PROLOGO.
 // ════════════════════════════════════════════════════════════════
-
-/**
- * Cuántas hojas debería haber leído el jugador (2 tramos de 8 pisos):
- * 1 al empezar · 2 a mitad del tramo 1 · 3 al empezar el tramo 2 · 4 a mitad del tramo 2 ·
- * 5 justo antes del Primigenio.
- */
-export function paginasHasta(tramo: number, piso: number, pisosTramo = 8) {
-  const mitad = piso >= Math.floor(pisosTramo / 2);
-  const n = tramo <= 1 ? (mitad ? 2 : 1) : 3 + (mitad ? 1 : 0) + (piso >= pisosTramo ? 1 : 0);
-  return Math.min(PROLOGO.length, n);
-}
 
 /**
  * Dibujo a tinta del Cerro de la Silla (la «silla» entre los dos picos) con la cueva marcada.
