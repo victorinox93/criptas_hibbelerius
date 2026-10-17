@@ -302,3 +302,17 @@ export function sortearMutador(antes?: string) {
 /** Cuántos dientes muerde (desactiva) cada jefe del Abismo al empezar la pelea */
 export const MORDIDAS_JEFE = 1;
 export const MORDIDAS_PRIMIGENIO = 2;
+
+/**
+ * v0.48 · CONDICIONES DE JEFE: al empezar la pelea, cada jefe del Abismo impone una al azar
+ * (se ve en el resumen antes de pelear). Sus efectos están en Combat.ts (busca «condJefe»).
+ */
+export interface CondicionJefe { id: string; nombre: string; texto: (prim: boolean) => string }
+export const CONDICIONES_JEFE: CondicionJefe[] = [
+  { id: 'mordida', nombre: 'Mordida', texto: (p) => `Te muerde ${p ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE} diente(s) al azar: no funcionan en esta pelea.` },
+  { id: 'sinDientes', nombre: 'Boca Cerrada', texto: () => 'NINGÚN diente de tu dentadura funciona en esta pelea.' },
+  { id: 'sinDefensa', nombre: 'Sin Defensa', texto: () => 'Tus cartas de Defensa no dan Bloqueo en esta pelea (otros Bloqueos sí).' },
+  { id: 'sinHabilidades', nombre: 'Mente en Blanco', texto: () => 'No puedes jugar cartas de Habilidad en esta pelea.' },
+  { id: 'sinEdiciones', nombre: 'Opacidad', texto: () => 'Las ediciones de tus cartas (Lámina, Holográfica, Polícroma, Cristal) no hacen nada.' },
+];
+export const CONDICION_JEFE = (id?: string) => CONDICIONES_JEFE.find((c) => c.id === id);

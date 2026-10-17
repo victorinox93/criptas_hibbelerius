@@ -2,6 +2,26 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.48.0 · Imparables, condiciones de jefe y relatos con castigo (beta)
+
+- **Enemigos IMPARABLES:** la Madre Hidra, el Engendro de Dunwich, Cthulhu y Yog-Sothoth tienen Inercia (su golpe crece cada turno) pero ningún golpe los detiene, aunque F ≥ umbral. Hay que matarlos rápido o aguantar con Bloqueo.
+- **Condiciones de jefe:** cada jefe del Abismo impone una al azar (se ve en el resumen antes de pelear y se anuncia en grande):
+  - Mordida: 1 diente (2 contra Primigenios) no funciona.
+  - Boca Cerrada: ningún diente funciona.
+  - Sin Defensa: tus cartas de Defensa no dan Bloqueo.
+  - Mente en Blanco: no puedes jugar Habilidades.
+  - Opacidad: las ediciones de tus cartas no hacen nada.
+- **3 Relatos nuevos con castigo** (cuentos de Lovecraft de 1920 y 1924):
+  - «El sabueso»: un amuleto que da un diente legendario y la maldición **El Sabueso te sigue** (−5 de vida al empezar cada combate, 4 combates); o una pregunta en la que, si fallas, pierdes un diente.
+  - «La declaración de Randolph Carter»: si fallas la pregunta pierdes 2 dientes y 10 de vida; si te quedas arriba, −10 de Cordura y Niebla Mental.
+  - «Los gatos de Ulthar»: si los espantas, 50 % de que te roben 2 dientes y te dejen Fatiga.
+- **Música del Abismo:** pistas de «Dark Ambient of 2024» de Cryo Chamber (con permiso de los autores), cortadas y comprimidas (≈12 MB en total):
+  - Mapa e inicio: «Uncertain Direction» (Tineidae & Sole Massif).
+  - Combates (al azar): «After the Annihilation» (Void Stasis) y «Onboard Errors» (Sabled Sun).
+  - Jefes: «In the Kingdom of Parasites» (Caldon Glover).
+  - Relatos y Observatorio: «Cerulean Depths» (Atrium Carceri & Kammarheit).
+  - Están en el Soundtrack y en Créditos (con enlace a cryochamber.bandcamp.com).
+
 ## v0.47.0 · Cosméticos del mito de Lovecraft (beta)
 
 Un premio en el Vestidor por **vencer a cada jefe del Abismo** (llegan solos, con letrero dorado; no se venden):

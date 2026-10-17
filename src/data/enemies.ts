@@ -63,6 +63,7 @@ export interface EnemyDef {
   vuelco?: boolean; // El Abismo: si lo golpeas 2 veces en el mismo turno, se vuelca (pierde su turno)
   hueco?: boolean; // El Abismo: área negativa; los golpes a TODOS le hacen la mitad
   oculto?: boolean; // El Abismo: invisible, sus intenciones no se ven (Engendro de Dunwich)
+  imparable?: boolean; // v0.48 · El Abismo: tiene Inercia pero NO se puede detener (F ≥ umbral no lo para)
   next: (e: EnemyState) => Intent;
 }
 
@@ -455,7 +456,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   hidra: {
-    id: 'hidra', name: 'La Madre Hidra', sprite: 'hidra', scale: 4.4, hp: [88, 96], mass: 200, umbral: 16, act: 5,
+    id: 'hidra', name: 'La Madre Hidra', sprite: 'hidra', scale: 4.4, hp: [88, 96], mass: 200, umbral: 16, act: 5, imparable: true,
     desc: 'Élite. Invoca Pólipos y los protege. Su centro de masa cambia cada vez que nace una cabeza.',
     next: (e) => {
       const p = e.turn % 3;
@@ -519,7 +520,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
       : { kind: 'attack', dmg: 6, hits: 4, vertigo: 1, label: 'Pirueta (I chica, ω grande)' }),
   },
   dunwich: {
-    id: 'dunwich', name: 'El Engendro de Dunwich', sprite: 'dunwich', scale: 3.6, hp: [290, 290], mass: 4000, umbral: 19, act: 5, oculto: true,
+    id: 'dunwich', name: 'El Engendro de Dunwich', sprite: 'dunwich', scale: 3.6, hp: [290, 290], mass: 4000, umbral: 19, act: 5, oculto: true, imparable: true,
     desc: 'Invisible: no ves sus intenciones, sólo sus huellas. Encuentra su centro de masa por las huellas que deja.',
     next: (e) => {
       switch (e.turn % 3) {
@@ -538,7 +539,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   cthulhu: {
-    id: 'cthulhu', name: 'Cthulhu', sprite: 'cthulhu', scale: 3.4, hp: [340, 340], mass: 99999, umbral: 22, act: 5,
+    id: 'cthulhu', name: 'Cthulhu', sprite: 'cthulhu', scale: 3.4, hp: [340, 340], mass: 99999, umbral: 22, act: 5, imparable: true,
     desc: "El Durmiente de R'lyeh. Pierdes 5 de Cordura cada turno. Despierta en 3 fases: ΣM = I·α, R'lyeh se alza, y ya no sueña.",
     next: (e) => {
       const f = e.hp / e.maxHp;
@@ -548,7 +549,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   yogSothoth: {
-    id: 'yogSothoth', name: 'Yog-Sothoth', sprite: 'yogSothoth', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5,
+    id: 'yogSothoth', name: 'Yog-Sothoth', sprite: 'yogSothoth', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5, imparable: true,
     desc: 'La Llave y la Puerta: un amontonamiento de esferas. Sólo robas 4 cartas por turno. Su golpe crece con la distancia al eje: I = I₀ + m·d².',
     next: (e) => {
       switch (e.turn % 3) {

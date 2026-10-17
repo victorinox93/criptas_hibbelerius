@@ -68,7 +68,7 @@ export class AbismoScene extends Phaser.Scene {
     this.layer = this.add.container(0, 0);
     if (data.fase === 'tramo') this.entreTramos();
     else if (data.fase === 'boca') { this.giros = 0; this.sacamuelas('boca', () => fadeTo(this, 'Map')); }
-    else if (data.fase === 'observatorio') this.observatorio();
+    else if (data.fase === 'observatorio') { audio.play('abismo2'); this.observatorio(); }
     else if (data.fase === 'colocar') this.sacamuelas('colocar', () => fadeTo(this, 'Map'));
     else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);

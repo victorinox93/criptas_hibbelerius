@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { Edicion } from '../data/cards';
-import { CORDURA, EDICIONES, MORDIDAS_JEFE, MORDIDAS_PRIMIGENIO, MUTADORES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
+import { CONDICIONES_JEFE, CORDURA, EDICIONES, MUTADORES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
 import { defDiente, HUECOS, MULT_DIENTES_MAX, NOMBRE_RAREZA } from '../data/dientes';
 import { dibujarDiente } from './dentadura';
 import { codexFlag } from '../state';
@@ -110,12 +110,12 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     },
   },
   {
-    titulo: 'Mutadores, mordidas y la Rueda',
-    texto: 'Cada tramo trae una regla distinta (se ve abajo del mapa). Los jefes muerden tu dentadura, y el Sacamuelas tiene una ruleta.',
+    titulo: 'Mutadores, jefes y la Rueda',
+    texto: 'Cada tramo trae una regla distinta (se ve abajo del mapa). Cada jefe impone una condición, y el Sacamuelas tiene una ruleta.',
     dibujo: (s, L) => {
       const filas: [string, string, string][] = [
         ['i_rune', 'Mutador del tramo', MUTADORES.map((m) => m.nombre).join(' · ') + '. Cambia en cada tramo.'],
-        ['i_diente', 'Mordida del jefe', `Al empezar, el jefe desactiva ${MORDIDAS_JEFE} diente al azar (el Primigenio, ${MORDIDAS_PRIMIGENIO}) durante esa pelea.`],
+        ['i_diente', 'Condición del jefe', `Cada jefe impone una al azar: ${CONDICIONES_JEFE.map((c) => c.nombre).join(', ')}. Algunos son IMPARABLES: no se detienen con F ≥ umbral.`],
         ['i_coin', 'Rueda de la Fortuna', 'En el Sacamuelas: diente legendario o raro, Ergios, Cordura, un apunte… o un parásito o nada. Cada giro cuesta más.'],
         ['i_skull', 'Tope del cosmos', `Los multiplicadores de los dientes (R'lyeh, Saturno, Sol Negro y Alineación) se suman y no pasan de ×${MULT_DIENTES_MAX}.`],
       ];

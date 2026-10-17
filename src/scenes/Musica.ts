@@ -24,6 +24,12 @@ const PISTAS: [TrackId, string, string][] = [
   ['santuario', 'Ecos del Pasado', 'Santuario'],
   ['calma', 'Respiro', 'Fogata y encuentros'],
   ['funk', 'Kitty Paw', 'Tienda de Layla'],
+  // v0.48 · El Abismo de los Ejes (Cryo Chamber, «Dark Ambient of 2024»)
+  ['abismo', 'Uncertain Direction', 'Abismo · mapa'],
+  ['combate6', 'After the Annihilation', 'Abismo · combate'],
+  ['combate7', 'Onboard Errors', 'Abismo · combate'],
+  ['jefe5', 'In the Kingdom of Parasites', 'Abismo · jefes'],
+  ['abismo2', 'Cerulean Depths', 'Abismo · relatos'],
 ];
 
 /** Menú → Soundtrack (se desbloquea al vencer a Hibbelerius) */

@@ -6,7 +6,7 @@
 // ════════════════════════════════════════════════════════════════
 import { MUSIC_FILES } from './config';
 
-export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4' | 'funk' | 'abismo' | 'combate6' | 'jefe5';
+export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4' | 'funk' | 'abismo' | 'combate6' | 'jefe5' | 'abismo2' | 'combate7';
 export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
 
 const LEVELS = [0, 0.3, 0.6, 1];
@@ -50,6 +50,9 @@ interface TrackDef {
 // El estilo es «dungeon synth»: lento, modal (eólico, frigio, menor armónico),
 // con drones, coro y clavecín; nada de hi-hats ni cajas electrónicas.
 const TRACKS: Record<TrackId, TrackDef> = {
+  // v0.48: abismo2 y combate7 usan archivos MP3 (config.ts); si faltan, suenan como abismo / combate6
+  get abismo2() { return TRACKS.abismo; },
+  get combate7() { return TRACKS.combate6; },
   // Re menor armónico: la entrada de la cripta
   menu: {
     bpm: 50,
