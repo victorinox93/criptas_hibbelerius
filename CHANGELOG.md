@@ -2,6 +2,17 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.44.0 · Más reto, estados visibles y el diario útil (beta, sólo Modo profesor)
+
+- **Más difícil:** los enemigos del Abismo tienen +50 % de vida (élites +45 %, jefes +30 %), el tramo 2 suma otro 30 % y pegan un poco más fuerte (daño ×1.25).
+- **Estados que se ven:** al quedar Confundido, Aturdido, con Hemorragia o con Vértigo aparece un anuncio grande en el centro durante 2 segundos, y una insignia sobre tu personaje mientras dure. Aturdido muestra estrellitas girando y un aviso «PIERDES ESTE TURNO».
+- **Cartas de Cristal:** al jugarlas, la carta aparece grande en el centro. Si resiste, tiembla y dice «El Cristal resiste»; si se rompe, se agrieta, estalla en pedazos y dice qué carta salió de tu mazo.
+- **Dientes:** la zona para tocar cada hueco es más grande y se marca al pasar el mouse. Si ganas un diente con la dentadura llena (por ejemplo en un Relato), ya no se pierde: al volver al mapa eliges qué diente cambiar o lo tiras. Los huecos que puedes cambiar parpadean.
+- **El diario de Montemayor sirve:** cada hoja que encuentras da un **apunte** (una pista gratis en una pregunta, en lugar de pagar Ergios) y +6 de Cordura. La última hoja anota el punto débil del Primigenio: empieza con 15 % menos vida.
+- **Nueva escena al empezar:** después de la hoja de 1931, «Casi cien años después…»: tú, en una práctica de campo, subes al Cerro de la Silla y encuentras la cueva, el diario, el Necronomicón y la dentadura.
+- **Mapa del Abismo:** los nodos se recorren a la derecha para dejar espacio al semáforo, la dentadura y la carta; el botón «Guía» pasó a la esquina derecha (antes tapaba los dones de los Ecos).
+- Créditos: nueva línea con Lovecraft, R. W. Chambers, Balatro, Sol Cesto, Returnal y Slay the Spire. La guía ya no menciona otros juegos y la ficha de Lovecraft es más corta.
+
 ## v0.43.0 · El Astrónomo de Providence: rarezas, parásitos y relatos (beta, sólo Modo profesor)
 
 - **Rarezas de dientes:** Comunes (60 %), ★ Raros (30 %, aquí van los Astros) y ★★ Legendarios (10 %, con aro dorado). Ahora hay **32 dientes**: 12 comunes, 10 raros, 4 legendarios (Sol Negro, Muela de Ámbar, Diente de R'lyeh, Diente de Diamante), 7 Astros entre ellos (nuevo: Neptuno, «Órbita») y 6 parásitos.
@@ -11,7 +22,6 @@ Lo más reciente primero. El resumen del juego está en el [README](README.md).
   - Nodo nuevo **Observatorio** (telescopio en el mapa): sube 1 nivel una constelación (Ataque, Defensa, Habilidad, Abismo, Gravedad u Órbita) y deja reacomodar la dentadura.
   - **Cartas de Providence:** al empezar cada tramo te manda una misión (vencer una élite sin daño, ganar sin Defensas, 6 cartas en un turno, 2 aciertos seguidos, Alineación, jefe en 6 turnos). Si la cumples, el trofeo del jefe trae 3 dientes legendarios. Se ve bajo la dentadura.
   - Te escribe una frase cada vez que bajas al modo infinito.
-  - Su ficha aclara que tuvo ideas racistas, muy criticadas hoy.
 - **Relatos del Abismo:** los nodos «?» del Abismo ahora son casi siempre situaciones de 7 cuentos de Lovecraft anteriores a 1929: La música de Erich Zann, Herbert West reanimador, Las ratas en las paredes, Aire frío, El templo, El modelo de Pickman y El extraño. Cada uno trae una pregunta de física o una apuesta con su probabilidad.
 - Contra un Primigenio, el trofeo siempre trae al menos un diente legendario.
 - La Guía del Abismo tiene 9 páginas (nueva: «El Astrónomo y los Relatos»).

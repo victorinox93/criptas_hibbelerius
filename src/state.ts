@@ -108,6 +108,8 @@ export interface Run {
   carta?: { id: string; tramo: number; hecho?: boolean; cobrada?: boolean }; // v0.43 · carta del Astrónomo de Providence
   bonoDientesHp?: number; // v0.43 · vida máxima que dan los dientes (Sarro, Branquia), para ajustarla al cambiar la dentadura
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
+  apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor
+  dientePendiente?: string; // v0.44 · diente ganado con la dentadura llena: se acomoda al volver al mapa
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
 }
 

@@ -24,7 +24,7 @@ import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
 import { alineacion, ALINEACION, cuantosAstros, gastarCristal, nivelDiente } from '../data/dientes';
 import { cumplirCarta } from '../data/lovecraft';
-import { CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
+import { PROLOGO, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
@@ -160,6 +160,8 @@ export class CombatScene extends Phaser.Scene {
   private trasAturdir = false; // justo después de perder un turno no te pueden volver a aturdir
   private vertigo = 0; // robas N cartas menos en tu siguiente turno
   private mercurioBono = 0; // Diente de Mercurio: daño guardado para tu siguiente ataque
+  private estadosC: Phaser.GameObjects.Container | null = null; // v0.44 · insignias de estado sobre el héroe
+  private estrellas: Phaser.GameObjects.Container | null = null; // estrellitas girando cuando estás Aturdido
   private golpesTurno = new Map<EnemyState, number>(); // golpes recibidos este turno (Acólito: se vuelca con 2)
   private curAll = false; // la carta en curso golpea a TODOS (Profundo Hueco recibe la mitad)
   private steinerUsed = false; // Página de Steiner: primer ataque del combate ×2
@@ -201,6 +203,8 @@ export class CombatScene extends Phaser.Scene {
     this.trasAturdir = false;
     this.vertigo = 0;
     this.mercurioBono = 0;
+    this.estadosC = null;
+    this.estrellas = null;
     this.discardMode = 0;
     this.cond = null;
     this.marco = 0;
@@ -321,6 +325,7 @@ export class CombatScene extends Phaser.Scene {
       costConfusion.add(c.inst.uid);
     }
     this.calc(`${fuente}: ¡estás CONFUNDIDO! Tus cartas cuestan 0–3 J al azar`);
+    this.anunciarEstado('¡CONFUNDIDO!', `${fuente}: tus cartas cuestan de 0 a 3 J al azar (gema naranja con «?»)`, 0xe8781a, '#ffb050');
     this.floatText(this.heroX, 190, '¿¿CONFUSIÓN??', '#ffd040');
     this.refreshPlayer();
   }
@@ -653,7 +658,13 @@ export class CombatScene extends Phaser.Scene {
       st.maxHp = st.hp = Math.round(st.hp * this.grav.hpMul);
     }
     // El Abismo: cada tramo es más fuerte (y en el infinito, mucho más)
-    if (this.acto === 5) st.maxHp = st.hp = Math.round(st.hp * escalaTramo(Game.run!.tramo ?? 1));
+    if (this.acto === 5) {
+      const base = this.kind === 'boss' && JEFES_ABISMO[st.def.id] ? VIDA_ABISMO.jefe : this.kind === 'elite' ? VIDA_ABISMO.elite : VIDA_ABISMO.normal;
+      // la última hoja del diario de Montemayor anota el punto débil del Primigenio: −15 % de vida
+      const debil = JEFES_ABISMO[st.def.id]?.primigenio && (Game.run!.diario ?? 1) >= PROLOGO.length ? 0.85 : 1;
+      st.maxHp = st.hp = Math.round(st.hp * base * debil * escalaTramo(Game.run!.tramo ?? 1));
+      if (debil < 1) this.time.delayedCall(900, () => this.calc(`Diario de Montemayor: conoces el punto débil de ${st.def.name} (−15 % de vida)`));
+    }
     st.intent = this.scaleIntent(st.intent, st);
     const root = this.add.container(x, 0);
     const sprite = this.add.image(0, 330, st.def.sprite).setOrigin(0.5, 1).setScale(st.def.scale);
@@ -820,6 +831,7 @@ export class CombatScene extends Phaser.Scene {
 
   // ───────────────────────── JUGADOR ─────────────────────────
   private refreshPlayer() {
+    if (this.acto === 5) this.pintarEstados();
     const run = Game.run!;
     this.hpBar.set(run.hp, run.maxHp, this.block);
     this.hud.setHp(run.hp, run.maxHp);
@@ -2090,19 +2102,19 @@ export class CombatScene extends Phaser.Scene {
       if (ed === 'poli') { this.drawCards(1); this.calc('Polícroma: robas 1'); }
       if (ed === 'cristal') { this.gainBlock(10); this.calc('Cristal: +10 de Bloqueo'); }
     }
-    if (ed === 'cristal' && Math.random() >= ROMPER_CRISTAL) {
-      this.calc('El Cristal resiste… por ahora');
-      this.floatText(W / 2, 180, 'Cristal intacto', '#c8f4ff');
-    } else if (ed === 'cristal') {
-      // frágil: esta vez se rompe y la carta sale de tu mazo para siempre (1 de cada 4, como en Balatro)
-      const run = Game.run!;
-      run.deck = run.deck.filter((x) => x.uid !== inst.uid);
-      (run.cristalesRotos ??= []).push(inst.id);
-      this.discard = this.discard.filter((x) => x !== inst);
-      this.exhaust = this.exhaust.filter((x) => x !== inst);
-      this.calc(`¡El Cristal se rompe! ${def.name} sale de tu mazo`);
-      this.burst(W / 2, 220, 0xe8fbff, 30);
-      this.floatText(W / 2, 180, '¡Crash!', '#e8fbff');
+    if (ed === 'cristal') {
+      const rompe = Math.random() < ROMPER_CRISTAL;
+      await this.animarCristal(inst, rompe);
+      if (!rompe) this.calc(`El Cristal resiste… por ahora (${def.name})`);
+      else {
+        // frágil: esta vez se rompe y la carta sale de tu mazo para siempre (1 de cada 4)
+        const run = Game.run!;
+        run.deck = run.deck.filter((x) => x.uid !== inst.uid);
+        (run.cristalesRotos ??= []).push(inst.id);
+        this.discard = this.discard.filter((x) => x !== inst);
+        this.exhaust = this.exhaust.filter((x) => x !== inst);
+        this.calc(`¡El Cristal se rompe! ${def.name} sale de tu mazo para siempre`);
+      }
     }
     if (this.masaDef && def.type === 'Defensa') {
       this.masa += 1;
@@ -2285,6 +2297,105 @@ export class CombatScene extends Phaser.Scene {
     await this.wait(160);
     this.children.list.filter((o) => o.getData && o.getData('tmp')).forEach((o) => this.tweens.add({ targets: o, alpha: 0, duration: 400, onComplete: () => o.destroy() }));
     return stopped;
+  }
+
+  /**
+   * v0.44 · La carta de Cristal se muestra grande en el centro: si resiste, brilla;
+   * si se rompe, se agrieta y estalla en pedazos (se toma su tiempo para que se entienda qué pasó).
+   */
+  private async animarCristal(inst: CardInst, rompe: boolean) {
+    const def = CARDS[inst.id];
+    const v = cardView(this, W / 2, 250, inst).setDepth(870).setScale(0.6).setAlpha(0);
+    this.tweens.add({ targets: v, alpha: 1, scale: 1.05, duration: 260, ease: 'Back.out' });
+    const fondo = this.add.rectangle(0, 0, W, H, 0x000000, 0).setOrigin(0).setDepth(865);
+    this.tweens.add({ targets: fondo, fillAlpha: 0.55, duration: 220 });
+    await this.wait(450);
+    if (!rompe) {
+      const t = txt(this, W / 2, 392, '💎 El Cristal resiste', 30, '#c8f4ff').setOrigin(0.5).setDepth(880).setStroke('#000', 5);
+      this.tweens.add({ targets: v, angle: { from: -3, to: 3 }, duration: 80, yoyo: true, repeat: 3 });
+      await this.wait(900);
+      this.tweens.add({ targets: [v, t, fondo], alpha: 0, duration: 250, onComplete: () => { v.destroy(); t.destroy(); fondo.destroy(); } });
+      return;
+    }
+    // grietas que crecen
+    const gr = this.add.graphics().setDepth(875);
+    const rayas = Array.from({ length: 7 }, () => ({ a: Math.random() * Math.PI * 2, l: 40 + Math.random() * 60 }));
+    const k = { t: 0 };
+    audio.sfx('hit');
+    this.tweens.add({ targets: k, t: 1, duration: 600, onUpdate: () => {
+      gr.clear().lineStyle(3, 0xffffff, 0.95);
+      for (const r of rayas) gr.lineBetween(W / 2, 250, W / 2 + Math.cos(r.a) * r.l * k.t, 250 + Math.sin(r.a) * r.l * k.t);
+    } });
+    this.tweens.add({ targets: v, x: W / 2 + 4, duration: 40, yoyo: true, repeat: 7 });
+    await this.wait(750);
+    // estalla
+    gr.destroy();
+    v.destroy();
+    this.cameras.main.flash(250, 230, 250, 255);
+    this.cameras.main.shake(250, 0.01);
+    this.burst(W / 2, 250, 0xe8fbff, 50);
+    for (let i = 0; i < 14; i++) {
+      const p = this.add.rectangle(W / 2 + Phaser.Math.Between(-60, 60), 250 + Phaser.Math.Between(-80, 80), Phaser.Math.Between(8, 22), Phaser.Math.Between(8, 22), 0xc8f4ff, 0.85).setDepth(876).setAngle(Phaser.Math.Between(0, 90));
+      this.tweens.add({ targets: p, x: p.x + Phaser.Math.Between(-220, 220), y: p.y + Phaser.Math.Between(80, 260), angle: p.angle + 360, alpha: 0, duration: 1100, onComplete: () => p.destroy() });
+    }
+    const t = txt(this, W / 2, 236, '¡SE ROMPIÓ!', 52, '#e8fbff').setOrigin(0.5).setDepth(880).setStroke('#1a4a6a', 7);
+    const st = txt(this, W / 2, 290, `${def.name} (Cristal) sale de tu mazo para siempre`, 22, CSS.bone).setOrigin(0.5).setDepth(880).setStroke('#000', 4);
+    await this.wait(1600);
+    this.tweens.add({ targets: [t, st, fondo], alpha: 0, duration: 300, onComplete: () => { t.destroy(); st.destroy(); fondo.destroy(); } });
+    await this.wait(250);
+  }
+
+  /**
+   * v0.44 · Anuncio grande de un estado en el centro de la pantalla (se queda ~2 s para que se lea).
+   */
+  private anunciarEstado(titulo: string, sub: string, color: number, css: string) {
+    const c = this.add.container(W / 2, 236).setDepth(880).setAlpha(0);
+    const g = this.add.graphics();
+    g.fillStyle(0x000000, 0.75).fillRect(-W / 2, -46, W, 92);
+    g.fillStyle(color, 0.9).fillRect(-W / 2, -46, W, 4).fillRect(-W / 2, 42, W, 4);
+    const t = txt(this, 0, -14, titulo, 46, css).setOrigin(0.5).setStroke('#000', 6);
+    const st = txt(this, 0, 24, sub, 20, CSS.bone).setOrigin(0.5);
+    c.add([g, t, st]);
+    this.tweens.add({ targets: c, alpha: 1, duration: 180 });
+    this.tweens.add({ targets: t, scale: { from: 1.4, to: 1 }, duration: 260, ease: 'Back.out' });
+    this.tweens.add({ targets: c, alpha: 0, delay: 1900, duration: 400, onComplete: () => c.destroy() });
+    this.cameras.main.flash(180, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+  }
+
+  /** v0.44 · Insignias de estado que se quedan sobre el héroe mientras duran */
+  private pintarEstados() {
+    this.estadosC?.destroy();
+    const lista: [string, string, number][] = [];
+    if (this.confusa) lista.push(['¿? CONFUNDIDO', '#ffb050', 0xe8781a]);
+    if (this.aturdido) lista.push(['★ ATURDIDO', '#ffe060', 0xd8b020]);
+    if (this.hemorragia) lista.push([`🩸 HEMORRAGIA ${this.hemorragia}`, '#ff7070', 0xb02020]);
+    if (this.vertigo) lista.push([`↻ VÉRTIGO −${this.vertigo}`, '#9ad8f0', 0x3a8ab8]);
+    // estrellitas girando sobre la cabeza mientras estás aturdido
+    if (this.aturdido && !this.estrellas) {
+      const e = this.add.container(this.heroX, 196).setDepth(650);
+      for (let k = 0; k < 3; k++) e.add(txt(this, Math.cos((k * 2 * Math.PI) / 3) * 30, Math.sin((k * 2 * Math.PI) / 3) * 8, '★', 24, '#ffe060').setOrigin(0.5).setStroke('#000', 3));
+      const ang = { a: 0 };
+      this.tweens.add({ targets: ang, a: Math.PI * 2, duration: 1200, repeat: -1, onUpdate: () => {
+        e.list.forEach((o, k) => { const t = o as Phaser.GameObjects.Text; t.setPosition(Math.cos(ang.a + (k * 2 * Math.PI) / 3) * 30, Math.sin(ang.a + (k * 2 * Math.PI) / 3) * 8); });
+      } });
+      this.estrellas = e;
+    } else if (!this.aturdido && this.estrellas) {
+      this.tweens.killTweensOf(this.estrellas);
+      this.estrellas.destroy();
+      this.estrellas = null;
+    }
+    if (!lista.length) { this.estadosC = null; return; }
+    const c = this.add.container(this.heroX, 168).setDepth(640);
+    lista.forEach(([t, css, col], i) => {
+      const y = -i * 26;
+      const tt = txt(this, 0, y, t, 18, css).setOrigin(0.5).setStroke('#000', 4);
+      const g = this.add.graphics();
+      g.fillStyle(0x000000, 0.7).fillRoundedRect(-tt.width / 2 - 8, y - 12, tt.width + 16, 24, 6);
+      g.lineStyle(2, col, 1).strokeRoundedRect(-tt.width / 2 - 8, y - 12, tt.width + 16, 24, 6);
+      c.add([g, tt]);
+    });
+    this.tweens.add({ targets: c, y: 164, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.estadosC = c;
   }
 
   private floatText(x: number, y: number, s: string, color: string) {
@@ -2699,13 +2810,12 @@ export class CombatScene extends Phaser.Scene {
     if (!this.aturdido) this.trasAturdir = false;
     if (this.aturdido) {
       // ATURDIDO: pierdes este turno (los enemigos vuelven a actuar, pero no te pueden aturdir otra vez seguido)
-      this.aturdido = false;
       this.trasAturdir = true;
       this.busy = true;
       this.calc('¡ATURDIDO! El golpe te dejó viendo estrellas: pierdes este turno');
-      this.floatText(this.heroX, 170, '¡ATURDIDO!', '#ffd040');
+      this.anunciarEstado('PIERDES ESTE TURNO', 'Sigues viendo estrellas… los enemigos vuelven a actuar', 0xd8b020, '#ffe060');
       this.cameras.main.shake(250, 0.006);
-      this.time.delayedCall(1400, () => { this.busy = false; void this.endTurn(); });
+      this.time.delayedCall(2600, () => { this.busy = false; this.aturdido = false; this.refreshPlayer(); void this.endTurn(); });
       return;
     }
     // familiares que actúan al inicio de tu turno
@@ -2880,7 +2990,7 @@ export class CombatScene extends Phaser.Scene {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
             else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
             else if (this.trasAturdir) this.calc('Sigues mareado del golpe anterior: este no te vuelve a aturdir');
-            else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.floatText(this.heroX, 170, '★ Aturdido ★', '#ffd040'); }
+            else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.anunciarEstado('¡ATURDIDO!', `${st.def.name} te alcanzó: pierdes tu siguiente turno`, 0xd8b020, '#ffe060'); this.refreshPlayer(); await this.wait(1200); }
           }
         }
         if (it.calor && Game.run!.hp > 0) {
@@ -2913,11 +3023,15 @@ export class CombatScene extends Phaser.Scene {
           const n = this.diente('protector') ? Math.ceil(it.hemorragia / 2) : it.hemorragia;
           this.hemorragia = Math.max(this.hemorragia, n);
           this.calc(`${st.def.name}: HEMORRAGIA por ${n} turno(s) → cada carta que juegues te quita 1 de vida`);
-          this.floatText(this.heroX, 180, 'Hemorragia', '#e05050');
+          this.anunciarEstado('¡HEMORRAGIA!', `Durante ${n} turno(s), cada carta que juegues te quita 1 de vida`, 0xb02020, '#ff7070');
+          await this.wait(900);
         }
         if (it.vertigo && Game.run!.hp > 0) {
           this.vertigo = Math.min(3, this.vertigo + it.vertigo);
           this.calc(`${st.def.name} te marea: VÉRTIGO, robas ${this.vertigo} carta(s) menos en tu siguiente turno`);
+          this.anunciarEstado('¡VÉRTIGO!', `En tu siguiente turno robas ${this.vertigo} carta(s) menos`, 0x3a8ab8, '#9ad8f0');
+          this.cameras.main.shake(400, 0.004);
+          await this.wait(900);
         }
         {
           if (it.friccion) {

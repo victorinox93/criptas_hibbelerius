@@ -105,8 +105,8 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(dibujarDiente(s, x, 236, id, 1.4));
         L(txt(s, x, 290, t, 15, NOMBRE_RAREZA[defDiente(id).rareza].css, { align: 'center' }).setOrigin(0.5, 0));
       });
-      L(txt(s, W / 2, 350, 'EL COSMOS (como los planetas de Balatro): los Astros suben de nivel una constelación de cartas.\nTres Astros seguidos forman una ALINEACIÓN PLANETARIA: tus ataques hacen ×1.5.', 17, '#ffd060', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
-      L(txt(s, W / 2, 410, 'Los PARÁSITOS (como en Returnal) se pegan solos y sólo el Sacamuelas te los arranca, cobrando. Los de CRISTAL valen doble pero se rompen.', 15, '#b8e070', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 350, 'EL COSMOS: los Astros suben de nivel una constelación de cartas.\nTres Astros seguidos forman una ALINEACIÓN PLANETARIA: tus ataques hacen ×1.5.', 17, '#ffd060', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 410, 'Los PARÁSITOS se pegan solos y sólo el Sacamuelas te los arranca, cobrando. Los de CRISTAL valen doble pero se rompen.', 15, '#b8e070', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {

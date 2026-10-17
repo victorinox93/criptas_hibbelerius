@@ -14,7 +14,7 @@ import { Game, saveLocal } from '../state';
 export const ASTRONOMO = 'El Astrónomo Aficionado de Providence';
 
 /** Una línea de contexto (se muestra en el Observatorio) */
-export const FICHA_LOVECRAFT = 'H. P. Lovecraft (1890–1937), escritor de Providence, EE. UU. De joven escribió columnas de astronomía para los periódicos y toda su vida escribió miles de cartas. También tuvo ideas racistas, muy criticadas hoy: aquí lo recordamos por su imaginación y su telescopio, no como un ejemplo a seguir.';
+export const FICHA_LOVECRAFT = 'H. P. Lovecraft (1890–1937), escritor de Providence, EE. UU. De joven escribió columnas de astronomía para los periódicos y toda su vida escribió miles de cartas.';
 
 export interface CartaDef { id: string; titulo: string; mision: string; texto: string }
 

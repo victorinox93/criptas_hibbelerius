@@ -98,6 +98,7 @@ export const T = {
       ['Institución', 'Universidad de Monterrey (UDEM)'],
       ['Curso', 'Dinámica · basado en los temas del libro de R. C. Hibbeler'],
       ['Inspirado en', 'Slay the Spire (Mega Crit), Loop Hero (Four Quarters), Hades (Supergiant Games) y la saga «Souls» de FromSoftware: Demon’s Souls, Dark Souls, Bloodborne y Elden Ring (almas en pena, signos de invocación, lápidas y la Llama Delirante)'],
+      ['El Abismo de los Ejes', 'Relatos de H. P. Lovecraft (1890–1937) y «El Rey de Amarillo» de R. W. Chambers. Ideas de juego inspiradas en Balatro (LocalThunk), Sol Cesto (Chibig), Returnal (Housemarque) y Slay the Spire (Mega Crit)'],
       ['AM', 'Basado en el cuento «I Have No Mouth, and I Must Scream» (1967) de Harlan Ellison'],
       ['Pixel art', 'Diseñado en código por Victorino Sepúlveda Arróniz con asistencia de Claude (Anthropic)'],
       ['Música', '«Cold Soul» (partes 1–3) de Lost in The Forest · lostintheforest.bandcamp.com (clic para visitar). Combates y jefes: dungeon synth generado en vivo con Web Audio'],
