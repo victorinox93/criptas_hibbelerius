@@ -85,6 +85,10 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   // v0.46 · El Abismo de los Ejes (logros)
   { name: 'Agua Negra', c: '#0e3a36', C: '#06201e', logro: 'abismo_tramo' },
   { name: 'Abismo sin Fondo', c: '#2a1a4a', C: '#0a0618', cosmos: true, logro: 'abismo_infinito' },
+  // v0.47 · el mito de Lovecraft (un premio por jefe del Abismo)
+  { name: 'El Signo Amarillo', c: '#d8b020', C: '#6a5010', logro: 'abismo_hastur' },
+  { name: 'Color que Cayó del Cielo', c: '#d070ff', C: '#5a2a8a', logro: 'abismo_colorCielo', holo: 280, rango: 120 },
+  { name: 'Velo de la Bailarina', c: '#8ac8d8', C: '#3a6a7a', logro: 'abismo_bailarina', holo: 180, rango: 30 },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -112,6 +116,7 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Cromo Arcoíris', l: '#e0e0ff', g: '#8080c8', holo: 0, id: 'col_arm_arcoiris', tienda: 12 },
   // v0.46 · El Abismo de los Ejes (logros)
   { name: 'Escamas de Profundo', l: '#6a9a8a', g: '#2a4a40', logro: 'abismo_primigenio' },
+  { name: 'Coraza de los Primigenios', l: '#3a2a5a', g: '#140a24', cosmos: true, logro: 'abismo_mitos' },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
@@ -135,6 +140,7 @@ export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Supernova', c: '#ffb03a', holo: 15, rango: 50, id: 'col_vis_supernova', tienda: 6 },
   // v0.46 · El Abismo de los Ejes (logros)
   { name: 'Mirada de Montemayor', c: '#b8ff9a', holo: 100, rango: 25, logro: 'abismo_diario' },
+  { name: 'Ojo de Dunwich', c: '#e0ffa0', holo: 60, rango: 90, logro: 'abismo_dunwich' },
 ];
 
 // UI

@@ -9,6 +9,7 @@ import { ALMA_IDS } from './almas';
 import { codexFlag, darCompra, Game } from '../state';
 import { ARMORS, CAPES, VISORS } from '../art/palette';
 import { ACCESORIOS } from './tienda';
+import { JEFES, PRIMIGENIOS } from './abismo_modo';
 
 export interface Logro {
   id: string;
@@ -17,6 +18,8 @@ export interface Logro {
   check: () => boolean;
 }
 
+/** «El Geómetra» → «al Geómetra», «La Bailarina» → «a la Bailarina», «Cthulhu» → «a Cthulhu» */
+const aQuien = (n: string) => (n.startsWith('El ') ? `al ${n.slice(3)}` : n.startsWith('La ') ? `a la ${n.slice(3)}` : `a ${n}`);
 const flag = (f: string) => (Game.codex.flags ?? []).includes(f);
 
 export const LOGROS: Record<string, Logro> = {
@@ -42,6 +45,11 @@ export const LOGROS: Record<string, Logro> = {
   abismo_diario: { id: 'abismo_diario', nombre: 'El diario completo', como: 'Abismo: encuentra las 16 hojas del diario', check: () => (Game.codex.diario ?? 0) >= 15 },
   abismo_dentadura: { id: 'abismo_dentadura', nombre: 'Sonrisa completa', como: 'Abismo: llena los 8 huecos de la dentadura', check: () => flag('logro_dentadura') },
   abismo_providence: { id: 'abismo_providence', nombre: 'Corresponsal', como: 'Abismo: cumple 3 cartas de Providence', check: () => (Game.codex.cartasProvidence ?? 0) >= 3 },
+  // v0.47 · el mito: vencer a cada jefe del Abismo (y a los 4 Primigenios)
+  ...Object.fromEntries(Object.entries(JEFES).map(([id, j]) => [`abismo_${id}`, {
+    id: `abismo_${id}`, nombre: `Vencer ${aQuien(j.nombre)}`, como: `Abismo: vence ${aQuien(j.nombre)}`, check: () => flag(`abismo_vence_${id}`),
+  }])),
+  abismo_mitos: { id: 'abismo_mitos', nombre: 'Los Mitos completos', como: 'Abismo: vence a los 4 Primigenios', check: () => PRIMIGENIOS.every((p) => flag(`abismo_vence_${p}`)) },
   // v0.31 · el último desbloqueable (Mecha «Inercia-01»): todos los demás logros
   mecha: {
     id: 'mecha', nombre: 'Piloto de élite (platino)', como: 'Consigue TODOS los demás logros',
