@@ -1,8 +1,9 @@
-import { HOJAS_DEBILIDAD, HOJAS_POR_EXPEDICION, JEFES as JEFES_ABISMO, nombreTramo, PROB_HOJA, PROLOGO, TRAMOS } from '../data/abismo_modo';
+import { HOJAS_DEBILIDAD, HOJAS_POR_EXPEDICION, JEFES as JEFES_ABISMO, MUTADOR, nombreTramo, PROB_HOJA, PROLOGO, TRAMOS } from '../data/abismo_modo';
 import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
 import { hojaDiario } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
+import { avisarPremios } from '../ui/avisos';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
@@ -43,6 +44,7 @@ export class MapScene extends Phaser.Scene {
   constructor() { super('Map'); }
 
   create() {
+    if (Game.run?.modo === 'abismo') avisarPremios(this);
     this.cameras.main.fadeIn(300);
     audio.play((Game.run?.acto ?? 1) === 5 ? 'abismo' : (Game.run?.acto ?? 1) >= 4 ? 'mapa4' : (Game.run?.acto ?? 1) === 3 ? 'mapa3' : (Game.run?.acto ?? 1) === 2 ? 'mapa2' : 'mapa');
     const run = Game.run!;
@@ -140,6 +142,13 @@ export class MapScene extends Phaser.Scene {
         }
       }
       saveLocal();
+    }
+    // v0.46 · el mutador del tramo, bajo el título
+    const mu = act5 ? MUTADOR(run.mutador) : undefined;
+    if (mu) {
+      const mt = txt(this, W / 2, H - 66, `Mutador del tramo: ${mu.nombre}  ⓘ`, 17, mu.color).setOrigin(0.5, 0).setDepth(5).setStroke('#000', 4);
+      tip.attach(mt.setInteractive(), `Mutador: ${mu.nombre}`, `${mu.texto}\nCambia en cada tramo.`, 20);
+      if (run.pos === -1) this.tweens.add({ targets: mt, scale: { from: 1.5, to: 1 }, duration: 600, ease: 'Back.out' });
     }
     title(this, W / 2, 66, act5 ? `${(run.tramo ?? 1) > TRAMOS ? 'Abismo sin fondo' : `Tramo ${run.tramo ?? 1} de ${TRAMOS}`} · ${nombreTramo(run.tramo ?? 1).replace(/^El Abismo sin Fondo · /, '')}` : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 

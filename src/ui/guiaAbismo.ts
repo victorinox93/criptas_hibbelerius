@@ -3,8 +3,8 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { Edicion } from '../data/cards';
-import { CORDURA, EDICIONES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
-import { defDiente, HUECOS, NOMBRE_RAREZA } from '../data/dientes';
+import { CORDURA, EDICIONES, MORDIDAS_JEFE, MORDIDAS_PRIMIGENIO, MUTADORES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
+import { defDiente, HUECOS, MULT_DIENTES_MAX, NOMBRE_RAREZA } from '../data/dientes';
 import { dibujarDiente } from './dentadura';
 import { codexFlag } from '../state';
 import { cardView, costConfusion, costOverride } from './card';
@@ -99,7 +99,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     titulo: 'La Dentadura (reliquias)',
     texto: `Las reliquias del Abismo son dientes: Comunes, ★ Raros y ★★ Legendarios. Al empezar eliges 2 de 4; ganas más con el Sacamuelas Ciego, los Relatos y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
     dibujo: (s, L) => {
-      const ej: [string, string][] = [['colmillo', 'Común\n+2 a ataques'], ['espejo', '★ Raro · Espejo:\ncopia al de su izq.'], ['marte~3', '✦ Marte de Cristal\n×2, dura 3 combates'], ['rlyeh', "★★ R'lyeh\n1er ataque ×3"], ['larva', '☣ Parásito: bueno\ny malo a la vez']];
+      const ej: [string, string][] = [['colmillo', 'Común\n+2 a ataques'], ['espejo', '★ Raro · Espejo:\ncopia al de su izq.'], ['marte~3', '✦ Marte de Cristal\n×2, dura 2 combates'], ['rlyeh', "★★ R'lyeh\n1er ataque ×2"], ['larva', '☣ Parásito: bueno\ny malo a la vez']];
       ej.forEach(([id, t], i) => {
         const x = W / 2 + (i - 2) * 150;
         L(dibujarDiente(s, x, 236, id, 1.4));
@@ -107,6 +107,24 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       });
       L(txt(s, W / 2, 350, 'EL COSMOS: los Astros suben de nivel una constelación de cartas.\nTres Astros seguidos forman una ALINEACIÓN PLANETARIA: tus ataques hacen ×1.5.', 17, '#ffd060', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
       L(txt(s, W / 2, 410, 'Los PARÁSITOS se pegan solos y sólo el Sacamuelas te los arranca, cobrando. Los de CRISTAL valen doble pero se rompen.', 15, '#b8e070', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+    },
+  },
+  {
+    titulo: 'Mutadores, mordidas y la Rueda',
+    texto: 'Cada tramo trae una regla distinta (se ve abajo del mapa). Los jefes muerden tu dentadura, y el Sacamuelas tiene una ruleta.',
+    dibujo: (s, L) => {
+      const filas: [string, string, string][] = [
+        ['i_rune', 'Mutador del tramo', MUTADORES.map((m) => m.nombre).join(' · ') + '. Cambia en cada tramo.'],
+        ['i_diente', 'Mordida del jefe', `Al empezar, el jefe desactiva ${MORDIDAS_JEFE} diente al azar (el Primigenio, ${MORDIDAS_PRIMIGENIO}) durante esa pelea.`],
+        ['i_coin', 'Rueda de la Fortuna', 'En el Sacamuelas: diente legendario o raro, Ergios, Cordura, un apunte… o un parásito o nada. Cada giro cuesta más.'],
+        ['i_skull', 'Tope del cosmos', `Los multiplicadores de los dientes (R'lyeh, Saturno, Sol Negro y Alineación) se suman y no pasan de ×${MULT_DIENTES_MAX}.`],
+      ];
+      filas.forEach(([ic, nom, d], i) => {
+        const y = 186 + i * 68;
+        L(s.add.image(W / 2 - 330, y + 16, ic).setScale(3.2));
+        L(txt(s, W / 2 - 296, y, nom, 20, CSS.gold));
+        L(txt(s, W / 2 - 296, y + 26, d, 15, CSS.bone, { wordWrap: { width: 640 } }));
+      });
     },
   },
   {

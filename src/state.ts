@@ -109,6 +109,7 @@ export interface Run {
   bonoDientesHp?: number; // v0.43 · vida máxima que dan los dientes (Sarro, Branquia), para ajustarla al cambiar la dentadura
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor
+  mutador?: string; // v0.46 · regla especial del tramo actual (src/data/abismo_modo.ts → MUTADORES)
   dientePendiente?: string; // v0.44 · diente ganado con la dentadura llena: se acomoda al volver al mapa
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
 }
@@ -160,6 +161,7 @@ export interface Codex {
   expediciones?: number; // expediciones terminadas (muerte o victoria); abre la Tienda de Layla
   bajas?: Record<string, number>; // v0.31.2: enemigos vencidos por id (pantalla de Estadísticas)
   diag?: { pre?: number; post?: number; total?: number; version?: number }; // v0.32: diagnóstico inicial y final (aciertos)
+  cartasProvidence?: number; // v0.46: cartas del Astrónomo de Providence cumplidas (logro)
   diario?: number; // v0.45: última hoja del diario de Montemayor encontrada (índice en PROLOGO; la 0 se lee al empezar)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
@@ -329,6 +331,17 @@ export function encontrarHoja(total: number): number | null {
   Game.codex.diario = i;
   codexDirty = true;
   return i;
+}
+
+/** v0.46 · Da un artículo del Vestidor sin pasar por la tienda (premios por logros) */
+export function darCompra(id: string) {
+  const c = (Game.codex.compras ??= []);
+  if (!c.includes(id)) { c.push(id); codexDirty = true; }
+}
+/** v0.46 · Una carta de Providence cumplida más (logro «Corresponsal») */
+export function contarCartaProvidence() {
+  Game.codex.cartasProvidence = (Game.codex.cartasProvidence ?? 0) + 1;
+  codexDirty = true;
 }
 
 export function contarHib() {
@@ -520,6 +533,8 @@ export function generateMap(acto = 1): MapNode[] {
 
 /** v0.43 · Ajusta la Vida máxima según los dientes que la cambian (Diente con Sarro +8, Branquia del Profundo +12) */
 export function aplicarSarro(r: Run) {
+  // logro «Sonrisa completa»: los 8 huecos llenos
+  if (!r.debug && (r.dientes ?? []).filter(Boolean).length >= 8) codexFlag('logro_dentadura');
   const quiere = 8 * nivelDiente(r.dientes, 'sarro') + 12 * nivelDiente(r.dientes, 'branquia');
   const delta = quiere - (r.bonoDientesHp ?? 0);
   if (!delta) return;

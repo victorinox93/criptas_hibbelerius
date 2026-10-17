@@ -2,6 +2,25 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.46.0 · Balance de dientes, mutadores, la Rueda de la Fortuna y premios en el Vestidor (beta, sólo Modo profesor)
+
+- **Balance de los dientes:**
+  - Los multiplicadores (R'lyeh, Saturno, Sol Negro y Alineación) ahora se **suman** y tienen un **tope de ×2** (antes se multiplicaban entre sí).
+  - Marte da +2 por nivel (antes +3). R'lyeh da ×2 al primer ataque (antes ×3). El Diente Espejo ya no copia legendarios ni a otro Espejo.
+  - Los dientes de Cristal salen menos (8 %) y duran 2 combates (antes 3).
+  - **Los jefes muerden:** al empezar la pelea, cada jefe desactiva 1 diente al azar (los Primigenios, 2) durante esa pelea. Se anuncia en grande.
+- **Mutadores de tramo:** cada tramo sortea una regla para todos sus combates (Gravedad Doble, Noche sin Estrellas, Fricción del Agua, Cielo Despejado, Tormenta de Ergios, Masa Extra o Eco del Abismo). Se ve abajo del mapa.
+- **Rueda de la Fortuna** en el Sacamuelas: 30 Ergios el primer giro (+15 cada giro más en la misma visita). Puede dar un diente legendario (7 %) o raro, Ergios, Cordura, un apunte… o un parásito o nada.
+- **Premios en el Vestidor** por avanzar en el Abismo (no se venden; llegan solos y se anuncian con un letrero dorado):
+  - Supera el tramo 1 → capa **Agua Negra**.
+  - Vence a un Primigenio → armadura **Escamas de Profundo** y **Casco de Buzo 1931**.
+  - Llega a la profundidad 4 → capa cósmica **Abismo sin Fondo**.
+  - Encuentra 8 hojas del diario → **Sombrero de Montemayor**; las 16 → **Monóculo de Montemayor** y ojos **Mirada de Montemayor**.
+  - Llena los 8 huecos de la dentadura → **Sonrisa de Oro**.
+  - Cumple 3 cartas de Providence → **Telescopio de Providence** (en la mano).
+  - Estos logros no cuentan para el platino (el Mecha), así que nadie lo pierde.
+- La Guía del Abismo tiene una página nueva: «Mutadores, mordidas y la Rueda».
+
 ## v0.45.0 · El diario completo y tramos más largos (beta, sólo Modo profesor)
 
 - **16 hojas del diario de Montemayor** (antes 5): son registros de lo que encontró en el Cerro de la Silla y de su descenso a la locura (los dientes en fila, el muelle de los acólitos, la carta al astrónomo de Providence, el reloj que se atrasa…).

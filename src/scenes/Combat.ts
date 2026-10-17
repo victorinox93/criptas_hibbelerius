@@ -22,9 +22,9 @@ import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
-import { alineacion, ALINEACION, cuantosAstros, gastarCristal, nivelDiente } from '../data/dientes';
+import { alineacion, ALINEACION, cuantosAstros, defDiente, esAstro, esParasito, gastarCristal, MULT_DIENTES_MAX, nivelDiente } from '../data/dientes';
 import { cumplirCarta } from '../data/lovecraft';
-import { HOJAS_DEBILIDAD, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
+import { HOJAS_DEBILIDAD, MORDIDAS_JEFE, MORDIDAS_PRIMIGENIO, MUTADOR, VIDA_ABISMO, CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
 import { RELICS } from '../data/relics';
@@ -167,6 +167,7 @@ export class CombatScene extends Phaser.Scene {
   private steinerUsed = false; // Página de Steiner: primer ataque del combate ×2
   private rlyehUsado = false; // Diente de R'lyeh: primer ataque del combate ×3
   private jugoDefensa = false; // carta de Providence «sin Defensas»
+  private mordidos: number[] = []; // v0.46 · huecos de la dentadura que el jefe mordió (no funcionan en esta pelea)
   private bonusJ1 = 0; // J extra en el primer turno (Boltzmann, Cantor)
   private robo1 = 0; // cartas extra en el primer turno (Newton 1693, página de la Confusión)
 
@@ -247,6 +248,7 @@ export class CombatScene extends Phaser.Scene {
     this.steinerUsed = false;
     this.rlyehUsado = false;
     this.jugoDefensa = false;
+    this.mordidos = [];
     this.bonusJ1 = 0;
     this.robo1 = 0;
     if (Game.run?.necro === 'sueno') this.maxEnergy += 1; // El Sueño Profundo
@@ -266,7 +268,15 @@ export class CombatScene extends Phaser.Scene {
   }
   /** Nivel de un diente de la Dentadura (0 = no lo tienes; el Diente Espejo suma copias) */
   private diente(id: string) {
-    return Game.run?.modo === 'abismo' ? nivelDiente(Game.run.dientes, id, Game.run.cosmos) : 0;
+    if (Game.run?.modo !== 'abismo') return 0;
+    const n = nivelDiente(this.dentEfectiva(), id, Game.run.cosmos);
+    // mutador «Cielo Despejado»: los Astros que tienes cuentan +1 nivel
+    return n && Game.run.mutador === 'despejado' && esAstro(id) ? n + 1 : n;
+  }
+  /** La dentadura sin los dientes que el jefe mordió (v0.46) */
+  private dentEfectiva() {
+    const d = Game.run?.dientes ?? [];
+    return this.mordidos.length ? d.map((x, i) => (this.mordidos.includes(i) ? null : x)) : d;
   }
 
   /** Carta del Astrónomo de Providence: si la misión activa es «id», se cumple */
@@ -286,21 +296,29 @@ export class CombatScene extends Phaser.Scene {
     if (dmt) { this.polonio += 4 * dmt; this.calc(`Diente de Diamante: +${4 * dmt}`); }
     const ojo = this.diente('ojo');
     if (ojo) { this.polonio += 3 * ojo; this.calc(`☣ Ojo Parpadeante: +${3 * ojo}`); }
+    // v0.46 · BALANCE: los multiplicadores de los dientes ya no se multiplican entre sí:
+    // se SUMAN (+1 de R'lyeh, +0.25 por nivel de Saturno, +0.1 por Astro del Sol Negro,
+    // +0.5 de la Alineación) y el total tiene un tope de ×MULT_DIENTES_MAX.
+    let extra = 0;
+    const partes: string[] = [];
     const rly = this.diente('rlyeh');
-    if (rly && !this.rlyehUsado) { this.rlyehUsado = true; this.mult *= 1 + 2 * rly; this.calc(`Diente de R'lyeh: primer ataque ×${1 + 2 * rly}`); }
+    if (rly && !this.rlyehUsado) { this.rlyehUsado = true; extra += rly; partes.push(`R'lyeh +${rly}`); }
     const mar = this.diente('marte');
-    if (mar) { this.polonio += 3 * mar; this.calc(`✦ Marte · Ataque nv ${mar}: +${3 * mar}`); }
+    if (mar) { this.polonio += 2 * mar; this.calc(`✦ Marte · Ataque nv ${mar}: +${2 * mar}`); }
     if (this.mercurioBono) { this.polonio += this.mercurioBono; this.calc(`✦ Mercurio: +${this.mercurioBono} guardado`); this.mercurioBono = 0; }
     if (this.pacto('palanca') && this.attacksTurn === 1) { this.polonio += 4; this.calc('Pacto de la Palanca: brazo largo, +4 al primer ataque'); }
     const sat = this.diente('saturno');
-    if (sat && def.abismo) { this.mult *= 1 + 0.25 * sat; this.calc(`✦ Saturno · Abismo nv ${sat}: ×${(1 + 0.25 * sat).toFixed(2)}`); }
+    if (sat && def.abismo) { extra += 0.25 * sat; partes.push(`Saturno +${(0.25 * sat).toFixed(2)}`); }
     const sol = this.diente('sol');
-    if (sol) {
-      const k = Math.pow(1.1, cuantosAstros(run.dientes) * sol);
+    const dent = this.dentEfectiva();
+    if (sol) { const k = 0.1 * cuantosAstros(dent) * sol; extra += k; partes.push(`Sol Negro +${k.toFixed(1)}`); }
+    if (alineacion(dent)) { extra += ALINEACION - 1; partes.push(`Alineación +${(ALINEACION - 1).toFixed(1)}`); }
+    if (extra > 0) {
+      const k = Math.min(MULT_DIENTES_MAX, 1 + extra);
       this.mult *= k;
-      this.calc(`✦ Sol Negro: ×${k.toFixed(2)} (${cuantosAstros(run.dientes)} Astros)`);
+      this.calc(`✦ Cosmos: ×${k.toFixed(2)} (${partes.join(' · ')}${1 + extra > MULT_DIENTES_MAX ? ` · tope ×${MULT_DIENTES_MAX}` : ''})`);
     }
-    if (alineacion(run.dientes)) { this.mult *= ALINEACION; this.calc(`✦ ALINEACIÓN PLANETARIA: ×${ALINEACION}`); }
+    void run;
   }
 
   /** La Dentadura y el cosmos sobre Defensas, Habilidades y Poderes */
@@ -308,6 +326,7 @@ export class CombatScene extends Phaser.Scene {
     if (def.type === 'Defensa') this.jugoDefensa = true;
     const dmd = this.diente('diamante');
     if (dmd && def.type === 'Defensa') { this.gainBlock(4 * dmd); this.calc(`Diente de Diamante: +${4 * dmd} de Bloqueo`); }
+    if (Game.run?.mutador === 'eco' && def.type === 'Defensa') { this.gainBlock(3); this.calc('Eco del Abismo: +3 de Bloqueo'); }
     const lun = this.diente('luna');
     if (lun && def.type === 'Defensa') { this.gainBlock(3 * lun); this.calc(`✦ Luna · Defensa nv ${lun}: +${3 * lun} de Bloqueo`); }
     const mer = this.diente('mercurio');
@@ -343,6 +362,18 @@ export class CombatScene extends Phaser.Scene {
     if (this.pacto('excentrico')) masaOVel(2, 'Pacto Excéntrico');
     if (this.pacto('inercia')) { this.block += 6; this.calc('Pacto de la Inercia: +6 de Bloqueo'); }
     if (this.pacto('cafeina')) { this.bonusJ1 += 1; this.calc('Pacto de la Cafeína: +1 J en tu primer turno'); }
+    // mutador del tramo (v0.46)
+    const mu = MUTADOR(run.mutador);
+    if (mu) this.calc(`Mutador del tramo · ${mu.nombre}`);
+    if (run.mutador === 'gravedad') masaOVel(3, 'Gravedad Doble');
+    if (run.mutador === 'masa') { this.block += 8; this.calc('Masa Extra: +8 de Bloqueo'); }
+    if (run.mutador === 'eco') this.addStatus({ id: 'susurro', n: 1, to: 'draw' });
+    // los jefes del Abismo muerden la dentadura: 1 diente (2 los Primigenios) no funciona en esta pelea
+    if (this.kind === 'boss' && JEFES_ABISMO[this.alive()[0]?.st.def.id ?? '']) {
+      const prim = !!JEFES_ABISMO[this.alive()[0].st.def.id].primigenio;
+      const libres = (run.dientes ?? []).map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
+      this.mordidos = Phaser.Utils.Array.Shuffle(libres).slice(0, prim ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE);
+    }
     // la Dentadura
     const mp = this.diente('muelaPlomo');
     if (mp) { this.block += 6 * mp; this.calc(`Muela de Plomo: +${6 * mp} de Bloqueo`); }
@@ -644,7 +675,7 @@ export class CombatScene extends Phaser.Scene {
   // ───────────────────────── ENEMIGOS ─────────────────────────
   /** Ajusta el daño de una intención según el nivel de gravedad */
   private scaleIntent(i: Intent, st?: EnemyState): Intent {
-    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1) * (this.acto === 5 ? escalaDano(Game.run!.tramo ?? 1) : 1);
+    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1) * (this.acto === 5 ? escalaDano(Game.run!.tramo ?? 1) * (Game.run!.mutador === 'gravedad' ? 1.2 : 1) : 1);
     if (m === 1) return i;
     if (i.kind === 'attack') return { ...i, dmg: Math.round(i.dmg * m) };
     if (i.kind === 'block' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
@@ -662,7 +693,8 @@ export class CombatScene extends Phaser.Scene {
       const base = this.kind === 'boss' && JEFES_ABISMO[st.def.id] ? VIDA_ABISMO.jefe : this.kind === 'elite' ? VIDA_ABISMO.elite : VIDA_ABISMO.normal;
       // la última hoja del diario de Montemayor anota el punto débil del Primigenio: −15 % de vida
       const debil = JEFES_ABISMO[st.def.id]?.primigenio && (Game.run!.diario ?? 0) >= HOJAS_DEBILIDAD ? 0.85 : 1;
-      st.maxHp = st.hp = Math.round(st.hp * base * debil * escalaTramo(Game.run!.tramo ?? 1));
+      const mut = Game.run!.mutador === 'masa' ? 1.25 : Game.run!.mutador === 'tormenta' ? 1.15 : 1;
+      st.maxHp = st.hp = Math.round(st.hp * base * debil * mut * escalaTramo(Game.run!.tramo ?? 1));
       if (debil < 1) this.time.delayedCall(900, () => this.calc(`Diario de Montemayor: conoces el punto débil de ${st.def.name} (−15 % de vida)`));
     }
     st.intent = this.scaleIntent(st.intent, st);
@@ -754,7 +786,8 @@ export class CombatScene extends Phaser.Scene {
     ev.hp.set(st.hp, st.maxHp, st.block);
     ev.blockT.setText(st.block > 0 ? `🛡${st.block}` : '');
     ev.intentC.removeAll(true);
-    if (!ev.dead && st.def.oculto && st.intent.kind !== 'stunned' && !this.diente('ojo')) {
+    const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
+    if (!ev.dead && (st.def.oculto || noche) && st.intent.kind !== 'stunned' && !this.diente('ojo')) {
       // invisible: no se ve qué hará, sólo sus huellas
       const ic = icon(this, -14, 0, 'i_fog', 3.2);
       ev.intentC.add([ic, txt(this, 2, -12, '???', 26, '#9a93a8')]);
@@ -2607,6 +2640,14 @@ export class CombatScene extends Phaser.Scene {
       this.hud.refresh();
     }
     if (this.pacto('pendulo') && this.turn % 2 === 1) { this.energy += 1; this.calc('Pacto del Péndulo (ida): +1 J'); }
+    if (this.turn === 1 && Game.run?.mutador === 'agua') { this.energy = Math.max(0, this.energy - 1); this.calc('Fricción del Agua: −1 J en tu primer turno'); }
+    if (this.turn === 1 && this.mordidos.length) {
+      const nombres = this.mordidos.map((i) => defDiente(Game.run!.dientes![i]!).nombre).join(' y ');
+      const jefe = this.alive()[0]?.st.def.name ?? 'El jefe';
+      this.calc(`${jefe} muerde tu dentadura: ${nombres} no funciona(n) en esta pelea`);
+      this.anunciarEstado('¡TE MUERDE LA DENTADURA!', `${nombres}: sin efecto en esta pelea`, 0xa83a4a, '#ff9aa8');
+    }
+    if (this.turn === 2 && Game.run?.mutador === 'noche') for (const e of this.alive()) this.refreshEnemy(e);
     const nep = this.diente('neptuno');
     if (nep && this.turn % 3 === 0) { this.energy += nep; this.calc(`✦ Neptuno · Órbita nv ${nep}: +${nep} J`); }
     if (this.jefeVivo('cthulhu')) {
@@ -2771,6 +2812,7 @@ export class CombatScene extends Phaser.Scene {
     this.reflect = false;
     this.restE = 0;
     this.played = 0;
+    if (Game.run?.mutador === 'agua') draw += 1;
     if (this.pacto('pendulo') && this.turn % 2 === 0) { draw += 1; this.calc('Pacto del Péndulo (vuelta): robas 1 carta más'); }
     const dia = this.diente('diastema');
     if (dia && this.turn % 3 === 0) { draw += dia; this.calc(`Diente Separado: +${dia} carta`); }
@@ -3140,7 +3182,8 @@ export class CombatScene extends Phaser.Scene {
     }
     run.effects.forEach((e) => e.left--);
     run.effects = run.effects.filter((e) => e.left > 0);
-    const erg = this.kind === 'elite' ? Phaser.Math.Between(35, 45) : this.kind === 'easy' ? Phaser.Math.Between(10, 14) : Phaser.Math.Between(13, 19);
+    const erg0 = this.kind === 'elite' ? Phaser.Math.Between(35, 45) : this.kind === 'easy' ? Phaser.Math.Between(10, 14) : Phaser.Math.Between(13, 19);
+    const erg = run.modo === 'abismo' && run.mutador === 'tormenta' ? Math.round(erg0 * 1.5) : erg0; // mutador «Tormenta de Ergios»
     if (this.kind !== 'boss') addErgios(erg + extra);
     else if (extra) addErgios(extra);
     audio.sfx('victory');

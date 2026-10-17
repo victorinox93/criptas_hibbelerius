@@ -278,3 +278,27 @@ export function escalaDano(t = 1) {
 export const multPuntaje = (t = 1) => (t <= TRAMOS ? 1 : 1 + 0.5 * (t - TRAMOS));
 /** Profundidad total (para el ranking): pisos de todos los tramos */
 export const profundidad = (tramo = 1, piso = 0) => (tramo - 1) * (PISOS_TRAMO + 1) + piso;
+
+// ════════════════════════════════════════════════════════════════
+//  v0.46 · MUTADORES DE TRAMO: cada tramo sortea una regla para todos sus combates.
+//  Se ven bajo el título del mapa. Sus efectos están en Combat.ts (busca «mutador»).
+// ════════════════════════════════════════════════════════════════
+export interface MutadorDef { id: string; nombre: string; texto: string; color: string }
+export const MUTADORES: MutadorDef[] = [
+  { id: 'gravedad', nombre: 'Gravedad Doble', texto: 'g = 19.6 m/s²: tus ataques +3 kg (o +3 m/s), pero los enemigos pegan 20 % más fuerte.', color: '#e0a060' },
+  { id: 'noche', nombre: 'Noche sin Estrellas', texto: 'En el primer turno de cada combate no ves las intenciones de los enemigos.', color: '#8a8ab8' },
+  { id: 'agua', nombre: 'Fricción del Agua', texto: 'El agua frena: −1 J en tu primer turno, pero robas 1 carta más cada turno.', color: '#6ab8d8' },
+  { id: 'despejado', nombre: 'Cielo Despejado', texto: 'Los Astros que tienes en la dentadura cuentan +1 nivel.', color: '#ffd060' },
+  { id: 'tormenta', nombre: 'Tormenta de Ergios', texto: 'Los combates dan 50 % más Ergios, pero los enemigos tienen 15 % más vida.', color: '#e8c15a' },
+  { id: 'masa', nombre: 'Masa Extra', texto: 'Los enemigos tienen 25 % más vida, pero empiezas cada combate con 8 de Bloqueo.', color: '#b8a088' },
+  { id: 'eco', nombre: 'Eco del Abismo', texto: 'Tus Defensas dan +3 de Bloqueo, pero cada combate te mete 1 Susurro.', color: '#c8a8ff' },
+];
+export const MUTADOR = (id?: string) => MUTADORES.find((m) => m.id === id);
+/** Sortea el mutador de un tramo (sin repetir el anterior) */
+export function sortearMutador(antes?: string) {
+  const de = MUTADORES.filter((m) => m.id !== antes);
+  return de[Math.floor(Math.random() * de.length)].id;
+}
+/** Cuántos dientes muerde (desactiva) cada jefe del Abismo al empezar la pelea */
+export const MORDIDAS_JEFE = 1;
+export const MORDIDAS_PRIMIGENIO = 2;

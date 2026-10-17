@@ -9,7 +9,7 @@
 //    · Frases al bajar al modo infinito.
 //  Las cartas se revisan en Combat.ts y Rune.ts (busca «cumplirCarta»).
 // ════════════════════════════════════════════════════════════════
-import { Game, saveLocal } from '../state';
+import { contarCartaProvidence, Game, saveLocal } from '../state';
 
 export const ASTRONOMO = 'El Astrónomo Aficionado de Providence';
 
@@ -44,6 +44,7 @@ export function cumplirCarta(id: string): boolean {
   const c = r?.carta;
   if (!r || r.modo !== 'abismo' || !c || c.hecho || c.id !== id || c.tramo !== (r.tramo ?? 1)) return false;
   c.hecho = true;
+  if (!r.debug) contarCartaProvidence();
   saveLocal();
   return true;
 }

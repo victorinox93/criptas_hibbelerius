@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { avisarPremios } from '../ui/avisos';
 import { api, isOnline } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -35,6 +36,7 @@ export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create(data: { iniciar?: boolean } = {}) {
+    avisarPremios(this); // v0.46 · premios nuevos del Abismo para el Vestidor
     // Phaser conserva los datos de la última vez que se abrió la escena: si no se borran,
     // «iniciar» (al volver del diagnóstico) abría la dificultad cada vez que regresabas al menú
     const iniciar = !!data?.iniciar;
