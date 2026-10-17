@@ -82,6 +82,9 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Cobre', c: '#b06a3a', C: '#6a3a1a', id: 'col_capa_cobre', tienda: 6, enSet: true },
   { name: 'Traje Espacial', c: '#e0e0e8', C: '#9a9aa8', id: 'col_capa_espacial', tienda: 6, enSet: true },
   { name: 'Lentejuela Dorada', c: '#ffd040', C: '#a87a10', holo: 45, rango: 20, id: 'col_capa_lentejuela', tienda: 6, enSet: true },
+  // v0.46 · El Abismo de los Ejes (logros)
+  { name: 'Agua Negra', c: '#0e3a36', C: '#06201e', logro: 'abismo_tramo' },
+  { name: 'Abismo sin Fondo', c: '#2a1a4a', C: '#0a0618', cosmos: true, logro: 'abismo_infinito' },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -107,6 +110,8 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   // v0.35 · Tienda de Layla
   { name: 'Nebulosa', l: '#2a2060', g: '#120c30', cosmos: true, id: 'col_arm_cosmos', tienda: 15 },
   { name: 'Cromo Arcoíris', l: '#e0e0ff', g: '#8080c8', holo: 0, id: 'col_arm_arcoiris', tienda: 12 },
+  // v0.46 · El Abismo de los Ejes (logros)
+  { name: 'Escamas de Profundo', l: '#6a9a8a', g: '#2a4a40', logro: 'abismo_primigenio' },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
@@ -128,6 +133,8 @@ export const VISORS: (Cosmetico & { c: string })[] = [
   // v0.35 · Tienda de Layla
   { name: 'Púlsar', c: '#a0d8ff', holo: 190, rango: 50, id: 'col_vis_pulsar', tienda: 6 },
   { name: 'Supernova', c: '#ffb03a', holo: 15, rango: 50, id: 'col_vis_supernova', tienda: 6 },
+  // v0.46 · El Abismo de los Ejes (logros)
+  { name: 'Mirada de Montemayor', c: '#b8ff9a', holo: 100, rango: 25, logro: 'abismo_diario' },
 ];
 
 // UI

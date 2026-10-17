@@ -45,6 +45,8 @@ export interface Accesorio {
   cat?: Cat; // categoría en la tienda (se completa en CAT_DE si falta)
   /** v0.35 · el artículo es un color (capa, armadura o visor de src/art/palette.ts), no un accesorio */
   color?: { parte: 'cape' | 'armor' | 'visor'; idx: number };
+  /** v0.46 · no se vende: se gana con un logro (src/data/logros.ts) y llega solo al Vestidor */
+  logro?: string;
   /** v0.36 · el artículo es un set: varias piezas y una capa, con descuento */
   set?: { piezas: string[]; capa: string };
 }
@@ -388,6 +390,21 @@ const SETS: { id: string; nombre: string; desc: string; piezas: string[]; capa: 
   { id: 'set_astronauta', nombre: 'Astronauta de las Criptas', desc: 'Escafandra, botas lunares, bandera y traje blanco. En la Luna, g = 1.62 m/s².', piezas: ['astronauta', 'botas_espacio', 'bandera_exp'], capa: 'col_capa_espacial' },
   { id: 'set_luchador', nombre: 'Luchador', desc: 'Máscara, cinturón de campeón y capa de lentejuela. Impulso = F·Δt desde la tercera cuerda.', piezas: ['mascara_luchador', 'cinturon'], capa: 'col_capa_lentejuela' },
 ];
+// v0.46 · premios del Abismo de los Ejes (no están a la venta; se ganan con logros)
+ACCESORIOS.push(
+  { id: 'casco_buzo', nombre: 'Casco de Buzo 1931', slot: 'cabeza', logro: 'abismo_primigenio', precio: 0, desc: 'De latón y vidrio. Para bajar a donde duermen los Primigenios.',
+    rows: ['...YYYY...', '..YyyyyY..', '.YyBBBByY.', '.YyBiiByY.', '.YyBBBByY.', '..YyyyyY..', '.YYYYYYYY.'], ancla: [5, 7] },
+  { id: 'sombrero_montemayor', nombre: 'Sombrero de Montemayor', slot: 'cabeza', logro: 'abismo_diario8', precio: 0, desc: 'El sombrero de explorador del erudito. Todavía huele a cueva.',
+    rows: ['...nnnn...', '..nnnnnn..', '..NNNNNN..', 'nnnnnnnnnn'], ancla: [5, 4] },
+  { id: 'monoculo', nombre: 'Monóculo de Montemayor', slot: 'cara', logro: 'abismo_diario', precio: 0, desc: 'Con él leyó el último registro. Ve ejes donde nadie más los ve.',
+    rows: ['.....yyy', '.....yiy', '.....yyy', '......y.', '......y.'], ancla: [4, 1] },
+  { id: 'sonrisa_oro', nombre: 'Sonrisa de Oro', slot: 'cara', logro: 'abismo_dentadura', precio: 0, desc: 'Ocho dientes, ocho huecos. Sonríe y que tiemble el Abismo.',
+    rows: ['.........', '.........', '.........', '..yWyWy..', '...yyy...'], ancla: [4, 0] },
+  { id: 'telescopio', nombre: 'Telescopio de Providence', slot: 'mano', logro: 'abismo_providence', precio: 0, desc: 'Regalo del Astrónomo Aficionado de Providence. Apunta a estrellas que no existen.',
+    rows: ['.......YY', '.....yyY.', '...yyy...', '.yyy.....', 'k........', '.k.......', '..k......'], ancla: [1, 4] },
+);
+for (const a of ACCESORIOS) if (a.logro) a.cat = 'criptas';
+
 for (const st of SETS) ACCESORIOS.push({ id: st.id, nombre: st.nombre, slot: 'cabeza', cat: 'sets', precio: 0, desc: st.desc, rows: [], ancla: [0, 0], set: { piezas: st.piezas, capa: st.capa } });
 
 export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Record<string, Accesorio>;
@@ -407,7 +424,7 @@ export function diaNum(hoy = new Date()) {
 /** La oferta del día (−40 %): cambia cada día, igual para todo el grupo (los sets ya traen descuento) */
 export function ofertaDelDia(hoy = new Date()) {
   const n = diaNum(hoy);
-  const sueltos = ACCESORIOS.filter((a) => !a.set);
+  const sueltos = ACCESORIOS.filter((a) => !a.set && !a.logro);
   return sueltos[(n * 7919) % sueltos.length];
 }
 
@@ -432,7 +449,8 @@ export function precioHoy(a: Accesorio, hoy = new Date()) {
 
 /** Artículos de una categoría (o todos) */
 export function catalogo(cat: Cat | 'todo') {
-  return cat === 'todo' ? ACCESORIOS : ACCESORIOS.filter((a) => a.cat === cat);
+  const venta = ACCESORIOS.filter((a) => !a.logro); // los premios del Abismo no se venden
+  return cat === 'todo' ? venta : venta.filter((a) => a.cat === cat);
 }
 
 /** Frases de Layla */

@@ -133,12 +133,12 @@ export function dentaduraView(s: Phaser.Scene, cx: number, cy: number, tip: Tool
       if (opts.onHueco) { z.on('pointerover', () => hover.setVisible(true)); z.on('pointerout', () => hover.setVisible(false)); }
       if (id) {
         const d = defDiente(id);
-        const copia = d.id === 'espejo' ? izq : null;
-        tip.attach(z, `${d.nombre} · ${etiquetaDiente(id)}`, `${d.texto}${d.id === 'espejo' ? `\nAhora copia: ${copia ? DIENTES[copia].nombre : 'nada (pon un diente a su izquierda)'}` : ''}${textoCristal(id)}\n${d.lore}`, 20);
+        const copia = d.id === 'espejo' && izq && DIENTES[izq]?.rareza !== 'legendario' ? izq : null;
+        tip.attach(z, `${d.nombre} · ${etiquetaDiente(id)}`, `${d.texto}${d.id === 'espejo' ? `\nAhora copia: ${copia ? DIENTES[copia].nombre : 'nada (pon un diente no legendario a su izquierda)'}` : ''}${textoCristal(id)}\n${d.lore}`, 20);
       } else tip.attach(z, `Hueco ${i + 1}`, 'Vacío. Consigue dientes en el Sacamuelas Ciego o al vencer a un jefe.', 20);
       if (opts.onHueco) z.on('pointerdown', () => opts.onHueco!(i));
       c.add(z);
-      izq = id ? (base(id) === 'espejo' ? izq : base(id)) : null;
+      izq = id && base(id) !== 'espejo' ? base(id) : null;
     }
     // alineación planetaria
     if (alineacion(dent)) {

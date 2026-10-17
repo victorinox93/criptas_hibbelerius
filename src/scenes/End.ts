@@ -1,6 +1,7 @@
 import { ENEMIES } from '../data/enemies';
 import { PISOS_TRAMO, TRAMOS } from '../data/abismo_modo';
 import Phaser from 'phaser';
+import { avisarPremios } from '../ui/avisos';
 import { CSS, UI } from '../art/palette';
 import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
@@ -63,6 +64,7 @@ export class EndScene extends Phaser.Scene {
   create(data: { victory: boolean; by?: string; nucleo?: 'am' | 'caido'; primeraAM?: boolean; abismo?: boolean }) {
     this.cameras.main.fadeIn(500);
     audio.play('menu');
+    if (data.abismo) avisarPremios(this);
     const run = Game.run!;
     codexFlag('primera'); // ya terminó (o perdió) su primera expedición
     this.add.rectangle(0, 0, W, H, 0x07060a).setOrigin(0);

@@ -43,18 +43,34 @@ export const NOMBRE_RAREZA: Record<RarezaDiente, { t: string; css: string; borde
   parasito: { t: '☣ Parásito', css: '#b8e070', borde: 0x6a8a2a },
 };
 /** Probabilidad de que un diente ofrecido salga de Cristal, y cuántos combates dura */
-export const PROB_CRISTAL = 0.12;
-export const CRISTAL_COMBATES = 3;
+export const PROB_CRISTAL = 0.08;
+export const CRISTAL_COMBATES = 2; // v0.46: antes 3
 /** Probabilidad de que el Sacamuelas meta un parásito entre sus 3 dientes */
 export const PROB_PARASITO_SACAMUELAS = 0.3;
 /** Ergios por arrancar un parásito en el Sacamuelas */
 export const ARRANCAR_PARASITO = 40;
+
+/** v0.46 · Rueda de la Fortuna del Sacamuelas: costo del primer giro y cuánto sube cada giro */
+export const RUEDA_COSTO = 30;
+export const RUEDA_SUBE = 15;
+/** Gajos de la rueda (p = probabilidad; suman 1) */
+export const RUEDA: { id: string; t: string; p: number; color: number }[] = [
+  { id: 'legendario', t: '★★ Diente', p: 0.07, color: 0xe8c15a },
+  { id: 'raro', t: '★ Diente', p: 0.18, color: 0x6a9ad8 },
+  { id: 'ergios', t: '+40 Ergios', p: 0.15, color: 0xb8902a },
+  { id: 'cordura', t: '+12 Cordura', p: 0.15, color: 0x4ec46a },
+  { id: 'apunte', t: 'Apunte', p: 0.1, color: 0x9a7a5a },
+  { id: 'parasito', t: '☣ Parásito', p: 0.17, color: 0x6a8a2a },
+  { id: 'nada', t: 'Nada', p: 0.18, color: 0x3a3440 },
+];
 
 export const HUECOS = 8;
 /** Ergios por volver a tirar en el Sacamuelas (como el «reroll» de Balatro) */
 export const RETIRAR_DIENTES = 25;
 /** Ataques ×ALINEACION si hay 3 Astros seguidos en la dentadura */
 export const ALINEACION = 1.5;
+/** v0.46 · tope de los multiplicadores de los dientes (se suman y no pasan de aquí) */
+export const MULT_DIENTES_MAX = 2;
 
 export const DIENTES: Record<string, DienteDef> = {
   // ── dientes comunes ──
@@ -68,7 +84,7 @@ export const DIENTES: Record<string, DienteDef> = {
   vampiro: { id: 'vampiro', rareza: 'raro', nombre: 'Colmillo Vampiro', tipo: 'normal', color: 0xf0d0d0, texto: 'Cuando muere un enemigo, recuperas 3 de vida.', lore: 'Muerde en la yugular… de la gráfica.' },
   canino: { id: 'canino', rareza: 'comun', nombre: 'Canino Giratorio', tipo: 'normal', color: 0xc8e8d8, texto: 'Cada 3 cartas que juegas en un turno, +1 J.', lore: 'Gira sobre su raíz: ω constante, I pequeñita.' },
   protector: { id: 'protector', rareza: 'raro', nombre: 'Protector Bucal', tipo: 'normal', color: 0x6ab8e8, texto: 'No puedes quedar Aturdido y la Hemorragia te dura la mitad.', lore: 'Reglamentario en el box y en el Abismo.' },
-  espejo: { id: 'espejo', rareza: 'raro', nombre: 'Diente Espejo', tipo: 'normal', color: 0xc8f4ff, texto: 'Copia el efecto del diente que tiene a su IZQUIERDA en la dentadura.', lore: 'En el espejo, tu sonrisa sonríe un poco tarde.', peso: 0.7 },
+  espejo: { id: 'espejo', rareza: 'raro', nombre: 'Diente Espejo', tipo: 'normal', color: 0xc8f4ff, texto: 'Copia el efecto del diente que tiene a su IZQUIERDA (no copia legendarios ni otros espejos).', lore: 'En el espejo, tu sonrisa sonríe un poco tarde.', peso: 0.7 },
   // v0.43 · más comunes
   astilla: { id: 'astilla', rareza: 'comun', nombre: 'Astilla de Hueso', tipo: 'normal', color: 0xe0d8c0, texto: 'Al empezar cada combate, 4 de daño a un enemigo al azar.', lore: 'Sale disparada cuando aprietas la quijada.' },
   premolar: { id: 'premolar', rareza: 'comun', nombre: 'Premolar Paciente', tipo: 'normal', color: 0xd8d8c8, texto: 'Al terminar tu turno, +2 de Bloqueo por cada J que no usaste.', lore: 'Mastica despacio. Ahorra energía.' },
@@ -78,7 +94,7 @@ export const DIENTES: Record<string, DienteDef> = {
   cordal: { id: 'cordal', rareza: 'raro', nombre: 'Cordal Despierta', tipo: 'normal', color: 0xf0e8d8, texto: 'En tu primer turno de cada combate: +1 J y robas 1 carta.', lore: 'Salió tarde, pero salió con ganas.' },
   // ── LEGENDARIOS ──
   ambar: { id: 'ambar', rareza: 'legendario', nombre: 'Muela de Ámbar', tipo: 'normal', color: 0xe8a040, texto: 'Conservas la mitad de tu Bloqueo de un turno al siguiente.', lore: 'Atrapó un mosquito hace 300 millones de años. Y no lo suelta.' },
-  rlyeh: { id: 'rlyeh', rareza: 'legendario', nombre: "Diente de R'lyeh", tipo: 'normal', color: 0x6ad8a8, texto: 'Tu primer ataque de cada combate hace ×3.', lore: 'Tiene ángulos que no deberían caber en una boca.' },
+  rlyeh: { id: 'rlyeh', rareza: 'legendario', nombre: "Diente de R'lyeh", tipo: 'normal', color: 0x6ad8a8, texto: 'Tu primer ataque de cada combate hace ×2.', lore: 'Tiene ángulos que no deberían caber en una boca.' },
   diamante: { id: 'diamante', rareza: 'legendario', nombre: 'Diente de Diamante', tipo: 'normal', color: 0xd8f8ff, texto: 'Tus Ataques hacen +4 y tus Defensas dan +4 de Bloqueo.', lore: 'Dureza 10 en la escala de Mohs. Muerde lo que sea.' },
   // ── PARÁSITOS (como en Returnal): un beneficio y un perjuicio ──
   podrido: { id: 'podrido', rareza: 'parasito', nombre: 'Diente Podrido', tipo: 'parasito', color: 0x7a6a3a, texto: '+1 J cada turno.\n☣ Pierdes 2 de Cordura cada turno.', lore: 'Huele a página vieja del Necronomicón.' },
@@ -88,13 +104,13 @@ export const DIENTES: Record<string, DienteDef> = {
   ojo: { id: 'ojo', rareza: 'parasito', nombre: 'Ojo Parpadeante', tipo: 'parasito', color: 0xe8e0a0, texto: 'Ves las intenciones de los enemigos invisibles y tus Ataques hacen +3.\n☣ Empiezas cada combate Confundido.', lore: 'Te mira desde la encía. Parpadea cuando tú no.' },
   garrapata: { id: 'garrapata', rareza: 'parasito', nombre: 'Garrapata de Leng', tipo: 'parasito', color: 0x8a5a3a, texto: '+30 Ergios al ganar un combate.\n☣ Pierdes 3 de vida al empezar cada combate.', lore: 'Se alimenta de ti y escupe monedas. Negocio redondo (para ella).' },
   // ── ASTROS (como los planetas de Balatro): suben de nivel una constelación ──
-  marte: { id: 'marte', rareza: 'raro', nombre: 'Diente de Marte', tipo: 'astro', color: 0xf0e0d0, planeta: 0xd85a3a, texto: 'Constelación de ATAQUE +1 nivel: tus Ataques hacen +3 de daño por nivel.', lore: 'El dios de la guerra también mordía.', peso: 0.7 },
+  marte: { id: 'marte', rareza: 'raro', nombre: 'Diente de Marte', tipo: 'astro', color: 0xf0e0d0, planeta: 0xd85a3a, texto: 'Constelación de ATAQUE +1 nivel: tus Ataques hacen +2 de daño por nivel.', lore: 'El dios de la guerra también mordía.', peso: 0.7 },
   luna: { id: 'luna', rareza: 'raro', nombre: 'Diente Lunar', tipo: 'astro', color: 0xf0f0f0, planeta: 0xd8d8c8, texto: 'Constelación de DEFENSA +1 nivel: tus Defensas dan +3 de Bloqueo por nivel.', lore: 'Mueve las mareas. Y las encías.', peso: 0.7 },
   mercurio: { id: 'mercurio', rareza: 'raro', nombre: 'Diente de Mercurio', tipo: 'astro', color: 0xe0e8f0, planeta: 0xa8b8c8, texto: 'Constelación de HABILIDAD +1 nivel: tus Habilidades dan +2 de Bloqueo y +2 de daño a tu siguiente ataque por nivel.', lore: 'El planeta más rápido. Muerde y se va.', peso: 0.7 },
   saturno: { id: 'saturno', rareza: 'raro', nombre: 'Diente de Saturno', tipo: 'astro', color: 0xf0e8d0, planeta: 0xe0b860, texto: 'Constelación del ABISMO +1 nivel: las cartas del Abismo hacen ×1.25 de daño (o +3 de Bloqueo) por nivel.', lore: 'Sus anillos tienen un momento de inercia enorme.', peso: 0.6 },
   jupiter: { id: 'jupiter', rareza: 'raro', nombre: 'Diente de Júpiter', tipo: 'astro', color: 0xf0e0c8, planeta: 0xc89a6a, texto: 'Constelación de GRAVEDAD +1 nivel: empiezas cada combate con +1 kg (o +1 m/s) por nivel.', lore: 'g = 24.8 m/s². Hasta morder pesa.', peso: 0.6 },
   neptuno: { id: 'neptuno', rareza: 'raro', nombre: 'Diente de Neptuno', tipo: 'astro', color: 0xe0f0f8, planeta: 0x3a6ad8, texto: 'Constelación de ÓRBITA +1 nivel: cada 3 turnos ganas +1 J por nivel.', lore: 'Lo encontraron con lápiz y papel antes que con telescopio (Le Verrier, 1846).', peso: 0.6 },
-  sol: { id: 'sol', rareza: 'legendario', nombre: 'Diente del Sol Negro', tipo: 'astro', color: 0x2a2a30, planeta: 0xffb030, texto: 'Tus ataques hacen ×1.1 por cada Astro en tu dentadura (contándolo a él).', lore: 'Un sol que no alumbra. Todos los planetas giran a su alrededor.', peso: 0.4 },
+  sol: { id: 'sol', rareza: 'legendario', nombre: 'Diente del Sol Negro', tipo: 'astro', color: 0x2a2a30, planeta: 0xffb030, texto: 'Tus ataques hacen +10 % por cada Astro en tu dentadura (contándolo a él).', lore: 'Un sol que no alumbra. Todos los planetas giran a su alrededor.', peso: 0.4 },
 };
 
 export const D = (id: string) => DIENTES[id];
@@ -148,9 +164,10 @@ export function dientesEfectivos(dent: (string | null)[] = []): string[] {
   for (const id0 of dent) {
     if (!id0) { izq = null; continue; }
     const id = base(id0);
-    const real: string | null = id === 'espejo' ? izq : id;
+    // v0.46: el Espejo no copia legendarios ni a otro Espejo (izq = null después de un espejo)
+    const real: string | null = id === 'espejo' ? (izq && DIENTES[izq]?.rareza !== 'legendario' ? izq : null) : id;
     if (real) { out.push(real); if (cristalDe(id0) !== undefined) out.push(real); } // el Cristal cuenta doble
-    izq = real;
+    izq = id === 'espejo' ? null : real;
   }
   return out;
 }
@@ -165,10 +182,10 @@ export function alineacion(dent: (string | null)[] = []): boolean {
   let izq: string | null = null;
   for (const id0 of dent) {
     const id = id0 ? base(id0) : null;
-    const real: string | null = id === 'espejo' ? izq : id;
+    const real: string | null = id === 'espejo' ? (izq && DIENTES[izq]?.rareza !== 'legendario' ? izq : null) : id;
     seguidos = esAstro(real ?? undefined) ? seguidos + 1 : 0;
     if (seguidos >= 3) return true;
-    izq = id ? real : null;
+    izq = id && id !== 'espejo' ? real : null;
   }
   return false;
 }
