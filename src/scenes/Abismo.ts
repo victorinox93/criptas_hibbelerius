@@ -407,9 +407,12 @@ export class AbismoScene extends Phaser.Scene {
       }
       const listo = quedan <= 0 && !pendiente;
       const etiqueta = modo === 'inicio' ? (listo ? 'Listo: abrir los sobres' : `Elige ${quedan} diente(s) más`) : listo ? 'Seguir' : 'Irme sin diente';
-      const b = button(this, W / 2, 500, 280, 40, etiqueta, () => { if (!pendiente) alTerminar(); }, { size: 19, color: listo ? UI.gold : UI.border });
-      if (modo === 'inicio' && !listo) b.setEnabled(false);
-      pie.add(b);
+      // mientras hay un diente por colocar, sólo se puede colocar (tocando un hueco) o tirarlo
+      if (!pendiente) {
+        const b = button(this, W / 2, 500, 280, 40, etiqueta, () => alTerminar(), { size: 19, color: listo ? UI.gold : UI.border });
+        if (modo === 'inicio' && !listo) b.setEnabled(false);
+        pie.add(b);
+      }
       if (modo === 'boca' && quedan > 0 && run) {
         const rr = button(this, W / 2 + 290, 500, 230, 36, `Volver a tirar (${RETIRAR_DIENTES} ⛁)`, () => {
           if (run.ergios < RETIRAR_DIENTES) return;

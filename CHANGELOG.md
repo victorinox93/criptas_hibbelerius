@@ -11,7 +11,7 @@ Lo más reciente primero. El resumen del juego está en el [README](README.md).
 - **El diario de Montemayor sirve:** cada hoja que encuentras da un **apunte** (una pista gratis en una pregunta, en lugar de pagar Ergios) y +6 de Cordura. La última hoja anota el punto débil del Primigenio: empieza con 15 % menos vida.
 - **Nueva escena al empezar:** después de la hoja de 1931, «Casi cien años después…»: tú, en una práctica de campo, subes al Cerro de la Silla y encuentras la cueva, el diario, el Necronomicón y la dentadura.
 - **Mapa del Abismo:** los nodos se recorren a la derecha para dejar espacio al semáforo, la dentadura y la carta; el botón «Guía» pasó a la esquina derecha (antes tapaba los dones de los Ecos).
-- Créditos: nueva línea con Lovecraft, R. W. Chambers, Balatro, Sol Cesto, Returnal y Slay the Spire. La guía ya no menciona otros juegos y la ficha de Lovecraft es más corta.
+- Créditos: nueva línea con Lovecraft, R. W. Chambers, Balatro, Sol Cesto y Returnal. La guía ya no menciona otros juegos y la ficha de Lovecraft es más corta.
 
 ## v0.43.0 · El Astrónomo de Providence: rarezas, parásitos y relatos (beta, sólo Modo profesor)
 

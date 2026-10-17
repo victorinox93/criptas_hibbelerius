@@ -3,3 +3,5 @@
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+1:09:49 PM [vite] (client) page reload src/scenes/Abismo.ts
+1:10:27 PM [vite] (client) page reload src/textos.ts
