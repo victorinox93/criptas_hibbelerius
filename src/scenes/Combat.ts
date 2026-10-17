@@ -17,12 +17,13 @@ function umbralDe(st: EnemyState) {
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
 import { AddCards, danoDe, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
-import { enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
+import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
 import { ENTROPIA, SUSURROS } from '../data/abismo';
-import { alineacion, ALINEACION, cuantosAstros, nivelDiente } from '../data/dientes';
+import { alineacion, ALINEACION, cuantosAstros, gastarCristal, nivelDiente } from '../data/dientes';
+import { cumplirCarta } from '../data/lovecraft';
 import { CORDURA, corduraDe, EDICIONES, escalaDano, escalaTramo, JEFES as JEFES_ABISMO, multPuntaje, nombreTramo, ROMPER_CRISTAL, TRAMOS } from '../data/abismo_modo';
 import { abismoBackground } from '../art/abismo';
 import { completarEncargo } from '../data/encargos';
@@ -162,6 +163,8 @@ export class CombatScene extends Phaser.Scene {
   private golpesTurno = new Map<EnemyState, number>(); // golpes recibidos este turno (Acólito: se vuelca con 2)
   private curAll = false; // la carta en curso golpea a TODOS (Profundo Hueco recibe la mitad)
   private steinerUsed = false; // Página de Steiner: primer ataque del combate ×2
+  private rlyehUsado = false; // Diente de R'lyeh: primer ataque del combate ×3
+  private jugoDefensa = false; // carta de Providence «sin Defensas»
   private bonusJ1 = 0; // J extra en el primer turno (Boltzmann, Cantor)
   private robo1 = 0; // cartas extra en el primer turno (Newton 1693, página de la Confusión)
 
@@ -238,6 +241,8 @@ export class CombatScene extends Phaser.Scene {
     this.golpesTurno = new Map();
     this.curAll = false;
     this.steinerUsed = false;
+    this.rlyehUsado = false;
+    this.jugoDefensa = false;
     this.bonusJ1 = 0;
     this.robo1 = 0;
     if (Game.run?.necro === 'sueno') this.maxEnergy += 1; // El Sueño Profundo
@@ -257,7 +262,15 @@ export class CombatScene extends Phaser.Scene {
   }
   /** Nivel de un diente de la Dentadura (0 = no lo tienes; el Diente Espejo suma copias) */
   private diente(id: string) {
-    return Game.run?.modo === 'abismo' ? nivelDiente(Game.run.dientes, id) : 0;
+    return Game.run?.modo === 'abismo' ? nivelDiente(Game.run.dientes, id, Game.run.cosmos) : 0;
+  }
+
+  /** Carta del Astrónomo de Providence: si la misión activa es «id», se cumple */
+  private cartaLovecraft(id: string) {
+    if (cumplirCarta(id)) {
+      this.floatText(W / 2, 150, '✉ ¡Carta de Providence cumplida!', '#ffd060');
+      this.calc('Carta de Providence cumplida: el trofeo del próximo jefe traerá 3 dientes legendarios');
+    }
   }
 
   /** La Dentadura y el cosmos sobre un Ataque (se suman a this.polonio y se multiplican en this.mult) */
@@ -265,6 +278,12 @@ export class CombatScene extends Phaser.Scene {
     const run = Game.run!;
     const col = this.diente('colmillo');
     if (col) { this.polonio += 2 * col; this.calc(`Colmillo de Profundo: +${2 * col}`); }
+    const dmt = this.diente('diamante');
+    if (dmt) { this.polonio += 4 * dmt; this.calc(`Diente de Diamante: +${4 * dmt}`); }
+    const ojo = this.diente('ojo');
+    if (ojo) { this.polonio += 3 * ojo; this.calc(`☣ Ojo Parpadeante: +${3 * ojo}`); }
+    const rly = this.diente('rlyeh');
+    if (rly && !this.rlyehUsado) { this.rlyehUsado = true; this.mult *= 1 + 2 * rly; this.calc(`Diente de R'lyeh: primer ataque ×${1 + 2 * rly}`); }
     const mar = this.diente('marte');
     if (mar) { this.polonio += 3 * mar; this.calc(`✦ Marte · Ataque nv ${mar}: +${3 * mar}`); }
     if (this.mercurioBono) { this.polonio += this.mercurioBono; this.calc(`✦ Mercurio: +${this.mercurioBono} guardado`); this.mercurioBono = 0; }
@@ -282,6 +301,9 @@ export class CombatScene extends Phaser.Scene {
 
   /** La Dentadura y el cosmos sobre Defensas, Habilidades y Poderes */
   private dientesNoAtaque(def: CardDef) {
+    if (def.type === 'Defensa') this.jugoDefensa = true;
+    const dmd = this.diente('diamante');
+    if (dmd && def.type === 'Defensa') { this.gainBlock(4 * dmd); this.calc(`Diente de Diamante: +${4 * dmd} de Bloqueo`); }
     const lun = this.diente('luna');
     if (lun && def.type === 'Defensa') { this.gainBlock(3 * lun); this.calc(`✦ Luna · Defensa nv ${lun}: +${3 * lun} de Bloqueo`); }
     const mer = this.diente('mercurio');
@@ -323,6 +345,20 @@ export class CombatScene extends Phaser.Scene {
     if (inc) this.robo1 += inc;
     const jup = this.diente('jupiter');
     if (jup) masaOVel(jup, `Diente de Júpiter (Gravedad nv ${jup})`);
+    const cor = this.diente('cordal');
+    if (cor) { this.bonusJ1 += cor; this.robo1 += cor; this.calc(`Cordal Despierta: +${cor} J y +${cor} carta en tu primer turno`); }
+    const gar = this.diente('garrapata');
+    if (gar) { run.hp = Math.max(1, run.hp - 3 * gar); this.calc(`☣ Garrapata de Leng: −${3 * gar} de vida`); }
+    if (this.diente('ojo')) this.time.delayedCall(500, () => this.confundir('☣ Ojo Parpadeante'));
+    const ast = this.diente('astilla');
+    if (ast) this.time.delayedCall(700, async () => {
+      const t = this.alive().length ? Phaser.Utils.Array.GetRandom(this.alive()) : null;
+      if (!t) return;
+      this.calc(`Astilla de Hueso: ${4 * ast} a ${t.st.def.name}`);
+      this.beam(t, 0xe0d8c0);
+      await this.hitEnemy(t, 4 * ast, false, 'res');
+      await this.checkEnd();
+    });
     if (this.necro('angulos')) {
       for (const e of this.alive()) { e.st.hp = e.st.maxHp = Math.round(e.st.maxHp * 1.15); this.refreshEnemy(e); }
       this.calc('Ángulos que No Suman: los enemigos tienen +15 % de vida');
@@ -707,7 +743,7 @@ export class CombatScene extends Phaser.Scene {
     ev.hp.set(st.hp, st.maxHp, st.block);
     ev.blockT.setText(st.block > 0 ? `🛡${st.block}` : '');
     ev.intentC.removeAll(true);
-    if (!ev.dead && st.def.oculto && st.intent.kind !== 'stunned') {
+    if (!ev.dead && st.def.oculto && st.intent.kind !== 'stunned' && !this.diente('ojo')) {
       // invisible: no se ve qué hará, sólo sus huellas
       const ic = icon(this, -14, 0, 'i_fog', 3.2);
       ev.intentC.add([ic, txt(this, 2, -12, '???', 26, '#9a93a8')]);
@@ -2061,6 +2097,7 @@ export class CombatScene extends Phaser.Scene {
       // frágil: esta vez se rompe y la carta sale de tu mazo para siempre (1 de cada 4, como en Balatro)
       const run = Game.run!;
       run.deck = run.deck.filter((x) => x.uid !== inst.uid);
+      (run.cristalesRotos ??= []).push(inst.id);
       this.discard = this.discard.filter((x) => x !== inst);
       this.exhaust = this.exhaust.filter((x) => x !== inst);
       this.calc(`¡El Cristal se rompe! ${def.name} sale de tu mazo`);
@@ -2442,7 +2479,9 @@ export class CombatScene extends Phaser.Scene {
     } else if (this.has('cristal')) {
       this.block = Math.floor(this.block / 2);
     } else if (this.turn > 1) {
-      this.block = 0;
+      const amb = this.diente('ambar');
+      this.block = amb >= 2 ? this.block : amb ? Math.floor(this.block / 2) : 0;
+      if (amb && this.block) this.calc(`Muela de Ámbar: conservas ${this.block} de Bloqueo`);
     }
     this.energy = Math.max(0, this.maxEnergy + this.jPerTurn + this.carry - this.drainNext);
     if (this.jefeVivo('colorCielo')) {
@@ -2457,6 +2496,8 @@ export class CombatScene extends Phaser.Scene {
       this.hud.refresh();
     }
     if (this.pacto('pendulo') && this.turn % 2 === 1) { this.energy += 1; this.calc('Pacto del Péndulo (ida): +1 J'); }
+    const nep = this.diente('neptuno');
+    if (nep && this.turn % 3 === 0) { this.energy += nep; this.calc(`✦ Neptuno · Órbita nv ${nep}: +${nep} J`); }
     if (this.jefeVivo('cthulhu')) {
       addEntropia(5);
       this.calc('Cthulhu sueña contigo: −5 de Cordura');
@@ -2620,6 +2661,13 @@ export class CombatScene extends Phaser.Scene {
     this.restE = 0;
     this.played = 0;
     if (this.pacto('pendulo') && this.turn % 2 === 0) { draw += 1; this.calc('Pacto del Péndulo (vuelta): robas 1 carta más'); }
+    const dia = this.diente('diastema');
+    if (dia && this.turn % 3 === 0) { draw += dia; this.calc(`Diente Separado: +${dia} carta`); }
+    const lar = this.diente('larva');
+    if (lar) {
+      draw += lar;
+      if (this.turn % 3 === 0) { this.addStatus({ id: 'susurro', n: 1, to: 'discard' }); this.calc('☣ Larva de Shoggoth: tekeli-li… un Susurro a tu descarte'); }
+    }
     if (this.vertigo) {
       draw = Math.max(1, draw - this.vertigo);
       this.calc(`Vértigo: todo da vueltas, robas ${this.vertigo} carta(s) menos`);
@@ -2711,6 +2759,9 @@ export class CombatScene extends Phaser.Scene {
       this.hud.refresh();
     }
     this.desvioUsed = false;
+    const pre = this.diente('premolar');
+    if (pre && this.energy > 0) { this.gainBlock(2 * pre * this.energy); this.calc(`Premolar Paciente: ${this.energy} J sin usar → +${2 * pre * this.energy} de Bloqueo`); }
+    if (this.played - this.jugadasIni >= 6) this.cartaLovecraft('seisCartas');
     // tareas pendientes: si siguen en la mano, cuestan vida
     const tareas = this.hand.filter((c) => c.inst.id === 'tarea').length;
     if (tareas) {
@@ -2920,10 +2971,25 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.kind === 'boss' && this.turn <= 6) this.encargo(completarEncargo('jefeRapido'));
     // la Dentadura: premios al ganar
+    const sinDano = run.hp >= this.hpStart;
     const lec = this.diente('leche');
     if (lec) { run.hp = Math.min(run.maxHp, run.hp + 4 * lec); this.floatText(this.heroX, 200, `+${4 * lec}`, CSS.green); }
     const oro = this.diente('oro');
     if (oro) { run.ergios += 20 * oro; this.floatText(W / 2, 210, `+${20 * oro} Ergios (Diente de Oro)`, CSS.gold); }
+    const lom = this.diente('lombriz');
+    if (lom) run.hp = Math.min(run.maxHp, run.hp + 5 * lom);
+    const gar = this.diente('garrapata');
+    if (gar) run.ergios += 30 * gar;
+    if (run.modo === 'abismo') {
+      // cartas del Astrónomo de Providence
+      if (sinDano && this.kind === 'elite') this.cartaLovecraft('elitePerfecta');
+      if (!this.jugoDefensa) this.cartaLovecraft('sinDefensa');
+      if (alineacion(run.dientes)) this.cartaLovecraft('alineacion');
+      if (this.kind === 'boss' && this.turn <= 6) this.cartaLovecraft('jefeRapido');
+      // los dientes de Cristal se gastan
+      const rotos = gastarCristal(run.dientes);
+      if (rotos.length) { this.floatText(W / 2, 240, `💎 Se rompe: ${rotos.join(', ')}`, '#c8f4ff'); aplicarSarro(run); }
+    }
     if (this.kind === 'boss') sumar(run, 'Actos superados', PUNTOS.acto * this.acto);
     if (this.kind === 'boss' && this.acto === 3) sumar(run, 'Victoria', PUNTOS.victoria);
     if (this.kind === 'boss' && this.acto === 4) sumar(run, 'AM derrotado', PUNTOS.victoria * 2);

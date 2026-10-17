@@ -6,6 +6,7 @@ import { EVENTS, EventDef, PROFE_CHANCE, PROFE_ENOJADO_CHANCE } from '../data/ev
 import { ALMA_CHANCE, ALMA_IDS } from '../data/almas';
 import { AM_CHANCE } from '../data/am';
 import { MYRIAM_CHANCE } from '../data/myriam';
+import { RELATO_CHANCE, RELATOS } from '../data/relatos';
 
 /** Probabilidad de encontrar el Necronomicón en un encuentro (Actos II y III, una vez) */
 const NECRO_CHANCE = 0.15;
@@ -25,6 +26,17 @@ export class EventScene extends Phaser.Scene {
     const seen = (run.seen ??= []);
     // ── ¿qué hay en la penumbra? (azar) ──
     let ev: EventDef | undefined = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
+    // El Abismo: casi siempre, un Relato basado en un cuento de Lovecraft (src/data/relatos.ts)
+    if (!ev && run.modo === 'abismo') {
+      const libres = RELATOS.filter((r) => !seen.includes(`relato_${r.id}`));
+      if (libres.length && Math.random() < RELATO_CHANCE) {
+        const r = Phaser.Utils.Array.GetRandom(libres);
+        seen.push(`relato_${r.id}`);
+        saveLocal();
+        this.scene.start('Relato', { floor: data.floor, id: r.id });
+        return;
+      }
+    }
     if (!ev) {
       const profeVisto = seen.includes('victorino') || seen.includes('profe_enojado');
       const almas = ALMA_IDS.filter((id) => !seen.includes(`alma_${id}`));

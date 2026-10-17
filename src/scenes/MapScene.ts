@@ -1,4 +1,5 @@
 import { JEFES as JEFES_ABISMO, nombreTramo, TRAMOS } from '../data/abismo_modo';
+import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
 import { hojaDiario, paginasHasta } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
@@ -26,6 +27,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   taberna: { icon: 'i_jarra', color: 0xd89a4a },
   jefe: { icon: 'i_boss', color: 0xe8c15a },
   boca: { icon: 'i_diente', color: 0xf0c8c8 },
+  observatorio: { icon: 'i_telescopio', color: 0xc8b8ff },
 };
 const NODE_INFO = Object.fromEntries(
   Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),
@@ -247,19 +249,44 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
+    const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'observatorio', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
+    const paso = types.length > 9 ? 94 : 105;
     types.forEach((t, i) => {
-      const x = 22 + i * 105;
+      const x = 22 + i * paso;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
       const lt = txt(this, x + 16, H - 33, t === 'jefe' && act5 ? JEFES_ABISMO[run.jefe ?? 'geometra'].nombre.replace(/^(El|La) /, '') : t === 'jefe' && act4 ? 'AM' : t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
-      if (lt.width > 84) lt.setScale(84 / lt.width, 1);
+      if (lt.width > paso - 21) lt.setScale((paso - 21) / lt.width, 1);
     });
 
     // al empezar cada acto: un consejo para quien no ha jugado este tipo de juegos
     if (run.pos === -1) {
-      if (!run.encargo || run.encargo.acto !== (run.acto ?? 1)) this.tablon(() => this.consejo());
+      if (act5) {
+        // en el Abismo, en lugar del tablón: una carta del Astrónomo de Providence por tramo
+        if (!run.carta || run.carta.tramo !== (run.tramo ?? 1)) this.time.delayedCall(700, () => this.cartaProvidence(nuevaCarta()));
+        else this.consejo();
+      } else if (!run.encargo || run.encargo.acto !== (run.acto ?? 1)) this.tablon(() => this.consejo());
       else this.consejo();
     }
+  }
+
+  /** Carta del Astrónomo Aficionado de Providence (src/data/lovecraft.ts) */
+  private cartaProvidence(carta: CartaDef) {
+    const c = this.add.container(0, 0).setDepth(900);
+    c.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.8).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, W / 2 - 320, 96, 640, 350, 0x1c1810, 0x8a7a5a, 0.98);
+    // sello de lacre
+    g.fillStyle(0x7a1a1a, 1).fillCircle(W / 2 + 280, 130, 18);
+    g.lineStyle(2, 0xb83a3a, 1).strokeCircle(W / 2 + 280, 130, 13);
+    c.add(g);
+    c.add(this.add.image(W / 2 - 260, 196, 'fig_lovecraft').setScale(4));
+    c.add(this.add.image(W / 2 + 280, 130, 'i_telescopio').setScale(1.6).setTint(0xf0c0a0));
+    c.add(txt(this, W / 2 - 200, 116, 'Carta de Providence', 30, '#e8d8b0'));
+    c.add(txt(this, W / 2 - 200, 152, `«${carta.titulo}» · ${ASTRONOMO}`, 15, '#8a7a5a', { wordWrap: { width: 460 } }));
+    c.add(txt(this, W / 2 - 200, 196, carta.texto, 18, '#d8c8a0', { wordWrap: { width: 480 }, lineSpacing: 3 }));
+    c.add(txt(this, W / 2 - 290, 300, `Misión de este tramo: ${carta.mision}`, 19, CSS.gold, { wordWrap: { width: 580 } }));
+    c.add(txt(this, W / 2 - 290, 340, 'Premio: el trofeo del jefe de este tramo traerá 3 dientes LEGENDARIOS para elegir.', 17, '#ffd060', { wordWrap: { width: 580 } }));
+    c.add(button(this, W / 2, 410, 240, 40, 'Guardar la carta', () => { c.destroy(); this.scene.restart(); }, { size: 19, color: UI.gold }));
   }
 
   /** Tablón de encargos: elige un contrato opcional para este acto (src/data/encargos.ts) */
@@ -331,6 +358,8 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Taberna', { floor: n.floor });
       case 'boca':
         return fadeTo(this, 'Abismo', { clase: Game.run!.clase ?? 'caballero', fase: 'boca' });
+      case 'observatorio':
+        return fadeTo(this, 'Abismo', { clase: Game.run!.clase ?? 'caballero', fase: 'observatorio' });
     }
   }
 

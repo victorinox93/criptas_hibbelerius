@@ -7,14 +7,15 @@ import {
   abrirSobre, ACTO_ABISMO, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
   RARAS_ABISMO, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
-import { DIENTES, HUECOS, ponerDiente, RETIRAR_DIENTES, sortearDientes } from '../data/dientes';
-import { dentaduraView, dibujarDiente, resumenCosmos } from '../ui/dentadura';
+import { ARRANCAR_PARASITO, cristalDe, defDiente, esParasito, HUECOS, nivelDiente, NOMBRE_RAREZA, PROB_PARASITO_SACAMUELAS, ponerDiente, RETIRAR_DIENTES, sortearDientes, sortearParasito } from '../data/dientes';
+import { ASTRONOMO, FICHA_LOVECRAFT, FRASES_INFINITO } from '../data/lovecraft';
+import { dentaduraView, dibujarDiente, etiquetaDiente, resumenCosmos, textoCristal } from '../ui/dentadura';
 import { ENEMIES } from '../data/enemies';
 import { bonosFinales } from '../data/puntaje';
 import { cardView, CW, CH } from '../ui/card';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import { hojaDiario } from '../ui/diario';
-import { addCard, codexFlag, Game, generateMap, logEvent, newRun, otorgarInsigniaAbismo, saveLocal, syncRun, unlock } from '../state';
+import { addCard, aplicarSarro, codexFlag, Game, generateMap, logEvent, newRun, otorgarInsigniaAbismo, saveLocal, syncRun, unlock } from '../state';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
 /**
@@ -32,7 +33,7 @@ export interface AbismoData {
   debug?: boolean;
   tanque?: boolean; // Modo profesor: vida ×10
   saltarPrologo?: boolean;
-  fase?: 'tramo' | 'boca'; // tramo = pantalla entre tramos; boca = el Sacamuelas Ciego (nodo del mapa)
+  fase?: 'tramo' | 'boca' | 'observatorio'; // tramo = entre tramos; boca = Sacamuelas Ciego; observatorio = el Astrónomo de Providence
 }
 
 export class AbismoScene extends Phaser.Scene {
@@ -66,6 +67,7 @@ export class AbismoScene extends Phaser.Scene {
     this.layer = this.add.container(0, 0);
     if (data.fase === 'tramo') this.entreTramos();
     else if (data.fase === 'boca') this.sacamuelas('boca', () => fadeTo(this, 'Map'));
+    else if (data.fase === 'observatorio') this.observatorio();
     else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);
   }
@@ -267,39 +269,66 @@ export class AbismoScene extends Phaser.Scene {
    * premio: al vencer a un jefe, 3 dientes y te llevas 1.
    * En los tres puedes reacomodar la dentadura (clic en un diente y luego en otro hueco).
    */
-  private sacamuelas(modo: 'inicio' | 'boca' | 'premio', alTerminar: () => void) {
+  private sacamuelas(modo: 'inicio' | 'boca' | 'premio' | 'acomodar', alTerminar: () => void) {
     this.limpiar();
     const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
     const run = Game.run;
     const dent = modo === 'inicio' ? this.dientesIni : (run!.dientes ??= Array(HUECOS).fill(null));
     while (dent.length < HUECOS) dent.push(null);
     const astrosX = (modo === 'inicio' ? this.elegido?.id : run?.pacto) === 'estelar' ? 2 : 1;
-    const cuantos = modo === 'inicio' ? this.elegido?.dientes ?? 2 : 1;
-    const nOpc = modo === 'inicio' ? 4 : 3;
-    let opciones = sortearDientes(nOpc, dent.filter((x): x is string => !!x), astrosX);
+    const cuantos = modo === 'inicio' ? this.elegido?.dientes ?? 2 : modo === 'acomodar' ? 0 : 1;
+    const nOpc = modo === 'inicio' ? 4 : modo === 'acomodar' ? 0 : 3;
+    const tengo = () => dent.filter((x): x is string => !!x);
+    // la carta del Astrónomo cumplida: el trofeo del jefe trae 3 legendarios
+    const carta = run?.carta;
+    const cartaPremio = modo === 'premio' && !!carta?.hecho && !carta.cobrada;
+    const sortear = () => {
+      if (cartaPremio) return sortearDientes(nOpc, tengo(), astrosX, { legendario: true });
+      const o = sortearDientes(nOpc, tengo(), astrosX);
+      // contra un Primigenio, siempre hay un legendario entre las opciones
+      if (modo === 'premio' && JEFES[run?.jefe ?? '']?.primigenio && !o.some((id) => defDiente(id).rareza === 'legendario')) o[0] = sortearDientes(1, tengo(), 1, { legendario: true })[0];
+      // el Sacamuelas a veces cuela un parásito (tú decides si lo tomas)
+      if (modo === 'boca' && Math.random() < PROB_PARASITO_SACAMUELAS) o[o.length - 1] = sortearParasito(dent);
+      return o;
+    };
+    let opciones = nOpc ? sortear() : [];
+    if (cartaPremio) { carta!.cobrada = true; saveLocal(); }
     let tomados = 0;
     let sel = -1; // hueco marcado para mover
     let pendiente: string | null = null; // diente elegido que espera hueco (dentadura llena)
+    let arrancando = false; // modo «arrancar un parásito» (Sacamuelas)
     let nota = ''; // mensaje de la última acción
-    const titulo = modo === 'inicio' ? 'La Dentadura de Montemayor' : modo === 'boca' ? 'El Sacamuelas Ciego' : 'Trofeo del jefe';
+    const titulo = { inicio: 'La Dentadura de Montemayor', boca: 'El Sacamuelas Ciego', premio: 'Trofeo del jefe', acomodar: 'Acomodar la dentadura' }[modo];
     L(title(this, W / 2, 40, titulo, 38, '#f0c8c8'));
     const sub = modo === 'inicio' ? `En la cueva encontraste la dentadura del erudito. Elige ${cuantos} de estos ${nOpc} dientes.`
-      : modo === 'boca' ? '«Dientes, dientes frescos… Llévate uno. Yo no los necesito: ya no tengo boca.»'
-        : 'Le arrancas un diente al jefe. Elige 1 de 3.';
-    L(txt(this, W / 2, 72, sub, 18, CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
+      : modo === 'boca' ? '«Dientes, dientes frescos… Llévate uno. Y si traes un parásito, te lo arranco. Cobro, claro.»'
+        : modo === 'acomodar' ? '«Los astros se ven mejor en fila», dice el astrónomo. Toca un diente y luego otro hueco.'
+          : cartaPremio ? '¡Carta de Providence cumplida! El Astrónomo te manda 3 dientes LEGENDARIOS: elige 1.' : 'Le arrancas un diente al jefe. Elige 1 de 3.';
+    L(txt(this, W / 2, 72, sub, 18, cartaPremio ? '#ffd060' : CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
     const aviso = L(txt(this, W / 2, 98, '', 16, '#ffd060', { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
     this.botonGuia();
     const jaw = dentaduraView(this, W / 2, 196, this.tip, {
       paso: 62, k: 0.85, dent: () => dent, marcado: () => sel,
       onHueco: (i) => {
+        if (arrancando) {
+          if (!esParasito(dent[i])) { nota = 'Ese no es un parásito.'; return pintar(); }
+          nota = `El Sacamuelas arranca ${defDiente(dent[i]!).nombre}. ¡Ay! (−${ARRANCAR_PARASITO} Ergios)`;
+          run!.ergios -= ARRANCAR_PARASITO;
+          dent[i] = null;
+          arrancando = false;
+          audio.sfx('hit');
+          this.cameras.main.shake(200, 0.006);
+          return pintar();
+        }
         if (pendiente) {
-          // reemplaza el diente de ese hueco
+          // reemplaza el diente de ese hueco (los parásitos no se dejan)
           const viejo = dent[i];
+          if (esParasito(viejo)) { nota = 'El parásito no se suelta: sólo el Sacamuelas lo arranca.'; return pintar(); }
           dent[i] = pendiente;
           pendiente = null;
           tomados++;
           audio.sfx('coin');
-          nota = viejo ? `Tiraste ${DIENTES[viejo].nombre}.` : '';
+          nota = viejo ? `Tiraste ${defDiente(viejo).nombre}.` : '';
           return pintar();
         }
         if (sel < 0) { if (dent[i]) { sel = i; audio.sfx('click'); } }
@@ -316,34 +345,37 @@ export class AbismoScene extends Phaser.Scene {
       jaw.pintar();
       opc.removeAll(true);
       pie.removeAll(true);
-      const cos = resumenCosmos(dent);
-      aviso.setText(pendiente ? `Tu dentadura está llena: toca el diente que quieres cambiar por ${DIENTES[pendiente].nombre}.`
-        : sel >= 0 ? 'Ahora toca otro hueco para mover ahí ese diente.'
-          : [nota, cos ? `Cosmos: ${cos}` : 'Tip: toca un diente y luego otro hueco para moverlo. El orden importa.'].filter(Boolean).join('  ·  '));
+      const cos = resumenCosmos(dent, run?.cosmos);
+      aviso.setText(arrancando ? 'Toca el parásito que quieres que te arranque.'
+        : pendiente ? `Tu dentadura está llena: toca el diente que quieres cambiar por ${defDiente(pendiente).nombre}.`
+          : sel >= 0 ? 'Ahora toca otro hueco para mover ahí ese diente.'
+            : [nota, cos ? `Cosmos: ${cos}` : 'Tip: toca un diente y luego otro hueco para moverlo. El orden importa.'].filter(Boolean).join('  ·  '));
       nota = '';
       const quedan = cuantos - tomados;
       opciones.forEach((id, i) => {
-        const d = DIENTES[id];
-        const x = W / 2 + (i - (opciones.length - 1) / 2) * 220, y = 268;
+        const d = defDiente(id);
+        const rz = NOMBRE_RAREZA[d.rareza];
+        const x = W / 2 + (i - (opciones.length - 1) / 2) * 220, y = 262;
         const c = this.add.container(x, y);
         const g = this.add.graphics();
-        const borde = d.tipo === 'astro' ? 0xffd060 : d.tipo === 'maldito' ? 0x8a6a3a : 0x8a3040;
-        frame(g, -100, 0, 200, 186, 0x140a0e, borde, 0.97);
+        frame(g, -100, 0, 200, 200, d.tipo === 'parasito' ? 0x0e140a : 0x140a0e, cristalDe(id) !== undefined ? 0xe8fbff : rz.borde, 0.97);
         c.add(g);
-        c.add(dibujarDiente(this, 0, 44, id, 1.1));
-        c.add(txt(this, 0, 86, d.nombre, 17, d.tipo === 'astro' ? '#ffd060' : '#f0c8c8', { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
-        c.add(txt(this, 0, 110, d.texto, 14, CSS.bone, { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
-        if (d.tipo !== 'normal') c.add(txt(this, 0, 6, d.tipo === 'astro' ? '✦ ASTRO' : '☠ MALDITO', 13, d.tipo === 'astro' ? '#ffd060' : '#c8a06a').setOrigin(0.5, 0));
-        c.setSize(200, 186).setInteractive(new Phaser.Geom.Rectangle(-100, 0, 200, 186), Phaser.Geom.Rectangle.Contains);
-        if (quedan > 0 && !pendiente) {
+        c.add(txt(this, 0, 6, etiquetaDiente(id), 13, rz.css).setOrigin(0.5, 0));
+        c.add(dibujarDiente(this, 0, 62, id, 1.0));
+        c.add(txt(this, 0, 100, d.nombre, 17, rz.css, { align: 'center', wordWrap: { width: 186 } }).setOrigin(0.5, 0));
+        c.add(txt(this, 0, 122, d.texto + (cristalDe(id) !== undefined ? `\n💎 Doble efecto · se rompe en ${cristalDe(id)} combates` : ''), 13, CSS.bone, { align: 'center', wordWrap: { width: 188 } }).setOrigin(0.5, 0));
+        c.setSize(200, 200).setInteractive(new Phaser.Geom.Rectangle(-100, 0, 200, 200), Phaser.Geom.Rectangle.Contains);
+        c.on('pointerover', () => this.tip.show(x < W / 2 ? x + 110 : x - 420, 160, d.nombre, `${d.texto}${textoCristal(id)}\n${d.lore}`));
+        c.on('pointerout', () => this.tip.hide());
+        if (quedan > 0 && !pendiente && !arrancando) {
           c.input!.cursor = 'pointer';
-          c.on('pointerover', () => this.tweens.add({ targets: c, y: y - 6, duration: 100 }));
-          c.on('pointerout', () => this.tweens.add({ targets: c, y, duration: 100 }));
           c.on('pointerdown', () => {
+            this.tip.hide();
             opciones = opciones.filter((_, k) => k !== i);
             if (ponerDiente(dent, id)) { tomados++; audio.sfx('coin'); nota = `${d.nombre} entra en tu dentadura.`; }
+            else if (dent.every(esParasito)) { nota = 'Tu dentadura está llena de parásitos…'; }
             else { pendiente = id; audio.sfx('click'); }
-            this.cameras.main.flash(150, 240, 200, 200);
+            this.cameras.main.flash(150, d.tipo === 'parasito' ? 120 : 240, 200, d.tipo === 'parasito' ? 80 : 200);
             pintar();
           });
         } else c.setAlpha(0.45);
@@ -355,19 +387,26 @@ export class AbismoScene extends Phaser.Scene {
       if (modo === 'inicio' && !listo) b.setEnabled(false);
       pie.add(b);
       if (modo === 'boca' && quedan > 0 && run) {
-        const puede = run.ergios >= RETIRAR_DIENTES;
         const rr = button(this, W / 2 + 290, 500, 230, 36, `Volver a tirar (${RETIRAR_DIENTES} ⛁)`, () => {
           if (run.ergios < RETIRAR_DIENTES) return;
           run.ergios -= RETIRAR_DIENTES;
-          opciones = sortearDientes(nOpc, dent.filter((x): x is string => !!x), astrosX);
+          opciones = sortear();
           audio.sfx('coin');
           nota = `Pagaste ${RETIRAR_DIENTES} Ergios. Te quedan ${run.ergios}.`;
           pintar();
         }, { size: 16 });
-        rr.setEnabled(puede);
+        rr.setEnabled(run.ergios >= RETIRAR_DIENTES);
         pie.add(rr);
       }
-      if (run) saveLocal();
+      if (modo === 'boca' && run && dent.some(esParasito)) {
+        const ar = button(this, W / 2 - 290, 500, 230, 36, arrancando ? 'Cancelar' : `Arrancar parásito (${ARRANCAR_PARASITO} ⛁)`, () => {
+          arrancando = !arrancando;
+          pintar();
+        }, { size: 16, color: 0x4a6a2a });
+        ar.setEnabled(arrancando || run.ergios >= ARRANCAR_PARASITO);
+        pie.add(ar);
+      }
+      if (run) { aplicarSarro(run); saveLocal(); }
     };
     pintar();
   }
@@ -549,8 +588,74 @@ export class AbismoScene extends Phaser.Scene {
     const sig = tramo + 1;
     L(txt(this, W / 2, 252, `¿Seguir bajando? Profundidad ${sig}: vida enemiga ×${escalaTramo(sig).toFixed(2)}, daño ×${escalaDano(sig).toFixed(2)} y puntaje ×${multPuntaje(sig).toFixed(1)}.`, 19, CSS.gold).setOrigin(0.5));
     L(txt(this, W / 2, 280, 'El modo infinito tiene su propio ranking. Si caes, conservas lo que llevas.', 17, CSS.dim).setOrigin(0.5));
+    // el Astrónomo de Providence te escribe una línea
+    L(this.add.image(W / 2 - 330, 460, 'fig_lovecraft').setScale(3));
+    L(txt(this, W / 2 - 290, 436, `${FRASES_INFINITO[(tramo - TRAMOS) % FRASES_INFINITO.length]}\n— ${ASTRONOMO}`, 16, '#d8c8a0', { wordWrap: { width: 640 } }));
     L(button(this, W / 2, 340, 340, 46, 'Seguir bajando (sobre y diente)', () => this.sobrePremio(() => this.trofeo()), { color: 0x9a6ad0, size: 21 }));
     L(button(this, W / 2, 402, 300, 40, 'Retirarte con tu gloria', () => this.retirarse(), { size: 19 }));
+  }
+
+  // ── El Observatorio: el Astrónomo Aficionado de Providence (src/data/lovecraft.ts) ──
+  private observatorio() {
+    this.limpiar();
+    const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
+    const run = Game.run!;
+    // cielo estrellado detrás
+    const cielo = this.add.graphics();
+    for (let i = 0; i < 120; i++) cielo.fillStyle(0xffffff, Math.random() * 0.7).fillCircle(Math.random() * W, Math.random() * 300, Math.random() < 0.1 ? 2 : 1);
+    L(cielo);
+    const por = L(this.add.image(130, 250, 'fig_lovecraft').setScale(8));
+    this.tweens.add({ targets: por, y: 246, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    L(this.add.image(214, 200, 'i_telescopio').setScale(6));
+    L(title(this, W / 2 + 90, 40, 'El Observatorio', 38, '#c8b8ff'));
+    L(txt(this, W / 2 + 90, 74, ASTRONOMO, 18, '#8a7a9a').setOrigin(0.5, 0));
+    L(txt(this, W / 2 + 90, 100, '«Pase, pase. Desde aquí abajo las estrellas se ven al revés, pero se ven. Elija una constelación y mírela bien: brillará más para usted.»', 17, '#d8c8a0', { align: 'center', wordWrap: { width: 600 } }).setOrigin(0.5, 0));
+    const CONST: [string, string, string][] = [
+      ['marte', 'ATAQUE', 'Tus Ataques +3 por nivel'], ['luna', 'DEFENSA', 'Tus Defensas +3 de Bloqueo por nivel'],
+      ['mercurio', 'HABILIDAD', '+2 Bloqueo y +2 al siguiente ataque por nivel'], ['saturno', 'ABISMO', 'Cartas del Abismo ×1.25 por nivel'],
+      ['jupiter', 'GRAVEDAD', '+1 kg (o m/s) al empezar por nivel'], ['neptuno', 'ÓRBITA', '+1 J cada 3 turnos por nivel'],
+    ];
+    const opciones = Phaser.Utils.Array.Shuffle([...CONST]).slice(0, 3);
+    const nivel = (id: string) => nivelDiente(run.dientes, id, run.cosmos);
+    let elegida = false;
+    const tarjetas: Phaser.GameObjects.Container[] = [];
+    const pie = this.add.container(0, 0);
+    L(pie);
+    opciones.forEach(([id, nom, efecto], i) => {
+      const x = W / 2 + 90 + (i - 1) * 205, y = 168;
+      const c = this.add.container(x, y);
+      const g = this.add.graphics();
+      frame(g, -95, 0, 190, 210, 0x0c0a18, 0x6a5ab0, 0.97);
+      // la constelación: estrellas unidas con líneas
+      const pts = Array.from({ length: 5 }, (_, k) => [-60 + k * 30 + Phaser.Math.Between(-8, 8), 50 + Phaser.Math.Between(-24, 24)]);
+      g.lineStyle(1, 0x8a7ad8, 0.8);
+      for (let k = 1; k < pts.length; k++) g.lineBetween(pts[k - 1][0], pts[k - 1][1], pts[k][0], pts[k][1]);
+      for (const [px, py] of pts) g.fillStyle(0xfff6c0, 1).fillCircle(px, py, 3);
+      c.add(g);
+      c.add(dibujarDiente(this, 0, 54, id, 0.6).setAlpha(0.9));
+      c.add(txt(this, 0, 96, nom, 20, '#ffd060').setOrigin(0.5, 0));
+      c.add(txt(this, 0, 122, efecto, 14, CSS.bone, { align: 'center', wordWrap: { width: 176 } }).setOrigin(0.5, 0));
+      const nv = txt(this, 0, 176, `Nivel ${nivel(id)} → ${nivel(id) + 1}`, 17, '#c8b8ff').setOrigin(0.5, 0);
+      c.add(nv);
+      c.setSize(190, 210).setInteractive(new Phaser.Geom.Rectangle(-95, 0, 190, 210), Phaser.Geom.Rectangle.Contains);
+      c.input!.cursor = 'pointer';
+      c.on('pointerdown', () => {
+        if (elegida) return;
+        elegida = true;
+        (run.cosmos ??= {})[id] = (run.cosmos[id] ?? 0) + 1;
+        saveLocal();
+        audio.sfx('coin');
+        this.cameras.main.flash(400, 200, 190, 255);
+        nv.setText(`¡Nivel ${nivel(id)}!`).setColor('#ffd060');
+        tarjetas.forEach((t) => { if (t !== c) t.setAlpha(0.4); });
+        pie.add(txt(this, W / 2 + 90, 392, `«${nom}. Buena elección. Mire: ya brilla más.»`, 18, '#d8c8a0').setOrigin(0.5, 0));
+        pie.add(button(this, W / 2 - 40, 440, 260, 40, 'Acomodar mi dentadura', () => this.sacamuelas('acomodar', () => fadeTo(this, 'Map')), { size: 18, color: 0x6a5ab0 }));
+        pie.add(button(this, W / 2 + 240, 440, 220, 40, 'Volver al mapa', () => fadeTo(this, 'Map'), { size: 18, color: UI.gold }));
+      });
+      tarjetas.push(L(c));
+    });
+    L(txt(this, W / 2, 486, FICHA_LOVECRAFT, 13, '#6a6a7a', { align: 'center', wordWrap: { width: 880 } }).setOrigin(0.5, 0));
+    this.botonGuia();
   }
 
   /** Después del sobre: un diente del jefe y luego el siguiente tramo */
@@ -614,6 +719,7 @@ export class AbismoScene extends Phaser.Scene {
     if (p?.vidaMax) { r.maxHp += p.vidaMax; r.hp = r.maxHp; }
     r.dientes = [...this.dientesIni];
     while (r.dientes.length < HUECOS) r.dientes.push(null);
+    aplicarSarro(r);
     if (!p) r.entropia = Math.max(0, r.entropia - PACTO_CIEGO_CORDURA);
     // efectos iniciales de la página del Necronomicón
     switch (r.necro) {

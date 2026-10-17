@@ -4,7 +4,7 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { Edicion } from '../data/cards';
 import { CORDURA, EDICIONES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
-import { DIENTES, HUECOS } from '../data/dientes';
+import { defDiente, HUECOS, NOMBRE_RAREZA } from '../data/dientes';
 import { dibujarDiente } from './dentadura';
 import { codexFlag } from '../state';
 import { cardView, costConfusion, costOverride } from './card';
@@ -97,16 +97,34 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'La Dentadura (reliquias)',
-    texto: `Las reliquias del Abismo son dientes. Al empezar eliges 2 de 4; consigues más con el Sacamuelas Ciego (ícono de diente en el mapa) y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
+    texto: `Las reliquias del Abismo son dientes: Comunes, ★ Raros y ★★ Legendarios. Al empezar eliges 2 de 4; ganas más con el Sacamuelas Ciego, los Relatos y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
     dibujo: (s, L) => {
-      const ej: [string, string][] = [['colmillo', 'Colmillo\n+2 a ataques'], ['espejo', 'Espejo: copia\nal de su izquierda'], ['marte', '✦ Marte\nAtaque nv +1'], ['luna', '✦ Luna\nDefensa nv +1'], ['saturno', '✦ Saturno\nAbismo nv +1']];
+      const ej: [string, string][] = [['colmillo', 'Común\n+2 a ataques'], ['espejo', '★ Raro · Espejo:\ncopia al de su izq.'], ['marte~3', '✦ Marte de Cristal\n×2, dura 3 combates'], ['rlyeh', "★★ R'lyeh\n1er ataque ×3"], ['larva', '☣ Parásito: bueno\ny malo a la vez']];
       ej.forEach(([id, t], i) => {
         const x = W / 2 + (i - 2) * 150;
         L(dibujarDiente(s, x, 236, id, 1.4));
-        L(txt(s, x, 290, t, 15, DIENTES[id].tipo === 'astro' ? '#ffd060' : CSS.bone, { align: 'center' }).setOrigin(0.5, 0));
+        L(txt(s, x, 290, t, 15, NOMBRE_RAREZA[defDiente(id).rareza].css, { align: 'center' }).setOrigin(0.5, 0));
       });
       L(txt(s, W / 2, 350, 'EL COSMOS (como los planetas de Balatro): los Astros suben de nivel una constelación de cartas.\nTres Astros seguidos forman una ALINEACIÓN PLANETARIA: tus ataques hacen ×1.5.', 17, '#ffd060', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
-      L(txt(s, W / 2, 420, 'En el Sacamuelas: toca un diente de tu dentadura y luego otro hueco para moverlo. Volver a tirar cuesta Ergios.', 15, CSS.dim, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 410, 'Los PARÁSITOS (como en Returnal) se pegan solos y sólo el Sacamuelas te los arranca, cobrando. Los de CRISTAL valen doble pero se rompen.', 15, '#b8e070', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+    },
+  },
+  {
+    titulo: 'El Astrónomo y los Relatos',
+    texto: 'El Astrónomo Aficionado de Providence (H. P. Lovecraft, que de joven escribía columnas de astronomía) te ayuda desde arriba. En los nodos «?» te esperan situaciones de sus cuentos.',
+    dibujo: (s, L) => {
+      L(s.add.image(150, 290, 'fig_lovecraft').setScale(6));
+      const filas: [string, string, string][] = [
+        ['i_telescopio', 'Observatorio', 'Mira por su telescopio: sube 1 nivel una constelación y acomoda tu dentadura.'],
+        ['i_book', 'Cartas de Providence', 'Cada tramo te manda una misión. Si la cumples, el trofeo del jefe trae 3 dientes legendarios.'],
+        ['i_note', 'Relatos', 'La música de Erich Zann, Herbert West, Las ratas en las paredes, Aire frío, El templo, El modelo de Pickman y El extraño.'],
+      ];
+      filas.forEach(([ic, nom, d], i) => {
+        const y = 200 + i * 80;
+        L(s.add.image(290, y + 16, ic).setScale(3.2));
+        L(txt(s, 324, y, nom, 20, CSS.gold));
+        L(txt(s, 324, y + 26, d, 15, CSS.bone, { wordWrap: { width: 560 } }));
+      });
     },
   },
   {

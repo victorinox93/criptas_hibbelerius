@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { nivelDiente } from '../data/dientes';
 import { CSS, UI } from '../art/palette';
 import { W } from '../config';
 import { audio } from '../audio';
@@ -35,7 +36,7 @@ export class CampfireScene extends Phaser.Scene {
     const sinCura = run.relics.includes('agujero');
     const prohib = run.prohibidos ?? [];
     const omega = prohib.includes('p_omega');
-    const heal = sinCura ? 0 : Math.round(run.maxHp * gravityOf(run.gravity).heal * (omega ? 0.5 : 1));
+    const heal = sinCura ? 0 : Math.round(run.maxHp * gravityOf(run.gravity).heal * (omega ? 0.5 : 1) * (nivelDiente(run.dientes, 'branquia') ? 0.5 : 1)); // ☣ Branquia del Profundo: la mitad
     const calma = prohib.includes('p_abismo') ? 0 : ENTROPIA.fogata;
     const libro = run.relics.includes('necronomicon') && PROHIBIDO_IDS.some((id) => !prohib.includes(id));
     // con el Necronomicón hay 3 opciones

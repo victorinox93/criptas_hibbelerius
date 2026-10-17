@@ -2,6 +2,20 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.43.0 · El Astrónomo de Providence: rarezas, parásitos y relatos (beta, sólo Modo profesor)
+
+- **Rarezas de dientes:** Comunes (60 %), ★ Raros (30 %, aquí van los Astros) y ★★ Legendarios (10 %, con aro dorado). Ahora hay **32 dientes**: 12 comunes, 10 raros, 4 legendarios (Sol Negro, Muela de Ámbar, Diente de R'lyeh, Diente de Diamante), 7 Astros entre ellos (nuevo: Neptuno, «Órbita») y 6 parásitos.
+- **Dientes de Cristal:** cualquier diente puede salir de Cristal (12 %): su efecto cuenta doble, pero se rompe después de 3 combates (el número se ve sobre el diente).
+- **Parásitos (como en Returnal):** Diente Podrido, Larva de Shoggoth, Branquia del Profundo, Lombriz de Yuggoth, Ojo Parpadeante y Garrapata de Leng. Tienen algo bueno y algo malo, se pegan solos y sólo el Sacamuelas los arranca (40 Ergios). El Sacamuelas a veces ofrece uno.
+- **El Astrónomo Aficionado de Providence** (H. P. Lovecraft, que de joven escribía columnas de astronomía):
+  - Nodo nuevo **Observatorio** (telescopio en el mapa): sube 1 nivel una constelación (Ataque, Defensa, Habilidad, Abismo, Gravedad u Órbita) y deja reacomodar la dentadura.
+  - **Cartas de Providence:** al empezar cada tramo te manda una misión (vencer una élite sin daño, ganar sin Defensas, 6 cartas en un turno, 2 aciertos seguidos, Alineación, jefe en 6 turnos). Si la cumples, el trofeo del jefe trae 3 dientes legendarios. Se ve bajo la dentadura.
+  - Te escribe una frase cada vez que bajas al modo infinito.
+  - Su ficha aclara que tuvo ideas racistas, muy criticadas hoy.
+- **Relatos del Abismo:** los nodos «?» del Abismo ahora son casi siempre situaciones de 7 cuentos de Lovecraft anteriores a 1929: La música de Erich Zann, Herbert West reanimador, Las ratas en las paredes, Aire frío, El templo, El modelo de Pickman y El extraño. Cada uno trae una pregunta de física o una apuesta con su probabilidad.
+- Contra un Primigenio, el trofeo siempre trae al menos un diente legendario.
+- La Guía del Abismo tiene 9 páginas (nueva: «El Astrónomo y los Relatos»).
+
 ## v0.42.0 · La Dentadura: dientes, cosmos y estados nuevos (beta, sólo Modo profesor)
 
 - **La Dentadura de Montemayor (reliquias):** las reliquias del Abismo son dientes que se ponen en una dentadura de 8 huecos (idea de *Sol Cesto*). Al empezar salen 4 y te quedas con 2. Se consiguen más en el nuevo nodo **Sacamuelas Ciego** (ícono de diente en el mapa; eliges 1 de 3 o pagas 25 Ergios para volver a tirar) y al vencer a un jefe. **El orden importa:** el Diente Espejo copia al de su izquierda. Se ve con el botón de diente bajo el semáforo.

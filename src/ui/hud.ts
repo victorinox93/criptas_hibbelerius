@@ -1,8 +1,9 @@
 import { fmtPuntos } from '../data/puntaje';
 import { ENTROPIA, nivelEntropia } from '../data/abismo';
 import { corduraDe, luzDe, SEMAFORO, TRAMOS } from '../data/abismo_modo';
-import { alineacion, DIENTES, HUECOS } from '../data/dientes';
+import { alineacion, cristalDe, defDiente, HUECOS } from '../data/dientes';
 import { dentaduraOverlay, resumenCosmos } from './dentadura';
+import { CARTA } from '../data/lovecraft';
 import { ENCARGOS } from '../data/encargos';
 import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
@@ -194,9 +195,20 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         const dn = txt(s, 0, 204, `${nd}/${HUECOS}`, 13, '#f0c8c8').setOrigin(0.5, 0);
         const dz = s.add.zone(0, 197, 40, 50).setInteractive({ useHandCursor: true });
         dz.on('pointerdown', () => { tip.hide(); dentaduraOverlay(s); });
-        const cos = resumenCosmos(dent);
-        tip.attach(dz, 'La Dentadura', `${nd ? dent.filter((x): x is string => !!x).map((id) => `· ${DIENTES[id].nombre}`).join('\n') : 'Sin dientes todavía.'}${cos ? `\n\nCosmos: ${cos}` : ''}\n(clic para verla)`, 20);
+        const cos = resumenCosmos(dent, r.cosmos);
+        tip.attach(dz, 'La Dentadura', `${nd ? dent.filter((x): x is string => !!x).map((id) => `· ${defDiente(id).nombre}${cristalDe(id) !== undefined ? ` 💎${cristalDe(id)}` : ''}`).join('\n') : 'Sin dientes todavía.'}${cos ? `\n\nCosmos: ${cos}` : ''}\n(clic para verla)`, 20);
         sema.add([bd, di, dn, dz]);
+        // la carta del Astrónomo de Providence (misión del tramo)
+        const ca = CARTA(r.carta?.id);
+        if (ca && r.carta!.tramo === (r.tramo ?? 1)) {
+          const bc = s.add.graphics();
+          frame(bc, -20, 230, 40, 34, 0x1c1810, r.carta!.hecho ? UI.green : 0x8a7a5a, 0.95);
+          const ci = s.add.image(-4, 247, 'i_book').setScale(2);
+          const cm = txt(s, 10, 236, r.carta!.hecho ? '✓' : '…', 16, r.carta!.hecho ? CSS.green : '#e8d8b0');
+          const cz = s.add.zone(0, 247, 40, 34).setInteractive();
+          tip.attach(cz, `Carta de Providence${r.carta!.hecho ? ' (cumplida)' : ''}`, `${ca.mision}\nPremio: el trofeo del jefe de este tramo trae 3 dientes legendarios.`, 20);
+          sema.add([bc, ci, cm, cz]);
+        }
         const z = s.add.zone(0, 60, 40, 190).setInteractive();
         sema.add(z);
         tip.attach(z, `Cordura ${cor}/100 · ${luz.nombre}`,

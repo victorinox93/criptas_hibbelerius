@@ -145,6 +145,7 @@ export const T = {
       taberna: ['Taberna', 'Minijuegos: Tiro al blanco y Tira y Afloja. Apuesta tus Ergios.'],
       santuario: ['Eco del Pasado', 'Una figura histórica de la física te espera. Te ofrecerá un don para toda la expedición.'],
       jefe: ['Coloso Inerte', 'El guardián del Acto I.'],
+      observatorio: ['Observatorio', 'El Astrónomo Aficionado de Providence te deja mirar por su telescopio: sube de nivel una constelación.'],
       boca: ['Sacamuelas Ciego', 'Te vende dientes para tu Dentadura: elige 1 de 3 (o paga para volver a tirar) y acomódalos.'],
     } as Record<string, [string, string]>,
   },

@@ -38,6 +38,15 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
     ]),
     ov: { h: '#4a3a2e', w: '#6a5a48', s: '#e0bea0', g: '#1a1a1a', G: '#9ab8c8', c: '#22222a' },
   },
+  // v0.43 · El Astrónomo Aficionado de Providence (H. P. Lovecraft): cara larga y pálida,
+  // mandíbula grande, pelo corto con raya, cuello alto y corbata
+  fig_lovecraft: {
+    rows: mirror([
+      '........', '.....hhh', '....hhhh', '...hhsss', '...sssss', '...skkss', '...sssss', '...ssssq',
+      '...sssss', '...qssss', '....ssss', '....qsss', '..cccWWt', '.ccccWWt', 'cccccWtt', 'cccccctt', 'cccccccc',
+    ]),
+    ov: { h: '#1e1a16', s: '#e8d6c2', q: '#b89c86', k: '#2a2a34', c: '#2a2a36', W: '#eeeae0', t: '#5a3040' },
+  },
 };
 
 /** Genera las texturas del modo (se llama desde generateAllTextures) */
