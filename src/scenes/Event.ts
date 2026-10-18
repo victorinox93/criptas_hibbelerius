@@ -3,7 +3,7 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { EVENTS, EventDef, PROFE_CHANCE, PROFE_ENOJADO_CHANCE } from '../data/events';
-import { ALMA_CHANCE, ALMA_IDS } from '../data/almas';
+import { ALMA_ABISMO_CHANCE, ALMA_CHANCE, ALMA_IDS, ALMA_IDS_ABISMO } from '../data/almas';
 import { AM_CHANCE } from '../data/am';
 import { MYRIAM_CHANCE } from '../data/myriam';
 import { RELATO_CHANCE, RELATOS } from '../data/relatos';
@@ -28,6 +28,15 @@ export class EventScene extends Phaser.Scene {
     let ev: EventDef | undefined = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
     // El Abismo: casi siempre, un Relato basado en un cuento de Lovecraft (src/data/relatos.ts)
     if (!ev && run.modo === 'abismo') {
+      // v0.49 · a veces, un alma en pena del Abismo (te acompaña hasta el final del tramo)
+      const almasA = ALMA_IDS_ABISMO.filter((id) => !seen.includes(`alma_${id}`));
+      if (almasA.length && data.floor >= 2 && Math.random() < ALMA_ABISMO_CHANCE) {
+        const id = Phaser.Utils.Array.GetRandom(almasA);
+        seen.push(`alma_${id}`);
+        saveLocal();
+        this.scene.start('Alma', { floor: data.floor, id });
+        return;
+      }
       const libres = RELATOS.filter((r) => !seen.includes(`relato_${r.id}`));
       if (libres.length && Math.random() < RELATO_CHANCE) {
         const r = Phaser.Utils.Array.GetRandom(libres);

@@ -109,6 +109,7 @@ export interface Run {
   bonoDientesHp?: number; // v0.43 · vida máxima que dan los dientes (Sarro, Branquia), para ajustarla al cambiar la dentadura
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor
+  aliadoTramo?: number; // v0.49 · el aliado es un alma del Abismo: se va al terminar este tramo
   mutador?: string; // v0.46 · regla especial del tramo actual (src/data/abismo_modo.ts → MUTADORES)
   dientePendiente?: string; // v0.44 · diente ganado con la dentadura llena: se acomoda al volver al mapa
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)

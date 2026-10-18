@@ -22,6 +22,7 @@ export interface Efecto {
   reanimar?: boolean;
   retrato?: boolean;
   retratoMalo?: boolean;
+  familiar?: string; // v0.49 · una criatura te acompaña (src/data/familiars.ts)
   pierdeDiente?: number; // v0.48 · pierdes N dientes al azar (no parásitos)
   maldicion?: [string, number]; // v0.48 · maldición de src/data/effects.ts por N combates
 }
@@ -41,6 +42,7 @@ export interface RelatoDef {
   anio: number;
   icono: string;
   tinte: number;
+  propio?: boolean; // v0.49 · no viene de un cuento: es del diario de Montemayor
   intro: string;
   opciones: OpcionRelato[];
 }
@@ -212,10 +214,10 @@ RELATOS.push(
   },
   {
     id: 'ulthar', titulo: 'Las calles de Ulthar', obra: 'Los gatos de Ulthar', anio: 1920, icono: 'i_paw', tinte: 0xd8b878,
-    intro: 'En Ulthar está prohibido matar gatos. Una pareja de ancianos los odia, y desde que llegaste, cien gatos te siguen en silencio. Esperan algo de ti.',
+    intro: 'En Ulthar los gatos son sagrados. Una pareja de ancianos gruñones los perseguía con la escoba por todo el pueblo, y desde que llegaste, cien gatos te siguen en silencio. Esperan algo de ti.',
     opciones: [
-      { label: 'Darles de comer', risk: '−20 Ergios: +15 de vida y +8 de Cordura', need: { ergios: 20 }, salidas: [
-        { p: 1, e: { texto: 'Los gatos ronronean. Esa noche duermes como nunca.', ergios: -20, hp: 15, cordura: 8 } },
+      { label: 'Darles de comer', risk: '−20 Ergios: +15 de vida, +8 de Cordura y un Gato de Ulthar te acompaña', need: { ergios: 20 }, salidas: [
+        { p: 1, e: { texto: 'Los gatos ronronean. Esa noche duermes como nunca, y en la mañana uno decide seguirte.', ergios: -20, hp: 15, cordura: 8, familiar: 'gatoUlthar' } },
       ] },
       { label: 'Espantarlos', risk: '50 %: no pasa nada · 50 %: se llevan 2 dientes y te dejan Fatiga (3 combates)', salidas: [
         { p: 0.5, e: { texto: 'Los gatos se van, ofendidos.' } },
@@ -225,4 +227,18 @@ RELATOS.push(
     ],
   },
 );
+// v0.49 · familiares del Abismo
+RELATOS.push({
+  id: 'pecera', titulo: 'El laboratorio de Montemayor', obra: 'Diario de Ignacio Montemayor', anio: 1931, propio: true, icono: 'i_lantern', tinte: 0x7ad8c8,
+  intro: 'Encuentras el laboratorio improvisado del erudito: frascos con agua negra y criaturas que todavía se mueven. Una nota dice: «No son peligrosos. Creo». Dos frascos tiemblan cuando te acercas.',
+  opciones: [
+    { label: 'Abrir el frasco del blob con ojos', risk: 'Un Shoggoth Bebé te acompaña 4 combates (+4 de Bloqueo cada turno y se come tus Susurros)', salidas: [
+      { p: 1, e: { texto: 'Algo pequeño, negro y lleno de ojos se te sube al hombro. Hace «tekeli-li» y se acurruca.', familiar: 'shoggoth' } },
+    ] },
+    { label: 'Abrir el frasco del pez que brilla', risk: 'Un Pez Linterna te acompaña 4 combates (robas 1 carta más y ves a los enemigos invisibles)', salidas: [
+      { p: 1, e: { texto: 'Un pez con una lucecita en la frente flota en el aire junto a ti. Ilumina lo que nadie más ve.', familiar: 'pezLinterna' } },
+    ] },
+    IRSE,
+  ],
+});
 export const RELATO = (id?: string) => RELATOS.find((r) => r.id === id);

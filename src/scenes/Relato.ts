@@ -7,7 +7,8 @@ import { CARDS } from '../data/cards';
 import { base, cristalDe, defDiente, esParasito, HUECOS, ponerDiente, sortearDientes, sortearParasito } from '../data/dientes';
 import { Efecto, OpcionRelato, RELATO } from '../data/relatos';
 import { EFFECTS } from '../data/effects';
-import { addCard, addEffect, addEntropia, aplicarSarro, Game, logEvent, saveLocal, syncRun } from '../state';
+import { FAMILIARS } from '../data/familiars';
+import { addCard, addEffect, addFamiliar, addEntropia, aplicarSarro, Game, logEvent, saveLocal, syncRun } from '../state';
 import { topBar } from '../ui/hud';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
@@ -79,6 +80,10 @@ export function aplicarEfecto(e: Efecto): string {
       }
     }
   }
+  if (e.familiar) {
+    const fid = addFamiliar(e.familiar);
+    partes.push(`Te acompaña: ${FAMILIARS[fid].name} (${FAMILIARS[fid].combats} combates)`);
+  }
   if (e.pierdeDiente) {
     // v0.48 · pierdes dientes al azar (los parásitos no se sueltan)
     const dent = r.dientes ?? [];
@@ -122,7 +127,7 @@ export class RelatoScene extends Phaser.Scene {
     this.tweens.add({ targets: halo, scale: 1.15, alpha: 0.03, duration: 1800, yoyo: true, repeat: -1 });
     const ic = this.add.image(200, 270, rel.icono).setScale(12).setTint(rel.tinte);
     this.tweens.add({ targets: ic, y: 262, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    txt(this, 200, 400, `Basado en «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
+    txt(this, 200, 400, rel.propio ? `Del diario de Ignacio Montemayor\n(${rel.anio})` : `Basado en «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
 
     title(this, W / 2 + 90, 70, rel.titulo, 36, '#9ad8c8');
     const g = this.add.graphics();

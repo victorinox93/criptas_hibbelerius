@@ -115,7 +115,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     dibujo: (s, L) => {
       const filas: [string, string, string][] = [
         ['i_rune', 'Mutador del tramo', MUTADORES.map((m) => m.nombre).join(' · ') + '. Cambia en cada tramo.'],
-        ['i_diente', 'Condición del jefe', `Cada jefe impone una al azar: ${CONDICIONES_JEFE.map((c) => c.nombre).join(', ')}. Algunos son IMPARABLES: no se detienen con F ≥ umbral.`],
+        ['i_diente', 'Condición del jefe', `Cada jefe impone una al azar: ${CONDICIONES_JEFE.map((c) => c.nombre).join(', ')}. Tras detenerlos, quedan IMPARABLES 1 o 2 turnos.`],
         ['i_coin', 'Rueda de la Fortuna', 'En el Sacamuelas: diente legendario o raro, Ergios, Cordura, un apunte… o un parásito o nada. Cada giro cuesta más.'],
         ['i_skull', 'Tope del cosmos', `Los multiplicadores de los dientes (R'lyeh, Saturno, Sol Negro y Alineación) se suman y no pasan de ×${MULT_DIENTES_MAX}.`],
       ];

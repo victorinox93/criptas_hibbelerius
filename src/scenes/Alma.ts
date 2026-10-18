@@ -102,7 +102,7 @@ export class AlmaScene extends Phaser.Scene {
     if (!ok) {
       msg = a.triste;
       audio.sfx('wrong');
-    } else if (run.aliado) {
+    } else if (run.aliado && !(a.abismo && run.aliadoTramo !== undefined && run.aliadoTramo !== (run.tramo ?? 1))) {
       msg = a.yaTienes;
       addErgios(ALMA_CONSUELO);
       extra = `+${ALMA_CONSUELO} ${T.moneda}`;
@@ -110,7 +110,10 @@ export class AlmaScene extends Phaser.Scene {
     } else {
       run.aliado = id;
       msg = a.gracias;
-      extra = `¡${a.name} es tu aliado!\nPelea a tu lado en élites y jefes: ${a.habilidad}\n(Sólo puedes tener un aliado en toda la expedición.)`;
+      if (a.abismo) run.aliadoTramo = run.tramo ?? 1; else delete run.aliadoTramo;
+      extra = a.abismo
+        ? `¡${a.name} te acompaña!\nPelea a tu lado en élites y jefes HASTA EL FINAL DE ESTE TRAMO: ${a.habilidad}`
+        : `¡${a.name} es tu aliado!\nPelea a tu lado en élites y jefes: ${a.habilidad}\n(Sólo puedes tener un aliado en toda la expedición.)`;
       sumar(run, 'Almas en pena', PUNTOS.alma);
       audio.sfx('victory');
       this.cameras.main.flash(500, 232, 193, 90);

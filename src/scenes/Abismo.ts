@@ -11,6 +11,7 @@ import { RUEDA, RUEDA_COSTO, RUEDA_SUBE, ARRANCAR_PARASITO, cristalDe, defDiente
 import { ASTRONOMO, FICHA_LOVECRAFT, FRASES_INFINITO } from '../data/lovecraft';
 import { dentaduraView, dibujarDiente, etiquetaDiente, resumenCosmos, textoCristal } from '../ui/dentadura';
 import { ENEMIES } from '../data/enemies';
+import { ALMAS } from '../data/almas';
 import { bonosFinales } from '../data/puntaje';
 import { cardView, CW, CH } from '../ui/card';
 import { guiaAbismo } from '../ui/guiaAbismo';
@@ -625,6 +626,8 @@ export class AbismoScene extends Phaser.Scene {
     // curación: 40 % de la vida perdida
     const cura = Math.ceil((run.maxHp - run.hp) * 0.4);
     if (!(run.seen ?? []).includes(`curaT${tramo}`)) { run.hp = Math.min(run.maxHp, run.hp + cura); (run.seen ??= []).push(`curaT${tramo}`); saveLocal(); }
+    // v0.49 · el alma del Abismo se despide aquí
+    if (run.aliado && run.aliadoTramo !== undefined) L(txt(this, W / 2, 208, `${ALMAS[run.aliado]?.name ?? 'Tu acompañante'} se despide: «Hasta aquí llego. Sigue bajando tú».`, 17, '#e8c15a').setOrigin(0.5));
     if (tramo < TRAMOS) {
       L(title(this, W / 2, 80, `¡Tramo ${tramo} superado!`, 52, '#9ad8c8'));
       L(txt(this, W / 2, 132, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 22, CSS.bone).setOrigin(0.5));
@@ -801,6 +804,8 @@ export class AbismoScene extends Phaser.Scene {
     run.tramo = (run.tramo ?? 1) + 1;
     run.jefe = elegirJefe(run.tramo, run.jefesVistos ?? []);
     run.mutador = sortearMutador(run.mutador);
+    // v0.49 · el alma del Abismo se despide al cambiar de tramo
+    if (run.aliadoTramo !== undefined) { delete run.aliado; delete run.aliadoTramo; }
     if (!run.debug && run.tramo >= 4) codexFlag('logro_abismo_inf'); // logro «Sin fondo»
     (run.jefesVistos ??= []).push(run.jefe);
     run.map = generateMap(ACTO_ABISMO);

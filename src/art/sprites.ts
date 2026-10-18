@@ -1118,6 +1118,19 @@ const PROFE_ENOJADO = mirrorHalf([
 
 // Familiares (miran al frente)
 const FAMS: Record<string, { rows: string[]; ov: Record<string, string> }> = {
+  // v0.49 · familiares del Abismo
+  fam_shoggoth: {
+    rows: mirrorHalf(['...kkk', '.kkkkk', 'kkEkkk', 'kkkkEk', 'kEkkkk', 'kkkkkk', 'kkkEkk', '.kkkkk', 'k.k.kk']),
+    ov: { k: '#1a2e22', E: '#b8ff9a' },
+  },
+  fam_gatoUlthar: {
+    rows: mirrorHalf(['.k....', '.kk...', '.kkkkk', 'kkEkkk', 'kkkkkk', '.kkkkp', '..kkkk', '.kkkkk', 'kkkkkk', 'kkkkkk', '.kk.kk']),
+    ov: { k: '#c8782a', E: '#7ad8ff', p: '#f0a0a0' },
+  },
+  fam_pezLinterna: {
+    rows: mirrorHalf(['.....y', '....y.', '...yY.', '..bbbb', '.bbbbb', 'bbEbbb', 'bbbbbk', 'bbkkkk', '.bbbbb', '...bbb']),
+    ov: { b: '#2a3a6a', E: '#ffffff', y: '#ffd060', Y: '#fff6c0', k: '#0d0b10' },
+  },
   fam_gato: {
     rows: mirrorHalf(['.k....', '.kk...', '.kkkkk', 'kkEkkk', 'kkkkkk', '.kkkkp', '..kkkk', '.kkkkk', 'kkkkkk', 'kkkkkk', '.kk.kk']),
     ov: { k: '#2a2630', E: '#c8f070', p: '#c87a8a' },
