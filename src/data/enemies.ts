@@ -44,6 +44,7 @@ export interface EnemyState {
   phase3?: boolean;
   impulso: number; // daño de un Impulso Sostenido pendiente
   impulsoLeft: number; // turnos que le quedan a ese impulso
+  imparableT?: number; // v0.49 · turnos que le quedan de IMPARABLE (tras ser detenido)
   recibido?: number; // daño total que ha recibido (los autómatas integradores lo usan)
 }
 
@@ -63,7 +64,7 @@ export interface EnemyDef {
   vuelco?: boolean; // El Abismo: si lo golpeas 2 veces en el mismo turno, se vuelca (pierde su turno)
   hueco?: boolean; // El Abismo: área negativa; los golpes a TODOS le hacen la mitad
   oculto?: boolean; // El Abismo: invisible, sus intenciones no se ven (Engendro de Dunwich)
-  imparable?: boolean; // v0.48 · El Abismo: tiene Inercia pero NO se puede detener (F ≥ umbral no lo para)
+  imparable?: number; // v0.49 · El Abismo: después de que lo detienes, queda IMPARABLE estos turnos (no se le puede volver a detener)
   next: (e: EnemyState) => Intent;
 }
 
@@ -456,7 +457,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   hidra: {
-    id: 'hidra', name: 'La Madre Hidra', sprite: 'hidra', scale: 4.4, hp: [88, 96], mass: 200, umbral: 16, act: 5, imparable: true,
+    id: 'hidra', name: 'La Madre Hidra', sprite: 'hidra', scale: 4.4, hp: [88, 96], mass: 200, umbral: 16, act: 5, imparable: 1,
     desc: 'Élite. Invoca Pólipos y los protege. Su centro de masa cambia cada vez que nace una cabeza.',
     next: (e) => {
       const p = e.turn % 3;
@@ -471,7 +472,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6 } : { kind: 'block', block: 6, label: 'Ángulo agudo' }),
   },
   geometra: {
-    id: 'geometra', name: 'El Geómetra No Euclidiano', sprite: 'geometra', scale: 3.6, hp: [270, 270], mass: 0, umbral: 19, act: 5,
+    id: 'geometra', name: 'El Geómetra No Euclidiano', sprite: 'geometra', scale: 3.6, hp: [270, 270], mass: 0, umbral: 19, act: 5, imparable: 1,
     desc: 'Jefe de la capa 1. Una figura cuyos ángulos no suman 180°. Con menos de la mitad de vida suelta Vértices y te Confunde; su golpe crece con la distancia de su centroide.',
     next: (e) => {
       const fase2 = e.hp <= e.maxHp / 2;
@@ -491,7 +492,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   // ════════ v0.41 · jefes del Descenso (src/data/abismo_modo.ts → JEFES) ════════
   dagon: {
-    id: 'dagon', name: 'Padre Dagón', sprite: 'dagon', scale: 3.6, hp: [270, 270], mass: 900, umbral: 18, act: 5,
+    id: 'dagon', name: 'Padre Dagón', sprite: 'dagon', scale: 3.6, hp: [270, 270], mass: 900, umbral: 18, act: 5, imparable: 1,
     desc: 'Rey de los Profundos. Su presión crece con la profundidad: P = ρ·g·h. MAREA ALTA: cada 3 turnos tus Bloqueos dan la mitad.',
     next: (e) => {
       switch (e.turn % 3) {
@@ -502,7 +503,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   colorCielo: {
-    id: 'colorCielo', name: 'El Color que Cayó del Cielo', sprite: 'colorCielo', scale: 3.4, hp: [260, 260], mass: 0, umbral: 17, act: 5,
+    id: 'colorCielo', name: 'El Color que Cayó del Cielo', sprite: 'colorCielo', scale: 3.4, hp: [260, 260], mass: 0, umbral: 17, act: 5, imparable: 1,
     desc: 'Un color que no existe. Se alimenta de energía: te roba 1 J al inicio de cada turno y se cura con lo que absorbe.',
     next: (e) => {
       switch (e.turn % 3) {
@@ -513,14 +514,14 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   bailarina: {
-    id: 'bailarina', name: 'La Bailarina Ahogada', sprite: 'bailarina', scale: 3.6, hp: [270, 270], mass: 55, umbral: 18, act: 5,
+    id: 'bailarina', name: 'La Bailarina Ahogada', sprite: 'bailarina', scale: 3.6, hp: [270, 270], mass: 55, umbral: 18, act: 5, imparable: 1,
     desc: 'I₁·ω₁ = I₂·ω₂: con los brazos abiertos gira lento y pega fuerte; con los brazos recogidos gira rápido y golpea 4 veces.',
     next: (e) => (e.turn % 2 === 0
       ? { kind: 'attack', dmg: 22 + 2 * e.inercia, aturde: true, label: 'Brazos abiertos (I grande, ω chica)' }
       : { kind: 'attack', dmg: 6, hits: 4, vertigo: 1, label: 'Pirueta (I chica, ω grande)' }),
   },
   dunwich: {
-    id: 'dunwich', name: 'El Engendro de Dunwich', sprite: 'dunwich', scale: 3.6, hp: [290, 290], mass: 4000, umbral: 19, act: 5, oculto: true, imparable: true,
+    id: 'dunwich', name: 'El Engendro de Dunwich', sprite: 'dunwich', scale: 3.6, hp: [290, 290], mass: 4000, umbral: 19, act: 5, oculto: true, imparable: 2,
     desc: 'Invisible: no ves sus intenciones, sólo sus huellas. Encuentra su centro de masa por las huellas que deja.',
     next: (e) => {
       switch (e.turn % 3) {
@@ -531,7 +532,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   nyarlathotep: {
-    id: 'nyarlathotep', name: 'Nyarlathotep', sprite: 'nyarlathotep', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5,
+    id: 'nyarlathotep', name: 'Nyarlathotep', sprite: 'nyarlathotep', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5, imparable: 2,
     desc: 'El Caos que Repta. Cambia de forma: compacto (I chica, muchos golpes) o extendido (I grande, un golpe enorme). La primera carta que robas cada turno se descarta.',
     next: (e) => {
       if (e.turn % 3 === 2) return { kind: 'block', block: 14, dmg: 6, confusion: true, label: 'Mil máscaras' };
@@ -539,7 +540,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   cthulhu: {
-    id: 'cthulhu', name: 'Cthulhu', sprite: 'cthulhu', scale: 3.4, hp: [340, 340], mass: 99999, umbral: 22, act: 5, imparable: true,
+    id: 'cthulhu', name: 'Cthulhu', sprite: 'cthulhu', scale: 3.4, hp: [340, 340], mass: 99999, umbral: 22, act: 5, imparable: 2,
     desc: "El Durmiente de R'lyeh. Pierdes 5 de Cordura cada turno. Despierta en 3 fases: ΣM = I·α, R'lyeh se alza, y ya no sueña.",
     next: (e) => {
       const f = e.hp / e.maxHp;
@@ -549,7 +550,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   yogSothoth: {
-    id: 'yogSothoth', name: 'Yog-Sothoth', sprite: 'yogSothoth', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5, imparable: true,
+    id: 'yogSothoth', name: 'Yog-Sothoth', sprite: 'yogSothoth', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5, imparable: 2,
     desc: 'La Llave y la Puerta: un amontonamiento de esferas. Sólo robas 4 cartas por turno. Su golpe crece con la distancia al eje: I = I₀ + m·d².',
     next: (e) => {
       switch (e.turn % 3) {
@@ -560,7 +561,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     },
   },
   hastur: {
-    id: 'hastur', name: 'Hastur', sprite: 'hastur', scale: 3.4, hp: [320, 320], mass: 0, umbral: 20, act: 5,
+    id: 'hastur', name: 'Hastur', sprite: 'hastur', scale: 3.4, hp: [320, 320], mass: 0, umbral: 20, act: 5, imparable: 2,
     desc: 'El Rey de Amarillo. Tus cartas de Ataque cuestan +1 J. Su Signo Amarillo llena tu mazo de Susurros.',
     next: (e) => {
       switch (e.turn % 3) {

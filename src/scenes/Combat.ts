@@ -801,7 +801,7 @@ export class CombatScene extends Phaser.Scene {
     ev.blockT.setText(st.block > 0 ? `🛡${st.block}` : '');
     ev.intentC.removeAll(true);
     const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
-    if (!ev.dead && (st.def.oculto || noche) && st.intent.kind !== 'stunned' && !this.diente('ojo')) {
+    if (!ev.dead && (st.def.oculto || noche) && st.intent.kind !== 'stunned' && !this.diente('ojo') && Game.run?.familiar?.id !== 'pezLinterna') {
       // invisible: no se ve qué hará, sólo sus huellas
       const ic = icon(this, -14, 0, 'i_fog', 3.2);
       ev.intentC.add([ic, txt(this, 2, -12, '???', 26, '#9a93a8')]);
@@ -835,9 +835,14 @@ export class CombatScene extends Phaser.Scene {
       const ic = icon(this, sx + 8, 0, 'i_momentum', 2.4);
       const t = txt(this, sx + 20, -11, `${st.inercia}`, 20, '#e0a070');
       this.tip.attach(ic, `Inercia ×${st.inercia}`,
-        st.def.imparable ? '¡IMPARABLE! Su golpe crece cada turno y NINGUNA fuerza lo detiene: mátalo rápido o aguanta con Bloqueo.' : `1ª ley: mientras nadie lo detenga, sigue avanzando y su golpe crece cada turno.\nDetenlo con un golpe de F ≥ ${umbralDe(st)} N.`);
+        (st.imparableT ?? 0) > 0 ? `¡IMPARABLE por ${st.imparableT} turno(s)! Ahorita ninguna fuerza lo detiene; después vuelve a poder detenerse.` : st.def.imparable ? `1ª ley: detenlo con F ≥ ${umbralDe(st)} N. Pero cuidado: después queda IMPARABLE ${st.def.imparable} turno(s).` : `1ª ley: mientras nadie lo detenga, sigue avanzando y su golpe crece cada turno.\nDetenlo con un golpe de F ≥ ${umbralDe(st)} N.`);
       ev.statusC.add([ic, t]);
       sx += 44;
+    }
+    if ((st.imparableT ?? 0) > 0) {
+      const t = txt(this, sx + 4, -11, `IMPARABLE ${st.imparableT}`, 15, '#ff7a5a').setStroke('#000', 3);
+      ev.statusC.add(t);
+      sx += t.width + 10;
     }
     if (st.detenido) {
       const ic = icon(this, sx + 8, 0, 'i_stun', 2.4);
@@ -2286,14 +2291,15 @@ export class CombatScene extends Phaser.Scene {
     let stopped = false;
     const umbral = umbralDe(st);
     if (umbral && !st.detenido && st.hp > 0 && kind !== 'calor' && kind !== 'res') {
-      if (F >= umbral && st.def.imparable) {
-        // v0.48 · IMPARABLE: ninguna fuerza lo detiene
-        this.calc(`F = ${F} N ≥ ${umbral} N… pero ${st.def.name} es IMPARABLE: no se detiene`);
+      if (F >= umbral && (st.imparableT ?? 0) > 0) {
+        // v0.49 · IMPARABLE por unos turnos después de que lo detuviste
+        this.calc(`F = ${F} N ≥ ${umbral} N… pero ${st.def.name} sigue IMPARABLE (${st.imparableT} turno(s)): no se detiene`);
         this.floatText(ev.baseX, 140, '¡IMPARABLE!', '#ff7a5a');
       } else if (F >= umbral) {
         stopped = true;
         st.detenido = true;
         st.stunned = 1;
+        if (st.def.imparable) st.imparableT = st.def.imparable + 1; // +1: el turno que pierde detenido
         st.inercia = 0;
         if (st.carga) this.calc(`Al detenerlo pierde todo su impulso acumulado (${st.carga})`);
         st.carga = 0;
@@ -2813,7 +2819,7 @@ export class CombatScene extends Phaser.Scene {
       this.calc('Núcleo Activo: +1 J');
     }
     const fam = Game.run!.familiar;
-    if (fam?.id === 'lechuza') draw += 1;
+    if (fam?.id === 'lechuza' || fam?.id === 'pezLinterna') draw += 1;
     if (this.isPen && this.turn > 1 && this.vel > 0) {
       const v0 = this.vel;
       this.vel = Math.max(0, Math.round((this.vel - 2) * 10) / 10);
@@ -2897,6 +2903,20 @@ export class CombatScene extends Phaser.Scene {
       return;
     }
     // familiares que actúan al inicio de tu turno
+    if (fam?.id === 'shoggoth') {
+      // v0.49 · Shoggoth Bebé: Bloqueo y se come un Susurro
+      this.famHop();
+      this.gainBlock(4);
+      this.calc('Shoggoth Bebé: +4 de Bloqueo');
+      const su = this.hand.find((c) => c.inst.id === 'susurro');
+      if (su) {
+        this.hand = this.hand.filter((c) => c !== su);
+        this.exhaust.push(su.inst);
+        this.tweens.add({ targets: su, y: su.y - 60, alpha: 0, scale: 0.2, duration: 300, onComplete: () => su.destroy() });
+        this.calc('Shoggoth Bebé: ¡ñam! se come un Susurro');
+        this.layoutHand();
+      }
+    }
     if (fam?.id === 'tortuga') {
       this.famHop();
       this.gainBlock(4);
@@ -2997,6 +3017,12 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Salamandra Ígnea: +3 de Calor a ${t.st.def.name}`);
         this.refreshEnemy(t);
         await this.wait(250);
+      } else if (fam.id === 'gatoUlthar') {
+        // v0.49 · Gato de Ulthar: araña al enemigo con más vida
+        const t = this.alive().reduce((a, b) => (b.st.hp > a.st.hp ? b : a));
+        this.famHop();
+        this.calc(`Gato de Ulthar: araña a ${t.st.def.name} (6)`);
+        await this.hitEnemy(t, 6, false, 'res');
       } else if (fam.id === 'cuervo') {
         const t = this.alive().reduce((a, b) => (b.st.hp < a.st.hp ? b : a));
         this.famHop();
@@ -3132,6 +3158,7 @@ export class CombatScene extends Phaser.Scene {
       if (Game.run!.hp <= 0 && (await this.dies(ev.st.def.name))) return;
       if (ev.dead) continue;
       st.turn++;
+      if ((st.imparableT ?? 0) > 0) st.imparableT = st.imparableT! - 1;
       if (st.stunned > 0) st.intent = { kind: 'stunned' };
       else {
         st.detenido = false;
@@ -3213,6 +3240,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.cond?.id === 'ecos') extra += 15;
     if (run.familiar) {
       if (run.familiar.id === 'cuervo') extra += 6;
+      if (run.familiar.id === 'gatoUlthar') addEntropia(-4); // v0.49 · +4 de Cordura
       run.familiar.left--;
       if (run.familiar.left <= 0) run.familiar = null;
     }
@@ -3542,7 +3570,7 @@ export class CombatScene extends Phaser.Scene {
     this.tweens.add({ targets: halo, alpha: 0.15, duration: 900, delay: 400 });
     this.tweens.add({ targets: [img, halo], y: 266, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     img.setInteractive();
-    this.tip.attach(img, `${a.name} (aliado)`, `${a.habilidad}\nTe acompaña en élites y jefes durante toda la expedición.`);
+    this.tip.attach(img, `${a.name} (aliado)`, `${a.habilidad}\nTe acompaña en élites y jefes ${a.abismo ? 'hasta el final de este tramo' : 'durante toda la expedición'}.`);
     this.aliadoImg = img;
     if (Game.run!.aliado === 'autocompleto') {
       // la llama amarilla que sale de su yelmo
@@ -3606,7 +3634,25 @@ export class CombatScene extends Phaser.Scene {
       g.lineStyle(4, 0xe8c15a, 0.9).lineBetween(img.x + 20, 250, to.baseX, 260);
       this.tweens.add({ targets: g, alpha: 0, duration: 350, onComplete: () => g.destroy() });
     };
-    if (a.id === 'icaro') {
+    if (a.id === 'buzo') {
+      const t = this.alive().reduce((x, y) => (y.st.hp > x.st.hp ? y : x));
+      rayo(t);
+      this.calc(`${a.name}: arpón a ${t.st.def.name} (9)`);
+      await this.hitEnemy(t, 9, false, 'res');
+    } else if (a.id === 'rosa') {
+      this.gainBlock(5);
+      addEntropia(-2);
+      this.floatText(img.x, 200, '+2 Cordura', '#6ee08a');
+      this.calc(`${a.name}: +5 de Bloqueo y +2 de Cordura`);
+      this.refreshPlayer();
+      this.hud.refresh();
+      await this.wait(300);
+    } else if (a.id === 'arrepentido') {
+      this.calc(`${a.name}: recita al revés → 5 a todos (−1 de Cordura)`);
+      addEntropia(1);
+      for (const t of [...this.alive()]) { rayo(t); await this.hitEnemy(t, 5, false, 'res'); }
+      this.hud.refresh();
+    } else if (a.id === 'icaro') {
       const t = Phaser.Utils.Array.GetRandom(this.alive());
       const dmg = Phaser.Math.Between(6, 14);
       rayo(t);

@@ -2,6 +2,20 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.49.0 · Acompañantes del Abismo y Vestidor más rápido (beta)
+
+- **Imparables, rebalanceados:** ya ningún enemigo es imparable todo el tiempo. Sí se pueden detener con F ≥ umbral, pero **después quedan IMPARABLES unos turnos** (se ve «IMPARABLE n» junto a su vida): 1 turno los jefes de tramo y la Hidra, 2 turnos los Primigenios y el Engendro de Dunwich. Así no se les puede detener turno tras turno.
+- **«Los gatos de Ulthar»:** el texto ya no menciona que los matan; ahora una pareja de ancianos gruñones los perseguía con la escoba. Si les das de comer, un **Gato de Ulthar** se va contigo.
+- **Familiares exclusivos del Abismo** (4 combates):
+  - Shoggoth Bebé: +4 de Bloqueo cada turno y se come un Susurro de tu mano.
+  - Gato de Ulthar: araña al enemigo con más vida (6) y te da +4 de Cordura al ganar.
+  - Pez Linterna: robas 1 carta más y ves las intenciones de los invisibles.
+  - Se consiguen en el Relato nuevo **«El laboratorio de Montemayor»** (y el gato, en Ulthar).
+- **Almas en pena del Abismo:** Ernesto el Buzo de 1931 (arpón de 9 al enemigo con más vida), Rosa la Ayudante de Montemayor (+5 de Bloqueo y +2 de Cordura) y el Acólito Arrepentido (5 a todos, −1 de Cordura). Te acompañan en élites y jefes **hasta el final del tramo**; al pasar al siguiente se despiden y puedes encontrar otra. No cuentan para el logro «Coleccionista de almas».
+- **Vestidor:**
+  - Pestaña nueva **«Abismo ◈»** con todo lo exclusivo del Abismo (capas, armaduras, ojos y accesorios) en un solo lugar.
+  - **Arreglado:** se trababa al pasar páginas. Las vistas previas holográficas o cósmicas dejaban un temporizador encendido que redibujaba cada 90 ms y se acumulaba en cada página; ahora se apagan al cambiar de página.
+
 ## v0.48.0 · Imparables, condiciones de jefe y relatos con castigo (beta)
 
 - **Enemigos IMPARABLES:** la Madre Hidra, el Engendro de Dunwich, Cthulhu y Yog-Sothoth tienen Inercia (su golpe crece cada turno) pero ningún golpe los detiene, aunque F ≥ umbral. Hay que matarlos rápido o aguantar con Bloqueo.

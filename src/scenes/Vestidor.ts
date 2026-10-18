@@ -38,9 +38,64 @@ export class VestidorScene extends Phaser.Scene {
     txt(this, W / 2, 66, 'Clic en un cosmético desbloqueado para equiparlo. Los demás dicen cómo conseguirlos.', 16, CSS.dim).setOrigin(0.5);
     this.tip = new Tooltip(this);
     this.layer = this.add.container(0, 0);
-    this.tabs = [...PARTES.map((p) => p.nombre), 'Accesorios'].map((_, i) => button(this, W / 2 + (i - 1.5) * 200, 98, 190, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 18 }));
+    // v0.49: 5 pestañas (la última, «Abismo», junta lo exclusivo del Abismo de los Ejes)
+    this.tabs = [...PARTES.map((p) => p.nombre), 'Accesorios', 'Abismo'].map((_, i) => button(this, W / 2 + (i - 2) * 178, 98, 170, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 17 }));
+    this.events.once('shutdown', () => this.pararAnimaciones());
     button(this, W / 2, 516, 200, 36, 'Volver', () => fadeTo(this, 'Menu'), { size: 21 });
     this.draw();
+  }
+
+  /** v0.49 · Todo lo exclusivo del Abismo (capas, armaduras, ojos y accesorios ganados con logros) */
+  private itemsAbismo() {
+    const nivel = nivelActual();
+    const compras = Game.codex.compras ?? [];
+    type It = { nombre: string; tiene: boolean; como: string; parte: Parte | 'acc'; idx?: number; acc?: (typeof ACCESORIOS)[number] };
+    const out: It[] = [];
+    PARTES.forEach((p) => p.lista.forEach((c, i) => {
+      if (c.logro?.startsWith('abismo_')) out.push({ nombre: c.name, tiene: !bloqueado(c, nivel), como: comoDesbloquear(c), parte: p.id, idx: i });
+    }));
+    ACCESORIOS.filter((a) => a.logro?.startsWith('abismo_')).forEach((a) => out.push({ nombre: a.nombre, tiene: compras.includes(a.id), como: LOGROS[a.logro!]?.como ?? '', parte: 'acc', acc: a }));
+    return out;
+  }
+
+  private drawAbismo(items: ReturnType<VestidorScene['itemsAbismo']>) {
+    const prof = Game.profile!;
+    const av = prof.avatar!;
+    const porPag = COLS * FILAS;
+    const pags = Math.ceil(items.length / porPag);
+    items.slice(this.pag * porPag, (this.pag + 1) * porPag).forEach((it, k) => {
+      const x = X0 + (k % COLS) * (CW + GAP), y = 124 + Math.floor(k / COLS) * (CH + 8);
+      const puesto = it.parte === 'acc' ? av[it.acc!.slot] === it.acc!.id : (av[it.parte] ?? 0) === it.idx;
+      const g = this.add.graphics();
+      frame(g, x, y, CW, CH, puesto ? 0x1e1430 : 0x0e0b12, puesto ? 0xc8a8ff : it.tiene ? 0x7a5aa8 : UI.border, 0.95);
+      this.layer.add(g);
+      const key = `vab_${it.parte}_${it.idx ?? it.acc!.id}`;
+      makeHeroFromAvatar(this, it.parte === 'acc' ? { ...av, [it.acc!.slot]: it.acc!.id } : { ...av, [it.parte]: it.idx }, key);
+      const im = this.add.image(x + CW / 2, y + 71, key).setOrigin(0.5, 1).setScale(1.5);
+      if (!it.tiene) im.setTint(0x2a2630);
+      this.layer.add(im);
+      const nombre = txt(this, x + CW / 2, y + 72, it.nombre, 15, it.tiene ? CSS.bone : '#6a6478', { align: 'center' }).setOrigin(0.5, 0);
+      if (nombre.width > CW - 10) nombre.setScale((CW - 10) / nombre.width, 1);
+      this.layer.add(nombre);
+      const et = txt(this, x + CW / 2, y + 92, !it.tiene ? `🔒 ${it.como}` : puesto ? '✓ Puesto · clic para quitar' : 'Clic para ponértelo', 12, !it.tiene ? '#8a7a6a' : puesto ? CSS.green : CSS.dim, { align: 'center', wordWrap: { width: CW - 10 } }).setOrigin(0.5, 0);
+      if (et.height > 22) et.setScale(Math.min(1, 22 / et.height));
+      this.layer.add(et);
+      const z = this.add.zone(x, y, CW, CH).setOrigin(0).setInteractive({ useHandCursor: it.tiene });
+      z.on('pointerover', () => this.tip.show(x + CW / 2, y + CH + 4, it.nombre, it.tiene ? (it.acc?.desc ?? 'Premio del Abismo.') : `Bloqueado. ${it.como}.`));
+      z.on('pointerout', () => this.tip.hide());
+      z.on('pointerdown', () => {
+        if (!it.tiene) { audio.sfx('wrong'); return; }
+        if (it.parte === 'acc') av[it.acc!.slot] = puesto ? undefined : it.acc!.id;
+        else (av as unknown as Record<string, number>)[it.parte] = puesto ? 0 : it.idx!;
+        saveLocal();
+        if (!prof.offline) enqueue('saveProfile', { token: prof.token, alias: av.alias, avatar: JSON.stringify(av) });
+        makeHeroFromAvatar(this, av);
+        audio.sfx('click');
+        this.draw();
+      });
+      this.layer.add(z);
+    });
+    if (pags > 1) this.layer.add(button(this, W - 90, 516, 120, 32, this.pag + 1 < pags ? 'Más ▸' : '◂ Inicio', () => { this.pag = (this.pag + 1) % pags; this.draw(); }, { size: 17 }));
   }
 
   /** Accesorios de la Tienda de Layla: los comprados se equipan aquí */
@@ -87,10 +142,22 @@ export class VestidorScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * v0.49 · Las vistas previas holográficas o cósmicas tienen un temporizador que redibuja la textura.
+   * Antes no se detenían al cambiar de página y se acumulaban (el Vestidor se trababa). Aquí se paran.
+   */
+  private pararAnimaciones() {
+    const sc = this as unknown as Record<string, Phaser.Time.TimerEvent | undefined>;
+    for (const k of Object.keys(sc)) {
+      if (k.startsWith('__holo_v')) { sc[k]?.remove(false); delete sc[k]; }
+    }
+  }
+
   private draw() {
     const prof = Game.profile!;
     const av = prof.avatar!;
     const nivel = nivelActual();
+    this.pararAnimaciones();
     this.layer.removeAll(true);
     PARTES.forEach((p, i) => {
       const n = p.lista.filter((c) => !bloqueado(c, nivel)).length;
@@ -98,7 +165,10 @@ export class VestidorScene extends Phaser.Scene {
     });
     const compras = Game.codex.compras ?? [];
     this.tabs[3].label.setText(`Accesorios ${ACCESORIOS.filter((a) => compras.includes(a.id)).length}/${ACCESORIOS.length}`).setColor(this.tab === 3 ? CSS.gold : CSS.dim);
+    const items = this.itemsAbismo();
+    this.tabs[4].label.setText(`Abismo ◈ ${items.filter((x) => x.tiene).length}/${items.length}`).setColor(this.tab === 4 ? '#c8a8ff' : CSS.dim);
     if (this.tab === 3) return this.drawAcc();
+    if (this.tab === 4) return this.drawAbismo(items);
     const parte = PARTES[this.tab];
     const porPag = COLS * FILAS;
     const pags = Math.ceil(parte.lista.length / porPag);

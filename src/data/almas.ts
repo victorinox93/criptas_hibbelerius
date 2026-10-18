@@ -26,6 +26,7 @@ export interface AlmaDef {
   yaTienes: string; // si ya caminas con otro aliado
   habilidad: string; // texto de su habilidad en combate
   final: string; // lo que dice si vencen juntos a Hibbelerius
+  abismo?: boolean; // v0.49 · alma del Abismo: te acompaña sólo hasta el final del tramo
 }
 
 export const ALMAS: Record<string, AlmaDef> = {
@@ -361,7 +362,73 @@ export const ALMAS: Record<string, AlmaDef> = {
   },
 };
 
-export const ALMA_IDS = Object.keys(ALMAS);
+// v0.49 · ALMAS DEL ABISMO: sólo aparecen en El Abismo de los Ejes y te acompañan
+// en élites y jefes HASTA EL FINAL DEL TRAMO; en el siguiente tramo se despiden.
+Object.assign(ALMAS, {
+  buzo: {
+    id: 'buzo', name: 'Ernesto, el Buzo de 1931', abismo: true,
+    look: { clase: 'caballero', helm: 'cerrado', arma: 1, extra: 0 },
+    pal: { c: '#3a4a4a', C: '#1e2a2a', l: '#8a7a4a', g: '#5a4a2a', E: '#9ad8f0', B: '#9ad8f0', s: '#b8a08a', q: '#8a7a6a' },
+    intro: 'Un buzo con escafandra de latón está sentado en una roca, goteando agua negra.\n«Bajé a buscar a mi amigo Ignacio Montemayor. Llevo tanto tiempo aquí abajo que ya no sé hacia dónde queda arriba.»',
+    pregunta: '«Dime: ¿vale la pena seguir buscando a alguien que tal vez ya no quiere ser encontrado?»',
+    opciones: [
+      'No. Si se perdió, es su problema.',
+      'Sí: buscarlo es también una forma de no perderte tú.',
+      'Sólo si te pagan por buscarlo.',
+    ],
+    correcta: 1,
+    ayuda: { label: 'Compartirle aire de tu tanque (−8 de vida)', hp: 8 },
+    gracias: '«…No perderme yo. Tienes razón. Bajemos juntos un rato; mi arpón todavía sirve.»',
+    triste: '«Ya veo.» El buzo vuelve a mirar el agua negra.',
+    yaTienes: '«Ya llevas compañía. Toma, encontré esto en el fondo.» Te da unos Ergios mojados.',
+    habilidad: 'Al final de tu turno lanza su arpón al enemigo con más vida: 9 de daño.',
+    final: 'Ernesto se quita la escafandra por primera vez en años: «Ya sé dónde queda arriba».',
+  },
+  rosa: {
+    id: 'rosa', name: 'Rosa, la Ayudante de Montemayor', abismo: true,
+    look: { clase: 'arcanista', helm: 'cuernos', arma: 0, extra: 0 },
+    pal: { c: '#4a3a5a', C: '#2a1e3a', l: '#7a6a8a', g: '#4a3a5a', E: '#ffd060', B: '#ffd060', s: '#d8b8a0', q: '#a88a7a' },
+    intro: 'Una joven con bata de laboratorio pasa en limpio, una y otra vez, los apuntes del erudito.\n«Fui su ayudante. Cuando él empezó a ver ejes donde no había nada, todos se alejaron. Yo me quedé. Ahora no sé si fue lealtad o miedo.»',
+    pregunta: '«¿Está mal tener miedo cuando alguien que quieres cambia?»',
+    opciones: [
+      'Sí: el miedo es debilidad.',
+      'No: el miedo es normal; lo importante es no dejarlo solo y pedir ayuda.',
+      'Da igual, de todos modos no puedes hacer nada.',
+    ],
+    correcta: 1,
+    ayuda: { label: 'Ayudarle a ordenar los apuntes (−30 Ergios)', ergios: 30 },
+    gracias: '«Pedir ayuda… nunca lo pensé así. Déjame acompañarte: sé mantener la cabeza fría.»',
+    triste: '«Ah.» Rosa regresa a sus apuntes, que ya no puede leer.',
+    yaTienes: '«Ya tienes quien te cuide. Lleva esto: a mí ya no me sirve.»',
+    habilidad: 'Al final de tu turno te da 5 de Bloqueo y +2 de Cordura.',
+    final: 'Rosa cierra el cuaderno: «Ahora sí, a casa».',
+  },
+  arrepentido: {
+    id: 'arrepentido', name: 'El Acólito Arrepentido', abismo: true,
+    look: { clase: 'penitente', helm: 'cerrado', arma: 1, extra: 0 },
+    pal: { c: '#2a3a32', C: '#16201a', l: '#5a6a5a', g: '#3a4a3a', E: '#b8ff9a', B: '#b8ff9a', s: '#a8b8a0', q: '#7a8a7a' },
+    intro: 'Un acólito de túnica verde dejó de rezarle al eje. Está sentado, con el libro cerrado.\n«Me dijeron que si rezaba lo suficiente, entendería todo sin estudiar. Recé años. No entendí nada.»',
+    pregunta: '«¿Se puede entender algo difícil sin esfuerzo?»',
+    opciones: [
+      'Sí, si tienes suerte o talento.',
+      'No: se entiende practicando, equivocándose y volviendo a intentar.',
+      'No vale la pena entender nada.',
+    ],
+    correcta: 1,
+    ayuda: { label: 'Explicarle un problema (−6 de vida)', hp: 6 },
+    gracias: '«Practicando… Qué cosa tan sencilla y nadie me la dijo. Te acompaño; me sé sus rezos al revés.»',
+    triste: '«Eso decían los otros.» El acólito vuelve a abrir el libro.',
+    yaTienes: '«Ya caminas con alguien. Que te vaya bien, de verdad.»',
+    habilidad: 'Al final de tu turno recita los rezos al revés: 5 de daño a todos los enemigos, pero pierdes 1 de Cordura.',
+    final: 'El acólito tira su túnica verde: debajo trae una sudadera de la universidad.',
+  },
+} as Record<string, AlmaDef>);
+
+/** Almas del modo normal (las del Abismo no cuentan para «Coleccionista de almas») */
+export const ALMA_IDS = Object.keys(ALMAS).filter((id) => !ALMAS[id].abismo);
+export const ALMA_IDS_ABISMO = Object.keys(ALMAS).filter((id) => ALMAS[id].abismo);
+/** Probabilidad de un alma del Abismo en un nodo «?» del Abismo */
+export const ALMA_ABISMO_CHANCE = 0.2;
 /** Probabilidad de encontrar un alma en pena en un nodo de encuentro */
 export const ALMA_CHANCE = 0.1;
 /** Ergios de consuelo si ya tienes aliado */

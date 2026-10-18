@@ -12,6 +12,7 @@ export interface FamiliarDef {
   text: string; // qué hace en combate
   lore: string; // la física (o la leyenda) detrás
   combats: number; // cuántos combates se queda contigo
+  abismo?: boolean; // v0.49 · sólo aparece en El Abismo de los Ejes
 }
 
 export const FAMILIARS: Record<string, FamiliarDef> = {
@@ -47,4 +48,24 @@ export const FAMILIARS: Record<string, FamiliarDef> = {
   },
 };
 
-export const FAMILIAR_POOL = Object.keys(FAMILIARS);
+// v0.49 · familiares exclusivos del Abismo (se consiguen en sus Relatos)
+Object.assign(FAMILIARS, {
+  shoggoth: {
+    id: 'shoggoth', name: 'Shoggoth Bebé', sprite: 'fam_shoggoth', combats: 4, abismo: true,
+    text: 'Al inicio de tu turno te da 4 de Bloqueo y se come un Susurro de tu mano.',
+    lore: 'Protoplasma que toma la forma que necesita. Por ahora, la de una mascota con demasiados ojos.',
+  },
+  gatoUlthar: {
+    id: 'gatoUlthar', name: 'Gato de Ulthar', sprite: 'fam_gatoUlthar', combats: 4, abismo: true,
+    text: 'Al final de tu turno araña al enemigo con más vida (6). Al ganar un combate, +4 de Cordura.',
+    lore: 'Los gatos de Ulthar cuidan a quien los cuida. Y nunca olvidan.',
+  },
+  pezLinterna: {
+    id: 'pezLinterna', name: 'Pez Linterna', sprite: 'fam_pezLinterna', combats: 4, abismo: true,
+    text: 'Robas 1 carta más cada turno y ves las intenciones de los enemigos invisibles.',
+    lore: 'En el fondo del mar la luz es rara. Este pez la fabrica: bioluminiscencia.',
+  },
+} as Record<string, FamiliarDef>);
+
+/** Familiares que pueden salir al azar (los del Abismo sólo se consiguen allá) */
+export const FAMILIAR_POOL = Object.keys(FAMILIARS).filter((id) => !FAMILIARS[id].abismo);
