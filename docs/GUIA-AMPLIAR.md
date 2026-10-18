@@ -483,3 +483,18 @@ Mecánicas nuevas de enemigos: `confusion: true` en una intención (te Confunde)
 
 Estados del Abismo en una intención (v0.42): `aturde: true` (si el golpe te hace daño pierdes tu siguiente turno), `hemorragia: N` (N turnos en que cada carta jugada te quita 1 de vida) y `vertigo: N` (robas N cartas menos el siguiente turno, máximo 3).
 
+
+
+### Vista previa de cartas (v0.50)
+
+Al pasar el mouse por una carta, `Combat.previa(v)` arma el texto «⚔ Si la juegas ahora», que el `Tooltip` muestra abajo de la explicación. Ese texto sale de tres funciones:
+
+- `baseAtaque()`: el daño base de cada Ataque (golpes, a todos, ignora Bloqueo…).
+- `previaAtaque()` / `previaContra()`: los bonos y el resultado contra cada enemigo.
+- `previaOtra()`: el Bloqueo de Defensas y Habilidades.
+
+Los bonos de los dientes salen de `dientesBonos()`, que es la misma función que usa el ataque real. Así la vista previa no se desfasa.
+
+**Si agregas una carta de Ataque con una regla especial**, agrega su `case` en `baseAtaque()`. Si no lo haces, la vista previa usará F = m·a.
+
+**Si agregas un bono nuevo** dentro de `playOn`/`hitEnemy`, agrégalo también en `previaAtaque()`.

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CardDef, CARDS, CardInst, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+import { CalcCtx, CardDef, CARDS, CardInst, CardStats, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
 const VMAX_PEN = 14;
@@ -294,36 +294,55 @@ export class CombatScene extends Phaser.Scene {
 
   /** La Dentadura y el cosmos sobre un Ataque (se suman a this.polonio y se multiplican en this.mult) */
   private dientesAtaque(def: CardDef) {
-    const run = Game.run!;
+    const b = this.dientesBonos(def, this.attacksTurn);
+    this.polonio += b.suma;
+    this.mult *= b.k;
+    b.lineas.forEach((l) => this.calc(l));
+    if (b.rlyeh) this.rlyehUsado = true;
+    this.mercurioBono = 0;
+  }
+
+  /**
+   * v0.50 · Los bonos de la Dentadura y el cosmos para un Ataque, SIN cambiar nada
+   * (lo usan el ataque real y la vista previa de la carta). nAtaque = qué ataque del turno sería.
+   */
+  private dientesBonos(def: CardDef, nAtaque: number) {
+    const lineas: string[] = [];
+    const sumas: string[] = [];
+    let suma = 0;
+    const s = (n: number, t: string) => { if (n) { suma += n; lineas.push(`${t}: +${n}`); sumas.push(`${t.replace(/^[✦☣] /, '').replace(/ · Ataque nv \d+/, '')} +${n}`); } };
     const col = this.diente('colmillo');
-    if (col) { this.polonio += 2 * col; this.calc(`Colmillo de Profundo: +${2 * col}`); }
+    s(2 * col, 'Colmillo de Profundo');
     const dmt = this.diente('diamante');
-    if (dmt) { this.polonio += 4 * dmt; this.calc(`Diente de Diamante: +${4 * dmt}`); }
+    s(4 * dmt, 'Diente de Diamante');
     const ojo = this.diente('ojo');
-    if (ojo) { this.polonio += 3 * ojo; this.calc(`☣ Ojo Parpadeante: +${3 * ojo}`); }
+    s(3 * ojo, '☣ Ojo Parpadeante');
     // v0.46 · BALANCE: los multiplicadores de los dientes ya no se multiplican entre sí:
     // se SUMAN (+1 de R'lyeh, +0.25 por nivel de Saturno, +0.1 por Astro del Sol Negro,
     // +0.5 de la Alineación) y el total tiene un tope de ×MULT_DIENTES_MAX.
     let extra = 0;
     const partes: string[] = [];
     const rly = this.diente('rlyeh');
-    if (rly && !this.rlyehUsado) { this.rlyehUsado = true; extra += rly; partes.push(`R'lyeh +${rly}`); }
+    const rlyeh = !!rly && !this.rlyehUsado;
+    if (rlyeh) { extra += rly; partes.push(`R'lyeh +${rly}`); }
     const mar = this.diente('marte');
-    if (mar) { this.polonio += 2 * mar; this.calc(`✦ Marte · Ataque nv ${mar}: +${2 * mar}`); }
-    if (this.mercurioBono) { this.polonio += this.mercurioBono; this.calc(`✦ Mercurio: +${this.mercurioBono} guardado`); this.mercurioBono = 0; }
-    if (this.pacto('palanca') && this.attacksTurn === 1) { this.polonio += 4; this.calc('Pacto de la Palanca: brazo largo, +4 al primer ataque'); }
+    if (mar) s(2 * mar, `✦ Marte · Ataque nv ${mar}`);
+    if (this.mercurioBono) { suma += this.mercurioBono; lineas.push(`✦ Mercurio: +${this.mercurioBono} guardado`); sumas.push(`Mercurio +${this.mercurioBono}`); }
+    if (this.pacto('palanca') && nAtaque === 1) { suma += 4; lineas.push('Pacto de la Palanca: brazo largo, +4 al primer ataque'); sumas.push('Pacto de la Palanca +4'); }
     const sat = this.diente('saturno');
     if (sat && def.abismo) { extra += 0.25 * sat; partes.push(`Saturno +${(0.25 * sat).toFixed(2)}`); }
     const sol = this.diente('sol');
     const dent = this.dentEfectiva();
     if (sol) { const k = 0.1 * cuantosAstros(dent) * sol; extra += k; partes.push(`Sol Negro +${k.toFixed(1)}`); }
     if (alineacion(dent)) { extra += ALINEACION - 1; partes.push(`Alineación +${(ALINEACION - 1).toFixed(1)}`); }
+    let k = 1;
+    let cosmos = '';
     if (extra > 0) {
-      const k = Math.min(MULT_DIENTES_MAX, 1 + extra);
-      this.mult *= k;
-      this.calc(`✦ Cosmos: ×${k.toFixed(2)} (${partes.join(' · ')}${1 + extra > MULT_DIENTES_MAX ? ` · tope ×${MULT_DIENTES_MAX}` : ''})`);
+      k = Math.min(MULT_DIENTES_MAX, 1 + extra);
+      cosmos = `Cosmos ×${r1(k)} (${partes.join(' · ')}${1 + extra > MULT_DIENTES_MAX ? ` · tope ×${MULT_DIENTES_MAX}` : ''})`;
+      lineas.push(`✦ Cosmos: ×${k.toFixed(2)} (${partes.join(' · ')}${1 + extra > MULT_DIENTES_MAX ? ` · tope ×${MULT_DIENTES_MAX}` : ''})`);
     }
-    void run;
+    return { suma, k, lineas, rlyeh, sumas, cosmos };
   }
 
   /** La Dentadura y el cosmos sobre Defensas, Habilidades y Poderes */
@@ -958,7 +977,10 @@ export class CombatScene extends Phaser.Scene {
       this.tweens.add({ targets: v, y: HAND_Y - 96, scale: 1.12, angle: 0, duration: 120 });
       const def = CARDS[v.inst.id];
       const ed = v.inst.ed ? EDICIONES[v.inst.ed] : null;
-      this.tip.show(v.x + 100, HAND_Y - 300, ed ? `${def.concept} · ${ed.nombre}` : def.concept, ed ? `${ed.texto}\n\n${def.lore}` : def.lore);
+      // v0.50 · abajo del texto: el cálculo real si la juegas ahora
+      let calc = '';
+      try { calc = this.previa(v); } catch (err) { console.warn('previa', err); }
+      this.tip.show(v.x + 100, HAND_Y - 300, ed ? `${def.concept} · ${ed.nombre}` : def.concept, ed ? `${ed.texto}\n\n${def.lore}` : def.lore, calc, [v.x - 100, v.x + 100]);
     });
     v.on('pointerout', () => {
       this.tip.hide();
@@ -987,6 +1009,267 @@ export class CombatScene extends Phaser.Scene {
     this.hintT.setAlpha(1);
     this.tweens.killTweensOf(this.hintT);
     this.tweens.add({ targets: this.hintT, alpha: 0, delay: 1600, duration: 400 });
+  }
+
+  // ───────────────────────── VISTA PREVIA (v0.50) ─────────────────────────
+  // Al pasar el mouse por una carta se calcula lo que haría SI LA JUEGAS AHORA,
+  // con dientes, cosmos, ediciones, dones, pactos, estados y el Bloqueo de cada enemigo.
+  // No cambia nada del combate: sólo lee el estado.
+
+  /** Daño base de un Ataque (lo que dice la carta) con el contexto actual */
+  private baseAtaque(v: CardView, st: CardStats, c: CalcCtx) {
+    const def = CARDS[v.inst.id];
+    type Base = { dmg: number; lim?: number; golpes?: number; todos?: boolean; ignora?: boolean; res?: boolean; azar?: boolean; ultimo?: boolean; centroide?: boolean; rompe?: boolean; nota?: string; sinDano?: string };
+    const F = () => force(st, c).F;
+    const K = () => kinetic(st, c).K;
+    const crit = (d: number) => (this.critica && Game.run!.hp < Game.run!.maxHp / 2 ? Math.round(d * 1.5) : d);
+    const P = (cc: CalcCtx = c) => crit(pmv(st, cc).p);
+    const b = (x: Base) => x;
+    switch (def.id) {
+      case 'golpe': case 'fuerzaNeta': case 'martillo': return b({ dmg: F() });
+      case 'embestida': return b({ dmg: F(), nota: `Retroceso: recibes ${Math.floor(F() / 4)} (¼ de F).` });
+      case 'pendulo': return b({ dmg: F(), nota: 'Regresa al inicio de tu siguiente turno y golpea igual.' });
+      case 'tajo': return b({ dmg: F(), nota: `Con θ = 60°: ${Math.round(F() * 0.5)} a TODOS (más bonos).` });
+      case 'centroideGolpe': return b({ dmg: F(), centroide: true });
+      case 'geometriaImposible': return b({ dmg: F(), todos: true, nota: 'Después quedas Confundido.' });
+      case 'calamarTorque': return b({ dmg: F(), golpes: 3 });
+      case 'patinadora': return b({ dmg: F(), golpes: Math.min(6, this.played + 1) });
+      case 'torbellinoAcero': return this.energy ? b({ dmg: F(), golpes: this.energy, todos: true, nota: `Gasta tus ${this.energy} J.` }) : b({ dmg: 0, sinDano: 'Sin J no hay giros: no hace nada.' });
+      case 'newtonV': return b({ dmg: Math.round(F() * 1.5), ultimo: true });
+      case 'enLibras': return b({ dmg: Math.round(F() * 2.2) });
+      case 'fmaCuadrado': return b({ dmg: Math.round((F() * F()) / 5) });
+      case 'pesoMuerto': return b({ dmg: Math.round(((st.m ?? 0) + this.masa) * this.grav.g), ignora: true });
+      case 'despertar': {
+        const loc = Math.max(0, 100 - (c.cordura ?? 70));
+        return b({ dmg: Math.round(((st.m ?? 10) + this.masa) * Math.max(1, Math.round(loc / 10))) });
+      }
+      case 'proyectil': case 'choque': case 'chispa': case 'cometa': return b({ dmg: K() });
+      case 'torbellino': return b({ dmg: K(), golpes: 3 });
+      case 'rafaga': case 'singularidad': return b({ dmg: K(), todos: true });
+      case 'doppler': return b({ dmg: K(), todos: this.vel >= 6 });
+      case 'honda': { const vv = this.hondaV.get(v.inst.uid) ?? (st.extra ?? 4); return b({ dmg: Math.round(0.5 * (st.m ?? 2) * vv * vv) }); }
+      case 'embestidaArd': return b({ dmg: crit(pmv(st, c).p + (st.extra ?? 2)) });
+      case 'absorcion': case 'reentrada': return b({ dmg: P() });
+      case 'ignicion': {
+        const dv = rocket(st.extra ?? 6, c).dv;
+        return b({ dmg: P({ ...c, vel: Math.min(this.vmax, Math.round(((c.vel ?? 0) + dv) * 10) / 10) }), nota: `Antes quemas ${st.extra} kg (+${dv} m/s).` });
+      }
+      case 'estelaPlasma': return b({ dmg: P(), todos: true });
+      case 'rebote': return b({ dmg: this.block });
+      case 'frecuencia': return b({ dmg: st.block ?? 3, nota: `+${st.extra} de Resonancia.` });
+      case 'impulsoSost': return b({ dmg: st.block ?? 4, nota: `Luego ${st.block} más en cada uno de sus 2 turnos.` });
+      case 'choquePlastico': return b({ dmg: st.block ?? 9 });
+      case 'retroceso': return b({ dmg: st.block ?? 8, nota: `Y tú ganas ${st.extra} de Bloqueo.` });
+      case 'impulsoAng': return b({ dmg: (st.block ?? 4) + 2 * this.played, todos: true });
+      case 'integral': return Math.min(st.extra!, this.danoTurno) > 0 ? b({ dmg: Math.min(st.extra!, this.danoTurno) }) : b({ dmg: 0, sinDano: 'Aún no haces daño este turno: el área bajo la curva es 0.' });
+      case 'limite': return b({ dmg: limiteDano(st.extra!), lim: st.extra });
+      case 'perdigones': return b({ dmg: st.extra ?? 3, golpes: 3, azar: true });
+      case 'descarga': return this.energy ? b({ dmg: (st.extra ?? 5) * this.energy, todos: true, nota: `Gasta tus ${this.energy} J.` }) : b({ dmg: 0, sinDano: 'Sin J: 0 de daño.' });
+      case 'fractura': return b({ dmg: st.extra ?? 7, rompe: true });
+      case 'golpeGracia': return b({ dmg: st.extra ?? 9 });
+      case 'tiroParabolico': return b({ dmg: st.extra ?? 16, res: true, ignora: true, nota: 'Sólo donde caiga el proyectil (eliges θ).' });
+      case 'dolorResonante': return b({ dmg: 0, sinDano: `Cada enemigo recibe ${st.extra} por carga de Resonancia (ignora el Bloqueo).` });
+      case 'friccionArd': return b({ dmg: 0, sinDano: `No hace daño directo: +${st.extra} de Calor.` });
+      case 'ondaCalor': case 'llamarada': return b({ dmg: 0, sinDano: `No hace daño directo: Calor a todos.` });
+      case 'fatigaMat': return b({ dmg: 0, sinDano: 'No hace daño directo: recibe +50 % de daño unos turnos.' });
+      case 'trinity': return b({ dmg: 0, sinDano: 'Derrota a todos (los jefes resisten).' });
+      default:
+        if (st.m && st.a) return b({ dmg: F(), todos: def.target === 'all' });
+        return null;
+    }
+  }
+
+  /** Texto de la vista previa de una carta (vacío si no hay nada que calcular) */
+  private previa(v: CardView): string {
+    const inst = v.inst;
+    const def = CARDS[inst.id];
+    if (def.unplayable || def.rarity === 'estado') return '';
+    if (this.condJefe === 'sinHabilidades' && def.type === 'Habilidad') return 'MENTE EN BLANCO: no puedes jugar Habilidades en esta pelea.';
+    const st = statsOf(inst);
+    const L: string[] = [];
+    const costo = this.cost(v);
+    if (costo > this.energy) L.push(`(Te faltan ${costo - this.energy} J para jugarla.)`);
+    const ed = this.condJefe === 'sinEdiciones' ? undefined : inst.ed;
+    if (def.type === 'Ataque') L.push(...this.previaAtaque(v, st, ed));
+    else L.push(...this.previaOtra(def, st, ed, costo));
+    if (this.hemorragia) L.push('Hemorragia: jugarla te quita 1 de vida.');
+    return L.join('\n');
+  }
+
+  private previaAtaque(v: CardView, st: CardStats, ed: string | undefined): string[] {
+    const def = CARDS[v.inst.id];
+    let suma = 0;
+    let mult = 1;
+    const sumas: string[] = [];
+    const mults: string[] = [];
+    const add = (n: number, t: string) => { if (n) { suma += n; sumas.push(`${t} +${n}`); } };
+    const por = (k: number, t: string) => { mult *= k; mults.push(`${t} ×${k}`); };
+    // Plano Inclinado cambia la aceleración o la rapidez ANTES de calcular la base
+    const c: CalcCtx = { ...this.ctx() };
+    const pl = boonLevel('g_plano');
+    let notaPlano = '';
+    if (!this.firstAttack && pl) {
+      if (this.usaVel) { const d = Math.max(0, Math.min(pl, VMAX - this.vel)); if (d) { c.vel = (c.vel ?? 0) + d; notaPlano = ` (Plano Inclinado: +${d} m/s)`; } }
+      else { c.acelBonus += 2 * pl; notaPlano = ` (Plano Inclinado: +${2 * pl} m/s²)`; }
+    }
+    const base = this.baseAtaque(v, st, c);
+    if (base?.sinDano) return [base.sinDano];
+    // bonos que se suman a cada golpe (igual que en playOn → hitEnemy)
+    const pol = boonLevel('m_polonio');
+    add(pol ? (pol === 2 ? 5 : 3) : 0, 'Polonio');
+    const ent = Game.run!.entropia ?? 0;
+    if (ent >= ENTROPIA.delirante) add(ENTROPIA.vision, 'Visión del Abismo');
+    if (this.prohibido('p_abismo')) add(Math.min(5, Math.floor(ent / 20)), 'Mirar de Vuelta');
+    const hc = boonLevel('h_centripeta');
+    if (hc && !this.centriUsed) add(6 * hc, 'Centrípeta');
+    const tv = boonLevel('co_travail');
+    if (tv && this.attacksTurn) add(tv * this.attacksTurn, 'Travail');
+    add(this.derivadaBono, 'Derivada');
+    if (this.palanca) por(2, 'Palanca');
+    if (ed === 'lamina') add(5, 'Lámina');
+    if (ed === 'poli') por(1.5, 'Polícroma');
+    if (ed === 'cristal') por(2, 'Cristal');
+    if (this.necro('steiner') && !this.steinerUsed) por(2, 'Steiner');
+    if (Game.run?.modo === 'abismo') {
+      const d = this.dientesBonos(def, this.attacksTurn + 1);
+      suma += d.suma;
+      sumas.push(...d.sumas);
+      if (d.cosmos) { mult *= d.k; mults.push(d.cosmos); }
+    }
+    if (!base) {
+      const L: string[] = [];
+      if (suma) L.push(`+${suma} a cada golpe: ${sumas.join(' · ')}`);
+      if (mult !== 1) L.push(`×${r1(mult)}: ${mults.join(' · ')}`);
+      return L;
+    }
+    const L: string[] = [];
+    const golpes = base.golpes ?? 1;
+    L.push(`Base: ${base.dmg}${golpes > 1 ? ` por golpe (${golpes} golpes)` : ''}${base.todos ? ' a TODOS' : ''}${base.ignora ? ' · ignora Bloqueo' : ''}${notaPlano}`);
+    if (base.res) {
+      L.push('(Este daño no recibe tus bonos.)');
+      suma = 0;
+      mult = 1;
+    } else {
+      if (suma) L.push(`+${suma}: ${sumas.join(' · ')}`);
+      if (mult !== 1) L.push(`×${r1(mult)}: ${mults.join(' · ')}`);
+      if (suma || mult !== 1) {
+        const F = Math.round((base.dmg + suma) * mult);
+        L.push(`= ${suma ? (mult !== 1 ? `(${base.dmg} + ${suma})` : `${base.dmg} + ${suma}`) : base.dmg}${mult !== 1 ? ` × ${r1(mult)}` : ''} = ${F}${golpes > 1 ? ' por golpe' : ''}`);
+      }
+    }
+    if (base.nota) L.push(base.nota);
+    // resultado contra cada enemigo
+    const vivos = this.alive().sort((x, y) => x.baseX - y.baseX);
+    const objetivos = base.ultimo ? vivos.slice(-1) : vivos;
+    if (objetivos.length > 1 && !base.todos && !base.ultimo) L.push(base.azar ? 'Si un golpe cae en…' : 'Según a quién se la juegues:');
+    for (const e of objetivos) L.push(this.previaContra(e, base, golpes, suma, mult, def));
+    return L;
+  }
+
+  /** Simula los golpes contra un enemigo sin tocarlo */
+  private previaContra(e: EnemyView, base: { dmg: number; todos?: boolean; ignora?: boolean; res?: boolean; centroide?: boolean; rompe?: boolean; azar?: boolean; lim?: number }, golpes: number, suma: number, mult: number, def: CardDef): string {
+    const st = e.st;
+    let blk = base.rompe ? 0 : st.block;
+    let hp = st.hp;
+    let det = !!st.detenido;
+    let total = 0;
+    let absorb = 0;
+    let para = '';
+    const umbral = umbralDe(st);
+    const cardHit = !base.res;
+    const n = base.azar ? 1 : golpes;
+    let F0 = 0;
+    for (let i = 0; i < n && hp > 0; i++) {
+      let F = base.dmg + (cardHit ? suma : 0);
+      if (cardHit && st.def.hueco && base.todos) F = Math.round(F / 2);
+      const m = mult * (base.centroide && blk <= 0 ? 1.5 : 1);
+      if (cardHit && m !== 1) F = Math.round(F * m);
+      const tt = boonLevel('tu_test');
+      if (cardHit && tt && st.def.act === 4) F += tt === 2 ? 6 : 3;
+      if (i === 0) F0 = F;
+      let dmg = F;
+      if (det) dmg = Math.round(dmg * 1.5);
+      if (st.fatiga > 0) dmg = Math.round(dmg * 1.5);
+      if (!(base.ignora || (cardHit && this.pierce))) { const a = Math.min(blk, dmg); blk -= a; dmg -= a; absorb += a; }
+      hp -= dmg;
+      total += dmg;
+      if (umbral && !det && hp > 0 && cardHit && F >= umbral) {
+        if ((st.imparableT ?? 0) > 0) para = 'IMPARABLE: no se detiene';
+        else { det = true; para = `lo DETIENES (≥ ${umbral} N)`; }
+      }
+    }
+    const partes: string[] = [];
+    let s = `${st.def.name}: −${total} de vida`;
+    if (absorb) s += ` (+${absorb} al Bloqueo)`;
+    partes.push(s);
+    if (cardHit && st.def.hueco && base.todos) partes.push('área negativa: ½');
+    if (st.detenido) partes.push('detenido ×1.5');
+    if (st.fatiga > 0) partes.push('fatiga ×1.5');
+    void F0;
+    if (para) partes.push(para);
+    if (hp <= 0) partes.push('¡lo derrotas!');
+    else if (umbral && !para && !st.detenido && cardHit) partes.push(`no lo detiene (umbral ${umbral})`);
+    if (st.def.thorns) partes.push(`Púas: te regresa ${st.def.thorns}${n > 1 ? ' por golpe' : ''}`);
+    if (def.id === 'limite' && base.lim) {
+      const jefe = st.def.id === 'am' || st.def.id === 'hibbelerius' || this.kind === 'boss';
+      if (st.hp <= (st.maxHp * (jefe ? 10 : base.lim)) / 100) return `→ ${st.def.name}: ¡lo derrotas (Límite: le queda ≤ ${jefe ? 10 : base.lim} %)!`;
+    }
+    return `→ ${partes.join(' · ')}`;
+  }
+
+  /** Vista previa de Defensas, Habilidades y Poderes: Bloqueo real y efectos extra */
+  private previaOtra(def: CardDef, st: CardStats, ed: string | undefined, costo: number): string[] {
+    const L: string[] = [];
+    const ab = Game.run?.modo === 'abismo';
+    const bonos: [number, string][] = [];
+    if (ab && def.type === 'Defensa') {
+      const dmd = this.diente('diamante');
+      if (dmd) bonos.push([4 * dmd, 'Diente de Diamante']);
+      if (Game.run?.mutador === 'eco') bonos.push([3, 'Eco del Abismo']);
+      const lun = this.diente('luna');
+      if (lun) bonos.push([3 * lun, `✦ Luna nv ${lun}`]);
+    }
+    if (ab && def.type === 'Habilidad') {
+      const mer = this.diente('mercurio');
+      if (mer) { bonos.push([2 * mer, `✦ Mercurio nv ${mer}`]); L.push(`✦ Mercurio: +${2 * mer} a tu siguiente ataque`); }
+    }
+    if (ab && def.abismo) { const sat = this.diente('saturno'); if (sat) bonos.push([3 * sat, `✦ Saturno nv ${sat}`]); }
+    if (ed === 'lamina') bonos.push([4, 'Lámina']);
+    if (ed === 'cristal') bonos.push([10, 'Cristal']);
+    if (ed === 'poli') L.push('Polícroma: robas 1');
+    if (ed === 'holo') L.push('Holográfica: +1 J');
+    const fot = boonLevel('e_foton');
+    if (fot && def.type === 'Habilidad') L.push(`Efecto Fotoeléctrico: ${fot === 2 ? 7 : 4} a un enemigo al azar`);
+    let baseB = def.type === 'Defensa' ? st.block ?? 0 : 0;
+    // Defensas cuyo Bloqueo depende del momento
+    const quedan = Math.max(0, this.energy - costo);
+    switch (def.id) {
+      case 'radioGiro': if (this.hand.length - 1 >= 4) baseB += 4; break;
+      case 'dclTentaculos': baseB = (st.block ?? 4) * this.alive().length; break;
+      case 'muroMasa': baseB = (st.block ?? 4) + 3 * Math.max(0, this.masa); break;
+      case 'patoHule': baseB = (st.block ?? 3) * (this.confusa ? 3 : 1); break;
+      case 'conservacion': baseB = (st.extra ?? 3) * quedan; break;
+      case 'barrera': baseB = Math.round((st.extra ?? 1.5) * this.vel); break;
+      case 'retro': baseB = Math.round((st.extra ?? 3) * Math.min(4, this.vel)); break;
+      case 'frenado': { const v2 = Math.max(0, this.vel - 2); baseB = Math.round(0.5 * (st.m ?? 1) * (this.vel * this.vel - v2 * v2)); break; }
+      case 'equilibrio': {
+        const inc = this.alive().reduce((n, e) => { const i = e.st.intent; return n + (i.kind === 'attack' ? i.dmg * (i.hits ?? 1) : i.kind === 'block' ? i.dmg ?? 0 : 0); }, 0);
+        baseB = Math.min(inc, st.extra ?? 12);
+        break;
+      }
+    }
+    if (!baseB && !bonos.length && !L.length) return [];
+    const sinDef = this.condJefe === 'sinDefensa' && def.type === 'Defensa';
+    const marea = this.jefeVivo('dagon') && this.turn % 3 === 0;
+    const efectivo = (n: number) => (sinDef ? 0 : marea ? Math.floor(n / 2) : n);
+    let total = efectivo(baseB);
+    const out: string[] = [];
+    if (baseB) out.push(`Base: +${baseB} de Bloqueo`);
+    for (const [n, t] of bonos) { out.push(`${t}: +${n} de Bloqueo`); total += efectivo(n); }
+    if (sinDef) out.push('SIN DEFENSA: esta pelea las Defensas no dan Bloqueo');
+    else if (marea) out.push('Marea Alta (Dagón): cada Bloqueo da la mitad');
+    if (baseB || bonos.length) out.push(`── Total: +${total} de Bloqueo (tendrías ${this.block + total}) ──`);
+    return [...out, ...L];
   }
 
   private calc(line: string) {

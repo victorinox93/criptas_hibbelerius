@@ -2,6 +2,21 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.50.0 · Cálculo de cartas en vivo
+
+- **Vista previa al pasar el mouse por una carta:** abajo del texto de la carta aparece «⚔ Si la juegas ahora», con el cálculo real en ese momento. Funciona en todos los modos; en el Abismo es donde más ayuda.
+  - **Ataques:**
+    - La base de la carta.
+    - Lo que se suma (dientes, Lámina, Polonio, Derivada, pactos…).
+    - Lo que multiplica (Cosmos, Polícroma, Cristal, Palanca, Steiner).
+    - La cuenta completa, por ejemplo `= (10 + 8) × 2 = 36`.
+    - Lo que le pasa a **cada enemigo**: vida que pierde, cuánto se va a su Bloqueo, si lo detienes (umbral), si está IMPARABLE, si lo derrotas, Púas, detenido o fatiga ×1.5, y el área negativa (½).
+  - **Defensas:** el Bloqueo total con dientes, mutador y edición. También avisa si el jefe no te deja defenderte o si la Marea Alta de Dagón lo reduce a la mitad.
+  - **Habilidades:** Mercurio, Saturno, ediciones y Fotoeléctrico.
+  - Avisa si te faltan J, si tienes Hemorragia o si es una Habilidad con «Mente en Blanco».
+  - El recuadro se pone **a un lado de la carta** para no taparla.
+  - La vista previa sólo lee el combate y no cambia nada. Se probó contra el daño real: coincide.
+
 ## v0.49.0 · Acompañantes del Abismo y Vestidor más rápido (beta)
 
 - **Imparables, rebalanceados:** ya ningún enemigo es imparable todo el tiempo. Sí se pueden detener con F ≥ umbral, pero **después quedan IMPARABLES unos turnos** (se ve «IMPARABLE n» junto a su vida): 1 turno los jefes de tramo y la Hidra, 2 turnos los Primigenios y el Engendro de Dunwich. Así no se les puede detener turno tras turno.

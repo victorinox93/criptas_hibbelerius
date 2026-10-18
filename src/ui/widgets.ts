@@ -241,21 +241,33 @@ export class Tooltip {
   private g: Phaser.GameObjects.Graphics;
   private t1: Phaser.GameObjects.Text;
   private t2: Phaser.GameObjects.Text;
+  private t3: Phaser.GameObjects.Text; // v0.50 · cálculo real de la carta (abajo)
   constructor(private s: Phaser.Scene) {
     this.g = s.add.graphics();
     this.t1 = txt(s, 12, 8, '', 22, CSS.gold);
     this.t2 = txt(s, 12, 32, '', 19, CSS.bone, { wordWrap: { width: 300 } });
-    this.c = s.add.container(0, 0, [this.g, this.t1, this.t2]).setDepth(1000).setVisible(false);
+    this.t3 = txt(s, 12, 0, '', 17, '#9af0c0', { wordWrap: { width: 340 }, lineSpacing: 1 });
+    this.c = s.add.container(0, 0, [this.g, this.t1, this.t2, this.t3]).setDepth(1000).setVisible(false);
   }
-  show(x: number, y: number, head: string, body: string) {
+  show(x: number, y: number, head: string, body: string, calc = '', evitar?: [number, number]) {
     this.t1.setText(head);
     this.t2.setText(body);
-    const w = Math.max(this.t1.width, this.t2.width) + 26;
-    const h = this.t2.y + this.t2.height + 12;
+    // con cálculo, la explicación se acorta para que quepa todo en pantalla
+    this.t2.setFontSize(calc ? 16 : 19).setWordWrapWidth(calc ? 340 : 300);
+    this.t3.setText(calc ? `⚔ Si la juegas ahora:\n${calc}` : '').setVisible(!!calc);
+    this.t3.y = this.t2.y + this.t2.height + 14;
+    const w = Math.max(this.t1.width, this.t2.width, calc ? this.t3.width : 0) + 26;
+    const h = (calc ? this.t3.y + this.t3.height : this.t2.y + this.t2.height) + 12;
     this.g.clear();
     frame(this.g, 0, 0, w, h, 0x0b090e, UI.gold, 0.97);
-    const px = Phaser.Math.Clamp(x, 8, W - w - 8);
-    const py = Phaser.Math.Clamp(y, 8, H - h - 8);
+    if (calc) this.g.lineStyle(1, UI.gold, 0.5).lineBetween(10, this.t3.y - 7, w - 10, this.t3.y - 7);
+    let px = Phaser.Math.Clamp(x, 8, W - w - 8);
+    let py = Phaser.Math.Clamp(y, 8, H - h - 8);
+    if (evitar && px < evitar[1] && px + w > evitar[0]) {
+      // no tapar la carta: a su derecha si cabe, si no a su izquierda, pegado abajo
+      px = evitar[1] + 6 + w <= W - 8 ? evitar[1] + 6 : Math.max(8, evitar[0] - 6 - w);
+      py = H - h - 8;
+    }
     this.c.setPosition(px, py).setVisible(true);
   }
   hide() {
