@@ -16,7 +16,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
-import { AddCards, danoDe, encounters, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
+import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
 import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
@@ -141,6 +141,8 @@ export class CombatScene extends Phaser.Scene {
   private mult = 1; // multiplicador del ataque en curso
   private pierce = false; // Efecto Túnel: ignorar Bloqueo este turno
   private masaDef = false; // Masa Inamovible
+  private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es un combate onírico
+  private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
   private blockPerTurn = 0; // Resistencia del Material
   private orbit = 0; // Órbita Cerrada (masa del satélite)
   private entropia = 0; // Entropía (J por turno a cambio de vida)
@@ -175,9 +177,10 @@ export class CombatScene extends Phaser.Scene {
 
   constructor() { super('Combat'); }
 
-  init(data: { kind: Kind; floor: number }) {
+  init(data: { kind: Kind; floor: number; sueno?: string }) {
     this.kind = data.kind;
     this.floor = data.floor;
+    this.sueno = data.sueno; // v0.51 · combate onírico (src/scenes/Sueno.ts)
     this.enemies = [];
     this.hand = [];
     this.discard = [];
@@ -529,6 +532,16 @@ export class CombatScene extends Phaser.Scene {
     if (this.acto === 5) {
       audio.play(this.kind === 'boss' ? 'jefe5' : Math.random() < 0.5 ? 'combate6' : 'combate7');
       abismoBackground(this, 500 + this.floor * 7, this.kind === 'boss');
+      if (this.sueno) {
+        // v0.51 · el sueño: todo se tiñe de violeta y hay estrellas
+        this.add.rectangle(0, 0, W, H, 0x1a0a3a, 0.45).setOrigin(0).setDepth(-6);
+        this.add.rectangle(0, 0, W, H, 0x5a2aa0, 0.12).setOrigin(0).setDepth(-5).setBlendMode(Phaser.BlendModes.ADD);
+        for (let i = 0; i < 40; i++) {
+          const st = this.add.circle(Math.random() * W, 40 + Math.random() * 300, 1, 0xe8dcff, 0.6).setDepth(-4);
+          this.tweens.add({ targets: st, alpha: 0.1, duration: 700 + Math.random() * 1500, yoyo: true, repeat: -1 });
+        }
+        this.time.delayedCall(900, () => this.anunciarEstado('COMBATE ONÍRICO', 'La vida que pierdas en el sueño no es real: al despertar la recuperas. La Cordura, sí.', 0x5a4aa8, '#c8b8ff'));
+      }
     } else if (this.acto >= 4) {
       audio.play(this.kind === 'boss' ? 'jefe4' : 'combate5');
       nucleoBackground(this, 400 + this.floor * 7, this.kind === 'boss');
@@ -564,7 +577,7 @@ export class CombatScene extends Phaser.Scene {
 
     // ── Enemigos ──
     // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
-    const enc = this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
+    const enc = this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
 
@@ -810,6 +823,8 @@ export class CombatScene extends Phaser.Scene {
     if (i.aturde) r.d += '\nGOLPE ATURDIDOR: si te hace daño (no lo bloqueas completo), PIERDES tu siguiente turno.';
     if (i.hemorragia) r.d += `\nHEMORRAGIA ${i.hemorragia}: durante ${i.hemorragia} turno(s), cada carta que juegues te quitará 1 de vida.`;
     if (i.vertigo) r.d += `\nVÉRTIGO: en tu siguiente turno robarás ${i.vertigo} carta(s) menos.`;
+    if (i.perfora) r.d += '\nPERFORA: sale de un ángulo y su golpe atraviesa tu Bloqueo.';
+    if (i.inunda) r.d += '\nEL LAGO SUBE: antes del golpe pierdes TODO tu Bloqueo.';
     if (i.add) r.d += `\nMeterá ${i.add.n} «${CARDS[i.add.id].name}» a tu ${i.add.to === 'draw' ? 'mazo de robo' : 'descarte'}.`;
     return r;
   }
@@ -844,6 +859,8 @@ export class CombatScene extends Phaser.Scene {
         if (ii.aturde) { ev.intentC.add(icon(this, ex, 0, 'i_stun', 3).setTint(0xffd040)); ex += 30; }
         if (ii.hemorragia) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3).setTint(0xb02020)); ex += 30; }
         if (ii.vertigo) { ev.intentC.add(icon(this, ex, 0, 'i_momentum', 3).setTint(0x9ad8f0)); ex += 30; }
+        if (ii.perfora) { ev.intentC.add(icon(this, ex, 0, 'i_combat', 3).setTint(0x9a6ad0)); ex += 30; }
+        if (ii.inunda) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3).setTint(0x3a8ac8)); ex += 30; }
       }
       this.tip.attach(ic, 'Intención', it.d);
       this.tweens.add({ targets: ev.intentC, y: ev.intentC.y - 4, duration: 600, yoyo: true, repeat: 1 });
@@ -1266,6 +1283,7 @@ export class CombatScene extends Phaser.Scene {
     const out: string[] = [];
     if (baseB) out.push(`Base: +${baseB} de Bloqueo`);
     for (const [n, t] of bonos) { out.push(`${t}: +${n} de Bloqueo`); total += efectivo(n); }
+    if (def.type === 'Defensa' && this.jefeVivo('yig')) L.push('Yig: una serpiente te muerde (−2 de vida)');
     if (sinDef) out.push('SIN DEFENSA: esta pelea las Defensas no dan Bloqueo');
     else if (marea) out.push('Marea Alta (Dagón): cada Bloqueo da la mitad');
     if (baseB || bonos.length) out.push(`── Total: +${total} de Bloqueo (tendrías ${this.block + total}) ──`);
@@ -2438,6 +2456,14 @@ export class CombatScene extends Phaser.Scene {
     this.mult = 1;
     this.curAll = false;
     if (def.type !== 'Ataque' && Game.run?.modo === 'abismo') this.dientesNoAtaque(def);
+    if (def.type === 'Defensa' && this.jefeVivo('yig')) {
+      // v0.51 · Yig: cada Defensa despierta a una serpiente
+      const run = Game.run!;
+      run.hp = Math.max(1, run.hp - 2);
+      this.calc('Yig: una serpiente te muerde al defenderte (−2 de vida)');
+      this.floatText(this.heroX, 200, '−2 🐍', '#9af07a');
+      this.hud.refresh();
+    }
     if (ed && def.type !== 'Ataque') {
       if (ed === 'lamina') { this.gainBlock(4); this.calc('Lámina: +4 de Bloqueo'); }
       if (ed === 'poli') { this.drawCards(1); this.calc('Polícroma: robas 1'); }
@@ -2877,7 +2903,8 @@ export class CombatScene extends Phaser.Scene {
       this.hanbeiE += parte;
       this.floatText(this.aliadoImg.x, 200, `Hanbei recibe ${parte}`, '#e8c15a');
     }
-    const absorbed = Math.min(this.block, dmg);
+    const absorbed = this.perforaGolpe && from ? 0 : Math.min(this.block, dmg);
+    if (this.perforaGolpe && from && this.block > 0) this.floatText(this.heroX, 240, 'Perfora', '#c8a8ff');
     this.block -= absorbed;
     const real = dmg - absorbed;
     const antesHp = run.hp;
@@ -2975,6 +3002,9 @@ export class CombatScene extends Phaser.Scene {
     if (this.turn === 2 && Game.run?.mutador === 'noche') for (const e of this.alive()) this.refreshEnemy(e);
     const nep = this.diente('neptuno');
     if (nep && this.turn % 3 === 0) { this.energy += nep; this.calc(`✦ Neptuno · Órbita nv ${nep}: +${nep} J`); }
+    // v0.51 · El Dios de las Cinco Cabezas está en equilibrio: gana Bloqueo cada turno tuyo
+    const cinco = this.jefeVivo('cincoCabezas') ? this.alive().find((e) => e.st.def.id === 'cincoCabezas') : undefined;
+    if (cinco) { cinco.st.block += 6; this.refreshEnemy(cinco); this.calc('El Dios de las Cinco Cabezas: ΣF = 0 → +6 de Bloqueo'); }
     if (this.jefeVivo('cthulhu')) {
       addEntropia(5);
       this.calc('Cthulhu sueña contigo: −5 de Cordura');
@@ -3351,6 +3381,14 @@ export class CombatScene extends Phaser.Scene {
         if (!st.impulsoLeft) st.impulso = 0;
         if (ev.dead) continue;
       }
+      if (st.def.id === 'shubNiggurath') {
+        // v0.51 · los Mil Retoños alimentan a su madre
+        const hijos = this.alive().filter((e) => e.st.def.id === 'retono').length;
+        if (hijos) {
+          const cura = Math.min(st.maxHp - st.hp, 6 * hijos);
+          if (cura > 0) { st.hp += cura; this.floatText(ev.baseX, 170, `+${cura}`, '#9af07a'); this.calc(`Shub-Niggurath: ${hijos} Retoño(s) la alimentan → +${cura} de vida`); this.refreshEnemy(ev); }
+        }
+      }
       const it = st.intent;
       if (it.kind === 'stunned') {
         st.stunned = Math.max(0, st.stunned - 1);
@@ -3367,11 +3405,19 @@ export class CombatScene extends Phaser.Scene {
           if (it.dmg) await this.hurtPlayer(it.dmg, ev);
         } else if (it.kind === 'attack') {
           const hpAntes = Game.run!.hp;
+          if (it.inunda && this.block > 0) {
+            this.calc(`${st.def.name}: el lago sube y se lleva tu Bloqueo (${this.block})`);
+            this.floatText(this.heroX, 190, '¡Inundado!', '#7ab8ff');
+            this.block = 0;
+            this.refreshPlayer();
+          }
+          this.perforaGolpe = !!it.perfora;
           for (let h = 0; h < (it.hits ?? 1); h++) {
             await this.hurtPlayer(it.dmg, ev);
             if (Game.run!.hp <= 0 || ev.dead) break;
             await this.wait(140);
           }
+          this.perforaGolpe = false;
           if (it.release) st.carga = 0;
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
@@ -3612,6 +3658,19 @@ export class CombatScene extends Phaser.Scene {
       fadeTo(this, 'End', { victory: true });
       return true;
     }
+    if (this.sueno) {
+      // v0.51 · ganaste en el sueño: la vida que perdiste allá no era real
+      const recupera = Math.max(0, (run.suenoHp ?? run.hp) - run.hp);
+      run.hp = Math.max(run.hp, run.suenoHp ?? run.hp);
+      run.suenoHp = undefined;
+      run.floor = this.floor; // la escena del sueño avanza el piso al despertar
+      logEvent('suenoCombate', '', true, { sueno: this.sueno, piso: this.floor });
+      saveLocal();
+      syncRun('en curso');
+      await this.banner('¡Venciste en el sueño!');
+      fadeTo(this, 'Sueno', { floor: this.floor, fase: 'despertar', gano: true, combate: this.sueno, recupera });
+      return true;
+    }
     syncRun('en curso');
     await this.banner(T.combate.victoria);
     fadeTo(this, 'Reward', { kind: this.kind, ergios: erg + extra });
@@ -3625,6 +3684,23 @@ export class CombatScene extends Phaser.Scene {
   private async dies(by: string): Promise<boolean> {
     const run = Game.run!;
     if (this.bannerT.getData('dead')) return true;
+    if (this.sueno) {
+      // v0.51 · morir en un sueño sólo te despierta (sin gastar la Vida Extra)
+      this.bannerT.setData('dead', true);
+      this.busy = true;
+      const vuelve = Math.max(1, run.suenoHp ?? 1);
+      const recupera = Math.max(0, vuelve - Math.max(0, run.hp));
+      run.hp = vuelve;
+      run.suenoHp = undefined;
+      addEntropia(15);
+      run.floor = this.floor;
+      logEvent('suenoCombate', '', false, { sueno: this.sueno, piso: this.floor, enemigo: by });
+      saveLocal();
+      this.tweens.add({ targets: this.hero, alpha: 0.3, duration: 700 });
+      await this.banner('¡Despiertas!', '#c8b8ff');
+      fadeTo(this, 'Sueno', { floor: this.floor, fase: 'despertar', gano: false, combate: this.sueno, recupera });
+      return true;
+    }
     const i = run.relics.indexOf('vidaExtra');
     if (i >= 0) {
       run.relics.splice(i, 1);

@@ -4,11 +4,11 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { RARAS_ABISMO } from '../data/abismo_modo';
 import { CARDS } from '../data/cards';
-import { base, cristalDe, defDiente, esParasito, HUECOS, ponerDiente, sortearDientes, sortearParasito } from '../data/dientes';
+import { base, cristalDe, defDiente, DIENTES, esParasito, HUECOS, ponerDiente, sortearDientes, sortearParasito } from '../data/dientes';
 import { Efecto, OpcionRelato, RELATO } from '../data/relatos';
 import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
-import { addCard, addEffect, addFamiliar, addEntropia, aplicarSarro, Game, logEvent, saveLocal, syncRun } from '../state';
+import { addCard, addEffect, addFamiliar, addEntropia, aplicarSarro, Game, logEvent, saveLocal, sonarSueno, syncRun } from '../state';
 import { topBar } from '../ui/hud';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
 
@@ -19,7 +19,7 @@ import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widg
  */
 
 /** Pone un diente ganado en un relato. Los parásitos se pegan solos (si no hay hueco, desplazan a un diente normal). */
-function darDiente(tipo: string): string {
+export function darDiente(tipo: string): string {
   const r = Game.run!;
   const dent = (r.dientes ??= Array(HUECOS).fill(null));
   while (dent.length < HUECOS) dent.push(null);
@@ -30,6 +30,10 @@ function darDiente(tipo: string): string {
     const normales = tengo.filter((x) => !esParasito(x));
     if (!normales.length) return 'No tienes dientes que copiar: el reflejo sólo sonríe.';
     id = base(Phaser.Utils.Array.GetRandom(normales));
+  } else if (tipo === 'astro') {
+    // v0.51 · un Astro (planeta) al azar; si ya los tienes todos, uno raro
+    const astros = Object.values(DIENTES).filter((d) => d.tipo === 'astro' && d.rareza !== 'legendario' && !tengo.map(base).includes(d.id));
+    id = astros.length ? Phaser.Utils.Array.GetRandom(astros).id : sortearDientes(1, tengo, 1)[0];
   } else if (tipo === 'raro' || tipo === 'legendario') {
     id = sortearDientes(1, tengo, 1, { legendario: tipo === 'legendario' })[0];
     if (tipo === 'raro' && defDiente(id).rareza === 'comun') id = sortearDientes(1, tengo, 1)[0];
@@ -115,9 +119,15 @@ export class RelatoScene extends Phaser.Scene {
     const rel = RELATO(data.id)!;
     this.cameras.main.fadeIn(500);
     audio.play('abismo2');
-    this.add.rectangle(0, 0, W, H, 0x04080a).setOrigin(0);
+    const sueno = !!rel.sueno; // v0.51 · los sueños se ven violetas y con estrellas
+    if (sueno && !run.debug) sonarSueno(rel.id);
+    this.add.rectangle(0, 0, W, H, sueno ? 0x0a0618 : 0x04080a).setOrigin(0);
     const niebla = this.add.graphics();
-    for (let i = 0; i < 10; i++) niebla.fillStyle(0x0c1a18, 0.25).fillEllipse(Math.random() * W, 380 + Math.random() * 120, 300, 40);
+    for (let i = 0; i < 10; i++) niebla.fillStyle(sueno ? 0x2a1a4a : 0x0c1a18, 0.25).fillEllipse(Math.random() * W, 380 + Math.random() * 120, 300, 40);
+    if (sueno) for (let i = 0; i < 50; i++) {
+      const st = this.add.circle(Math.random() * W, 40 + Math.random() * (H - 60), 1, 0xe8dcff, 0.3 + Math.random() * 0.5);
+      this.tweens.add({ targets: st, alpha: 0.1, duration: 900 + Math.random() * 1500, yoyo: true, repeat: -1 });
+    }
     vignette(this);
     const tip = new Tooltip(this);
     const hud = topBar(this, tip);
@@ -127,11 +137,12 @@ export class RelatoScene extends Phaser.Scene {
     this.tweens.add({ targets: halo, scale: 1.15, alpha: 0.03, duration: 1800, yoyo: true, repeat: -1 });
     const ic = this.add.image(200, 270, rel.icono).setScale(12).setTint(rel.tinte);
     this.tweens.add({ targets: ic, y: 262, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    txt(this, 200, 400, rel.propio ? `Del diario de Ignacio Montemayor\n(${rel.anio})` : `Basado en «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
+    txt(this, 200, 400, rel.propio ? `Del diario de Ignacio Montemayor\n(${rel.anio})` : `${sueno ? 'Sueño basado en' : 'Basado en'} «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, sueno ? '#9a8ac0' : '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
 
-    title(this, W / 2 + 90, 70, rel.titulo, 36, '#9ad8c8');
+    const tt = title(this, W / 2 + 90, 70, rel.titulo, 36, sueno ? '#c8b8ff' : '#9ad8c8');
+    if (tt.width > 600) tt.setScale(600 / tt.width);
     const g = this.add.graphics();
-    frame(g, 380, 100, 550, 150, 0x080e0e, 0x2c5a4e, 0.95);
+    frame(g, 380, 100, 550, 150, sueno ? 0x0e0a1c : 0x080e0e, sueno ? 0x5a4aa8 : 0x2c5a4e, 0.95);
     txt(this, 398, 114, rel.intro, 18, CSS.bone, { wordWrap: { width: 514 }, lineSpacing: 3 });
 
     const opciones = this.add.container(0, 0);
@@ -162,7 +173,15 @@ export class RelatoScene extends Phaser.Scene {
         resultado.add(rg);
         resultado.add(txt(this, 400, 286, e.texto, 19, '#d8c8a0', { wordWrap: { width: 510 }, lineSpacing: 3 }));
         resultado.add(txt(this, 400, 370, res, 18, CSS.gold, { wordWrap: { width: 510 } }));
-        resultado.add(button(this, 655, 496, 220, 40, 'Continuar', terminar, { size: 20, color: UI.gold }));
+        if (e.combate) {
+          // v0.51 · combate onírico: la vida que pierdas allá no es real
+          const pelear = () => {
+            run.suenoHp = run.hp;
+            saveLocal();
+            fadeTo(this, 'Combat', { kind: e.combate === 'bokrug' ? 'elite' : 'normal', floor: data.floor, sueno: e.combate });
+          };
+          resultado.add(button(this, 655, 496, 260, 40, 'Pelear en el sueño', pelear, { size: 20, color: 0x9a6ad0 }));
+        } else resultado.add(button(this, 655, 496, 220, 40, sueno ? 'Despertar' : 'Continuar', terminar, { size: 20, color: UI.gold }));
       }, { size: 19, color: i === rel.opciones.length - 1 ? UI.border : 0x2c5a4e });
       if (falta) b.setEnabled(false);
       opciones.add(b);

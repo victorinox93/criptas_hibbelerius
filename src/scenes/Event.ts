@@ -37,7 +37,7 @@ export class EventScene extends Phaser.Scene {
         this.scene.start('Alma', { floor: data.floor, id });
         return;
       }
-      const libres = RELATOS.filter((r) => !seen.includes(`relato_${r.id}`));
+      const libres = RELATOS.filter((r) => !r.sueno && !seen.includes(`relato_${r.id}`));
       if (libres.length && Math.random() < RELATO_CHANCE) {
         const r = Phaser.Utils.Array.GetRandom(libres);
         seen.push(`relato_${r.id}`);

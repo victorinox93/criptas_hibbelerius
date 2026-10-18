@@ -498,3 +498,20 @@ Los bonos de los dientes salen de `dientesBonos()`, que es la misma función que
 **Si agregas una carta de Ataque con una regla especial**, agrega su `case` en `baseAtaque()`. Si no lo haces, la vista previa usará F = m·a.
 
 **Si agregas un bono nuevo** dentro de `playOn`/`hitEnemy`, agrégalo también en `previaAtaque()`.
+
+
+### Las Tierras del Sueño (v0.51)
+
+- **Sueños:** viven en `src/data/relatos.ts → SUENOS`. Son Relatos con `sueno: true`, así que no salen en los «?». Para agregar uno, copia uno existente.
+  - Si quieres que una salida empiece un combate onírico, usa el efecto `combate: '<clave>'`. La clave debe existir en `src/data/enemies.ts → ENCOUNTERS_SUENO`.
+  - En un combate onírico la vida que pierdes se devuelve al despertar (`run.suenoHp`). Morir sólo despierta al jugador (`Combat.dies`).
+- **Escena:** `src/scenes/Sueno.ts`.
+  - Fase `entrar`: las 3 puertas. Primero salen los sueños que el jugador no ha soñado (`codex.suenos`).
+  - Fase `despertar`: entrega el premio después de un combate onírico.
+- **Criaturas nuevas:**
+  - Los dibujos están en `tools/arte/mythos.py`. Corre `python3 tools/arte/mythos.py` y se escribe `src/art/mythos_sprites.ts`.
+  - Los datos van en `src/data/enemies.ts`.
+  - Intenciones nuevas: `perfora` (atraviesa el Bloqueo) e `inunda` (te quita el Bloqueo antes del golpe).
+- **Jefes:**
+  - Los jefes de tramo y los Primigenios se registran en `JEFES`, `JEFES_TRAMO` y `PRIMIGENIOS` (`abismo_modo.ts`). Al estar en `JEFES`, cada uno crea solo su logro `abismo_<id>`.
+  - Sus reglas especiales están en `Combat.ts`; busca `yig`, `cincoCabezas` y `shubNiggurath`.

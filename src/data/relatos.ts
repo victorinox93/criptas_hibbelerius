@@ -25,6 +25,7 @@ export interface Efecto {
   familiar?: string; // v0.49 · una criatura te acompaña (src/data/familiars.ts)
   pierdeDiente?: number; // v0.48 · pierdes N dientes al azar (no parásitos)
   maldicion?: [string, number]; // v0.48 · maldición de src/data/effects.ts por N combates
+  combate?: string; // v0.51 · sólo en sueños: empieza un combate onírico (src/data/enemies.ts → ENCOUNTERS_SUENO)
 }
 
 export interface OpcionRelato {
@@ -43,6 +44,7 @@ export interface RelatoDef {
   icono: string;
   tinte: number;
   propio?: boolean; // v0.49 · no viene de un cuento: es del diario de Montemayor
+  sueno?: boolean; // v0.51 · es un SUEÑO: sólo sale en el nodo 🌙 (src/scenes/Sueno.ts), no en los «?»
   intro: string;
   opciones: OpcionRelato[];
 }
@@ -241,4 +243,136 @@ RELATOS.push({
     IRSE,
   ],
 });
+
+// ════════════════════════════════════════════════════════════════
+//  v0.51 · LAS TIERRAS DEL SUEÑO: sueños basados en el «ciclo del sueño»
+//  de Lovecraft (cuentos publicados hasta 1930). Salen en el nodo 🌙.
+//  En un combate onírico (efecto «combate») la vida que pierdes no es real:
+//  al despertar la recuperas. La Cordura que pierdes sí cuenta.
+// ════════════════════════════════════════════════════════════════
+const DESPERTAR: OpcionRelato = { label: 'Despertar', risk: 'Abres los ojos. No pasa nada.', salidas: [{ p: 1, e: { texto: 'Te despiertas con la mejilla pegada a la dentadura. Sólo fue un sueño. Casi.' } }] };
+
+export const SUENOS: RelatoDef[] = [
+  {
+    id: 'celephais', sueno: true, titulo: 'Celephaïs, en el valle de Ooth-Nargai', obra: 'Celephaïs', anio: 1922, icono: 'i_shrine', tinte: 0xffd8a0,
+    intro: 'Bajas a un valle donde una ciudad de mármol brilla junto a un mar quieto. Un hombre con corona te saluda: es Kuranes, que soñó tanto con Celephaïs que ahora es su rey. En el puerto, galeras doradas zarpan… hacia el cielo, justo donde el mar toca las nubes.',
+    opciones: [
+      { label: 'Quedarte una noche en Celephaïs', risk: '+20 de vida y +12 de Cordura', salidas: [
+        { p: 1, e: { texto: 'En Celephaïs nadie envejece y nada se rompe. Duermes dentro del sueño, y descansas de verdad.', hp: 20, cordura: 12 } },
+      ] },
+      {
+        label: 'Subir a la galera que navega al cielo', risk: 'Pregunta de energía potencial. Si aciertas: un diente raro y +6 de Cordura. Si fallas: −10 de vida.',
+        pregunta: {
+          concepts: ['Energia potencial', 'Trabajo-energia'],
+          bien: { texto: 'Calculas cuánta energía necesita subir la galera y Kuranes te deja timonear. En las nubes encuentras un diente que brilla como estrella.', diente: 'raro', cordura: 6 },
+          mal: { texto: 'La galera sube… y tú no. Caes entre las nubes y despiertas antes de tocar el suelo, con el golpe todavía en el cuerpo.', hp: -10 },
+        },
+      },
+      DESPERTAR,
+    ],
+  },
+  {
+    id: 'barcoBlanco', sueno: true, titulo: 'El puente de luz de luna', obra: 'El barco blanco', anio: 1919, icono: 'i_wind', tinte: 0xd8e8ff,
+    intro: 'Eres el guardián de un faro. Una noche de luna llena, un barco blanco llega caminando sobre un puente de luz. Su capitán, un anciano de barba larga, te invita a subir. Te ofrece tres destinos: la tranquila Sona-Nyl, la ciudad de las mil maravillas, Thalarion… o seguir al pájaro celeste hasta Cathuria, la Tierra de la Esperanza.',
+    opciones: [
+      { label: 'Desembarcar en Sona-Nyl', risk: '+12 de vida y +10 de Cordura', salidas: [
+        { p: 1, e: { texto: 'En Sona-Nyl no hay dolor ni prisa. Te quedas lo que en el sueño parecen años.', hp: 12, cordura: 10 } },
+      ] },
+      { label: 'Entrar a Thalarion', risk: 'COMBATE ONÍRICO contra el Guardián de Thalarion. Si ganas: un diente raro. (La vida que pierdas en el sueño no es real.)', salidas: [
+        { p: 1, e: { texto: 'Las puertas de la ciudad se cierran detrás de ti. Nadie que entra a Thalarion vuelve a salir… a menos que venza a su Guardián.', combate: 'thalarion' } },
+      ] },
+      { label: 'Seguir al pájaro celeste hasta Cathuria', risk: '50 %: un diente LEGENDARIO · 50 %: −15 de vida y −10 de Cordura', salidas: [
+        { p: 0.5, e: { texto: 'Más allá de las Columnas de Basalto, el pájaro deja caer algo en tu mano antes de desaparecer.', diente: 'legendario' } },
+        { p: 0.5, e: { texto: 'Tras las Columnas no hay ninguna tierra: sólo una catarata sin fondo. El barco cae, y caes con él.', hp: -15, cordura: -10 } },
+      ] },
+    ],
+  },
+  {
+    id: 'sarnath', sueno: true, titulo: 'El banquete de Sarnath', obra: 'La perdición que cayó sobre Sarnath', anio: 1920, icono: 'i_skull', tinte: 0x7ae0a0,
+    intro: 'Hace mil años, la orgullosa Sarnath destruyó la ciudad de Ib y se robó el ídolo verde de su dios, Bokrug, el Gran Lagarto de Agua. Hoy Sarnath celebra el aniversario con un banquete enorme. En el lago, algo verde se mueve bajo la luna.',
+    opciones: [
+      { label: 'Robar el ídolo de Bokrug del templo', risk: 'COMBATE ONÍRICO contra BOKRUG (jefe del sueño). Si ganas: un diente LEGENDARIO y su trofeo para el Vestidor.', salidas: [
+        { p: 1, e: { texto: 'Tomas el ídolo. El lago entero se levanta: Bokrug viene por lo que es suyo.', combate: 'bokrug' } },
+      ] },
+      { label: 'Sentarte al banquete', risk: '60 %: +40 Ergios y +10 de vida · 40 %: −12 de Cordura', salidas: [
+        { p: 0.6, e: { texto: 'Comes manjares de mil años. Al irte, te llenan los bolsillos de monedas de Sarnath.', ergios: 40, hp: 10 } },
+        { p: 0.4, e: { texto: 'A media cena ves que los invitados tienen la piel verde y los labios fofos. Nadie habla. Nadie parpadea.', cordura: -12 } },
+      ] },
+      { label: 'Bajar a las ruinas de Ib', risk: 'COMBATE ONÍRICO contra dos Seres de Ib. Si ganas: un diente raro.', salidas: [
+        { p: 1, e: { texto: 'Entre las piedras de Ib te esperan dos de sus habitantes. No hacen ningún ruido al acercarse.', combate: 'ib' } },
+      ] },
+    ],
+  },
+  {
+    id: 'hypnos', sueno: true, titulo: 'El estudio del escultor', obra: 'Hypnos', anio: 1923, icono: 'i_ojo', tinte: 0xc8b8ff,
+    intro: 'Tu amigo, un escultor de rostro perfecto, viaja contigo cada noche por sueños cada vez más hondos. Ahora tiene miedo y no deja que abras la cortina: allá afuera, en el cielo, brilla la Corona Boreal.',
+    opciones: [
+      {
+        label: 'Seguir a tu amigo más hondo', risk: 'Pregunta de conservación de la energía. Si aciertas: un diente raro y +10 de Cordura. Si fallas: −15 de Cordura y un parásito.',
+        pregunta: {
+          concepts: ['Conservacion', 'Energia potencial'],
+          bien: { texto: 'Bajan tan hondo que el sueño se vuelve transparente. Tu amigo te regala algo que encontró ahí.', diente: 'raro', cordura: 10 },
+          mal: { texto: 'Te pierdes en un sueño sin fondo. Al volver, algo vino contigo.', cordura: -15, diente: 'parasito' },
+        },
+      },
+      { label: 'Abrir la cortina', risk: 'COMBATE ONÍRICO contra Lo que Vino de la Corona Boreal (invisible). Si ganas: un diente raro.', salidas: [
+        { p: 1, e: { texto: 'Abres la cortina. De la Corona Boreal baja una luz fría… y luego una sombra.', combate: 'hypnos' } },
+      ] },
+      DESPERTAR,
+    ],
+  },
+  {
+    id: 'muroSueno', sueno: true, titulo: 'El pabellón del hospital', obra: 'Más allá del muro del sueño', anio: 1919, icono: 'i_star', tinte: 0xfff0a0,
+    intro: 'Un paciente del hospital, Joe Slater, habla en sueños con una voz que no es suya. Esta noche lo sueñas tú también: a través de él te habla un ser de pura luz, prisionero en su cuerpo. «Mañana verás una estrella nueva cerca de Algol», dice.',
+    opciones: [
+      {
+        label: 'Escuchar al ser de luz', risk: 'Pregunta de energía. Si aciertas: un diente ASTRO y +10 de Cordura. Si fallas: −10 de Cordura.',
+        pregunta: {
+          concepts: ['Energia cinetica', 'Trabajo'],
+          bien: { texto: 'Entiendes de qué está hecho: luz que viaja sin detenerse. Antes de irse, deja un pequeño planeta en tu boca.', diente: 'astro', cordura: 10 },
+          mal: { texto: 'La voz habla demasiado rápido. Te quedas con el zumbido en los oídos.', cordura: -10 },
+        },
+      },
+      { label: 'Ayudarlo a escapar del cuerpo', risk: '+15 de Cordura y +4 de Vida máxima', salidas: [
+        { p: 1, e: { texto: '«Nos veremos en el fulgor de Algol.» Al día siguiente, de verdad aparece una estrella nueva en el cielo. (La Nova de Perseo existió: se vio en 1901.)', cordura: 15, maxHp: 4 } },
+      ] },
+      DESPERTAR,
+    ],
+  },
+  {
+    id: 'llavePlata', sueno: true, titulo: 'El desván de la infancia', obra: 'La llave de plata', anio: 1929, icono: 'i_rune', tinte: 0xe0e0f0,
+    intro: 'Randolph Carter perdió la llave de los sueños a los treinta años. Esta noche, en el desván de su vieja casa, encuentras una caja de roble con una llave de plata enorme y llena de jeroglíficos. Si la giras, dicen, uno vuelve a ser niño.',
+    opciones: [
+      { label: 'Girar la llave de plata', risk: '+10 de Cordura y recuperas tu última carta de Cristal rota (si no hay, una carta tuya se vuelve de Cristal)', salidas: [
+        { p: 1, e: { texto: 'Vuelves a tener diez años. Lo que habías perdido está otra vez en tu bolsillo, como si nunca se hubiera roto.', cordura: 10, reanimar: true } },
+      ] },
+      { label: 'Guardar la llave para después', risk: '+45 Ergios', salidas: [
+        { p: 1, e: { texto: 'Al despertar ya no tienes la llave, pero tus bolsillos pesan más.', ergios: 45 } },
+      ] },
+      DESPERTAR,
+    ],
+  },
+  {
+    id: 'polaris', sueno: true, titulo: 'La atalaya de Olathoë', obra: 'Polaris', anio: 1920, icono: 'i_star', tinte: 0xa0c8ff,
+    intro: 'Sueñas que eres el vigía de una torre en la ciudad de Olathoë. Tienes que dar la alarma si algo se acerca por el valle. Pero la Estrella Polar, que nunca se mueve, te mira desde el cielo y canta: «Duerme, vigía…»',
+    opciones: [
+      {
+        label: 'Mantenerte despierto en la atalaya', risk: 'Pregunta de equilibrio (1ª ley). Si aciertas: +8 de Vida máxima y +6 de Cordura. Si fallas: −8 de Cordura y Fatiga (2 combates).',
+        pregunta: {
+          concepts: ['1a ley', 'Fuerza normal'],
+          bien: { texto: 'Te mantienes firme como la torre: ΣF = 0. La ciudad está a salvo esta noche.', maxHp: 8, hp: 8, cordura: 6 },
+          mal: { texto: 'Cierras los ojos «sólo un momento». La estrella se ríe. Al despertar sigues cansado.', cordura: -8, maldicion: ['fatiga', 2] },
+        },
+      },
+      { label: 'Escuchar el canto de la Estrella Polar', risk: '50 %: un diente raro · 50 %: −12 de Cordura', salidas: [
+        { p: 0.5, e: { texto: 'La estrella te enseña cómo gira el cielo a su alrededor. Te deja un recuerdo.', diente: 'raro' } },
+        { p: 0.5, e: { texto: 'Los versos de la estrella se te quedan pegados. Los vas a oír toda la expedición.', cordura: -12 } },
+      ] },
+      DESPERTAR,
+    ],
+  },
+];
+RELATOS.push(...SUENOS);
 export const RELATO = (id?: string) => RELATOS.find((r) => r.id === id);
+/** Sueños que te faltan por soñar (codex.suenos), o todos si ya los soñaste */
+export const suenosNuevos = (vistos: string[] = []) => SUENOS.filter((r) => !vistos.includes(r.id));

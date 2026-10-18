@@ -89,6 +89,9 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'El Signo Amarillo', c: '#d8b020', C: '#6a5010', logro: 'abismo_hastur' },
   { name: 'Color que Cayó del Cielo', c: '#d070ff', C: '#5a2a8a', logro: 'abismo_colorCielo', holo: 280, rango: 120 },
   { name: 'Velo de la Bailarina', c: '#8ac8d8', C: '#3a6a7a', logro: 'abismo_bailarina', holo: 180, rango: 30 },
+  // v0.51 · Las Tierras del Sueño
+  { name: 'Bosque de los Mil Retoños', c: '#2a1a2a', C: '#0a060a', logro: 'abismo_shubNiggurath' },
+  { name: 'Vela del Barco Blanco', c: '#e8ecff', C: '#9aa8d8', holo: 220, rango: 20, logro: 'abismo_suenos' },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -117,6 +120,9 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   // v0.46 · El Abismo de los Ejes (logros)
   { name: 'Escamas de Profundo', l: '#6a9a8a', g: '#2a4a40', logro: 'abismo_primigenio' },
   { name: 'Coraza de los Primigenios', l: '#3a2a5a', g: '#140a24', cosmos: true, logro: 'abismo_mitos' },
+  // v0.51 · Las Tierras del Sueño
+  { name: 'Escamas de Yig', l: '#5aa86a', g: '#1e4a2a', logro: 'abismo_yig' },
+  { name: 'Piedra de las Cinco Cabezas', l: '#8a8478', g: '#3a362e', logro: 'abismo_cincoCabezas' },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
@@ -141,6 +147,8 @@ export const VISORS: (Cosmetico & { c: string })[] = [
   // v0.46 · El Abismo de los Ejes (logros)
   { name: 'Mirada de Montemayor', c: '#b8ff9a', holo: 100, rango: 25, logro: 'abismo_diario' },
   { name: 'Ojo de Dunwich', c: '#e0ffa0', holo: 60, rango: 90, logro: 'abismo_dunwich' },
+  // v0.51 · Las Tierras del Sueño
+  { name: 'Ojos del Soñador', c: '#c8a8ff', holo: 260, rango: 40, logro: 'abismo_sueno3' },
 ];
 
 // UI
