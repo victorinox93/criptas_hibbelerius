@@ -2,7 +2,7 @@
 //  LA DENTADURA DE MONTEMAYOR · reliquias del Abismo (v0.42–v0.43)
 //  (idea: Sol Cesto, donde los dientes se ponen sobre una dentadura)
 //
-//  · Al empezar salen 4 dientes al azar y te quedas con 2.
+//  · Al empezar salen 3 dientes al azar y te quedas con 1 (v0.53).
 //  · Se ganan más en el Sacamuelas Ciego (mapa), en los Relatos y al vencer a un jefe.
 //  · La dentadura tiene 8 huecos y el ORDEN importa:
 //      – el Diente Espejo copia al diente de su izquierda;

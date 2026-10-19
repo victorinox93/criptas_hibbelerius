@@ -2,6 +2,20 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.53.0 · El Gabinete de Montemayor (beta)
+
+- **Balance del inicio:** ahora eliges **1 de 3 dientes** (antes 2 de 4; con el Pacto de la Sonrisa, 2) y te quedas con **1 carta de cada sobre** (antes 2). Empiezas más débil y cada decisión pesa más.
+- **12 cartas nuevas del Abismo** (de 18 a 30):
+  - Ataques: Rodar sin Deslizar, Torque Abisal, Energía de Rotación, Centro de Percusión y Ángulo de 90° de Tíndalos.
+  - Rampa del Abismo, Péndulo Físico, Giroscopio de Montemayor, Tren de Engranes y Sueño Profundo.
+  - Legendarias: La Llave de Plata y el Necronomicón de Dinámica.
+  - Todas tienen su cálculo en la vista previa.
+- **Nodo nuevo: El Gabinete de Montemayor** (uno por tramo). Tres minijuegos dibujados, de 3 rondas cada uno:
+  - **La Rampa de R'lyeh:** una criatura sobre una pendiente. ¿Qué ángulo θ tiene (con h y b)? ¿Qué ejes conviene usar (x' sobre la rampa, y' perpendicular)? ¿Cuánto vale m·g·senθ o m·g·cosθ? Al contestar se dibujan los ejes y el peso.
+  - **El Centroide del Ídolo:** haz clic donde está el centroide de una figura compuesta (incluye figuras con hueco). Se muestra la cuenta x̄ = ΣxA/ΣA.
+  - **¿Cuál gira más fácil?:** aros, discos, esferas y varillas. ¿Cuál tiene mayor I? ¿Cuál llega primero rodando?
+  - Premios: +15 Ergios por acierto y +8 de Cordura por 3 de 3. Cada respuesta se registra para tus estadísticas.
+
 ## v0.52.0 · Pulido del Abismo (beta)
 
 - **Guía · Estados alterados:** ahora va en dos columnas. Ya se ven los 6 estados (antes no se alcanzaban a ver Perfora y El lago sube).

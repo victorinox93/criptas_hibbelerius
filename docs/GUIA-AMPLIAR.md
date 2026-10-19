@@ -515,3 +515,12 @@ Los bonos de los dientes salen de `dientesBonos()`, que es la misma función que
 - **Jefes:**
   - Los jefes de tramo y los Primigenios se registran en `JEFES`, `JEFES_TRAMO` y `PRIMIGENIOS` (`abismo_modo.ts`). Al estar en `JEFES`, cada uno crea solo su logro `abismo_<id>`.
   - Sus reglas especiales están en `Combat.ts`; busca `yig`, `cincoCabezas` y `shubNiggurath`.
+
+
+### El Gabinete de Montemayor (v0.53)
+
+Los minijuegos de física del Abismo están en `src/scenes/Gabinete.ts`, un método por juego: `rampa()`, `centroide()` e `inercia()`.
+
+- **Para agregar figuras al centroide:** agrégalas a la lista `figuras`. Las piezas pueden ser `rect`, `tri` o `hueco` (el hueco cuenta con área negativa).
+- **Para agregar cuerpos al juego de inercia:** agrégalos a la lista `C`. El campo `k` es el factor de I = k·m·R².
+- **Premios:** se ajustan en `ERGIOS_ACIERTO` y `CORDURA_PERFECTO`.

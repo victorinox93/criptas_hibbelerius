@@ -4,7 +4,7 @@ import { audio } from '../audio';
 import { W, H } from '../config';
 import { CardInst, CARDS } from '../data/cards';
 import {
-  abrirSobre, ACTO_ABISMO, AUTOR, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
+  abrirSobre, ACTO_ABISMO, DIENTES_INICIO, DIENTES_OFRECIDOS, AUTOR, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
   RARAS_ABISMO, sortearMutador, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
 import { RUEDA, RUEDA_COSTO, RUEDA_SUBE, ARRANCAR_PARASITO, cristalDe, defDiente, esParasito, HUECOS, nivelDiente, NOMBRE_RAREZA, PROB_PARASITO_SACAMUELAS, ponerDiente, RETIRAR_DIENTES, sortearDientes, sortearParasito } from '../data/dientes';
@@ -24,7 +24,7 @@ import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widg
  *   1. Prólogo (el diario de Montemayor; se puede saltar)
  *   2. Una página del Necronomicón (modificador para toda la expedición)
  *   3. El Pacto (mazo base) o el Pacto ciego (mazo al azar)
- *   4. Tres sobres (como Pokémon TCG): de cada uno te quedas con 2 cartas
+ *   4. Tres sobres (como Pokémon TCG): de cada uno te quedas con 1 carta
  * La primera vez sale la Guía del Abismo (src/ui/guiaAbismo.ts); luego, con el botón «Guía».
  * Por ahora sólo se entra desde el Modo profesor (src/scenes/Debug.ts).
  */
@@ -290,7 +290,7 @@ export class AbismoScene extends Phaser.Scene {
 
   // ── La Dentadura de Montemayor (src/data/dientes.ts) ──
   /**
-   * inicio: salen 4 dientes y te quedas con 2 (3 con el Pacto de la Sonrisa).
+   * inicio: salen 3 dientes y te quedas con 1 (2 con el Pacto de la Sonrisa).
    * boca:   el Sacamuelas Ciego (nodo del mapa): 3 dientes, te llevas 1; puedes pagar para volver a tirar.
    * premio: al vencer a un jefe, 3 dientes y te llevas 1.
    * En los tres puedes reacomodar la dentadura (clic en un diente y luego en otro hueco).
@@ -302,8 +302,8 @@ export class AbismoScene extends Phaser.Scene {
     const dent = modo === 'inicio' ? this.dientesIni : (run!.dientes ??= Array(HUECOS).fill(null));
     while (dent.length < HUECOS) dent.push(null);
     const astrosX = (modo === 'inicio' ? this.elegido?.id : run?.pacto) === 'estelar' ? 2 : 1;
-    const cuantos = modo === 'inicio' ? this.elegido?.dientes ?? 2 : modo === 'acomodar' ? 0 : 1;
-    const nOpc = modo === 'inicio' ? 4 : modo === 'acomodar' || modo === 'colocar' ? 0 : 3;
+    const cuantos = modo === 'inicio' ? this.elegido?.dientes ?? DIENTES_INICIO : modo === 'acomodar' ? 0 : 1;
+    const nOpc = modo === 'inicio' ? DIENTES_OFRECIDOS : modo === 'acomodar' || modo === 'colocar' ? 0 : 3;
     const tengo = () => dent.filter((x): x is string => !!x);
     // la carta del Astrónomo cumplida: el trofeo del jefe trae 3 legendarios
     const carta = run?.carta;
@@ -474,7 +474,7 @@ export class AbismoScene extends Phaser.Scene {
     pintar();
   }
 
-  // ── 4. Sobres: rasgas el empaque, se voltean 5 cartas y te quedas con 2 ──
+  // ── 4. Sobres: rasgas el empaque, se voltean 5 cartas y te quedas con 1 ──
   private sobre(n: number) {
     if (!this.premio && n >= SOBRES.length) return this.empezar();
     this.limpiar();

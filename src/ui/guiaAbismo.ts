@@ -38,8 +38,8 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     titulo: 'El viaje',
     texto: `Arrancas una página del Necronomicón, firmas un Pacto, eliges dientes y abres 3 sobres. Luego bajas ${TRAMOS} tramos de ${PISOS_TRAMO} pisos: el primero termina con un jefe al azar y el segundo con un Primigenio. Después puedes seguir bajando sin fin.`,
     dibujo: (s, L) => {
-      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', 'Dentadura\n(2 de 4 dientes)', '3 sobres\n(+6 cartas)', `${TRAMOS} tramos\n+ Primigenio`];
-      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 2 mazos\no el Pacto ciego', 'Reliquias: el orden\nimporta', 'De cada sobre te\nquedas con 2 cartas', 'Jefe al azar; luego,\n¿infinito?'];
+      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', 'Dentadura\n(1 de 3 dientes)', '3 sobres\n(+3 cartas)', `${TRAMOS} tramos\n+ Primigenio`];
+      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 2 mazos\no el Pacto ciego', 'Reliquias: el orden\nimporta', 'De cada sobre te\nquedas con 1 carta', 'Jefe al azar; luego,\n¿infinito?'];
       const u = pasos.length - 1;
       pasos.forEach((p, i) => {
         const x = 108 + i * 186, y = 300;
@@ -107,7 +107,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'La Dentadura (reliquias)',
-    texto: `Las reliquias del Abismo son dientes: Comunes, ★ Raros y ★★ Legendarios. Al empezar eliges 2 de 4; ganas más con el Sacamuelas Ciego, los Relatos y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
+    texto: `Las reliquias del Abismo son dientes: Comunes, ★ Raros y ★★ Legendarios. Al empezar eliges 1 de 3; ganas más con el Sacamuelas Ciego, los Relatos y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
     dibujo: (s, L) => {
       const ej: [string, string][] = [['colmillo', 'Común\n+2 a ataques'], ['espejo', '★ Raro · Espejo:\ncopia al de su izq.'], ['marte~3', '✦ Marte de Cristal\n×2, dura 2 combates'], ['rlyeh', "★★ R'lyeh\n1er ataque ×2"], ['larva', '☣ Parásito: bueno\ny malo a la vez']];
       ej.forEach(([id, t], i) => {
