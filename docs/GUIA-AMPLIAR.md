@@ -503,11 +503,11 @@ Los bonos de los dientes salen de `dientesBonos()`, que es la misma función que
 ### Las Tierras del Sueño (v0.51)
 
 - **Sueños:** viven en `src/data/relatos.ts → SUENOS`. Son Relatos con `sueno: true`, así que no salen en los «?». Para agregar uno, copia uno existente.
-  - Si quieres que una salida empiece un combate onírico, usa el efecto `combate: '<clave>'`. La clave debe existir en `src/data/enemies.ts → ENCOUNTERS_SUENO`.
-  - En un combate onírico la vida que pierdes se devuelve al despertar (`run.suenoHp`). Morir sólo despierta al jugador (`Combat.dies`).
+  - Si quieres que una salida empiece una pesadilla, usa el efecto `combate: '<clave>'`. La clave debe existir en `src/data/enemies.ts → ENCOUNTERS_SUENO`.
+  - En una pesadilla la vida que pierdes se devuelve al despertar (`run.suenoHp`). Morir sólo despierta al jugador (`Combat.dies`).
 - **Escena:** `src/scenes/Sueno.ts`.
   - Fase `entrar`: las 3 puertas. Primero salen los sueños que el jugador no ha soñado (`codex.suenos`).
-  - Fase `despertar`: entrega el premio después de un combate onírico.
+  - Fase `despertar`: entrega el premio después de una pesadilla.
 - **Criaturas nuevas:**
   - Los dibujos están en `tools/arte/mythos.py`. Corre `python3 tools/arte/mythos.py` y se escribe `src/art/mythos_sprites.ts`.
   - Los datos van en `src/data/enemies.ts`.

@@ -113,6 +113,16 @@ export function dentaduraView(s: Phaser.Scene, cx: number, cy: number, tip: Tool
       const p = posHueco(i, cx, cy, paso);
       const v = dibujarDiente(s, p.x, p.y, id, k);
       c.add(v);
+      const mordido = !opts.dent && !!id && (Game.run?.mordidos ?? []).includes(i);
+      if (mordido) {
+        // v0.52 · el jefe mordió este diente: no funciona en esta pelea
+        const m = s.add.graphics();
+        m.lineStyle(4 * k, 0xff3a4a, 0.95);
+        m.lineBetween(p.x - 18 * k, p.y - 26 * k, p.x + 18 * k, p.y + 22 * k);
+        m.lineBetween(p.x + 18 * k, p.y - 26 * k, p.x - 18 * k, p.y + 22 * k);
+        c.add(m);
+        c.add(txt(s, p.x, p.y + 30 * k, 'MORDIDO', Math.round(12 * Math.max(1, k)), '#ff8a9a').setOrigin(0.5, 0).setStroke('#000', 3));
+      }
       if (opts.marcado?.() === i) {
         const m = s.add.graphics();
         m.lineStyle(3, 0xe8c15a, 1).strokeRoundedRect(p.x - 26 * k, p.y - 46 * k, 52 * k, 86 * k, 8);
@@ -134,7 +144,7 @@ export function dentaduraView(s: Phaser.Scene, cx: number, cy: number, tip: Tool
       if (id) {
         const d = defDiente(id);
         const copia = d.id === 'espejo' && izq && DIENTES[izq]?.rareza !== 'legendario' ? izq : null;
-        tip.attach(z, `${d.nombre} · ${etiquetaDiente(id)}`, `${d.texto}${d.id === 'espejo' ? `\nAhora copia: ${copia ? DIENTES[copia].nombre : 'nada (pon un diente no legendario a su izquierda)'}` : ''}${textoCristal(id)}\n${d.lore}`, 20);
+        tip.attach(z, `${d.nombre} · ${etiquetaDiente(id)}`, `${mordido ? '¡MORDIDO por el jefe! No funciona en esta pelea.\n\n' : ''}${d.texto}${d.id === 'espejo' ? `\nAhora copia: ${copia ? DIENTES[copia].nombre : 'nada (pon un diente no legendario a su izquierda)'}` : ''}${textoCristal(id)}\n${d.lore}`, 20);
       } else tip.attach(z, `Hueco ${i + 1}`, 'Vacío. Consigue dientes en el Sacamuelas Ciego o al vencer a un jefe.', 20);
       if (opts.onHueco) z.on('pointerdown', () => opts.onHueco!(i));
       c.add(z);
@@ -178,7 +188,9 @@ export function dentaduraOverlay(s: Phaser.Scene) {
   capa.add(txt(s, W / 2, 104, 'La Dentadura de Montemayor', 30, '#f0c8c8').setOrigin(0.5, 0));
   const dent = Game.run?.dientes ?? [];
   const cos = resumenCosmos(dent, Game.run?.cosmos);
-  capa.add(txt(s, W / 2, 146, cos ? `Cosmos: ${cos}` : 'Pasa el mouse sobre un diente para ver qué hace. El orden importa.', 17, cos ? '#ffd060' : CSS.dim, { align: 'center', wordWrap: { width: 660 } }).setOrigin(0.5, 0));
+  const mord = (Game.run?.mordidos ?? []).filter((i) => dent[i]).map((i) => defDiente(dent[i]!).nombre);
+  const sub = mord.length ? `El jefe te mordió: ${mord.join(' y ')} (marcado${mord.length > 1 ? 's' : ''} con ✕) no funciona${mord.length > 1 ? 'n' : ''} en esta pelea.` : cos ? `Cosmos: ${cos}` : 'Pasa el mouse sobre un diente para ver qué hace. El orden importa.';
+  capa.add(txt(s, W / 2, 146, sub, 17, mord.length ? '#ff8a9a' : cos ? '#ffd060' : CSS.dim, { align: 'center', wordWrap: { width: 660 } }).setOrigin(0.5, 0));
   const tip = new Tooltip(s);
   const { c } = dentaduraView(s, W / 2, 290, tip);
   capa.add(c);

@@ -75,6 +75,7 @@ export interface Run {
   met: string[]; // figuras ya encontradas en esta expedición
   seen?: string[]; // encuentros y dilemas ya vistos en esta expedición
   familiar?: { id: string; left: number } | null; // criatura que te acompaña
+  familiarOferta?: { id: string; left: number }; // v0.52 · otro familiar quiere unirse: el jugador elige (src/ui/familiarElegir.ts)
   nextUid: number;
   done: boolean;
   debug?: boolean; // partida de prueba del Modo profesor: no se registra
@@ -110,7 +111,8 @@ export interface Run {
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor
   aliadoTramo?: number; // v0.49 · el aliado es un alma del Abismo: se va al terminar este tramo
-  suenoHp?: number; // v0.51 · vida al entrar a un combate onírico (al despertar se recupera)
+  mordidos?: number[]; // v0.52 · huecos de la dentadura mordidos por el jefe en la pelea actual (para verlos en la dentadura)
+  suenoHp?: number; // v0.51 · vida al entrar a una pesadilla (al despertar se recupera)
   mutador?: string; // v0.46 · regla especial del tramo actual (src/data/abismo_modo.ts → MUTADORES)
   dientePendiente?: string; // v0.44 · diente ganado con la dentadura llena: se acomoda al volver al mapa
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
@@ -676,7 +678,13 @@ export function addFamiliar(id: string, combats?: number): string {
   const r = Game.run!;
   const pool = FAMILIAR_POOL.filter((f) => f !== r.familiar?.id);
   const fid = id === 'random' ? pool[Math.floor(Math.random() * pool.length)] : id;
-  r.familiar = { id: fid, left: combats ?? FAMILIARS[fid].combats };
+  const left = combats ?? FAMILIARS[fid].combats;
+  if (r.familiar && r.familiar.left > 0 && r.familiar.id !== fid) {
+    // v0.52 · ya tienes uno: no se reemplaza solo, el jugador elige al volver al mapa
+    r.familiarOferta = { id: fid, left };
+    return fid;
+  }
+  r.familiar = { id: fid, left };
   unlock('npcs', `fam_${fid}`);
   return fid;
 }

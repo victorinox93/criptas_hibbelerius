@@ -2,6 +2,18 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.52.0 · Pulido del Abismo (beta)
+
+- **Guía · Estados alterados:** ahora va en dos columnas. Ya se ven los 6 estados (antes no se alcanzaban a ver Perfora y El lago sube).
+- **Ediciones explicadas mejor** (guía y tooltips):
+  - Lámina: si es Ataque, +5 de daño en cada golpe; si es Defensa o Habilidad, +4 de Bloqueo extra.
+  - Polícroma: si es Ataque, su daño se multiplica ×1.5 (12 → 18); si no, robas 1 carta.
+  - Cristal: ×2 o +10 de Bloqueo.
+  - Holográfica: recuperas 1 J.
+- **«Combate onírico» ahora se llama «Pesadilla».**
+- **Dientes mordidos a la vista:** cuando un jefe te muerde la dentadura, los dientes mordidos aparecen con una ✕ roja y la palabra MORDIDO al abrir la dentadura. También salen en el aviso de la dentadura de la barra de arriba y en un ícono junto a tu vida (pasa el mouse para ver cuáles).
+- **Elegir familiar:** si ya te acompaña un familiar y llega otro, ya no se reemplaza solo. Al volver al mapa (o al comprarlo en la tienda) eliges con cuál te quedas.
+
 ## v0.51.0 · Las Tierras del Sueño (beta)
 
 Más mythos para que cada expedición sea distinta. Todo sale de cuentos publicados hasta 1930; los textos y los dibujos son nuestros.

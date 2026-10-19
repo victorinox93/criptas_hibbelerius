@@ -86,7 +86,7 @@ export function aplicarEfecto(e: Efecto): string {
   }
   if (e.familiar) {
     const fid = addFamiliar(e.familiar);
-    partes.push(`Te acompaña: ${FAMILIARS[fid].name} (${FAMILIARS[fid].combats} combates)`);
+    partes.push(r.familiarOferta?.id === fid ? `${FAMILIARS[fid].name} quiere acompañarte: al volver al mapa eliges con qué familiar te quedas` : `Te acompaña: ${FAMILIARS[fid].name} (${FAMILIARS[fid].combats} combates)`);
   }
   if (e.pierdeDiente) {
     // v0.48 · pierdes dientes al azar (los parásitos no se sueltan)
@@ -174,7 +174,7 @@ export class RelatoScene extends Phaser.Scene {
         resultado.add(txt(this, 400, 286, e.texto, 19, '#d8c8a0', { wordWrap: { width: 510 }, lineSpacing: 3 }));
         resultado.add(txt(this, 400, 370, res, 18, CSS.gold, { wordWrap: { width: 510 } }));
         if (e.combate) {
-          // v0.51 · combate onírico: la vida que pierdas allá no es real
+          // v0.51 · pesadilla: la vida que pierdas allá no es real
           const pelear = () => {
             run.suenoHp = run.hp;
             saveLocal();

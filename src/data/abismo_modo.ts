@@ -139,10 +139,10 @@ export const RARAS_ABISMO = Object.values(CARDS).filter((c) => c.abismo && c.rar
 // ── Ediciones (como las de Balatro) ──
 export interface EdicionDef { nombre: string; texto: string; color: number; css: string; prob: number }
 export const EDICIONES: Record<Edicion, EdicionDef> = {
-  lamina: { nombre: 'Lámina', texto: 'Ataque: +5 de daño. Otras cartas: +4 de Bloqueo.', color: 0x9ad8f0, css: '#9ad8f0', prob: 0.08 },
-  holo: { nombre: 'Holográfica', texto: 'Recuperas 1 J al jugarla.', color: 0xc88aff, css: '#d0a0ff', prob: 0.05 },
-  poli: { nombre: 'Polícroma', texto: 'Ataque: ×1.5. Otras cartas: robas 1.', color: 0xff8ad0, css: '#ff9ad8', prob: 0.03 },
-  cristal: { nombre: 'Cristal', texto: 'Ataque: ×2. Otras cartas: +10 de Bloqueo.\nFrágil: 1 de cada 4 veces se rompe y sale de tu mazo.', color: 0xe8fbff, css: '#e8fbff', prob: 0.04 },
+  lamina: { nombre: 'Lámina', texto: 'Si es Ataque: cada golpe hace +5 de daño.\nSi es Defensa o Habilidad: te da +4 de Bloqueo extra.', color: 0x9ad8f0, css: '#9ad8f0', prob: 0.08 },
+  holo: { nombre: 'Holográfica', texto: 'Al jugarla recuperas 1 J: te sale 1 J más barata.', color: 0xc88aff, css: '#d0a0ff', prob: 0.05 },
+  poli: { nombre: 'Polícroma', texto: 'Si es Ataque: su daño se multiplica ×1.5 (ej. 12 → 18).\nSi es Defensa o Habilidad: robas 1 carta.', color: 0xff8ad0, css: '#ff9ad8', prob: 0.03 },
+  cristal: { nombre: 'Cristal', texto: 'Si es Ataque: su daño se multiplica ×2 (ej. 12 → 24).\nSi es Defensa o Habilidad: te da +10 de Bloqueo extra.\nFrágil: 1 de cada 4 veces se rompe y sale de tu mazo.', color: 0xe8fbff, css: '#e8fbff', prob: 0.04 },
 };
 /** Sortea una edición para una carta de recompensa (la mayoría de las veces, ninguna) */
 export function sortearEdicion(bonus = 1): Edicion | undefined {

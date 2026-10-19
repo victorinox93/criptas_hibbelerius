@@ -141,7 +141,7 @@ export class CombatScene extends Phaser.Scene {
   private mult = 1; // multiplicador del ataque en curso
   private pierce = false; // Efecto Túnel: ignorar Bloqueo este turno
   private masaDef = false; // Masa Inamovible
-  private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es un combate onírico
+  private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
   private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
   private blockPerTurn = 0; // Resistencia del Material
   private orbit = 0; // Órbita Cerrada (masa del satélite)
@@ -180,7 +180,7 @@ export class CombatScene extends Phaser.Scene {
   init(data: { kind: Kind; floor: number; sueno?: string }) {
     this.kind = data.kind;
     this.floor = data.floor;
-    this.sueno = data.sueno; // v0.51 · combate onírico (src/scenes/Sueno.ts)
+    this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
     this.enemies = [];
     this.hand = [];
     this.discard = [];
@@ -405,6 +405,7 @@ export class CombatScene extends Phaser.Scene {
         this.mordidos = Phaser.Utils.Array.Shuffle(libres).slice(0, prim ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE);
       }
     }
+    run.mordidos = this.mordidos.length ? [...this.mordidos] : undefined; // v0.52 · la dentadura los marca
     // la Dentadura
     const mp = this.diente('muelaPlomo');
     if (mp) { this.block += 6 * mp; this.calc(`Muela de Plomo: +${6 * mp} de Bloqueo`); }
@@ -540,7 +541,7 @@ export class CombatScene extends Phaser.Scene {
           const st = this.add.circle(Math.random() * W, 40 + Math.random() * 300, 1, 0xe8dcff, 0.6).setDepth(-4);
           this.tweens.add({ targets: st, alpha: 0.1, duration: 700 + Math.random() * 1500, yoyo: true, repeat: -1 });
         }
-        this.time.delayedCall(900, () => this.anunciarEstado('COMBATE ONÍRICO', 'La vida que pierdas en el sueño no es real: al despertar la recuperas. La Cordura, sí.', 0x5a4aa8, '#c8b8ff'));
+        this.time.delayedCall(900, () => this.anunciarEstado('PESADILLA', 'La vida que pierdas en el sueño no es real: al despertar la recuperas. La Cordura, sí.', 0x5a4aa8, '#c8b8ff'));
       }
     } else if (this.acto >= 4) {
       audio.play(this.kind === 'boss' ? 'jefe4' : 'combate5');
@@ -944,6 +945,11 @@ export class CombatScene extends Phaser.Scene {
     if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema naranja con «?»).']);
     if (this.hemorragia) items.push(['i_heart', `${this.hemorragia}`, 'Hemorragia', `Cada carta que juegues te quita 1 de vida. Quedan ${this.hemorragia} turno(s).`]);
     if (this.aturdido) items.push(['i_stun', '!', 'Aturdido', 'Pierdes tu siguiente turno.']);
+    if (this.mordidos.length) {
+      // v0.52 · qué dientes mordió el jefe (también se marcan en la dentadura)
+      const dd = Game.run!.dientes ?? [];
+      items.push(['i_diente', `×${this.mordidos.length}`, 'Dentadura mordida', `El jefe mordió:\n${this.mordidos.map((i) => `· ${dd[i] ? defDiente(dd[i]!).nombre : '—'} (hueco ${i + 1})`).join('\n')}\nNo funcionan en esta pelea. Abre la dentadura para verlos marcados.`]);
+    }
     if (this.vertigo) items.push(['i_momentum', `-${this.vertigo}`, 'Vértigo', `Robarás ${this.vertigo} carta(s) menos en tu siguiente turno.`]);
     if (this.pCalor) items.push(['i_fire', `${this.pCalor}`, 'Calor', `Pierdes ${this.pCalor} de vida al inicio de tu turno; luego baja 1.`]);
     if (this.jPerTurn) items.push(['i_pend', `+${this.jPerTurn}`, 'Batería de Resorte', `+${this.jPerTurn} J al inicio de cada turno.`]);
@@ -2997,7 +3003,7 @@ export class CombatScene extends Phaser.Scene {
       const nombres = this.mordidos.map((i) => defDiente(Game.run!.dientes![i]!).nombre).join(' y ');
       const jefe = this.alive()[0]?.st.def.name ?? 'El jefe';
       this.calc(`${jefe} muerde tu dentadura: ${nombres} no funciona(n) en esta pelea`);
-      this.anunciarEstado('¡TE MUERDE LA DENTADURA!', `${nombres}: sin efecto en esta pelea`, 0xa83a4a, '#ff9aa8');
+      this.anunciarEstado('¡TE MUERDE LA DENTADURA!', `${nombres}: sin efecto en esta pelea (míralos con ✕ en tu dentadura)`, 0xa83a4a, '#ff9aa8');
     }
     if (this.turn === 2 && Game.run?.mutador === 'noche') for (const e of this.alive()) this.refreshEnemy(e);
     const nep = this.diente('neptuno');
@@ -3508,6 +3514,7 @@ export class CombatScene extends Phaser.Scene {
     this.busy = true;
     const run = Game.run!;
     run.floor = this.floor + 1;
+    run.mordidos = undefined; // v0.52 · la mordida sólo dura la pelea
     run.stats.combates++;
     // puntaje: combate perfecto (sin perder vida)
     if (run.hp >= this.hpStart) {

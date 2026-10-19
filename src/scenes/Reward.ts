@@ -97,7 +97,7 @@ export class RewardScene extends Phaser.Scene {
       hud.refresh();
       const fi = this.add.image(W / 2 + 280, y0 - 52, f.sprite).setScale(3);
       tip.attach(fi, f.name, f.text);
-      txt(this, W / 2 + 280, y0 - 20, `${f.name} te sigue`, 18, '#c8a8e8').setOrigin(0.5);
+      txt(this, W / 2 + 280, y0 - 20, run.familiarOferta?.id === fid ? `${f.name} quiere seguirte` : `${f.name} te sigue`, 18, '#c8a8e8').setOrigin(0.5);
     }
 
     txt(this, W / 2, y0, T.botin.elige, 26, CSS.bone).setOrigin(0.5);
