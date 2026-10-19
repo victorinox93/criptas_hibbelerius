@@ -3,6 +3,7 @@ import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
 import { hojaDiario } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
+import { elegirFamiliar } from '../ui/familiarElegir';
 import { avisarPremios } from '../ui/avisos';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -118,7 +119,7 @@ export class MapScene extends Phaser.Scene {
     embers(this);
     vignette(this);
 
-    topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
+    const hudMapa = topBar(this, tip, { onMenu: () => fadeTo(this, 'Menu') });
     // un diente ganado con la dentadura llena: primero hay que acomodarlo
     if (act5 && run.dientePendiente) this.time.delayedCall(250, () => fadeTo(this, 'Abismo', { clase: run.clase ?? 'caballero', fase: 'colocar' }));
     // la Guía va arriba a la derecha (a la izquierda están los dones de los Ecos)
@@ -285,6 +286,9 @@ export class MapScene extends Phaser.Scene {
       const lt = txt(this, x + 16, H - 33, t === 'jefe' && act5 ? JEFES_ABISMO[run.jefe ?? 'geometra'].nombre.replace(/^(El|La) /, '') : t === 'jefe' && act4 ? 'AM' : t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
       if (lt.width > paso - 21) lt.setScale((paso - 21) / lt.width, 1);
     });
+
+    // v0.52 · otro familiar quiere unirse: el jugador elige con cuál quedarse
+    if (run.familiarOferta && !hayHoja) this.time.delayedCall(500, () => elegirFamiliar(this, () => hudMapa.refresh()));
 
     // al empezar cada acto: un consejo para quien no ha jugado este tipo de juegos
     if (run.pos === -1) {

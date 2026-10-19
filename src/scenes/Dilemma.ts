@@ -165,7 +165,7 @@ export class DilemmaScene extends Phaser.Scene {
     if (r.familiar) {
       const fid = addFamiliar(r.familiar, r.famCombats);
       const f = FAMILIARS[fid];
-      out.push(`Familiar: ${f.name} (${run.familiar!.left} combates) — ${f.text}`);
+      out.push(run.familiarOferta?.id === fid ? `Familiar: ${f.name} quiere unirse — al volver al mapa eliges con cuál te quedas` : `Familiar: ${f.name} (${run.familiar!.left} combates) — ${f.text}`);
     }
     return out;
   }

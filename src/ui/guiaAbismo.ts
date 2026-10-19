@@ -80,20 +80,28 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         ['i_combat', 0x9a6ad0, 'Perfora', 'El Sabueso de Tíndalos sale de un ángulo: su golpe atraviesa tu Bloqueo.'],
         ['i_shield', 0x3a8ac8, 'El lago sube', 'Bokrug inunda todo: antes de su golpe pierdes TODO tu Bloqueo.'],
       ];
+      // v0.52 · dos columnas de 3 (con 6 estados la lista ya no cabía)
       estados.forEach(([ic, tint, nom, d], i) => {
-        const y = 186 + i * 52;
-        L(s.add.image(W / 2 - 300, y + 14, ic).setScale(3.4).setTint(tint));
-        L(txt(s, W / 2 - 266, y, nom, 20, CSS.gold));
-        L(txt(s, W / 2 - 266, y + 24, d, 16, CSS.bone, { wordWrap: { width: 600 } }));
+        const x = i < 3 ? 90 : W / 2 + 20;
+        const y = 196 + (i % 3) * 82;
+        L(s.add.image(x + 16, y + 14, ic).setScale(3.4).setTint(tint));
+        L(txt(s, x + 48, y, nom, 20, CSS.gold));
+        L(txt(s, x + 48, y + 24, d, 15, CSS.bone, { wordWrap: { width: 330 } }));
       });
     },
   },
   {
     titulo: 'Tipos de carta',
-    texto: 'Cada carta tiene una rareza (Común, ★ Rara o ★★ Legendaria). Además, cualquier carta puede salir con una edición que la hace brillar y la vuelve más fuerte.',
+    texto: 'Cualquier carta puede salir con una EDICIÓN que la hace brillar. «+5» se SUMA a cada golpe; «×1.5» MULTIPLICA el daño (12 → 18). En las Defensas y Habilidades la edición da Bloqueo extra o robas una carta.',
     dibujo: (s, L) => {
       const eds: Edicion[] = ['lamina', 'holo', 'poli', 'cristal'];
-      muestra(s, L, eds.map((ed) => ({ id: 'golpe', ed })), eds.map((ed) => `${EDICIONES[ed].nombre}\n${EDICIONES[ed].texto.replace(/\n.*/s, '')}`), 262, 0.68);
+      const corto: Record<Edicion, string> = {
+        lamina: 'Ataque: +5 de daño\nDefensa/Habilidad: +4 Bloqueo',
+        holo: 'Recuperas 1 J\nal jugarla',
+        poli: 'Ataque: daño ×1.5\nDefensa/Habilidad: robas 1',
+        cristal: 'Ataque: daño ×2\nDefensa/Habilidad: +10 Bloqueo',
+      };
+      muestra(s, L, eds.map((ed) => ({ id: 'golpe', ed })), eds.map((ed) => `${EDICIONES[ed].nombre}\n${corto[ed]}`), 262, 0.68);
       L(txt(s, W / 2, 436, `El Cristal es frágil: cada vez que lo juegas hay ${Math.round(ROMPER_CRISTAL * 100)} % de probabilidad de que se rompa y salga de tu mazo.`, 16, '#c8f4ff', { align: 'center', wordWrap: { width: 780 } }).setOrigin(0.5, 0));
     },
   },
@@ -155,7 +163,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       L(txt(s, 160, 340, 'Bokrug, jefe del sueño', 17, CSS.gold).setOrigin(0.5, 0));
       const filas: [string, string, string][] = [
         ['i_sueno', 'Sueños', 'Celephaïs, El barco blanco, Sarnath, Hypnos, Más allá del muro del sueño, La llave de plata y Polaris.'],
-        ['i_combat', 'Combate onírico', 'Algunos sueños terminan en pelea. La vida que pierdes en el sueño NO es real: al despertar la recuperas. La Cordura sí cuenta.'],
+        ['i_combat', 'Pesadilla', 'Algunos sueños terminan en pelea. La vida que pierdes en el sueño NO es real: al despertar la recuperas. La Cordura sí cuenta.'],
         ['i_skull', 'Si «mueres» soñando…', 'Sólo despiertas sudando (−15 de Cordura). No gastas la Vida Extra y la expedición sigue.'],
       ];
       filas.forEach(([ic, nom, d], i) => {

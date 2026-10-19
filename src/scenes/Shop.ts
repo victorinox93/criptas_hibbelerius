@@ -12,6 +12,7 @@ import { cardView } from '../ui/card';
 import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, mist, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { randomRelics } from './Reward';
+import { elegirFamiliar } from '../ui/familiarElegir';
 import { grantRelic } from './Reward';
 
 /** Cuánto paga el mercader por una carta de tu mazo */
@@ -199,7 +200,7 @@ export class ShopScene extends Phaser.Scene {
       const z = this.add.zone(780, 372, 160, 132).setOrigin(0).setInteractive({ useHandCursor: !s.familiar.sold });
       z.on('pointerover', (p: Phaser.Input.Pointer) => this.tip.show(p.worldX - 330, p.worldY - 150, f.name, `${f.text}\nTe acompaña ${f.combats} combates.\n${f.lore}`));
       z.on('pointerout', () => this.tip.hide());
-      z.on('pointerdown', () => this.buy(s.familiar!, `familiar ${f.id}`, () => addFamiliar(f.id)));
+      z.on('pointerdown', () => this.buy(s.familiar!, `familiar ${f.id}`, () => { addFamiliar(f.id); if (Game.run?.familiarOferta) this.time.delayedCall(300, () => elegirFamiliar(this)); }));
       L(z);
       this.tag(860, 520, s.familiar);
     }

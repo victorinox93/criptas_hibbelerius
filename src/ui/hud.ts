@@ -196,7 +196,7 @@ export function topBar(s: Phaser.Scene, tip: Tooltip, opts: { onMenu?: () => voi
         const dz = s.add.zone(0, 197, 40, 50).setInteractive({ useHandCursor: true });
         dz.on('pointerdown', () => { tip.hide(); dentaduraOverlay(s); });
         const cos = resumenCosmos(dent, r.cosmos);
-        tip.attach(dz, 'La Dentadura', `${nd ? dent.filter((x): x is string => !!x).map((id) => `· ${defDiente(id).nombre}${cristalDe(id) !== undefined ? ` 💎${cristalDe(id)}` : ''}`).join('\n') : 'Sin dientes todavía.'}${cos ? `\n\nCosmos: ${cos}` : ''}\n(clic para verla)`, 20);
+        tip.attach(dz, 'La Dentadura', () => { const mord = r.mordidos ?? []; return `${nd ? dent.map((id, i) => (id ? `· ${defDiente(id).nombre}${cristalDe(id) !== undefined ? ` 💎${cristalDe(id)}` : ''}${mord.includes(i) ? '  ✕ MORDIDO' : ''}` : '')).filter(Boolean).join('\n') : 'Sin dientes todavía.'}${cos ? `\n\nCosmos: ${cos}` : ''}\n(clic para verla)`; }, 20);
         sema.add([bd, di, dn, dz]);
         // la carta del Astrónomo de Providence (misión del tramo)
         const ca = CARTA(r.carta?.id);

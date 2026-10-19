@@ -25,7 +25,7 @@ export interface Efecto {
   familiar?: string; // v0.49 · una criatura te acompaña (src/data/familiars.ts)
   pierdeDiente?: number; // v0.48 · pierdes N dientes al azar (no parásitos)
   maldicion?: [string, number]; // v0.48 · maldición de src/data/effects.ts por N combates
-  combate?: string; // v0.51 · sólo en sueños: empieza un combate onírico (src/data/enemies.ts → ENCOUNTERS_SUENO)
+  combate?: string; // v0.51 · sólo en sueños: empieza una pesadilla (src/data/enemies.ts → ENCOUNTERS_SUENO)
 }
 
 export interface OpcionRelato {
@@ -247,7 +247,7 @@ RELATOS.push({
 // ════════════════════════════════════════════════════════════════
 //  v0.51 · LAS TIERRAS DEL SUEÑO: sueños basados en el «ciclo del sueño»
 //  de Lovecraft (cuentos publicados hasta 1930). Salen en el nodo 🌙.
-//  En un combate onírico (efecto «combate») la vida que pierdes no es real:
+//  En una pesadilla (efecto «combate») la vida que pierdes no es real:
 //  al despertar la recuperas. La Cordura que pierdes sí cuenta.
 // ════════════════════════════════════════════════════════════════
 const DESPERTAR: OpcionRelato = { label: 'Despertar', risk: 'Abres los ojos. No pasa nada.', salidas: [{ p: 1, e: { texto: 'Te despiertas con la mejilla pegada a la dentadura. Sólo fue un sueño. Casi.' } }] };
@@ -278,7 +278,7 @@ export const SUENOS: RelatoDef[] = [
       { label: 'Desembarcar en Sona-Nyl', risk: '+12 de vida y +10 de Cordura', salidas: [
         { p: 1, e: { texto: 'En Sona-Nyl no hay dolor ni prisa. Te quedas lo que en el sueño parecen años.', hp: 12, cordura: 10 } },
       ] },
-      { label: 'Entrar a Thalarion', risk: 'COMBATE ONÍRICO contra el Guardián de Thalarion. Si ganas: un diente raro. (La vida que pierdas en el sueño no es real.)', salidas: [
+      { label: 'Entrar a Thalarion', risk: 'PESADILLA: peleas contra el Guardián de Thalarion. Si ganas: un diente raro. (La vida que pierdas en el sueño no es real.)', salidas: [
         { p: 1, e: { texto: 'Las puertas de la ciudad se cierran detrás de ti. Nadie que entra a Thalarion vuelve a salir… a menos que venza a su Guardián.', combate: 'thalarion' } },
       ] },
       { label: 'Seguir al pájaro celeste hasta Cathuria', risk: '50 %: un diente LEGENDARIO · 50 %: −15 de vida y −10 de Cordura', salidas: [
@@ -291,14 +291,14 @@ export const SUENOS: RelatoDef[] = [
     id: 'sarnath', sueno: true, titulo: 'El banquete de Sarnath', obra: 'La perdición que cayó sobre Sarnath', anio: 1920, icono: 'i_skull', tinte: 0x7ae0a0,
     intro: 'Hace mil años, la orgullosa Sarnath destruyó la ciudad de Ib y se robó el ídolo verde de su dios, Bokrug, el Gran Lagarto de Agua. Hoy Sarnath celebra el aniversario con un banquete enorme. En el lago, algo verde se mueve bajo la luna.',
     opciones: [
-      { label: 'Robar el ídolo de Bokrug del templo', risk: 'COMBATE ONÍRICO contra BOKRUG (jefe del sueño). Si ganas: un diente LEGENDARIO y su trofeo para el Vestidor.', salidas: [
+      { label: 'Robar el ídolo de Bokrug del templo', risk: 'PESADILLA: peleas contra BOKRUG (jefe del sueño). Si ganas: un diente LEGENDARIO y su trofeo para el Vestidor.', salidas: [
         { p: 1, e: { texto: 'Tomas el ídolo. El lago entero se levanta: Bokrug viene por lo que es suyo.', combate: 'bokrug' } },
       ] },
       { label: 'Sentarte al banquete', risk: '60 %: +40 Ergios y +10 de vida · 40 %: −12 de Cordura', salidas: [
         { p: 0.6, e: { texto: 'Comes manjares de mil años. Al irte, te llenan los bolsillos de monedas de Sarnath.', ergios: 40, hp: 10 } },
         { p: 0.4, e: { texto: 'A media cena ves que los invitados tienen la piel verde y los labios fofos. Nadie habla. Nadie parpadea.', cordura: -12 } },
       ] },
-      { label: 'Bajar a las ruinas de Ib', risk: 'COMBATE ONÍRICO contra dos Seres de Ib. Si ganas: un diente raro.', salidas: [
+      { label: 'Bajar a las ruinas de Ib', risk: 'PESADILLA: peleas contra dos Seres de Ib. Si ganas: un diente raro.', salidas: [
         { p: 1, e: { texto: 'Entre las piedras de Ib te esperan dos de sus habitantes. No hacen ningún ruido al acercarse.', combate: 'ib' } },
       ] },
     ],
@@ -315,7 +315,7 @@ export const SUENOS: RelatoDef[] = [
           mal: { texto: 'Te pierdes en un sueño sin fondo. Al volver, algo vino contigo.', cordura: -15, diente: 'parasito' },
         },
       },
-      { label: 'Abrir la cortina', risk: 'COMBATE ONÍRICO contra Lo que Vino de la Corona Boreal (invisible). Si ganas: un diente raro.', salidas: [
+      { label: 'Abrir la cortina', risk: 'PESADILLA: peleas contra Lo que Vino de la Corona Boreal (invisible). Si ganas: un diente raro.', salidas: [
         { p: 1, e: { texto: 'Abres la cortina. De la Corona Boreal baja una luz fría… y luego una sombra.', combate: 'hypnos' } },
       ] },
       DESPERTAR,

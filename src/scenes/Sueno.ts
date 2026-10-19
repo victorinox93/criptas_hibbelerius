@@ -12,7 +12,7 @@ import { darDiente } from './Relato';
  * v0.51 · LAS TIERRAS DEL SUEÑO (nodo 🌙 del Abismo).
  *  · fase 'entrar': te quedas dormido y eliges una de tres puertas (cada una es un sueño de
  *    src/data/relatos.ts → SUENOS, que se juega en la escena Relato).
- *  · fase 'despertar': vuelves de un combate onírico (src/scenes/Combat.ts → this.sueno).
+ *  · fase 'despertar': vuelves de una pesadilla (src/scenes/Combat.ts → this.sueno).
  *    La vida que perdiste en el sueño ya se te devolvió; aquí se da el premio.
  */
 export class SuenoScene extends Phaser.Scene {
@@ -30,7 +30,7 @@ export class SuenoScene extends Phaser.Scene {
     title(this, W / 2, 84, 'Las Tierras del Sueño', 40, '#c8b8ff');
     txt(this, W / 2, 124, 'Te quedas dormido junto a la dentadura. Bajas una escalera de mármol que no estaba ahí…\nal fondo hay tres puertas. Detrás de cada una, un sueño.', 18, '#b8a8d8', { align: 'center' }).setOrigin(0.5, 0);
     const vistos = Game.codex.suenos ?? [];
-    txt(this, W / 2, 178, `Sueños soñados: ${vistos.length}/${SUENOS.length}   ·   En un combate onírico la vida que pierdes no es real; la Cordura, sí.`, 15, '#8a7ab0').setOrigin(0.5, 0);
+    txt(this, W / 2, 178, `Sueños soñados: ${vistos.length}/${SUENOS.length}   ·   En una pesadilla la vida que pierdes no es real; la Cordura, sí.`, 15, '#8a7ab0').setOrigin(0.5, 0);
 
     // tres puertas: primero los sueños que nunca has soñado
     const enRun = (run.seen ?? []).filter((x) => x.startsWith('relato_')).map((x) => x.slice(7));

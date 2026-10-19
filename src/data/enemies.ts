@@ -652,7 +652,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     desc: 'Un árbol oscuro que camina sobre pezuñas. Mientras viva, cura a su madre. Derríbalo primero.',
     next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 7, label: 'Rama con boca' } : { kind: 'block', block: 6, dmg: 4, label: 'Raíces' }),
   },
-  // ── Criaturas del sueño (sólo en los combates oníricos: src/scenes/Sueno.ts) ──
+  // ── Criaturas del sueño (sólo en los pesadillas: src/scenes/Sueno.ts) ──
   serIb: {
     id: 'serIb', name: 'Ser de Ib', sprite: 'serIb', scale: 4.4, hp: [26, 30], mass: 60, act: 5,
     desc: '«La perdición que cayó sobre Sarnath» (1920). Verdes como el lago, de ojos saltones y labios fofos. No tienen voz.',
@@ -733,7 +733,7 @@ export const ENCOUNTERS_5 = {
   boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug']],
 };
 
-/** v0.51 · combates oníricos (src/scenes/Sueno.ts): el sueño decide contra quién peleas */
+/** v0.51 · pesadillas (src/scenes/Sueno.ts): el sueño decide contra quién peleas */
 export const ENCOUNTERS_SUENO: Record<string, string[]> = {
   ib: ['serIb', 'serIb'],
   hypnos: ['sombraHypnos'],
