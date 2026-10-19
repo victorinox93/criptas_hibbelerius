@@ -65,7 +65,7 @@ export const PROLOGO: { fecha: string; texto: string; dibujo?: 'cerro' }[] = [
   { fecha: 'Sin fecha', texto: 'Si alguien encuentra este diario: no bajes sin entender la física.\nAllá abajo, lo único que te mantiene cuerdo es una respuesta correcta.\n\n— Último registro del erudito Ignacio Montemayor' },
 ];
 /** Probabilidad de encontrar una hoja después de cada tipo de nodo (son raras) */
-export const PROB_HOJA: Record<string, number> = { combate: 0.07, elite: 0.3, evento: 0.18, runa: 0.15, santuario: 0.1, mercader: 0.04, fogata: 0.1, boca: 0.05, observatorio: 0.12, jefe: 0.5 };
+export const PROB_HOJA: Record<string, number> = { combate: 0.07, elite: 0.3, evento: 0.18, runa: 0.15, santuario: 0.1, mercader: 0.04, fogata: 0.1, boca: 0.05, observatorio: 0.12, sueno: 0.2, jefe: 0.5 };
 /** Máximo de hojas por expedición, y con cuántas conoces el punto débil del Primigenio */
 export const HOJAS_POR_EXPEDICION = 3;
 export const HOJAS_DEBILIDAD = 2;
@@ -248,10 +248,16 @@ export const JEFES: Record<string, JefeInfo> = {
   nyarlathotep: { nombre: 'Nyarlathotep', titulo: 'Primigenio · el Caos que Repta', tema: 'Momento de inercia', desventaja: 'La primera carta que robas cada turno se descarta. Cambia de forma: compacto (muchos golpes) o extendido (un golpe enorme).', origen: '«Nyarlathotep», H. P. Lovecraft (1920)', primigenio: true },
   cthulhu: { nombre: 'Cthulhu', titulo: "Primigenio · el Durmiente de R'lyeh", tema: 'ΣM = I·α y H = I·ω', desventaja: 'Pierdes 5 de Cordura cada turno. Despierta en 3 fases; en la última, su golpe te ATURDE.', origen: '«The Call of Cthulhu», H. P. Lovecraft (1928)', primigenio: true },
   yogSothoth: { nombre: 'Yog-Sothoth', titulo: 'Primigenio · la Llave y la Puerta', tema: 'Ejes paralelos (I = I₀ + m·d²)', desventaja: 'Sólo robas 4 cartas por turno.', origen: '«The Dunwich Horror», H. P. Lovecraft (1929)', primigenio: true },
+  // v0.51 · Las Tierras del Sueño
+  yig: { nombre: 'Yig, Padre de las Serpientes', titulo: 'Jefe del tramo', tema: 'Fuerza centrípeta (F = m·v²/r)', desventaja: 'Cada vez que juegas una Defensa, una serpiente te muerde: −2 de vida. Su mordida deja HEMORRAGIA 3.', origen: '«La maldición de Yig», H. P. Lovecraft y Zealia Bishop (1929)' },
+  cincoCabezas: { nombre: 'El Dios de las Cinco Cabezas', titulo: 'Jefe del tramo', tema: 'Equilibrio (ΣF = 0 y ΣM = 0)', desventaja: 'Al inicio de cada uno de tus turnos gana 6 de Bloqueo. Su Peso de la Piedra te ATURDE.', origen: '«Bajo las pirámides», H. P. Lovecraft y Harry Houdini (1924)' },
+  shubNiggurath: { nombre: 'Shub-Niggurath', titulo: 'Primigenio · la Cabra Negra de los Mil Retoños', tema: 'Masa variable (dm/dt)', desventaja: 'Cada 3 turnos nace un Retoño; al inicio de su turno se cura 6 por cada Retoño vivo.', origen: '«El horror de Dunwich», H. P. Lovecraft (1929)', primigenio: true },
   hastur: { nombre: 'Hastur', titulo: 'Primigenio · el Rey de Amarillo', tema: 'Impulso y cantidad de movimiento', desventaja: 'Tus cartas de Ataque cuestan +1 J.', origen: '«El Rey de Amarillo», R. W. Chambers (1895)', primigenio: true },
 };
-export const JEFES_TRAMO = ['geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich'];
-export const PRIMIGENIOS = ['nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur'];
+export const JEFES_TRAMO = ['geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'yig', 'cincoCabezas'];
+export const PRIMIGENIOS = ['nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur', 'shubNiggurath'];
+/** v0.51 · el jefe del sueño: no sale como jefe de tramo, sólo en el sueño de Sarnath (src/scenes/Sueno.ts) */
+export const BOKRUG: JefeInfo = { nombre: 'Bokrug, el Gran Lagarto de Agua', titulo: 'Jefe del sueño', tema: 'Flotación (E = ρ·g·V)', desventaja: 'Cada 3 turnos el lago sube: pierdes todo tu Bloqueo antes de su golpe.', origen: '«La perdición que cayó sobre Sarnath», H. P. Lovecraft (1920)' };
 
 /** Elige el jefe de un tramo sin repetir los ya vistos en la partida (si se acaban, se repiten) */
 export function elegirJefe(tramo: number, vistos: string[] = []): string {

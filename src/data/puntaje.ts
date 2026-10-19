@@ -30,7 +30,9 @@ export const PUNTOS = {
 /** Jefes (para el multiplicador) */
 export const JEFES = ['colossus', 'bruja', 'hibbelerius',
   // El Abismo (v0.41): jefes de tramo y Primigenios
-  'geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur'];
+  'geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur',
+  // v0.51 · Las Tierras del Sueño
+  'yig', 'cincoCabezas', 'shubNiggurath', 'bokrug'];
 
 interface RunLike {
   score: number;

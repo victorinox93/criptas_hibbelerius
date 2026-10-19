@@ -16,6 +16,8 @@ interface IntentExtras {
   aturde?: boolean; // El Abismo: si el golpe te hace daño, pierdes tu siguiente turno
   hemorragia?: number; // El Abismo: N turnos en que cada carta que juegas te quita 1 de vida
   vertigo?: number; // El Abismo: robas N cartas menos en tu siguiente turno
+  perfora?: boolean; // v0.51 · su golpe atraviesa tu Bloqueo (Sabueso de Tíndalos)
+  inunda?: boolean; // v0.51 · antes del golpe pierdes todo tu Bloqueo (Bokrug)
 
 }
 
@@ -571,6 +573,112 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ════════ v0.51 · LAS TIERRAS DEL SUEÑO: más criaturas del mythos (cuentos publicados hasta 1930) ════════
+  necrofago: {
+    id: 'necrofago', name: 'Necrófago', sprite: 'necrofago', scale: 4.4, hp: [36, 40], mass: 70, act: 5,
+    desc: '«El modelo de Pickman» (1927). Encorvado, con cara de perro y piel de hule. Roe (HEMORRAGIA) y se cura comiendo. Su mandíbula es una palanca: fuerza pequeña cerca del eje, mordida enorme.',
+    next: (e) => (e.turn % 3 === 0 ? { kind: 'attack', dmg: 9, hemorragia: 2, label: 'Roer' } : e.turn % 3 === 1 ? { kind: 'attack', dmg: 13, label: 'Mordida de palanca' } : { kind: 'block', block: 8, heal: 8, label: 'Comer' }),
+  },
+  martense: {
+    id: 'martense', name: 'Engendro de los Martense', sprite: 'martense', scale: 4.4, hp: [20, 24], mass: 40, act: 5,
+    desc: '«El miedo que acecha» (1923). Pálidos, simiescos, con un ojo azul y otro café. Nunca vienen solos: cada 3 turnos sale otro de la tierra.',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'buff', summon: 'martense', label: 'Sale otro de la tierra' } : { kind: 'attack', dmg: e.turn % 3 === 0 ? 7 : 5, hits: e.turn % 3 === 0 ? 1 : 2, label: 'Arañazos' }),
+  },
+  aladoFestival: {
+    id: 'aladoFestival', name: 'Criatura Alada de «El Festival»', sprite: 'aladoFestival', scale: 4.2, hp: [30, 34], mass: 25, act: 5,
+    desc: '«El Festival» (1925). Ni cuervo, ni topo, ni buitre. Sube y gana energía potencial (mgh); en la picada la convierte en cinética: ½mv².',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'attack', dmg: 8 + 6 * e.carga, release: true, vertigo: 1, label: 'Picada: mgh → ½mv²' } : { kind: 'block', block: 6, dmg: 4, charge: true, label: 'Sube (h aumenta)' }),
+  },
+  reptilSinNombre: {
+    id: 'reptilSinNombre', name: 'Reptil de la Ciudad sin Nombre', sprite: 'reptilSinNombre', scale: 4, hp: [40, 44], mass: 90, act: 5,
+    desc: '«La ciudad sin nombre» (1921). Entre cocodrilo y foca, se arrastra por túneles bajísimos. Su cola te llena de arena: FRICCIÓN.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 8, friccion: 1, label: 'Coletazo de arena' } : { kind: 'attack', dmg: 14, label: 'Embestida rastrera' }),
+  },
+  wilbur: {
+    id: 'wilbur', name: 'Wilbur Whateley', sprite: 'wilbur', scale: 4.6, hp: [90, 98], mass: 130, umbral: 17, act: 5,
+    desc: 'Élite. «El horror de Dunwich» (1929). Alto, con abrigo largo… y algo que se mueve debajo. Lee el Necronomicón en voz alta: te llena de Susurros y se protege.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 14, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Lee el Necronomicón' };
+      if (p === 1) return { kind: 'attack', dmg: 8, hits: 2, hemorragia: 2, label: 'Lo que hay bajo el abrigo' };
+      return { kind: 'attack', dmg: 19 + 3 * e.inercia, label: '¡Yog-Sothoth!' };
+    },
+  },
+  sabueso: {
+    id: 'sabueso', name: 'Sabueso de Tíndalos', sprite: 'sabueso', scale: 4, hp: [86, 94], mass: 60, umbral: 16, act: 5,
+    desc: 'Élite. «Los perros de Tíndalos», F. B. Long (1929). Vive en los ÁNGULOS del tiempo y sale por las esquinas: sus golpes PERFORAN tu Bloqueo.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'attack', dmg: 12, perfora: true, label: 'Sale de un ángulo' };
+      if (p === 1) return { kind: 'attack', dmg: 6, hits: 3, hemorragia: 2, label: 'Lengua de aguja' };
+      return { kind: 'block', block: 14, vertigo: 1, label: 'Se esconde en una esquina de 90°' };
+    },
+  },
+  yig: {
+    id: 'yig', name: 'Yig, Padre de las Serpientes', sprite: 'yig', scale: 3.4, hp: [270, 270], mass: 600, umbral: 18, act: 5, imparable: 1,
+    desc: 'Jefe del tramo. «La maldición de Yig» (1929). Te aprieta con sus anillos: la fuerza centrípeta F = m·v²/r crece mientras más rápido gira. Cada vez que juegas una Defensa, una serpiente te muerde (−2 de vida).',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 10 + 3 * Math.min(6, e.turn) + 2 * e.inercia, label: 'Abrazo: F = m·v²/r' };
+        case 1: return { kind: 'attack', dmg: 11, hits: 2, hemorragia: 3, label: 'Mordida venenosa' };
+        default: return { kind: 'block', block: 16, heal: 15, label: 'Muda de piel' };
+      }
+    },
+  },
+  cincoCabezas: {
+    id: 'cincoCabezas', name: 'El Dios de las Cinco Cabezas', sprite: 'cincoCabezas', scale: 3.2, hp: [280, 280], mass: 8000, umbral: 19, act: 5, imparable: 1,
+    desc: 'Jefe del tramo. «Bajo las pirámides» (1924). Bajo la Esfinge vive algo con cinco cabezas. Está en EQUILIBRIO (ΣF = 0, ΣM = 0): al inicio de cada uno de tus turnos gana 6 de Bloqueo.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 5, hits: 5, label: 'Cinco cabezas, cinco mordidas' };
+        case 1: return { kind: 'block', block: 18, dmg: 8, label: 'La pirámide encima' };
+        default: return { kind: 'attack', dmg: 23 + 3 * e.inercia, aturde: true, label: 'Peso de la piedra' };
+      }
+    },
+  },
+  shubNiggurath: {
+    id: 'shubNiggurath', name: 'Shub-Niggurath', sprite: 'shubNiggurath', scale: 3.2, hp: [330, 330], mass: 99999, umbral: 21, act: 5, imparable: 2,
+    desc: 'La Cabra Negra de los Bosques con Mil Retoños («El horror de Dunwich», 1929). Su MASA CRECE: cada 3 turnos nace un Retoño, y al inicio de su turno se cura 6 por cada Retoño vivo.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'buff', summon: 'retono', shieldAll: 6, label: '¡Iä! Nace un Retoño' };
+        case 1: return { kind: 'attack', dmg: 6, hits: 4, label: 'Mil bocas' };
+        default: return { kind: 'attack', dmg: 26 + 3 * e.inercia, label: 'Pezuña de la Cabra Negra' };
+      }
+    },
+  },
+  retono: {
+    id: 'retono', name: 'Retoño de los Mil', sprite: 'retono', scale: 4, hp: [20, 24], mass: 50, act: 5,
+    desc: 'Un árbol oscuro que camina sobre pezuñas. Mientras viva, cura a su madre. Derríbalo primero.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 7, label: 'Rama con boca' } : { kind: 'block', block: 6, dmg: 4, label: 'Raíces' }),
+  },
+  // ── Criaturas del sueño (sólo en los combates oníricos: src/scenes/Sueno.ts) ──
+  serIb: {
+    id: 'serIb', name: 'Ser de Ib', sprite: 'serIb', scale: 4.4, hp: [26, 30], mass: 60, act: 5,
+    desc: '«La perdición que cayó sobre Sarnath» (1920). Verdes como el lago, de ojos saltones y labios fofos. No tienen voz.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 8, label: 'Golpe mudo' } : { kind: 'attack', dmg: 5, vertigo: 1, label: 'Mirada sin párpados' }),
+  },
+  sombraHypnos: {
+    id: 'sombraHypnos', name: 'Lo que Vino de la Corona Boreal', sprite: 'sombraHypnos', scale: 4.2, hp: [34, 38], mass: 0, act: 5, oculto: true,
+    desc: '«Hypnos» (1923). Una sombra coronada de siete estrellas. No ves lo que hará: sólo su luz fría.',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'attack', dmg: 6, confusion: true, label: 'Rayo de la Corona' } : { kind: 'attack', dmg: 10, add: { id: 'susurro', n: 1, to: 'discard' }, label: 'Sueño sin fondo' }),
+  },
+  guardianThalarion: {
+    id: 'guardianThalarion', name: 'Guardián de Thalarion', sprite: 'guardianThalarion', scale: 4.2, hp: [40, 44], mass: 70, act: 5,
+    desc: '«El barco blanco» (1919). Custodia la Ciudad de las Mil Maravillas, donde nadie que entra vuelve a salir.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 11, label: 'Báculo de luz' } : { kind: 'block', block: 10, heal: 8, label: 'Maravilla prohibida' }),
+  },
+  bokrug: {
+    id: 'bokrug', name: 'Bokrug, el Gran Lagarto de Agua', sprite: 'bokrug', scale: 3.2, hp: [200, 200], mass: 3000, umbral: 18, act: 5, imparable: 1,
+    desc: 'Jefe del sueño. El dios de Ib vuelve por Sarnath. Flota en su lago (empuje de Arquímedes: E = ρ·g·V). Cada 3 turnos el lago SUBE: pierdes todo tu Bloqueo antes de su golpe.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 9, hits: 2, label: 'Coletazo' };
+        case 1: return { kind: 'buff', summon: 'serIb', shieldAll: 8, label: 'Llama a los seres de Ib' };
+        default: return { kind: 'attack', dmg: 18 + 3 * e.inercia, inunda: true, label: 'El lago sube: E = ρ·g·V' };
+      }
+    },
+  },
   colossus: {
     id: 'colossus', name: 'Coloso Inerte', sprite: 'colossus', scale: 5, hp: [140, 140], mass: 12, umbral: 15,
     desc: 'Guardián del Acto I. Una montaña en movimiento. Sólo una fuerza neta suficiente lo detiene.',
@@ -614,12 +722,23 @@ export const ENCOUNTERS_4 = {
 };
 
 export const ENCOUNTERS_5 = {
-  easy: [['acolito'], ['polipo'], ['cultistaEje'], ['profundo']],
+  easy: [['acolito'], ['polipo'], ['cultistaEje'], ['profundo'], ['martense'], ['aladoFestival']],
   normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
-    ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje']],
-  elite: [['vigia'], ['hidra']],
+    ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje'],
+    // v0.51 · más mythos
+    ['necrofago'], ['necrofago', 'acolito'], ['martense', 'martense'], ['aladoFestival', 'profundo'], ['reptilSinNombre'],
+    ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense']],
+  elite: [['vigia'], ['hidra'], ['wilbur'], ['sabueso']],
   // el jefe de cada tramo se sortea (run.jefe, src/data/abismo_modo.ts); esta lista sólo los marca como jefes
-  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur']],
+  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug']],
+};
+
+/** v0.51 · combates oníricos (src/scenes/Sueno.ts): el sueño decide contra quién peleas */
+export const ENCOUNTERS_SUENO: Record<string, string[]> = {
+  ib: ['serIb', 'serIb'],
+  hypnos: ['sombraHypnos'],
+  thalarion: ['guardianThalarion', 'serIb'],
+  bokrug: ['bokrug'],
 };
 
 export function encounters(acto: number) {

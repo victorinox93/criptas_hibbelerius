@@ -417,6 +417,19 @@ ACCESORIOS.push(
     rows: ['G.G.G', 'G.G.G', 'GGGGG', '..G..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..'], ancla: [2, 13] },
   { id: 'telescopio', nombre: 'Telescopio de Providence', slot: 'mano', logro: 'abismo_providence', precio: 0, desc: 'Regalo del Astrónomo Aficionado de Providence. Apunta a estrellas que no existen.',
     rows: ['.......YY', '.....yyY.', '...yyy...', '.yyy.....', 'k........', '.k.......', '..k......'], ancla: [1, 4] },
+  // v0.51 · Las Tierras del Sueño
+  { id: 'cuernos_shub', nombre: 'Cuernos de la Cabra Negra', slot: 'cabeza', logro: 'abismo_shubNiggurath', precio: 0, desc: '¡Iä! ¡Shub-Niggurath! Mil retoños te reconocen como familia.',
+    rows: ['N...............N', 'NN.............NN', '.NN...........NN.', '.NNh.........hNN.', '..NNh.......hNN..', '..dNNh.....hNNd..', '...ddddddddddd...'], ancla: [8, 6] },
+  { id: 'corona_yig', nombre: 'Corona de Serpientes de Yig', slot: 'cabeza', logro: 'abismo_yig', precio: 0, desc: 'Yig no perdona a quien lastima a sus hijos. A ti te dejó esta corona.',
+    rows: ['.G...G...G...G.', 'GrG.GrG.GrG.GrG', '.g...g...g...g.', '.g...g...g...g.', 'ggggggggggggggg', 'gyGyGyGyGyGyGyg', 'ggggggggggggggg'], ancla: [7, 6] },
+  { id: 'mascara_esfinge', nombre: 'Máscara de la Esfinge', slot: 'cara', logro: 'abismo_cincoCabezas', precio: 0, desc: 'Bajo la Esfinge había algo con cinco cabezas. Esta cara es la que muestra hacia afuera.',
+    rows: ['...ybybybybyb...', '..ybybybybybyb..', '.ybybqqqqqqbyby.', 'ybybqqqqqqqqbyby', 'bybqqkkqqkkqqyby', 'ybyqqqqqqqqqqbyb', 'bybqqqqqkqqqqyby', 'ybyqqqqqqqqqqbyb', 'bybyqqkkkkqqybyb', '.ybyqqqqqqqqyby.', '.byb.qqqqqq.byb.', '..b...bybb...b..', '......bybb......'], ancla: [7.5, 4] },
+  { id: 'idolo_bokrug', nombre: 'Ídolo de Bokrug', slot: 'mano', logro: 'abismo_bokrug', precio: 0, desc: 'El ídolo verde de Ib. Sarnath se lo robó y Sarnath ya no existe. Cuídalo.',
+    rows: ['..GG...', '.GgGG..', '.GggG.k', 'GGggGGk', '.GggG..', '.GgGG..', '..GgG..', '.G.G.G.', 'G..G..G'], ancla: [3, 6] },
+  { id: 'gorro_sonador', nombre: 'Gorro del Soñador', slot: 'cabeza', logro: 'abismo_sueno1', precio: 0, desc: 'Para bajar los escalones del sueño ligero sin despertarte.',
+    rows: ['..........a.', '.........aWa', '.......bb.a.', '.....bbbbb..', '...bbbbBbb..', '..bbBbbbbb..', '.bbbbbbBbbb.', 'WWWWWWWWWWWW'], ancla: [6, 7] },
+  { id: 'llave_plata', nombre: 'La Llave de Plata', slot: 'mano', logro: 'abismo_sueno3', precio: 0, desc: 'Randolph Carter la encontró en el desván. Gírala y vuelves a soñar como cuando eras niño.',
+    rows: ['.iii.', 'i.W.i', 'iWlWi', 'i.W.i', '.iii.', '..i..', '..i..', '..i..', '..ii.', '..i..', '..iii'], ancla: [2, 5] },
 );
 for (const a of ACCESORIOS) if (a.logro) a.cat = 'criptas';
 

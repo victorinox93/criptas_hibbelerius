@@ -2,6 +2,34 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.51.0 · Las Tierras del Sueño (beta)
+
+Más mythos para que cada expedición sea distinta. Todo sale de cuentos publicados hasta 1930; los textos y los dibujos son nuestros.
+
+- **Criaturas nuevas del Abismo:**
+  - Necrófago («El modelo de Pickman», 1927): roe y se cura comiendo.
+  - Engendro de los Martense («El miedo que acecha», 1923): nunca viene solo.
+  - Criatura alada de «El Festival» (1925): sube (mgh) y cae en picada (½mv²).
+  - Reptil de «La ciudad sin nombre» (1921): te llena de arena (Fricción).
+  - **Élites:** Wilbur Whateley («El horror de Dunwich») lee el Necronomicón. El **Sabueso de Tíndalos** (F. B. Long, 1929) sale de los ángulos y sus golpes **PERFORAN** tu Bloqueo.
+- **Jefes nuevos:**
+  - **Yig, Padre de las Serpientes** (jefe de tramo · fuerza centrípeta): cada Defensa que juegas, una serpiente te muerde (−2 de vida).
+  - **El Dios de las Cinco Cabezas** («Bajo las pirámides», 1924 · equilibrio ΣF = 0): gana 6 de Bloqueo en cada uno de tus turnos.
+  - **Shub-Niggurath**, Primigenio (masa variable): cada 3 turnos nace un Retoño, y cada Retoño vivo la cura 6.
+- **Las Tierras del Sueño (nodo 🌙, uno por tramo):**
+  - Te quedas dormido y eliges una de 3 puertas.
+  - Hay 7 sueños: Celephaïs, El barco blanco, Sarnath, Hypnos, Más allá del muro del sueño, La llave de plata y Polaris.
+  - Algunos terminan en un **combate onírico**: la vida que pierdes en el sueño **no es real** (la recuperas al despertar), pero la Cordura sí. Si «mueres» soñando, sólo despiertas sudando (−15 de Cordura, sin gastar la Vida Extra).
+  - El jefe del sueño es **Bokrug, el Gran Lagarto de Agua** (flotación): cada 3 turnos el lago sube y te quita todo el Bloqueo. Si lo vences, ganas un diente legendario.
+- **Cosméticos nuevos** (pestaña «Abismo ◈» del Vestidor):
+  - Cuernos de la Cabra Negra y capa Bosque de los Mil Retoños (Shub-Niggurath).
+  - Corona de Serpientes y armadura Escamas de Yig (Yig).
+  - Máscara de la Esfinge y armadura Piedra de las Cinco Cabezas (las Cinco Cabezas).
+  - Ídolo de Bokrug (Bokrug).
+  - Por soñar: Gorro del Soñador (1 sueño), La Llave de Plata y Ojos del Soñador (3 sueños), y la Vela del Barco Blanco (los 7 sueños).
+- **Logros nuevos:** vencer a cada jefe nuevo, Bokrug, Soñador, Peregrino del sueño y Señor de las Tierras del Sueño. «Los Mitos completos» ahora pide los 5 Primigenios.
+- **Guía del Abismo:** página nueva «Las Tierras del Sueño» y los estados Perfora y El lago sube.
+
 ## v0.50.0 · Cálculo de cartas en vivo
 
 - **Vista previa al pasar el mouse por una carta:** abajo del texto de la carta aparece «⚔ Si la juegas ahora», con el cálculo real en ese momento. Funciona en todos los modos; en el Abismo es donde más ayuda.

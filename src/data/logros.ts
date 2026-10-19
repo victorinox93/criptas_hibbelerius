@@ -10,6 +10,7 @@ import { codexFlag, darCompra, Game } from '../state';
 import { ARMORS, CAPES, VISORS } from '../art/palette';
 import { ACCESORIOS } from './tienda';
 import { JEFES, PRIMIGENIOS } from './abismo_modo';
+import { SUENOS } from './relatos';
 
 export interface Logro {
   id: string;
@@ -49,7 +50,12 @@ export const LOGROS: Record<string, Logro> = {
   ...Object.fromEntries(Object.entries(JEFES).map(([id, j]) => [`abismo_${id}`, {
     id: `abismo_${id}`, nombre: `Vencer ${aQuien(j.nombre)}`, como: `Abismo: vence ${aQuien(j.nombre)}`, check: () => flag(`abismo_vence_${id}`),
   }])),
-  abismo_mitos: { id: 'abismo_mitos', nombre: 'Los Mitos completos', como: 'Abismo: vence a los 4 Primigenios', check: () => PRIMIGENIOS.every((p) => flag(`abismo_vence_${p}`)) },
+  abismo_mitos: { id: 'abismo_mitos', nombre: 'Los Mitos completos', como: `Abismo: vence a los ${PRIMIGENIOS.length} Primigenios`, check: () => PRIMIGENIOS.every((p) => flag(`abismo_vence_${p}`)) },
+  // v0.51 · Las Tierras del Sueño
+  abismo_bokrug: { id: 'abismo_bokrug', nombre: 'Vencer a Bokrug', como: 'Abismo: vence a Bokrug en el sueño de Sarnath', check: () => flag('abismo_vence_bokrug') },
+  abismo_sueno1: { id: 'abismo_sueno1', nombre: 'Soñador', como: 'Abismo: sueña tu primer sueño (nodo 🌙)', check: () => (Game.codex.suenos ?? []).length >= 1 },
+  abismo_sueno3: { id: 'abismo_sueno3', nombre: 'Peregrino del sueño', como: 'Abismo: sueña 3 sueños distintos', check: () => (Game.codex.suenos ?? []).length >= 3 },
+  abismo_suenos: { id: 'abismo_suenos', nombre: 'Señor de las Tierras del Sueño', como: `Abismo: sueña los ${SUENOS.length} sueños`, check: () => (Game.codex.suenos ?? []).length >= SUENOS.length },
   // v0.31 · el último desbloqueable (Mecha «Inercia-01»): todos los demás logros
   mecha: {
     id: 'mecha', nombre: 'Piloto de élite (platino)', como: 'Consigue TODOS los demás logros',

@@ -36,7 +36,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio'; // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio' | 'sueno'; // sueno = las Tierras del Sueño (v0.51) // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -110,6 +110,7 @@ export interface Run {
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor
   aliadoTramo?: number; // v0.49 · el aliado es un alma del Abismo: se va al terminar este tramo
+  suenoHp?: number; // v0.51 · vida al entrar a un combate onírico (al despertar se recupera)
   mutador?: string; // v0.46 · regla especial del tramo actual (src/data/abismo_modo.ts → MUTADORES)
   dientePendiente?: string; // v0.44 · diente ganado con la dentadura llena: se acomoda al volver al mapa
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
@@ -163,6 +164,7 @@ export interface Codex {
   bajas?: Record<string, number>; // v0.31.2: enemigos vencidos por id (pantalla de Estadísticas)
   diag?: { pre?: number; post?: number; total?: number; version?: number }; // v0.32: diagnóstico inicial y final (aciertos)
   cartasProvidence?: number; // v0.46: cartas del Astrónomo de Providence cumplidas (logro)
+  suenos?: string[]; // v0.51: sueños distintos que has soñado (src/data/relatos.ts → SUENOS)
   diario?: number; // v0.45: última hoja del diario de Montemayor encontrada (índice en PROLOGO; la 0 se lee al empezar)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';
@@ -519,6 +521,7 @@ export function generateMap(acto = 1): MapNode[] {
     ensure('santuario', 1, [1, FLOORS - 3]);
     ensure('boca', 1, [2, FLOORS - 2]);
     ensure('observatorio', 1, [3, FLOORS - 2]);
+    ensure('sueno', 1, [2, FLOORS - 2]); // v0.51 · las Tierras del Sueño
     return [...list, boss];
   }
   ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);
@@ -676,4 +679,11 @@ export function addFamiliar(id: string, combats?: number): string {
   r.familiar = { id: fid, left: combats ?? FAMILIARS[fid].combats };
   unlock('npcs', `fam_${fid}`);
   return fid;
+}
+
+/** v0.51 · Anota un sueño soñado (para los logros y cosméticos del sueño) */
+export function sonarSueno(id: string) {
+  const v = (Game.codex.suenos ??= []);
+  if (!v.includes(id)) v.push(id);
+  saveLocal();
 }

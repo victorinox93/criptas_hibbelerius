@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { W, H } from '../config';
 import { vignette } from '../ui/widgets';
 import { ABISMO_PAL, ABISMO_SPRITES } from './abismo_sprites';
+import { MYTHOS_SPRITES } from './mythos_sprites';
 import { makeTexture } from './sprites';
 
 // ════════════════════════════════════════════════════════════════
@@ -52,6 +53,7 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
 /** Genera las texturas del modo (se llama desde generateAllTextures) */
 export function generateAbismoTextures(scene: Phaser.Scene) {
   for (const [k, rows] of Object.entries(ABISMO_SPRITES)) makeTexture(scene, k, rows, ABISMO_PAL);
+  for (const [k, rows] of Object.entries(MYTHOS_SPRITES)) makeTexture(scene, k, rows, ABISMO_PAL); // v0.51
   for (const [k, f] of Object.entries(FIG_ABISMO)) makeTexture(scene, k, f.rows, f.ov);
 }
 

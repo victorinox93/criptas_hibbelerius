@@ -77,9 +77,11 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         ['i_stun', 0xffd040, 'Aturdido', 'Golpe aturdidor: si te hace daño, PIERDES tu siguiente turno. Bloquéalo completo y no pasa nada.'],
         ['i_heart', 0xb02020, 'Hemorragia', 'Durante unos turnos, cada carta que juegas te quita 1 de vida. Juega pocas y fuertes.'],
         ['i_momentum', 0x9ad8f0, 'Vértigo', 'En tu siguiente turno robas cartas de menos. Lo causan los que giran.'],
+        ['i_combat', 0x9a6ad0, 'Perfora', 'El Sabueso de Tíndalos sale de un ángulo: su golpe atraviesa tu Bloqueo.'],
+        ['i_shield', 0x3a8ac8, 'El lago sube', 'Bokrug inunda todo: antes de su golpe pierdes TODO tu Bloqueo.'],
       ];
       estados.forEach(([ic, tint, nom, d], i) => {
-        const y = 196 + i * 66;
+        const y = 186 + i * 52;
         L(s.add.image(W / 2 - 300, y + 14, ic).setScale(3.4).setTint(tint));
         L(txt(s, W / 2 - 266, y, nom, 20, CSS.gold));
         L(txt(s, W / 2 - 266, y + 24, d, 16, CSS.bone, { wordWrap: { width: 600 } }));
@@ -135,13 +137,32 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       const filas: [string, string, string][] = [
         ['i_telescopio', 'Observatorio', 'Mira por su telescopio: sube 1 nivel una constelación y acomoda tu dentadura.'],
         ['i_book', 'Cartas de Providence', 'Cada tramo te manda una misión. Si la cumples, el trofeo del jefe trae 3 dientes legendarios.'],
-        ['i_note', 'Relatos', 'La música de Erich Zann, Herbert West, Las ratas en las paredes, Aire frío, El templo, El modelo de Pickman y El extraño.'],
+        ['i_note', 'Relatos', 'La música de Erich Zann, Herbert West, Las ratas en las paredes, Aire frío, El templo, El modelo de Pickman, El sabueso, Los gatos de Ulthar…'],
       ];
       filas.forEach(([ic, nom, d], i) => {
         const y = 200 + i * 80;
         L(s.add.image(290, y + 16, ic).setScale(3.2));
         L(txt(s, 324, y, nom, 20, CSS.gold));
         L(txt(s, 324, y + 26, d, 15, CSS.bone, { wordWrap: { width: 560 } }));
+      });
+    },
+  },
+  {
+    titulo: 'Las Tierras del Sueño',
+    texto: 'En el nodo 🌙 te quedas dormido y eliges una de tres puertas. Cada una es un sueño de un cuento de Lovecraft. Colecciona los 7: hay premios en el Vestidor.',
+    dibujo: (s, L) => {
+      L(s.add.image(160, 330, 'bokrug').setOrigin(0.5, 1).setScale(2.6));
+      L(txt(s, 160, 340, 'Bokrug, jefe del sueño', 17, CSS.gold).setOrigin(0.5, 0));
+      const filas: [string, string, string][] = [
+        ['i_sueno', 'Sueños', 'Celephaïs, El barco blanco, Sarnath, Hypnos, Más allá del muro del sueño, La llave de plata y Polaris.'],
+        ['i_combat', 'Combate onírico', 'Algunos sueños terminan en pelea. La vida que pierdes en el sueño NO es real: al despertar la recuperas. La Cordura sí cuenta.'],
+        ['i_skull', 'Si «mueres» soñando…', 'Sólo despiertas sudando (−15 de Cordura). No gastas la Vida Extra y la expedición sigue.'],
+      ];
+      filas.forEach(([ic, nom, d], i) => {
+        const y = 196 + i * 84;
+        L(s.add.image(310, y + 16, ic).setScale(3.2));
+        L(txt(s, 344, y, nom, 20, CSS.gold));
+        L(txt(s, 344, y + 26, d, 15, CSS.bone, { wordWrap: { width: 540 } }));
       });
     },
   },
@@ -169,7 +190,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(txt(s, x, 316, nom, 19, CSS.gold).setOrigin(0.5, 0));
         L(txt(s, x, 342, txt0, 16, CSS.bone, { align: 'center', wordWrap: { width: 200 } }).setOrigin(0.5, 0));
       });
-      L(txt(s, W / 2, 446, 'Antes de cada jefe verás quién es y su desventaja. En el tramo 2 te espera un Primigenio: Nyarlathotep, Cthulhu, Yog-Sothoth o Hastur.', 16, '#c8a8ff', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 446, 'Antes de cada jefe verás quién es y su desventaja. En el tramo 2 te espera un Primigenio: Nyarlathotep, Cthulhu, Yog-Sothoth, Hastur o Shub-Niggurath.', 16, '#c8a8ff', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {

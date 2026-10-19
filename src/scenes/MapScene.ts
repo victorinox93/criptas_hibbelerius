@@ -29,6 +29,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   jefe: { icon: 'i_boss', color: 0xe8c15a },
   boca: { icon: 'i_diente', color: 0xf0c8c8 },
   observatorio: { icon: 'i_telescopio', color: 0xc8b8ff },
+  sueno: { icon: 'i_sueno', color: 0x9a8ae0 },
 };
 const NODE_INFO = Object.fromEntries(
   Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),
@@ -276,8 +277,8 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'observatorio', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
-    const paso = types.length > 9 ? 94 : 105;
+    const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'observatorio', 'sueno', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
+    const paso = types.length > 10 ? 86 : types.length > 9 ? 94 : 105;
     types.forEach((t, i) => {
       const x = 22 + i * paso;
       this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
@@ -388,6 +389,8 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Abismo', { clase: Game.run!.clase ?? 'caballero', fase: 'boca' });
       case 'observatorio':
         return fadeTo(this, 'Abismo', { clase: Game.run!.clase ?? 'caballero', fase: 'observatorio' });
+      case 'sueno':
+        return fadeTo(this, 'Sueno', { floor: n.floor });
     }
   }
 
