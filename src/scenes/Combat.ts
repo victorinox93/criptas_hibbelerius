@@ -103,6 +103,11 @@ export class CombatScene extends Phaser.Scene {
   private get usaVel() { return this.isArc || this.isPen; }
   private vel = 0; // rapidez del Arcanista (m/s)
   private jPerTurn = 0; // Batería de Resorte
+  // v0.53 · cartas nuevas del Abismo
+  private giroscopio = 0; // Giroscopio: Bloqueo al inicio de cada turno y no te aturden
+  private penduloB = 0; // Péndulo Físico: Bloqueo que regresa el siguiente turno
+  private poderes = 0; // Poderes jugados en este combate (Tren de Engranes)
+  private necroDin = false; // Necronomicón de Dinámica: detener = +1 J y robas 1
   private velPerTurn = 0; // Impulso Constante
   private pCalor = 0; // Calor sobre el jugador
   private discardMode = 0; // cartas por descartar (Diagrama de Cuerpo Libre)
@@ -202,6 +207,10 @@ export class CombatScene extends Phaser.Scene {
     this.baseAcel = 0;
     this.vel = 0;
     this.jPerTurn = 0;
+    this.giroscopio = 0;
+    this.penduloB = 0;
+    this.poderes = 0;
+    this.necroDin = false;
     this.velPerTurn = 0;
     this.pCalor = 0;
     this.hemorragia = 0;
@@ -1042,7 +1051,7 @@ export class CombatScene extends Phaser.Scene {
   /** Daño base de un Ataque (lo que dice la carta) con el contexto actual */
   private baseAtaque(v: CardView, st: CardStats, c: CalcCtx) {
     const def = CARDS[v.inst.id];
-    type Base = { dmg: number; lim?: number; golpes?: number; todos?: boolean; ignora?: boolean; res?: boolean; azar?: boolean; ultimo?: boolean; centroide?: boolean; rompe?: boolean; nota?: string; sinDano?: string };
+    type Base = { dmg: number; lim?: number; brazo?: boolean; golpes?: number; todos?: boolean; ignora?: boolean; res?: boolean; azar?: boolean; ultimo?: boolean; centroide?: boolean; rompe?: boolean; nota?: string; sinDano?: string };
     const F = () => force(st, c).F;
     const K = () => kinetic(st, c).K;
     const crit = (d: number) => (this.critica && Game.run!.hp < Game.run!.maxHp / 2 ? Math.round(d * 1.5) : d);
@@ -1060,6 +1069,11 @@ export class CombatScene extends Phaser.Scene {
       case 'torbellinoAcero': return this.energy ? b({ dmg: F(), golpes: this.energy, todos: true, nota: `Gasta tus ${this.energy} J.` }) : b({ dmg: 0, sinDano: 'Sin J no hay giros: no hace nada.' });
       case 'newtonV': return b({ dmg: Math.round(F() * 1.5), ultimo: true });
       case 'enLibras': return b({ dmg: Math.round(F() * 2.2) });
+      case 'rodadura': return b({ dmg: this.block > 0 ? Math.round(F() * 1.5) : F(), nota: this.block > 0 ? 'Tienes Bloqueo: agarre ×1.5 (ya incluido).' : 'Sin Bloqueo no hay agarre (con Bloqueo: ×1.5).' });
+      case 'torqueAbisal': return b({ dmg: F(), brazo: true, nota: 'τ = r × F: ×1 al 1º, ×1.5 al 2º, ×2 al 3º de la fila.' });
+      case 'energiaRotacional': { const w = Math.min(6, this.played + 1); return b({ dmg: Math.round(2 * w * w), nota: `ω = ${w}: juega más cartas antes para que pegue más.` }); }
+      case 'centroPercusion': return b({ dmg: F(), nota: 'Si lo detienes, robas 2.' });
+      case 'anguloRecto': return b({ dmg: F(), ignora: true });
       case 'fmaCuadrado': return b({ dmg: Math.round((F() * F()) / 5) });
       case 'pesoMuerto': return b({ dmg: Math.round(((st.m ?? 0) + this.masa) * this.grav.g), ignora: true });
       case 'despertar': {
@@ -1190,7 +1204,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   /** Simula los golpes contra un enemigo sin tocarlo */
-  private previaContra(e: EnemyView, base: { dmg: number; todos?: boolean; ignora?: boolean; res?: boolean; centroide?: boolean; rompe?: boolean; azar?: boolean; lim?: number }, golpes: number, suma: number, mult: number, def: CardDef): string {
+  private previaContra(e: EnemyView, base: { dmg: number; todos?: boolean; ignora?: boolean; res?: boolean; centroide?: boolean; rompe?: boolean; azar?: boolean; lim?: number; brazo?: boolean }, golpes: number, suma: number, mult: number, def: CardDef): string {
     const st = e.st;
     let blk = base.rompe ? 0 : st.block;
     let hp = st.hp;
@@ -1202,8 +1216,11 @@ export class CombatScene extends Phaser.Scene {
     const cardHit = !base.res;
     const n = base.azar ? 1 : golpes;
     let F0 = 0;
+    // v0.53 · Torque Abisal: el brazo de palanca depende del lugar en la fila
+    const fila = this.alive().sort((a, b) => a.baseX - b.baseX);
+    const bd = base.brazo ? Math.round(base.dmg * [1, 1.5, 2, 2.5][Math.min(3, Math.max(0, fila.indexOf(e)))]) : base.dmg;
     for (let i = 0; i < n && hp > 0; i++) {
-      let F = base.dmg + (cardHit ? suma : 0);
+      let F = bd + (cardHit ? suma : 0);
       if (cardHit && st.def.hueco && base.todos) F = Math.round(F / 2);
       const m = mult * (base.centroide && blk <= 0 ? 1.5 : 1);
       if (cardHit && m !== 1) F = Math.round(F * m);
@@ -1551,6 +1568,7 @@ export class CombatScene extends Phaser.Scene {
       }
     }
     if (def.type === 'Ataque') this.firstAttack = true;
+    if (def.type === 'Poder') this.poderes++;
     // Curie · Polonio: los ataques pegan más
     const pol = boonLevel('m_polonio');
     this.polonio = def.type === 'Ataque' && pol ? (pol === 2 ? 5 : 3) : 0;
@@ -1635,6 +1653,88 @@ export class CombatScene extends Phaser.Scene {
         this.drawCards(2);
         this.energy += st.extra ?? 1;
         this.calc(`Pirueta: I₁ω₁ = I₂ω₂ → robas 2 y +${st.extra} J`);
+        break;
+      // ── v0.53 · cartas nuevas del Abismo ──
+      case 'rodadura': {
+        const f = force(st, c);
+        const agarre = this.block > 0;
+        if (agarre) this.mult *= 1.5;
+        this.calc(`Rodar sin Deslizar: F = ${f.F} N${agarre ? ' · con Bloqueo (agarre): ×1.5' : ' (sin Bloqueo no hay agarre)'}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, f.F);
+        break;
+      }
+      case 'torqueAbisal': {
+        const f = force(st, c);
+        const fila = this.alive().sort((a, b) => a.baseX - b.baseX);
+        const pos = target ? Math.max(0, fila.indexOf(target)) : 0;
+        const r = [1, 1.5, 2, 2.5][Math.min(3, pos)];
+        const dmg = Math.round(f.F * r);
+        this.calc(`Torque Abisal: τ = r × F = ${r} × ${f.F} N = ${dmg} (${pos + 1}º de la fila)`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, dmg);
+        break;
+      }
+      case 'energiaRotacional': {
+        const w = Math.min(6, this.played + 1);
+        const K = Math.round(0.5 * 4 * w * w);
+        this.calc(`Energía de Rotación: K = ½·4·${w}² = ${K}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, K);
+        break;
+      }
+      case 'centroPercusion': {
+        const f = force(st, c);
+        this.calc(`Centro de Percusión: F = ${f.F} N justo en el punto dulce`);
+        await this.heroLunge();
+        if (target && (await this.hitEnemy(target, f.F))) { this.drawCards(2); this.calc('¡Sin reacción en el eje! Robas 2'); }
+        break;
+      }
+      case 'anguloRecto': {
+        const f = force(st, c);
+        this.calc(`Ángulo de 90°: F = ${f.F} N desde una esquina (ignora el Bloqueo)`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, f.F, true);
+        break;
+      }
+      case 'rampaAbisal':
+        if (this.usaVel) { this.vel = Math.min(this.vmax, this.vel + 2); this.calc(`Rampa del Abismo: a = g·senθ → +2 m/s (v = ${this.vel})`); }
+        else { this.acel += st.extra ?? 3; this.calc(`Rampa del Abismo: a = g·sen18° ≈ 3 → +${st.extra} m/s² este turno`); }
+        this.drawCards(1);
+        break;
+      case 'penduloFisico':
+        this.gainBlock(st.block ?? 6);
+        this.penduloB += st.block ?? 6;
+        this.calc(`Péndulo Físico: +${st.block} de Bloqueo… y regresará el siguiente turno`);
+        break;
+      case 'giroscopio':
+        this.giroscopio += st.block ?? 3;
+        this.calc(`Giroscopio: H = I·ω → +${st.block} de Bloqueo cada turno y ya no te aturden`);
+        break;
+      case 'trenEngranes': {
+        const n = Math.min(4, (st.extra ?? 1) + this.poderes);
+        this.energy += n;
+        this.calc(`Tren de Engranes: ω₁r₁ = ω₂r₂ → +${n} J (${this.poderes} Poder(es) jugados)`);
+        break;
+      }
+      case 'suenoProfundo':
+        addEntropia(-(st.extra ?? 12));
+        this.drawCards(2);
+        this.calc(`Sueño Profundo: +${st.extra} de Cordura y robas 2`);
+        this.hud.refresh();
+        break;
+      case 'llavePlata': {
+        const n = Math.min(st.extra ?? 2, this.discard.length);
+        const vuelven = Phaser.Utils.Array.Shuffle([...this.discard]).slice(0, n);
+        this.discard = this.discard.filter((x) => !vuelven.includes(x));
+        this.draw.push(...vuelven);
+        this.drawCards(vuelven.length);
+        this.calc(`La Llave de Plata: ${vuelven.map((x) => CARDS[x.id].name).join(' y ') || 'nada'} regresa(n) del descarte`);
+        break;
+      }
+      case 'necroDinamica':
+        this.necroDin = true;
+        this.calc('Necronomicón de Dinámica: cada vez que detengas a alguien, +1 J y robas 1');
         break;
       case 'volanteAbisal':
         this.jPerTurn += 1;
@@ -2623,6 +2723,7 @@ export class CombatScene extends Phaser.Scene {
         this.floatText(ev.baseX, 140, T.combate.detenido, CSS.gold);
         audio.sfx('stop');
         logEvent('detener', '1a ley', true, { enemigo: st.def.id, F, umbral });
+        if (this.necroDin) { this.energy += 1; this.time.delayedCall(50, () => this.drawCards(1)); this.calc('Necronomicón de Dinámica: +1 J y robas 1'); }
         this.encargo(completarEncargo('detener'));
         // los jefes aprenden: la próxima vez necesitarás más fuerza para detenerlos
         if (JEFES.includes(st.def.id)) {
@@ -3008,6 +3109,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.turn === 2 && Game.run?.mutador === 'noche') for (const e of this.alive()) this.refreshEnemy(e);
     const nep = this.diente('neptuno');
     if (nep && this.turn % 3 === 0) { this.energy += nep; this.calc(`✦ Neptuno · Órbita nv ${nep}: +${nep} J`); }
+    if (this.penduloB) { this.block += this.penduloB; this.calc(`Péndulo Físico: regresa → +${this.penduloB} de Bloqueo`); this.penduloB = 0; }
+    if (this.giroscopio) { this.block += this.giroscopio; this.calc(`Giroscopio: +${this.giroscopio} de Bloqueo`); }
     // v0.51 · El Dios de las Cinco Cabezas está en equilibrio: gana Bloqueo cada turno tuyo
     const cinco = this.jefeVivo('cincoCabezas') ? this.alive().find((e) => e.st.def.id === 'cincoCabezas') : undefined;
     if (cinco) { cinco.st.block += 6; this.refreshEnemy(cinco); this.calc('El Dios de las Cinco Cabezas: ΣF = 0 → +6 de Bloqueo'); }
@@ -3428,6 +3531,7 @@ export class CombatScene extends Phaser.Scene {
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
             else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
+            else if (this.giroscopio) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
             else if (this.trasAturdir) this.calc('Sigues mareado del golpe anterior: este no te vuelve a aturdir');
             else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.anunciarEstado('¡ATURDIDO!', `${st.def.name} te alcanzó: pierdes tu siguiente turno`, 0xd8b020, '#ffe060'); this.refreshPlayer(); await this.wait(1200); }
           }

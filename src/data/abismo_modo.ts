@@ -65,7 +65,7 @@ export const PROLOGO: { fecha: string; texto: string; dibujo?: 'cerro' }[] = [
   { fecha: 'Sin fecha', texto: 'Si alguien encuentra este diario: no bajes sin entender la física.\nAllá abajo, lo único que te mantiene cuerdo es una respuesta correcta.\n\n— Último registro del erudito Ignacio Montemayor' },
 ];
 /** Probabilidad de encontrar una hoja después de cada tipo de nodo (son raras) */
-export const PROB_HOJA: Record<string, number> = { combate: 0.07, elite: 0.3, evento: 0.18, runa: 0.15, santuario: 0.1, mercader: 0.04, fogata: 0.1, boca: 0.05, observatorio: 0.12, sueno: 0.2, jefe: 0.5 };
+export const PROB_HOJA: Record<string, number> = { combate: 0.07, elite: 0.3, evento: 0.18, runa: 0.15, santuario: 0.1, mercader: 0.04, fogata: 0.1, boca: 0.05, observatorio: 0.12, sueno: 0.2, gabinete: 0.12, jefe: 0.5 };
 /** Máximo de hojas por expedición, y con cuántas conoces el punto débil del Primigenio */
 export const HOJAS_POR_EXPEDICION = 3;
 export const HOJAS_DEBILIDAD = 2;
@@ -97,7 +97,7 @@ export interface PactoDef {
   regla: string;
   mazo: (clase: string) => string[];
   vidaMax?: number; // cambio de Vida máxima
-  dientes?: number; // cuántos dientes te quedas al empezar (normal: 2 de 4)
+  dientes?: number; // cuántos dientes te quedas al empezar (normal: 1 de 3, v0.53)
 }
 const sinDefensas = (clase: string, n: number) => {
   const d = [...starterDeck(clase)];
@@ -115,7 +115,7 @@ export const PACTOS: PactoDef[] = [
   { id: 'inercia', nombre: 'Pacto de la Inercia', regla: 'Empiezas cada combate con 6 de Bloqueo y tu mazo trae Momento de Inercia.', mazo: (c) => [...starterDeck(c), 'momentoInercia'] },
   // v0.42
   { id: 'pendulo', nombre: 'Pacto del Péndulo', regla: 'Va y viene: en tus turnos impares +1 J; en los pares robas 1 carta más.', mazo: (c) => [...starterDeck(c), 'ejesParalelos'] },
-  { id: 'sonrisa', nombre: 'Pacto de la Sonrisa', regla: 'Al empezar te quedas con 3 dientes en lugar de 2, pero −10 de Vida máxima.', mazo: (c) => [...starterDeck(c), 'dclTentaculos'], vidaMax: -10, dientes: 3 },
+  { id: 'sonrisa', nombre: 'Pacto de la Sonrisa', regla: 'Al empezar te quedas con 2 dientes en lugar de 1, pero −10 de Vida máxima.', mazo: (c) => [...starterDeck(c), 'dclTentaculos'], vidaMax: -10, dientes: 2 },
   { id: 'estelar', nombre: 'Pacto Estelar', regla: 'Empiezas con un Astro en tu dentadura y los Astros te salen el doble de seguido.', mazo: (c) => [...starterDeck(c), 'calamarTorque'] },
   { id: 'palanca', nombre: 'Pacto de la Palanca', regla: 'Brazo largo: tu primer Ataque de cada turno hace +4 de daño.', mazo: (c) => [...starterDeck(c), 'enLibras'] },
   { id: 'cafeina', nombre: 'Pacto de la Cafeína', regla: '+1 J en tu primer turno de cada combate. Tu mazo trae 2 Cafés del Abismo.', mazo: (c) => [...starterDeck(c), 'cafeAbismo', 'cafeAbismo'] },
@@ -162,7 +162,7 @@ export function editarAlAzar(deck: CardInst[], ed: Edicion, n: number) {
   }
 }
 
-// ── Sobres (como en Pokémon TCG): al empezar abres 3 y te quedas con 2 cartas de cada uno ──
+// ── Sobres (como en Pokémon TCG): al empezar abres 3 y te quedas con 1 carta de cada uno (v0.53) ──
 export interface SobreDef {
   id: string;
   nombre: string;
@@ -178,7 +178,10 @@ export const SOBRES: SobreDef[] = [
 ];
 /** Cartas por sobre y cuántas te quedas */
 export const CARTAS_POR_SOBRE = 5;
-export const ELIGES_POR_SOBRE = 2;
+export const ELIGES_POR_SOBRE = 1; // v0.53 · balance: antes 2
+/** v0.53 · balance: al empezar salen DIENTES_OFRECIDOS dientes y te quedas con DIENTES_INICIO (antes 2 de 4) */
+export const DIENTES_OFRECIDOS = 3;
+export const DIENTES_INICIO = 1;
 /** Edición del espacio brillante de cada sobre (siempre trae una) */
 const BRILLANTE: [Edicion, number][] = [['lamina', 0.45], ['holo', 0.35], ['poli', 0.12], ['cristal', 0.08]];
 

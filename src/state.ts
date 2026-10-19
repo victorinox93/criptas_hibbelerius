@@ -36,7 +36,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio' | 'sueno'; // sueno = las Tierras del Sueño (v0.51) // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio' | 'sueno' | 'gabinete'; // sueno = las Tierras del Sueño (v0.51); gabinete = minijuegos de física del Abismo (v0.53) // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -524,6 +524,7 @@ export function generateMap(acto = 1): MapNode[] {
     ensure('boca', 1, [2, FLOORS - 2]);
     ensure('observatorio', 1, [3, FLOORS - 2]);
     ensure('sueno', 1, [2, FLOORS - 2]); // v0.51 · las Tierras del Sueño
+    ensure('gabinete', 1, [1, FLOORS - 2]); // v0.53 · el Gabinete de Montemayor (minijuegos)
     return [...list, boss];
   }
   ensure('elite', acto >= 2 ? 3 : 2, [5, FLOORS - 2]);
