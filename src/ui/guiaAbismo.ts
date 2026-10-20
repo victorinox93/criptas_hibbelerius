@@ -141,9 +141,9 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     titulo: 'El Astrónomo y los Relatos',
     texto: 'El Astrónomo Aficionado de Providence (H. P. Lovecraft, que de joven escribía columnas de astronomía) te ayuda desde arriba. En los nodos «?» te esperan situaciones de sus cuentos.',
     dibujo: (s, L) => {
-      L(s.add.image(150, 290, 'fig_lovecraft').setScale(6));
+      L(s.add.image(150, 300, 'fig_astronomo').setScale(3.6));
       const filas: [string, string, string][] = [
-        ['i_telescopio', 'Observatorio', 'Mira por su telescopio: sube 1 nivel una constelación y acomoda tu dentadura.'],
+        ['i_telescopio', 'Observatorio', 'Sube 1 nivel una constelación. Luego elige un favor: una pregunta de órbitas (otro nivel), su telescopio (ves lo oculto) o una hoja de Montemayor.'],
         ['i_book', 'Cartas de Providence', 'Cada tramo te manda una misión. Si la cumples, el trofeo del jefe trae 3 dientes legendarios.'],
         ['i_note', 'Relatos', 'La música de Erich Zann, Herbert West, Las ratas en las paredes, Aire frío, El templo, El modelo de Pickman, El sabueso, Los gatos de Ulthar…'],
       ];

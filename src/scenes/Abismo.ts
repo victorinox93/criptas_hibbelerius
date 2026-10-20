@@ -5,10 +5,10 @@ import { W, H } from '../config';
 import { CardInst, CARDS } from '../data/cards';
 import {
   abrirSobre, ACTO_ABISMO, DIENTES_INICIO, DIENTES_OFRECIDOS, AUTOR, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
-  RARAS_ABISMO, sortearMutador, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
+  HOJAS_POR_EXPEDICION, RARAS_ABISMO, sortearMutador, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
 import { RUEDA, RUEDA_COSTO, RUEDA_SUBE, ARRANCAR_PARASITO, cristalDe, defDiente, esParasito, HUECOS, nivelDiente, NOMBRE_RAREZA, PROB_PARASITO_SACAMUELAS, ponerDiente, RETIRAR_DIENTES, sortearDientes, sortearParasito } from '../data/dientes';
-import { ASTRONOMO, FICHA_LOVECRAFT, FRASES_INFINITO } from '../data/lovecraft';
+import { ASTRONOMO, ASTRONOMO_MAL, FICHA_LOVECRAFT, FRASES_INFINITO, TELESCOPIO_COMBATES } from '../data/lovecraft';
 import { dentaduraView, dibujarDiente, etiquetaDiente, resumenCosmos, textoCristal } from '../ui/dentadura';
 import { ENEMIES } from '../data/enemies';
 import { ALMAS } from '../data/almas';
@@ -739,9 +739,11 @@ export class AbismoScene extends Phaser.Scene {
     const cielo = this.add.graphics();
     for (let i = 0; i < 120; i++) cielo.fillStyle(0xffffff, Math.random() * 0.7).fillCircle(Math.random() * W, Math.random() * 300, Math.random() < 0.1 ? 2 : 1);
     L(cielo);
-    const por = L(this.add.image(130, 250, 'fig_lovecraft').setScale(8));
-    this.tweens.add({ targets: por, y: 246, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    L(this.add.image(214, 200, 'i_telescopio').setScale(6));
+    // v0.58 · cuerpo entero leyendo, con tentáculos que se mecen detrás (de lo que lee)
+    this.tentaculos(L, 120, 470);
+    const por = L(this.add.image(120, 300, 'fig_astronomo').setScale(5));
+    this.tweens.add({ targets: por, y: 296, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    L(this.add.image(232, 150, 'i_telescopio').setScale(5));
     L(title(this, W / 2 + 90, 40, 'El Observatorio', 38, '#c8b8ff'));
     L(txt(this, W / 2 + 90, 74, ASTRONOMO, 18, '#8a7a9a').setOrigin(0.5, 0));
     L(txt(this, W / 2 + 90, 100, '«Pase, pase. Desde aquí abajo las estrellas se ven al revés, pero se ven. Elija una constelación y mírela bien: brillará más para usted.»', 17, '#d8c8a0', { align: 'center', wordWrap: { width: 600 } }).setOrigin(0.5, 0));
@@ -783,14 +785,83 @@ export class AbismoScene extends Phaser.Scene {
         this.cameras.main.flash(400, 200, 190, 255);
         nv.setText(`¡Nivel ${nivel(id)}!`).setColor('#ffd060');
         tarjetas.forEach((t) => { if (t !== c) t.setAlpha(0.4); });
-        pie.add(txt(this, W / 2 + 90, 392, `«${nom}. Buena elección. Mire: ya brilla más.»`, 18, '#d8c8a0').setOrigin(0.5, 0));
-        pie.add(button(this, W / 2 - 40, 440, 260, 40, 'Acomodar mi dentadura', () => this.sacamuelas('acomodar', () => fadeTo(this, 'Map')), { size: 18, color: 0x6a5ab0 }));
-        pie.add(button(this, W / 2 + 240, 440, 220, 40, 'Volver al mapa', () => fadeTo(this, 'Map'), { size: 18, color: UI.gold }));
+        // v0.58 · después de la constelación, un favor del Astrónomo
+        this.time.delayedCall(900, () => {
+          tarjetas.forEach((t) => t.destroy());
+          this.favoresAstronomo(pie, id, nom);
+        });
       });
       tarjetas.push(L(c));
     });
     L(txt(this, W / 2, 486, FICHA_LOVECRAFT, 13, '#6a6a7a', { align: 'center', wordWrap: { width: 880 } }).setOrigin(0.5, 0));
     this.botonGuia();
+  }
+
+  /** v0.58 · Tentáculos que salen del suelo detrás del Astrónomo y se mecen (bloques de 4 px, como pixel art) */
+  private tentaculos(L: <T extends Phaser.GameObjects.GameObject>(o: T) => T, x0: number, y0: number) {
+    const g = L(this.add.graphics());
+    const T = [
+      { dx: -66, alto: 330, fase: 0, grosor: 13, giro: 1 }, { dx: 70, alto: 360, fase: 2.1, grosor: 14, giro: -1 },
+      { dx: -30, alto: 230, fase: 4.0, grosor: 10, giro: -1 }, { dx: 104, alto: 210, fase: 1.2, grosor: 9, giro: 1 },
+    ];
+    const q = (v: number) => Math.round(v / 3) * 3;
+    const dibujar = (t: number) => {
+      g.clear();
+      for (const k of T) {
+        const N = 60;
+        const pts: [number, number, number][] = [];
+        for (let i = 0; i <= N; i++) {
+          const u = i / N;
+          // sube ondulando y la punta se enrosca
+          const curl = u > 0.75 ? (u - 0.75) * 4 : 0;
+          const x = x0 + k.dx + Math.sin(t * 1.3 + k.fase + u * 4.2) * 30 * u + k.giro * Math.sin(curl * 2.6) * 26;
+          const y = y0 - u * k.alto + (1 - Math.cos(curl * 2.6)) * 22;
+          pts.push([x, y, Math.max(2, k.grosor * (1 - u * 0.88))]);
+        }
+        for (const [x, y, r] of pts) g.fillStyle(0x0a0610, 1).fillRect(q(x - r - 3), q(y - r - 3), q(2 * r + 6), q(2 * r + 6));
+        pts.forEach(([x, y, r], i) => g.fillStyle(i > N * 0.6 ? 0x5a3480 : 0x40225e, 1).fillRect(q(x - r), q(y - r), q(2 * r), q(2 * r)));
+        pts.forEach(([x, y, r], i) => { if (i % 6 === 0 && r > 4) g.fillStyle(0xc8a0e0, 0.95).fillRect(q(x + r * 0.3), q(y), 3, 3); }); // ventosas
+      }
+    };
+    dibujar(0);
+    const ev = this.time.addEvent({ loop: true, delay: 60, callback: () => { if (!g.active) { ev.remove(); return; } dibujar(this.time.now / 1000); } });
+  }
+
+  /** v0.58 · Los favores del Astrónomo (eliges uno): pregunta de órbitas, telescopio prestado o una hoja de Montemayor */
+  private favoresAstronomo(pie: Phaser.GameObjects.Container, id: string, nom: string) {
+    const run = Game.run!;
+    const cx = W / 2 + 90;
+    pie.add(txt(this, cx, 168, '«Ya que está aquí… ¿le ayudo con algo más?» (elige uno)', 18, '#c8b8ff').setOrigin(0.5, 0));
+    const quedanHojas = (run.diario ?? 0) < HOJAS_POR_EXPEDICION && (Game.codex.diario ?? 0) + 1 < PROLOGO.length && !run.hojaSegura;
+    const FAV: { t: string; d: string; ok: boolean; hacer: () => string | void }[] = [
+      { t: 'Pregunta de órbitas', d: `Movimiento circular. Si aciertas: ${nom} sube otro nivel. Si fallas: −${ASTRONOMO_MAL} de Cordura.`, ok: true,
+        hacer: () => { fadeTo(this, 'Rune', { floor: run.floor ?? 0, source: 'observatorio', constelacion: [id, nom] }); } },
+      { t: 'Que te preste el telescopio', d: `En tus ${TELESCOPIO_COMBATES} siguientes combates ves lo que harán los enemigos invisibles, de noche y la Calculadora sin batería.`, ok: true,
+        hacer: () => { run.telescopio = (run.telescopio ?? 0) + TELESCOPIO_COMBATES; return '«Cuídelo. Ve más lejos de lo que debería.»'; } },
+      { t: 'Una hoja de Montemayor', d: quedanHojas ? 'Te señala dónde cayó una hoja del diario: la encuentras al volver al mapa.' : 'Ya no quedan hojas que señalar en esta expedición.', ok: quedanHojas,
+        hacer: () => { run.hojaSegura = true; return '«Por allá, junto a la escalera. La vi caer desde el telescopio.»'; } },
+    ];
+    const btns: ReturnType<typeof button>[] = [];
+    FAV.forEach((f, i) => {
+      const x = cx + (i - 1) * 210, y = 214;
+      const g = this.add.graphics();
+      frame(g, x - 100, y - 10, 200, 160, 0x0c0a18, f.ok ? 0x6a5ab0 : 0x3a3448, 0.97);
+      pie.add(g);
+      pie.add(txt(this, x, y + 50, f.d, 14, f.ok ? CSS.bone : CSS.dim, { align: 'center', wordWrap: { width: 184 } }).setOrigin(0.5, 0));
+      const b = button(this, x, y + 18, 186, 36, f.t, () => {
+        btns.forEach((o) => o.setEnabled(false));
+        audio.sfx('coin');
+        const msg = f.hacer();
+        if (msg === undefined) return; // la pregunta cambia de escena
+        saveLocal();
+        pie.add(txt(this, cx, 392, msg, 18, '#d8c8a0').setOrigin(0.5, 0));
+        pie.add(button(this, W / 2 - 40, 440, 260, 40, 'Acomodar mi dentadura', () => this.sacamuelas('acomodar', () => fadeTo(this, 'Map')), { size: 18, color: 0x6a5ab0 }));
+        pie.add(button(this, W / 2 + 240, 440, 220, 40, 'Volver al mapa', () => fadeTo(this, 'Map'), { size: 18, color: UI.gold }));
+      }, { size: 16, color: 0x3a2a6a });
+      if (!f.ok) b.setEnabled(false);
+      btns.push(b);
+      pie.add(b);
+    });
   }
 
   /** Después del sobre: un diente del jefe y luego el siguiente tramo */

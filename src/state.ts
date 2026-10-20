@@ -108,6 +108,8 @@ export interface Run {
   jefesVistos?: string[]; // jefes que ya salieron en esta partida (para no repetir)
   cosmos?: Record<string, number>; // v0.43 · niveles de constelación del Observatorio (astro → niveles extra)
   carta?: { id: string; tramo: number; hecho?: boolean; cobrada?: boolean }; // v0.43 · carta del Astrónomo de Providence
+  telescopio?: number; // v0.58 · combates que te quedan con el telescopio prestado del Astrónomo (ves las intenciones ocultas)
+  hojaSegura?: boolean; // v0.58 · el Astrónomo te señaló una hoja de Montemayor: la encuentras al volver al mapa
   bonoDientesHp?: number; // v0.43 · vida máxima que dan los dientes (Sarro, Branquia), para ajustarla al cambiar la dentadura
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor

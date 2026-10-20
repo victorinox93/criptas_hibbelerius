@@ -12,6 +12,10 @@
 import { contarCartaProvidence, Game, saveLocal } from '../state';
 
 export const ASTRONOMO = 'El Astrónomo Aficionado de Providence';
+/** v0.58 · Cordura que pierdes si fallas su pregunta de órbitas */
+export const ASTRONOMO_MAL = 8;
+/** v0.58 · combates en que el telescopio prestado te deja ver las intenciones ocultas */
+export const TELESCOPIO_COMBATES = 2;
 
 /** Una línea de contexto (se muestra en el Observatorio) */
 export const FICHA_LOVECRAFT = 'H. P. Lovecraft (1890–1937), escritor de Providence, EE. UU. De joven escribió columnas de astronomía para los periódicos y toda su vida escribió miles de cartas.';
