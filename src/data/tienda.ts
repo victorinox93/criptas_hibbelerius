@@ -417,6 +417,9 @@ ACCESORIOS.push(
     rows: ['G.G.G', 'G.G.G', 'GGGGG', '..G..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..', '..g..'], ancla: [2, 13] },
   { id: 'telescopio', nombre: 'Telescopio de Providence', slot: 'mano', logro: 'abismo_providence', precio: 0, desc: 'Regalo del Astrónomo Aficionado de Providence. Apunta a estrellas que no existen.',
     rows: ['.......YY', '.....yyY.', '...yyy...', '.yyy.....', 'k........', '.k.......', '..k......'], ancla: [1, 4] },
+  // v0.56 · La Entropía (la escultura del campus) hecha casco
+  { id: 'casco_entropia', nombre: 'Casco de la Entropía', slot: 'cabeza', logro: 'abismo_entropia', precio: 0, desc: 'Bloques amarillos que nunca vuelven a acomodarse: ΔS ≥ 0. Lo ganaste perdiendo la cordura… y sobreviviendo.',
+    rows: ['.....ay......', '....aYya..ay.', '...ayYa.ayYa.', '..aYya.aYya..', '.ayYa.ayYa.ay', 'aYyaYyaYyaYya', 'lllllllllllll'], ancla: [6, 6] },
   // v0.51 · Las Tierras del Sueño
   { id: 'cuernos_shub', nombre: 'Cuernos de la Cabra Negra', slot: 'cabeza', logro: 'abismo_shubNiggurath', precio: 0, desc: '¡Iä! ¡Shub-Niggurath! Mil retoños te reconocen como familia.',
     rows: ['N...............N', 'NN.............NN', '.NN...........NN.', '.NNh.........hNN.', '..NNh.......hNN..', '..dNNh.....hNNd..', '...ddddddddddd...'], ancla: [8, 6] },

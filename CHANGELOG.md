@@ -2,6 +2,15 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.56.0 · Infrarrojo (beta)
+
+- **ARREGLO IMPORTANTE:** al iniciar sesión se perdían las hojas del diario de Montemayor, las cartas de Providence cumplidas y los sueños soñados. El juego junta lo guardado en el navegador con lo del servidor, y esos tres datos no se incluían en la mezcla. Ahora se conservan; los logros del diario y de los sueños ya se pueden completar.
+- **Mapa del Abismo:** la leyenda de abajo va en dos filas y ya no se encima. El aviso del mutador sube un poco.
+- **Casco de la Entropía** (cabeza): los bloques amarillos de la escultura del campus. Se gana si tu Locura llega a 100 (Quiebre) en el Abismo.
+- **Efecto nuevo «infrarrojo»:** como una cámara térmica (negro → violeta → rojo → amarillo → blanco), con el calor moviéndose por la tela. Tiene que ver con la ley de Wien: lo más caliente brilla más blanco.
+  - **Llama Infrarroja** (capa): vence a 3 jefes distintos del Abismo.
+  - **Cuerpo Negro** (armadura): vence a 6.
+
 ## v0.55.0 · Compañeros (beta)
 
 - **Cosméticos de veterano más exigentes:** el Manto del Desvelado ahora pide **10 horas** jugadas (antes 5) y la Coraza de la Eternidad **15 horas** (antes 10).

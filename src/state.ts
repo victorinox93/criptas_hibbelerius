@@ -209,6 +209,13 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   if (hib) c.hib = hib;
   const am = (a?.am?.visitas ?? 0) >= (b?.am?.visitas ?? 0) ? a?.am : b?.am;
   if (am) c.am = am;
+  // v0.56 · ARREGLO: estos campos del Abismo no se combinaban y se perdían al iniciar sesión
+  const diario = Math.max(a?.diario ?? 0, b?.diario ?? 0);
+  if (diario) c.diario = diario;
+  const cp = Math.max(a?.cartasProvidence ?? 0, b?.cartasProvidence ?? 0);
+  if (cp) c.cartasProvidence = cp;
+  const sueños = [...new Set([...(a?.suenos ?? []), ...(b?.suenos ?? [])])];
+  if (sueños.length) c.suenos = sueños;
   return c;
 }
 

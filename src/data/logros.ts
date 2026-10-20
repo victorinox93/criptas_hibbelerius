@@ -56,6 +56,10 @@ export const LOGROS: Record<string, Logro> = {
   // v0.54 · premio por dedicarle tiempo (cuenta todo el tiempo de juego, en cualquier modo)
   abismo_veterano5: { id: 'abismo_veterano5', nombre: 'Desvelado', como: 'Juega 10 horas en total', check: () => (Game.codex.tiempo ?? 0) >= 10 * 3600 }, // v0.55: antes 5 h
   abismo_veterano10: { id: 'abismo_veterano10', nombre: 'Veterano de las Criptas', como: 'Juega 15 horas en total', check: () => (Game.codex.tiempo ?? 0) >= 15 * 3600 }, // v0.55: antes 10 h
+  // v0.56 · entropía e infrarrojo
+  abismo_entropia: { id: 'abismo_entropia', nombre: 'ΔS ≥ 0', como: 'Abismo: tu Locura llega a 100 (Quiebre) y sigues peleando', check: () => flag('logro_quiebre_abismo') },
+  abismo_calor3: { id: 'abismo_calor3', nombre: 'Radiación térmica', como: 'Abismo: vence a 3 jefes distintos', check: () => (Game.codex.flags ?? []).filter((f) => f.startsWith('abismo_vence_')).length >= 3 },
+  abismo_calor6: { id: 'abismo_calor6', nombre: 'Cuerpo negro', como: 'Abismo: vence a 6 jefes distintos', check: () => (Game.codex.flags ?? []).filter((f) => f.startsWith('abismo_vence_')).length >= 6 },
   abismo_sueno1: { id: 'abismo_sueno1', nombre: 'Soñador', como: 'Abismo: sueña tu primer sueño (nodo 🌙)', check: () => (Game.codex.suenos ?? []).length >= 1 },
   abismo_sueno3: { id: 'abismo_sueno3', nombre: 'Peregrino del sueño', como: 'Abismo: sueña 3 sueños distintos', check: () => (Game.codex.suenos ?? []).length >= 3 },
   abismo_suenos: { id: 'abismo_suenos', nombre: 'Señor de las Tierras del Sueño', como: `Abismo: sueña los ${SUENOS.length} sueños`, check: () => (Game.codex.suenos ?? []).length >= SUENOS.length },
