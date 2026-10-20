@@ -2,6 +2,22 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.59.0 · Los Astros Errantes (beta)
+
+- **Nodo nuevo en el Abismo: Astro Errante** (1 o 2 por tramo). Los planetas despertaron y bajaron al Abismo. Son más fuertes que una élite y más débiles que un jefe, y cada uno pelea con su física:
+  - **Mercurio, el Mensajero Veloz:** muchos golpes seguidos y te marea (v = 2πr/T).
+  - **Venus, la Nube que Quema:** lluvia de ácido (Hemorragia) y la presión de 92 atm te quita todo el Bloqueo.
+  - **Marte, el Ojo Rojo:** pelea con sus lunas Fobos (miedo) y Deimos (terror); su golpe crece si no lo detienes.
+  - **Júpiter, el Gigante:** gravedad de 24.8 m/s² que te aturde; queda Imparable 2 turnos.
+  - **Saturno, el que Devora a sus Hijos:** anillos de dientes; se cura devorando una luna y te roba J.
+  - **El Sol, el Ojo que Arde** (desde el tramo 2): Calor, llamaradas que atraviesan tu Bloqueo y fusión que lo cura.
+- **Premio:** un sobre (te quedas con 1 carta) y, la primera vez, un cosmético.
+  - Sandalias de Mercurio, capa Nube de Venus, Yelmo de Marte, Escudo de la Gran Mancha, Anillos de Saturno y Corona Solar.
+  - Si vences a los 6: la capa **Heliosfera** (efecto cósmico).
+- Al empezar la pelea sale un dato real del planeta.
+- La masa de los enemigos ahora se escribe en notación científica (5.7 × 10²⁶ kg).
+- Página nueva en la Guía del Abismo: «Los Astros Errantes».
+
 ## v0.58.0 · El Astrónomo de Providence (beta)
 
 - **El Astrónomo, de cuerpo entero:** traje gris, leyendo un libro, con tentáculos que se mecen detrás de él (de lo que está leyendo).

@@ -1,5 +1,6 @@
 import { HOJAS_DEBILIDAD, HOJAS_POR_EXPEDICION, JEFES as JEFES_ABISMO, MUTADOR, nombreTramo, PROB_HOJA, PROLOGO, TRAMOS } from '../data/abismo_modo';
 import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
+import { ASTROS, elegirAstro } from '../data/astros';
 import { hojaDiario } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
@@ -33,6 +34,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   observatorio: { icon: 'i_telescopio', color: 0xc8b8ff },
   sueno: { icon: 'i_sueno', color: 0x9a8ae0 },
   gabinete: { icon: 'i_angle', color: 0x7fe8d8 },
+  astro: { icon: 'i_astro', color: 0xffb030 }, // v0.59 · Astros Errantes
 };
 const NODE_INFO = Object.fromEntries(
   Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),
@@ -237,18 +239,22 @@ export class MapScene extends Phaser.Scene {
 
     // el jefe del acto se ve en el mapa: ya cuenta para el Bestiario
     unlock('enemies', act5 ? run.jefe ?? 'geometra' : act4 ? 'am' : act3 ? 'hibbelerius' : act2 ? 'bruja' : 'colossus');
+    // v0.59 · cada nodo de astro sabe qué planeta espera ahí (se sortea la primera vez que se ve)
+    if (act5) for (const n of run.map) if (n.type === 'astro' && !n.astro) { n.astro = elegirAstro(); saveLocal(); }
     // nodos
     for (const n of run.map) {
       const { x, y } = nodeXY(n);
       const jA = JEFES_ABISMO[run.jefe ?? 'geometra'];
       const jt = act5 ? [jA.nombre, `${jA.titulo}. Desventaja: ${jA.desventaja}`] : act4 ? T.mapa.jefe4 : act3 ? T.mapa.jefe3 : T.mapa.jefe2;
-      const info = n.type === 'jefe' && (act2 || act3 || act4 || act5) ? { ...NODE_INFO.jefe, name: jt[0], desc: jt[1] } : NODE_INFO[n.type];
-      const size = n.type === 'jefe' ? 76 : 42;
+      const ast = n.type === 'astro' ? ASTROS[n.astro ?? 'mercurio'] : null;
+      const info = n.type === 'jefe' && (act2 || act3 || act4 || act5) ? { ...NODE_INFO.jefe, name: jt[0], desc: jt[1] }
+        : ast ? { ...NODE_INFO.astro, name: ast.nombre, desc: `${ast.titulo} · ${ast.tema}\n${ast.mecanica}\nPremio: un sobre${(Game.codex.flags ?? []).includes(`abismo_astro_${ast.id}`) ? '.' : ` y ${ast.premio} (la primera vez).`}` } : NODE_INFO[n.type];
+      const size = n.type === 'jefe' ? 76 : n.type === 'astro' ? 52 : 42;
       const g = this.add.graphics();
       const isAvail = available.has(n.id);
       const isPast = n.floor < (current ? current.floor : 0) || (current && n.id === current.id);
       frame(g, x - size / 2, y - size / 2, size, size, isAvail ? 0x261e2c : 0x141017, isAvail ? info.color : 0x3a3244);
-      const im = n.type === 'jefe' && act5 ? this.add.image(x, y, ENEMIES[run.jefe ?? 'geometra'].sprite).setScale(Math.min(1.6, 64 / this.textures.get(ENEMIES[run.jefe ?? 'geometra'].sprite).getSourceImage().height)) : n.type === 'jefe' && act4 ? this.add.image(x, y, 'am_jefe').setScale(1.05) : n.type === 'jefe' && act3 ? this.add.image(x, y, 'hibbelerius').setScale(1.1) : this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.1);
+      const im = n.type === 'jefe' && act5 ? this.add.image(x, y, ENEMIES[run.jefe ?? 'geometra'].sprite).setScale(Math.min(1.6, 64 / this.textures.get(ENEMIES[run.jefe ?? 'geometra'].sprite).getSourceImage().height)) : ast ? this.add.image(x, y, `astro_${ast.id}`).setScale(Math.min(1.2, 46 / this.textures.get(`astro_${ast.id}`).getSourceImage().height)) : n.type === 'jefe' && act4 ? this.add.image(x, y, 'am_jefe').setScale(1.05) : n.type === 'jefe' && act3 ? this.add.image(x, y, 'hibbelerius').setScale(1.1) : this.add.image(x, y, info.icon).setScale(n.type === 'jefe' ? 6 : 3.1);
       if (!isAvail && !(current && n.id === current.id)) im.setAlpha(isPast ? 0.3 : 0.75);
       if (visited.has(n.id)) {
         const mark = this.add.graphics();
@@ -300,7 +306,7 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda
-    const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'observatorio', 'sueno', 'gabinete', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
+    const types: NodeType[] = act5 ? ['combate', 'elite', 'astro', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'observatorio', 'sueno', 'gabinete', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
     // v0.56 · con más de 10 tipos (el Abismo) la leyenda va en dos filas para que no se encimen
     const dosFilas = types.length > 10;
     const porFila = dosFilas ? Math.ceil(types.length / 2) : types.length;
@@ -424,6 +430,8 @@ export class MapScene extends Phaser.Scene {
         return fadeTo(this, 'Sueno', { floor: n.floor });
       case 'gabinete':
         return fadeTo(this, 'Gabinete', { floor: n.floor });
+      case 'astro':
+        return fadeTo(this, 'Combat', { kind: 'elite', floor: n.floor, astro: n.astro ?? 'mercurio' });
     }
   }
 

@@ -37,7 +37,7 @@ export interface Profile {
   avatar: Avatar | null;
 }
 
-export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio' | 'sueno' | 'gabinete'; // sueno = las Tierras del Sueño (v0.51); gabinete = minijuegos de física del Abismo (v0.53) // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
+export type NodeType = 'combate' | 'elite' | 'fogata' | 'runa' | 'evento' | 'mercader' | 'santuario' | 'taberna' | 'jefe' | 'boca' | 'observatorio' | 'sueno' | 'gabinete' | 'astro'; // sueno = las Tierras del Sueño (v0.51); gabinete = minijuegos de física del Abismo (v0.53) // boca = el Sacamuelas Ciego; observatorio = el Astrónomo de Providence (sólo en el Abismo)
 
 /** Efecto temporal (bendición o maldición) que dura N combates */
 export interface Effect {
@@ -51,6 +51,7 @@ export interface MapNode {
   lane: number;
   type: NodeType;
   next: number[];
+  astro?: string; // v0.59 · nodo «astro»: qué planeta espera ahí (src/data/astros.ts)
 }
 
 export interface Run {
@@ -108,6 +109,7 @@ export interface Run {
   jefesVistos?: string[]; // jefes que ya salieron en esta partida (para no repetir)
   cosmos?: Record<string, number>; // v0.43 · niveles de constelación del Observatorio (astro → niveles extra)
   carta?: { id: string; tramo: number; hecho?: boolean; cobrada?: boolean }; // v0.43 · carta del Astrónomo de Providence
+  astrosVistos?: string[]; // v0.59 · astros errantes ya enfrentados en esta partida (no se repiten)
   telescopio?: number; // v0.58 · combates que te quedan con el telescopio prestado del Astrónomo (ves las intenciones ocultas)
   hojaSegura?: boolean; // v0.58 · el Astrónomo te señaló una hoja de Montemayor: la encuentras al volver al mapa
   bonoDientesHp?: number; // v0.43 · vida máxima que dan los dientes (Sarro, Branquia), para ajustarla al cambiar la dentadura
@@ -527,6 +529,8 @@ export function generateMap(acto = 1): MapNode[] {
     // tramos del Abismo (8 pisos): sin taberna; en su lugar, el Sacamuelas Ciego (dientes)
     for (const n of list) if (n.type === 'taberna') n.type = 'boca';
     ensure('elite', 3, [3, FLOORS - 2]);
+    // v0.59 · Astros Errantes (1 o 2 por tramo); van antes que los demás para que siempre quepan
+    ensure('astro', Math.random() < 0.5 ? 2 : 1, [2, FLOORS - 2]);
     ensure('runa', 2, [1, FLOORS - 3]);
     ensure('evento', 3, [1, FLOORS - 2]);
     ensure('mercader', 1, [2, FLOORS - 2]);

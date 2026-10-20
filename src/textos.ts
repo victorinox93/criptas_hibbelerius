@@ -150,6 +150,7 @@ export const T = {
       observatorio: ['Observatorio', 'El Astrónomo Aficionado de Providence te deja mirar por su telescopio: sube de nivel una constelación.'],
       gabinete: ['Gabinete', 'El Gabinete de Montemayor: un minijuego de cuerpo rígido (rampa, centroide o momento de inercia; cambia en cada visita) para ganar Ergios y Cordura.'],
       sueno: ['Sueño', 'Te quedas dormido y bajas a las Tierras del Sueño: eliges una de tres puertas. En una pesadilla la vida que pierdes no es real (al despertar la recuperas), pero la Cordura sí.'],
+      astro: ['Astro Errante', 'Un planeta despertó y bajó al Abismo. Más fuerte que una élite. Premio: un sobre y, la primera vez, un cosmético.'],
       boca: ['Sacamuelas Ciego', 'Te vende dientes para tu Dentadura: elige 1 de 3 (o paga para volver a tirar) y acomódalos.'],
     } as Record<string, [string, string]>,
   },

@@ -105,6 +105,9 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Manto del Desvelado (veterano)', c: '#e8b030', C: '#6a3a08', veterano: true, logro: 'abismo_veterano5' },
   // v0.56 · efecto infrarrojo (ley de Wien: lo más caliente brilla más blanco); v0.58 · se llama «Carcosa»,
   // la ciudad del Rey de Amarillo, donde arden soles negros
+  // v0.59 · Astros Errantes
+  { name: 'Nube de Venus', c: '#f0dc9a', C: '#8a6a2a', holo: 50, rango: 18, logro: 'abismo_astro_venus' },
+  { name: 'Heliosfera', c: '#ffd060', C: '#3a1a6a', cosmos: true, logro: 'abismo_astros' },
   { name: 'Llama de Carcosa', c: '#ff5a1a', C: '#5a0a3a', infrarrojo: true, logro: 'abismo_calor3' },
 ];
 
