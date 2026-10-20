@@ -2,6 +2,19 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.54.0 · Veteranos del Abismo (beta)
+
+- **Dragón Shantak:** la Criatura Alada de «El Festival» ahora es el Dragón Shantak, con un dibujo nuevo (ave escamosa con cabeza de caballo y alas de murciélago). Hace lo mismo: sube (mgh) y cae en picada (½mv²).
+- **Guía:** «Si mueres soñando» ahora dice «Si caes vencido en el sueño».
+- **Gabinete de Montemayor:** en cada visita sólo hay **un** experimento (cambia según el piso y el tramo), no los tres.
+- **Ropa del mythos** (pestaña «Abismo ◈»):
+  - Túnicas: Túnica de la Orden Esotérica de Dagón, Saco de Tweed de la Miskatonic (8 hojas del diario), Sudario del Faraón Negro (cósmico; Nyarlathotep), Túnica del Soñador de Celephaïs (holográfica; tu primer sueño) y Hábito del Acólito de Yog-Sothoth.
+  - Capas: Alas de R'lyeh (Cthulhu), Gabardina de los Whateley (Dunwich) y Manto del Geómetra (holográfico).
+- **Efecto nuevo «veterano» por horas de juego:** oro incandescente con un destello que recorre la tela y brasas rojas, distinto a cualquier otro color del juego. **Manto del Desvelado** a las 5 horas jugadas y **Coraza de la Eternidad** a las 10.
+- **Ranking:** cada héroe muestra cuántas **partidas** jugó y su **tiempo de juego** (también en su ficha). El grupo ahora va debajo del nombre.
+  - **Para el profe:** hay que pegar el `apps-script/Code.gs` nuevo y publicar una nueva versión. Mientras no se publique, el tiempo sale como «—».
+- **Arreglado:** en el ranking del Abismo, el tramo se calculaba con los pisos viejos (7); ahora usa los 11 actuales.
+
 ## v0.53.0 · El Gabinete de Montemayor (beta)
 
 - **Balance del inicio:** ahora eliges **1 de 3 dientes** (antes 2 de 4; con el Pacto de la Sonrisa, 2) y te quedas con **1 carta de cada sobre** (antes 2). Empiezas más débil y cada decisión pesa más.

@@ -164,7 +164,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       const filas: [string, string, string][] = [
         ['i_sueno', 'Sueños', 'Celephaïs, El barco blanco, Sarnath, Hypnos, Más allá del muro del sueño, La llave de plata y Polaris.'],
         ['i_combat', 'Pesadilla', 'Algunos sueños terminan en pelea. La vida que pierdes en el sueño NO es real: al despertar la recuperas. La Cordura sí cuenta.'],
-        ['i_skull', 'Si «mueres» soñando…', 'Sólo despiertas sudando (−15 de Cordura). No gastas la Vida Extra y la expedición sigue.'],
+        ['i_skull', 'Si caes vencido en el sueño…', 'Sólo despiertas sudando (−15 de Cordura). No gastas la Vida Extra y la expedición sigue.'],
       ];
       filas.forEach(([ic, nom, d], i) => {
         const y = 196 + i * 84;

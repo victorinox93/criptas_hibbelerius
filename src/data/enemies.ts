@@ -585,8 +585,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => (e.turn % 3 === 2 ? { kind: 'buff', summon: 'martense', label: 'Sale otro de la tierra' } : { kind: 'attack', dmg: e.turn % 3 === 0 ? 7 : 5, hits: e.turn % 3 === 0 ? 1 : 2, label: 'Arañazos' }),
   },
   aladoFestival: {
-    id: 'aladoFestival', name: 'Criatura Alada de «El Festival»', sprite: 'aladoFestival', scale: 4.2, hp: [30, 34], mass: 25, act: 5,
-    desc: '«El Festival» (1925). Ni cuervo, ni topo, ni buitre. Sube y gana energía potencial (mgh); en la picada la convierte en cinética: ½mv².',
+    id: 'aladoFestival', name: 'Dragón Shantak', sprite: 'aladoFestival', scale: 4.2, hp: [30, 34], mass: 25, act: 5,
+    desc: 'Un ave enorme cubierta de escamas, con cabeza de caballo, de las Tierras del Sueño («La búsqueda onírica de la desconocida Kadath»). Sube y gana energía potencial (mgh); en la picada la convierte en cinética: ½mv².',
     next: (e) => (e.turn % 3 === 2 ? { kind: 'attack', dmg: 8 + 6 * e.carga, release: true, vertigo: 1, label: 'Picada: mgh → ½mv²' } : { kind: 'block', block: 6, dmg: 4, charge: true, label: 'Sube (h aumenta)' }),
   },
   reptilSinNombre: {

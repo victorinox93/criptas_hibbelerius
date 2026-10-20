@@ -902,6 +902,9 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   const cosmos: Record<string, number> = {};
   if (cape.cosmos) { cosmos.c = 1; cosmos.C = 0.55; }
   if (armor.cosmos && !armor.mecha) { cosmos.l = 1.15; cosmos.g = 0.6; }
+  // v0.54 · «veterano»: los valores negativos marcan el efecto de oro incandescente (ver makeTextureHolo)
+  if (cape.veterano) { cosmos.c = -1; cosmos.C = -0.55; }
+  if (armor.veterano && !armor.mecha) { cosmos.l = -1.1; cosmos.g = -0.6; }
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
   if (!Object.keys(holo).length && !Object.keys(cosmos).length) { makeTexture(scene, key, rows, ov); return pintarAccesorios(scene, key, av); }
@@ -965,6 +968,20 @@ function colorCosmico(x: number, y: number, t: number, brillo: number) {
   return `rgb(${c.map((v) => Math.round(Math.min(255, v * brillo))).join(',')})`;
 }
 
+/** v0.54 · Color «veterano»: oro incandescente, un destello blanco que barre en diagonal y brasas rojas que titilan */
+function colorVeterano(x: number, y: number, t: number, brillo: number) {
+  const tt = t / 20;
+  const ola = 0.5 + 0.5 * Math.sin((x + y) * 0.5 - tt * 0.6); // vetas de oro que se mueven
+  const m = (p: number[], q: number[], f: number) => p.map((v, i) => v + (q[i] - v) * f);
+  let c = m([120, 52, 8], [255, 196, 60], ola);
+  const barrido = ((tt * 2.2) % 70) - 15; // el destello cruza la tela cada pocos segundos
+  const d = Math.abs(x + y * 0.6 - barrido);
+  if (d < 3) c = m(c, [255, 252, 225], (3 - d) / 3);
+  const h = ((x * 2654435761) ^ (y * 40503)) >>> 0;
+  if (h % 13 === 0) c = m(c, [255, 70, 30], 0.5 + 0.5 * Math.sin(tt * 1.3 + (h % 53)));
+  return `rgb(${c.map((v) => Math.round(Math.min(255, v * brillo))).join(',')})`;
+}
+
 /** Como makeTexture, pero las letras de `holo` cambian de tono según su posición y el tiempo (efecto holograma) */
 export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number, number]>, t: number, cosmos: Record<string, number> = {}) {
   makeTexture(scene, key, rows, overrides);
@@ -973,7 +990,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const k = cosmos[row[x]];
-      if (k !== undefined) { ctx.fillStyle = colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
+      if (k !== undefined) { ctx.fillStyle = k < 0 ? colorVeterano(x, y, t, -k) : colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
       const h = holo[row[x]];
       if (!h) continue;
       // el tono va y viene dentro de su rango (rango 360 = arcoíris completo)

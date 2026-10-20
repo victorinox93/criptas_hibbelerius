@@ -12,7 +12,7 @@ import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widg
  *   · La Rampa de R'lyeh: ángulo de una pendiente, ejes inclinados y componentes del peso.
  *   · El Centroide del Ídolo: haz clic donde está el centroide de una figura compuesta.
  *   · ¿Cuál gira más fácil?: momento de inercia de aros, discos, esferas y varillas.
- * Cada acierto da Ergios; acertar las 3 rondas de un juego da Cordura. Cada juego, una vez por visita.
+ * Cada acierto da Ergios; acertar las 3 rondas de un juego da Cordura. v0.54: en cada visita sólo se ofrece UNO de los tres.
  */
 const G = 9.81;
 const ERGIOS_ACIERTO = 15;
@@ -61,8 +61,11 @@ export class GabineteScene extends Phaser.Scene {
     const seen = (run.seen ??= []);
     this.L(title(this, W / 2, 84, 'El Gabinete de Montemayor', 38, '#9ad8c8'));
     this.L(txt(this, W / 2, 120, '«Mis instrumentos siguen aquí. Si entiendes cómo se mueve un cuerpo rígido, el Abismo te paga.»', 18, CSS.dim, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
-    JUEGOS.forEach((j, i) => {
-      const y = 200 + i * 96;
+    // v0.54 · en cada visita el gabinete prepara UN solo juego (cambia según el piso y el tramo)
+    const hoy = JUEGOS[Math.abs((run.pos ?? 0) * 7 + (run.tramo ?? 1) * 5 + this.floor) % JUEGOS.length];
+    this.L(txt(this, W / 2, 168, 'Hoy Montemayor dejó preparado este experimento:', 17, CSS.gold).setOrigin(0.5, 0));
+    [hoy].forEach((j, i) => {
+      const y = 260 + i * 96;
       const hecho = seen.includes(this.clave(j.id));
       const fr = this.add.graphics();
       frame(fr, 120, y - 42, 720, 84, 0x0a1614, hecho ? UI.border : 0x3a8a74, 0.95);
