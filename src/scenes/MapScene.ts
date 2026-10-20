@@ -4,6 +4,7 @@ import { hojaDiario } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
 import { elegirFamiliar } from '../ui/familiarElegir';
+import { mascotaJunto } from '../ui/mascota';
 import { avisarPremios } from '../ui/avisos';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -275,7 +276,9 @@ export class MapScene extends Phaser.Scene {
 
     // héroe en el mapa
     const hp = current ? nodeXY(current) : { x: act5 ? 84 : 30, y: 280 };
+    const masc = mascotaJunto(this, hp.x - 20, hp.y - 26, 1); // v0.55 · compañero cosmético
     const hero = this.add.image(hp.x, hp.y - 46, 'hero').setScale(1);
+    void masc;
     this.tweens.add({ targets: hero, y: hero.y - 4, duration: 500, yoyo: true, repeat: -1 });
 
     // leyenda

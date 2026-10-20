@@ -1002,7 +1002,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
   });
   tex.refresh();
 }
-export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string; cara?: string; pies?: string; escudo?: string }
+export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string; cara?: string; pies?: string; escudo?: string; mascota?: string }
 
 const NPC = mirrorHalf([
   '.....kkk',

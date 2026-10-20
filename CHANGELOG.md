@@ -2,6 +2,15 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.55.0 · Compañeros (beta)
+
+- **Cosméticos de veterano más exigentes:** el Manto del Desvelado ahora pide **10 horas** jugadas (antes 5) y la Coraza de la Eternidad **15 horas** (antes 10).
+- **Compañero (pestaña nueva del Vestidor):** cualquier familiar que ya te acompañó en una expedición se puede quedar contigo **de adorno**.
+  - Aparece flotando a tu lado en el menú, en el mapa y en el combate (cuando no llevas un familiar de verdad).
+  - También sale junto a tu héroe en la ficha del ranking.
+  - Los que no has descubierto salen como «???» con la pista de dónde conseguirlos.
+  - Se guarda con tu avatar en el servidor, así que se ve en cualquier computadora.
+
 ## v0.54.0 · Veteranos del Abismo (beta)
 
 - **Dragón Shantak:** la Criatura Alada de «El Festival» ahora es el Dragón Shantak, con un dibujo nuevo (ave escamosa con cabeza de caballo y alas de murciélago). Hace lo mismo: sube (mgh) y cae en picada (½mv²).

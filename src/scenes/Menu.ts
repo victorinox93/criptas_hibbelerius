@@ -4,6 +4,7 @@ import { api, isOnline } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
+import { mascotaJunto } from '../ui/mascota';
 import { T } from '../textos';
 import { FORM_URL, W, H } from '../config';
 import { starterDeck } from '../data/cards';
@@ -55,6 +56,7 @@ export class MenuScene extends Phaser.Scene {
 
     torch(this, 300, 330);
     this.add.image(300, 352, 'i_fire').setScale(5);
+    mascotaJunto(this, 112, 372, 3); // v0.55 · compañero cosmético
     const hero = this.add.image(200, 330, 'hero').setScale(3);
     this.tweens.add({ targets: hero, y: 326, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
