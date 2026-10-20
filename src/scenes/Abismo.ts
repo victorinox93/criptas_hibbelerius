@@ -65,6 +65,8 @@ export class AbismoScene extends Phaser.Scene {
     this.escritura = null;
     this.premio = null;
     this.dientesIni = [];
+    Game.preparando = !data.fase; // v0.60 · sin fase = expedición nueva (todavía no hay partida)
+    this.events.once('shutdown', () => { Game.preparando = false; });
     this.cameras.main.fadeIn(700);
     audio.play('abismo');
     this.fondo();
@@ -75,7 +77,7 @@ export class AbismoScene extends Phaser.Scene {
     else if (data.fase === 'observatorio') { audio.play('abismo2'); this.observatorio(); }
     else if (data.fase === 'colocar') this.sacamuelas('colocar', () => fadeTo(this, 'Map'));
     else if (data.fase === 'astro') {
-      // v0.59 · premio de un Astro Errante: un sobre (te quedas con 1 carta) y, la primera vez, su cosmético
+      // v0.59 · premio de un Astro Ambulante: un sobre (te quedas con 1 carta) y, la primera vez, su cosmético
       const a = ASTROS[data.astro ?? 'mercurio'];
       this.sobrePremio(() => fadeTo(this, 'Map'));
       const corto = a.nombre.split(',')[0];
@@ -920,6 +922,7 @@ export class AbismoScene extends Phaser.Scene {
 
   /** Crea la expedición del Abismo y baja al mapa */
   private empezar() {
+    Game.preparando = false;
     const p = this.elegido;
     const d = this.d;
     // «L-» hace que el servidor la registre aunque no se haya iniciado en línea (src/backend.ts → updateRun)

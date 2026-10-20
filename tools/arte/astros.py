@@ -1,4 +1,4 @@
-# v0.59 · Los Astros Errantes: planetas del horror cósmico (nodos especiales del Abismo).
+# v0.59 · Los Astros Ambulantes: planetas del horror cósmico (nodos especiales del Abismo).
 # Uso: python3 tools/arte/astros.py [vista.png] → escribe src/art/astros_sprites.ts
 # Mismas herramientas que tools/arte/mythos.py, con una paleta propia (colores de planeta).
 import math, sys
@@ -173,7 +173,7 @@ for cx, cy, r in ((22, 44, 2.4), (47, 26, 2), (44, 46, 1.6)): disc(g, cx, cy, r,
 disc(g, 34, 34, 9, 'W', 6.5); disc(g, 34, 34, 6, 'H', 5.5); disc(g, 34, 34, 2.4, 'k', 5)
 S['sol'] = rows(outline(g))
 
-out = ['// ════════ v0.59 · LOS ASTROS ERRANTES · generado con tools/arte/astros.py (python3) ════════',
+out = ['// ════════ v0.59 · LOS ASTROS AMBULANTES · generado con tools/arte/astros.py (python3) ════════',
        '// Planetas del horror cósmico (diseños originales). Paleta propia: ASTROS_PAL.',
        f'export const ASTROS_PAL: Record<string, string> = {{ {", ".join(f"{k}: {v!r}" for k, v in PAL.items())} }};',
        'export const ASTROS_SPRITES: Record<string, string[]> = {']

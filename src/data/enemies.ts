@@ -665,10 +665,10 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
-  // ── v0.59 · Los Astros Errantes (nodos especiales del Abismo: src/data/astros.ts) ──
+  // ── v0.59 · Los Astros Ambulantes (nodos especiales del Abismo: src/data/astros.ts) ──
   astro_mercurio: {
     id: 'astro_mercurio', name: 'Mercurio, el Mensajero Veloz', sprite: 'astro_mercurio', scale: 3.4, hp: [95, 105], mass: 3.3e23, umbral: 15, act: 5,
-    desc: 'Astro errante. El planeta más rápido: una vuelta al Sol en 88 días. Pega muchas veces seguidas y te marea. DETENLO con un golpe de F ≥ umbral.',
+    desc: 'Astro ambulante. El planeta más rápido: una vuelta al Sol en 88 días. Pega muchas veces seguidas y te marea. DETENLO con un golpe de F ≥ umbral.',
     next: (e) => {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 4, hits: 4, label: 'Órbita de 88 días' };
@@ -679,7 +679,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   astro_venus: {
     id: 'astro_venus', name: 'Venus, la Nube que Quema', sprite: 'astro_venus', scale: 3.4, hp: [100, 110], mass: 4.9e24, umbral: 16, act: 5,
-    desc: 'Astro errante. Lluvia de ácido sulfúrico y 92 atmósferas de presión: antes de su golpe más fuerte pierdes TODO tu Bloqueo. Gira al revés y te confunde.',
+    desc: 'Astro ambulante. Lluvia de ácido sulfúrico y 92 atmósferas de presión: antes de su golpe más fuerte pierdes TODO tu Bloqueo. Gira al revés y te confunde.',
     next: (e) => {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 7, hemorragia: 3, label: 'Lluvia de ácido' };
@@ -690,7 +690,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   astro_marte: {
     id: 'astro_marte', name: 'Marte, el Ojo Rojo', sprite: 'astro_marte', scale: 3.2, hp: [88, 96], mass: 6.4e23, umbral: 17, act: 5,
-    desc: 'Astro errante. El dios de la guerra, con sus lunas Fobos (miedo) y Deimos (terror). Mientras nadie lo detenga, su golpe crece cada turno.',
+    desc: 'Astro ambulante. El dios de la guerra, con sus lunas Fobos (miedo) y Deimos (terror). Mientras nadie lo detenga, su golpe crece cada turno.',
     next: (e) => {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 17 + 3 * e.inercia, label: 'Dios de la guerra' };
@@ -711,7 +711,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   astro_jupiter: {
     id: 'astro_jupiter', name: 'Júpiter, el Gigante', sprite: 'astro_jupiter', scale: 2.6, hp: [140, 150], mass: 1.9e27, umbral: 22, act: 5, imparable: 2,
-    desc: 'Astro errante. 318 veces la masa de la Tierra y una tormenta que es un ojo. Su gravedad (24.8 m/s²) te ATURDE. Después de detenerlo queda IMPARABLE 2 turnos.',
+    desc: 'Astro ambulante. 318 veces la masa de la Tierra y una tormenta que es un ojo. Su gravedad (24.8 m/s²) te ATURDE. Después de detenerlo queda IMPARABLE 2 turnos.',
     next: (e) => {
       switch (e.turn % 4) {
         case 0: return { kind: 'attack', dmg: 12, aturde: true, label: 'Gravedad de 24.8 m/s²' };
@@ -723,7 +723,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   astro_saturno: {
     id: 'astro_saturno', name: 'Saturno, el que Devora a sus Hijos', sprite: 'astro_saturno', scale: 2.6, hp: [128, 136], mass: 5.7e26, umbral: 19, act: 5,
-    desc: 'Astro errante. Tan poco denso que flotaría en el agua. Sus anillos de dientes lo protegen, se cura devorando una de sus lunas y te roba J.',
+    desc: 'Astro ambulante. Tan poco denso que flotaría en el agua. Sus anillos de dientes lo protegen, se cura devorando una de sus lunas y te roba J.',
     next: (e) => {
       switch (e.turn % 3) {
         case 0: return { kind: 'attack', dmg: 9, hits: 2, label: 'Anillo de dientes' };
@@ -734,7 +734,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   astro_sol: {
     id: 'astro_sol', name: 'El Sol, el Ojo que Arde', sprite: 'astro_sol', scale: 2.6, hp: [165, 175], mass: 2e30, umbral: 22, act: 5, imparable: 1,
-    desc: 'Astro errante, el más fuerte. Te transfiere CALOR, sus llamaradas atraviesan tu Bloqueo y se cura con fusión nuclear (E = m·c²).',
+    desc: 'Astro ambulante, el más fuerte. Te transfiere CALOR, sus llamaradas atraviesan tu Bloqueo y se cura con fusión nuclear (E = m·c²).',
     next: (e) => {
       switch (e.turn % 4) {
         case 0: return { kind: 'attack', dmg: 9, calor: 3, label: 'Viento solar' };

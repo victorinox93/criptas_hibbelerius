@@ -2,7 +2,20 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
-## v0.59.0 · Los Astros Errantes (beta)
+## v0.60.0 · El Portal del Abismo (beta)
+
+- **Portal del Abismo en el menú** (para todos, bloqueado por ahora): un remolino verde y morado que llama la atención. Al pasar el cursor dice «Próximamente · Sólo para quienes hayan vencido a AM».
+- **Arreglo:** al abrir los sobres iniciales del Abismo algunas palabras de las cartas salían borradas, como si tuvieras poca Cordura. Era la Locura de tu partida ANTERIOR; ahora no cuenta mientras armas la expedición.
+- **Los Astros Errantes ahora se llaman Astros Ambulantes.**
+- **Un casco o escudo por astro** (además de lo que ya daban):
+  - Casco Alado de Mercurio.
+  - Escudo de las Nubes de Venus.
+  - Escudo de Fobos y Deimos.
+  - Escudo de los Anillos.
+  - Escudo del Ojo Solar.
+  - En total los astros dan 12 cosméticos.
+
+## v0.59.0 · Los Astros Errantes (beta) — renombrados «Ambulantes» en la v0.60
 
 - **Nodo nuevo en el Abismo: Astro Errante** (1 o 2 por tramo). Los planetas despertaron y bajaron al Abismo. Son más fuertes que una élite y más débiles que un jefe, y cada uno pelea con su física:
   - **Mercurio, el Mensajero Veloz:** muchos golpes seguidos y te marea (v = 2πr/T).

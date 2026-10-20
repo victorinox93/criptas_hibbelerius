@@ -156,7 +156,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     },
   },
   {
-    titulo: 'Los Astros Errantes',
+    titulo: 'Los Astros Ambulantes',
     texto: 'Los planetas despertaron y bajaron al Abismo. En cada tramo hay 1 o 2 nodos de planeta: son más fuertes que una élite. Si ganas abres un sobre y, la primera vez, te llevas su cosmético.',
     dibujo: (s, L) => {
       const ast: [string, number, number, number][] = [['astro_mercurio', 100, 226, 1.3], ['astro_venus', 220, 226, 1.1], ['astro_marte', 340, 226, 1.1], ['astro_jupiter', 470, 226, 0.9], ['astro_saturno', 630, 226, 1], ['astro_sol', 800, 226, 0.9]];
@@ -164,7 +164,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
       const filas: [string, string][] = [
         ['Mercurio · Venus · Marte', 'Rapidez orbital, presión de 92 atm y el peso en otro planeta (Marte trae a sus lunas Fobos y Deimos).'],
         ['Júpiter · Saturno · el Sol', 'Gravedad de 24.8 m/s², densidad (flotaría en agua) y E = m·c². El Sol sólo sale desde el tramo 2.'],
-        ['Premio', 'Un sobre (te quedas con 1 carta). La primera vez, un cosmético: sandalias, yelmo, escudo, anillos, corona… Si vences a los 6: la capa Heliosfera.'],
+        ['Premio', 'Un sobre (te quedas con 1 carta). La primera vez, su casco o escudo (y algo más): casco alado, yelmo, anillos, corona y 4 escudos. Si vences a los 6: la capa Heliosfera.'],
       ];
       filas.forEach(([nom, d], i) => {
         const y = 292 + i * 64;

@@ -61,6 +61,7 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: hero, y: 326, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     this.progreso();
+    this.portalAbismo();
     button(this, 70, 22, 110, 26, T.menu.creditos, () => fadeTo(this, 'Credits'), { size: 15 });
     // regalo diario de Layla (fomenta entrar seguido)
     this.avisosHuellas();
@@ -157,6 +158,47 @@ export class MenuScene extends Phaser.Scene {
     if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 46, 330, 38, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
     // al volver del diagnóstico inicial: directo a elegir la gravedad
     if (iniciar) this.time.delayedCall(400, () => this.pickGravity());
+  }
+
+  /**
+   * v0.60 · El portal del Abismo (bloqueado por ahora, para todos): llama la atención con
+   * un remolino verde y morado; al pasar el cursor dice que pronto se abrirá para quien venza a AM.
+   */
+  private portalAbismo() {
+    const x = 432, y = 330;
+    const c = this.add.container(x, y).setDepth(5);
+    const halo = this.add.ellipse(0, 0, 190, 140, 0x9a6ad0, 0.22).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: halo, scale: 1.18, alpha: 0.08, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const g = this.add.graphics();
+    frame(g, -78, -56, 156, 112, 0x07050e, 0x9a6ad0, 0.95);
+    // remolino: arcos verdes y morados que giran
+    const remo = this.add.graphics();
+    for (let k = 0; k < 6; k++) {
+      remo.lineStyle(3, k % 2 ? 0x7fe8d8 : 0xc070ff, 0.55 - k * 0.06);
+      remo.beginPath(); remo.arc(0, 0, 14 + k * 7, k * 1.1, k * 1.1 + 3.6); remo.strokePath();
+    }
+    remo.setY(-12);
+    this.tweens.add({ targets: remo, rotation: Math.PI * 2, duration: 5200, repeat: -1 });
+    const ojo = this.add.image(0, -12, 'i_ojo').setScale(2.2).setTint(0x9affc8);
+    this.tweens.add({ targets: ojo, alpha: 0.35, duration: 800, yoyo: true, repeat: -1 });
+    const t1 = txt(this, 0, 20, 'BAJAR AL ABISMO', 17, '#b8ffd8').setOrigin(0.5).setStroke('#000', 4);
+    const t2 = txt(this, 0, 40, '🔒 Próximamente', 14, '#ffb0ff').setOrigin(0.5).setStroke('#000', 3);
+    this.tweens.add({ targets: t1, scale: 1.06, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    c.add([halo, g, remo, ojo, t1, t2]);
+    // letrero al pasar el cursor
+    const tip = this.add.container(x, y - 98).setDepth(60).setVisible(false);
+    const tt = txt(this, 0, 0, 'Próximamente\nSólo para quienes hayan vencido a AM.', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
+    const tg = this.add.graphics();
+    frame(tg, -tt.width / 2 - 14, -tt.height / 2 - 8, tt.width + 28, tt.height + 16, 0x1a0a2a, 0xc070ff, 0.97);
+    tip.add([tg, tt]);
+    const zona = this.add.zone(x, y, 156, 112).setInteractive({ useHandCursor: true }).setDepth(6);
+    zona.on('pointerover', () => { tip.setVisible(true); halo.setFillStyle(0x7fe8d8, 0.3); });
+    zona.on('pointerout', () => { tip.setVisible(false); halo.setFillStyle(0x9a6ad0, 0.22); });
+    zona.on('pointerdown', () => {
+      audio.sfx('wrong');
+      tip.setVisible(true);
+      this.tweens.add({ targets: c, x: x + 6, duration: 50, yoyo: true, repeat: 3, onComplete: () => c.setX(x) });
+    });
   }
 
   /** v0.30: ¿tus signos ayudaron a alguien? ¿honraron tu lápida? (una vez por sesión) */
