@@ -1,4 +1,4 @@
-// ════════ v0.59 · LOS ASTROS ERRANTES · generado con tools/arte/astros.py (python3) ════════
+// ════════ v0.59 · LOS ASTROS AMBULANTES · generado con tools/arte/astros.py (python3) ════════
 // Planetas del horror cósmico (diseños originales). Paleta propia: ASTROS_PAL.
 export const ASTROS_PAL: Record<string, string> = { k: '#050608', W: '#f4f0e8', w: '#c8c4bc', F: '#ff4a6a', E: '#b8ff9a', r: '#4e1626', R: '#a43a4c', q: '#9a98a0', Q: '#5e5c66', j: '#3a3842', e: '#f0dc9a', f: '#c8a85a', g: '#8a6a2a', v: '#7ad84a', z: '#d0582e', Z: '#8a2e16', X: '#4a160c', a: '#e8c8a0', b: '#c08a5a', B: '#7a4a2a', o: '#e06a3a', s: '#e8d8a8', S: '#b8a070', n: '#6a5a3a', i: '#d8d0c0', x: '#fffbe0', y: '#ffe070', h: '#ffb030', H: '#e0601a', O: '#9a2a0a', m: '#6a2a8a', M: '#3a1450', p: '#c890e0' };
 export const ASTROS_SPRITES: Record<string, string[]> = {

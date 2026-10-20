@@ -34,7 +34,7 @@ const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   observatorio: { icon: 'i_telescopio', color: 0xc8b8ff },
   sueno: { icon: 'i_sueno', color: 0x9a8ae0 },
   gabinete: { icon: 'i_angle', color: 0x7fe8d8 },
-  astro: { icon: 'i_astro', color: 0xffb030 }, // v0.59 · Astros Errantes
+  astro: { icon: 'i_astro', color: 0xffb030 }, // v0.59 · Astros Ambulantes
 };
 const NODE_INFO = Object.fromEntries(
   Object.entries(NODE_STYLE).map(([k, v]) => [k, { ...v, name: T.mapa.nodos[k][0], desc: T.mapa.nodos[k][1] }]),

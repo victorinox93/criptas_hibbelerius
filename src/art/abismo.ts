@@ -115,7 +115,7 @@ export function generateAbismoTextures(scene: Phaser.Scene) {
   for (const [k, rows] of Object.entries(ABISMO_SPRITES)) makeTexture(scene, k, rows, ABISMO_PAL);
   for (const [k, rows] of Object.entries(MYTHOS_SPRITES)) makeTexture(scene, k, rows, ABISMO_PAL); // v0.51
   for (const [k, f] of Object.entries(FIG_ABISMO)) makeTexture(scene, k, f.rows, f.ov);
-  for (const [k, rows] of Object.entries(ASTROS_SPRITES)) makeTexture(scene, k, rows, ASTROS_PAL); // v0.59 · Astros Errantes
+  for (const [k, rows] of Object.entries(ASTROS_SPRITES)) makeTexture(scene, k, rows, ASTROS_PAL); // v0.59 · Astros Ambulantes
   // ícono del nodo «astro» en el mapa: un planeta con anillo
   makeTexture(scene, 'i_astro', ['....yyy....', '...yyyyy...', 'iiShhhhhSii', '..iiiiiii..', '...HHHHH...', '....HHH....'], { y: '#ffe070', h: '#ffb030', H: '#e0601a', S: '#b8a070', i: '#e8dcc0' });
 }

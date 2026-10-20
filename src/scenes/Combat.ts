@@ -154,7 +154,7 @@ export class CombatScene extends Phaser.Scene {
   private telescopio = false; // v0.58 · ves las intenciones ocultas (telescopio del Astrónomo)
   private radianes = false; // v0.57 · la Calculadora Primigenia te cambió a RAD: Ataques ×0.6
   private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
-  private astro?: string; // v0.59 · Astro Errante (src/data/astros.ts)
+  private astro?: string; // v0.59 · Astro Ambulante (src/data/astros.ts)
   private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
   private blockPerTurn = 0; // Resistencia del Material
   private orbit = 0; // Órbita Cerrada (masa del satélite)
@@ -570,7 +570,7 @@ export class CombatScene extends Phaser.Scene {
         this.time.delayedCall(900, () => this.anunciarEstado('PESADILLA', 'La vida que pierdas en el sueño no es real: al despertar la recuperas. La Cordura, sí.', 0x5a4aa8, '#c8b8ff'));
       }
       if (this.astro) {
-        // v0.59 · Astro Errante: el techo del Abismo se abre al espacio
+        // v0.59 · Astro Ambulante: el techo del Abismo se abre al espacio
         this.add.rectangle(0, 0, W, H, 0x050418, 0.55).setOrigin(0).setDepth(-6);
         for (let i = 0; i < 70; i++) {
           const st = this.add.circle(Math.random() * W, 20 + Math.random() * 320, Math.random() < 0.15 ? 2 : 1, 0xfff4d8, 0.7).setDepth(-4);
@@ -3894,7 +3894,7 @@ export class CombatScene extends Phaser.Scene {
       return true;
     }
     if (this.astro) {
-      // v0.59 · Astro Errante vencido: cosmético (la primera vez) y un sobre
+      // v0.59 · Astro Ambulante vencido: cosmético (la primera vez) y un sobre
       const a = ASTROS[this.astro];
       const nuevo = !(Game.codex.flags ?? []).includes(`abismo_astro_${this.astro}`);
       if (!run.debug) codexFlag(`abismo_astro_${this.astro}`);

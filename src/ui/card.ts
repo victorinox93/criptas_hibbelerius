@@ -158,7 +158,7 @@ export function cardView(s: Phaser.Scene, x: number, y: number, inst: CardInst, 
 
   c.refresh = (cx: CalcCtx, playable = true) => {
     const st = statsOf(inst);
-    body.setText(borrarTexto(def.text(st, cx), Game.run?.entropia ?? 0, inst.uid));
+    body.setText(borrarTexto(def.text(st, cx), Game.preparando ? 0 : Game.run?.entropia ?? 0, inst.uid));
     // el texto se ajusta bajando el tamaño de letra (no aplastándolo)
     const maxH = CH / 2 - 8 - (-CH / 2 + 114), maxW = CW - 14;
     let fs = 20;
