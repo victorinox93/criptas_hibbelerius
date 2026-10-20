@@ -506,6 +506,7 @@ export class CombatScene extends Phaser.Scene {
         this.calc('¡QUIEBRE! Tu Locura llegó a 100: algo salió de entre las ecuaciones…');
         this.cameras.main.flash(600, 40, 120, 40);
         logEvent('quiebre', '', '', { piso: this.floor });
+        if (this.acto === 5 && !run.debug) codexFlag('logro_quiebre_abismo'); // v0.56 · Casco de la Entropía
       }
     }
     if (e >= ENTROPIA.inquieto) {

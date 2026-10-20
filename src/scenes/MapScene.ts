@@ -150,7 +150,7 @@ export class MapScene extends Phaser.Scene {
     // v0.46 · el mutador del tramo, bajo el título
     const mu = act5 ? MUTADOR(run.mutador) : undefined;
     if (mu) {
-      const mt = txt(this, W / 2, H - 66, `Mutador del tramo: ${mu.nombre}  ⓘ`, 17, mu.color).setOrigin(0.5, 0).setDepth(5).setStroke('#000', 4);
+      const mt = txt(this, W / 2, H - 76, `Mutador del tramo: ${mu.nombre}  ⓘ`, 17, mu.color).setOrigin(0.5, 0).setDepth(5).setStroke('#000', 4);
       tip.attach(mt.setInteractive(), `Mutador: ${mu.nombre}`, `${mu.texto}\nCambia en cada tramo.`, 20);
       if (run.pos === -1) this.tweens.add({ targets: mt, scale: { from: 1.5, to: 1 }, duration: 600, ease: 'Back.out' });
     }
@@ -283,11 +283,16 @@ export class MapScene extends Phaser.Scene {
 
     // leyenda
     const types: NodeType[] = act5 ? ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'boca', 'observatorio', 'sueno', 'gabinete', 'fogata', 'jefe'] : ['combate', 'elite', 'evento', 'santuario', 'runa', 'mercader', 'taberna', 'fogata', 'jefe'];
-    const paso = types.length > 10 ? Math.floor(936 / types.length) : types.length > 9 ? 94 : 105;
-    types.forEach((t, i) => {
+    // v0.56 · con más de 10 tipos (el Abismo) la leyenda va en dos filas para que no se encimen
+    const dosFilas = types.length > 10;
+    const porFila = dosFilas ? Math.ceil(types.length / 2) : types.length;
+    const paso = dosFilas ? Math.floor(936 / porFila) : types.length > 9 ? 94 : 105;
+    types.forEach((t, k) => {
+      const i = k % porFila, fila = Math.floor(k / porFila);
       const x = 22 + i * paso;
-      this.add.image(x, H - 22, NODE_INFO[t].icon).setScale(2.6);
-      const lt = txt(this, x + 16, H - 33, t === 'jefe' && act5 ? JEFES_ABISMO[run.jefe ?? 'geometra'].nombre.replace(/^(El|La) /, '') : t === 'jefe' && act4 ? 'AM' : t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, 18, CSS.dim);
+      const yI = dosFilas ? H - 40 + fila * 24 : H - 22;
+      this.add.image(x, yI, NODE_INFO[t].icon).setScale(dosFilas ? 2 : 2.6);
+      const lt = txt(this, x + 14, yI - (dosFilas ? 9 : 11), t === 'jefe' && act5 ? JEFES_ABISMO[run.jefe ?? 'geometra'].nombre.replace(/^(El|La) /, '') : t === 'jefe' && act4 ? 'AM' : t === 'jefe' && act3 ? 'Hibbelerius' : t === 'jefe' && act2 ? T.mapa.jefe2[0] : NODE_INFO[t].name, dosFilas ? 16 : 18, CSS.dim);
       if (lt.width > paso - 21) lt.setScale((paso - 21) / lt.width, 1);
     });
 

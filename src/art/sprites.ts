@@ -905,6 +905,9 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   // v0.54 · «veterano»: los valores negativos marcan el efecto de oro incandescente (ver makeTextureHolo)
   if (cape.veterano) { cosmos.c = -1; cosmos.C = -0.55; }
   if (armor.veterano && !armor.mecha) { cosmos.l = -1.1; cosmos.g = -0.6; }
+  // v0.56 · «infrarrojo»: valores ≥ 10 (brillo = valor − 10)
+  if (cape.infrarrojo) { cosmos.c = 11; cosmos.C = 10.6; }
+  if (armor.infrarrojo && !armor.mecha) { cosmos.l = 11.1; cosmos.g = 10.65; }
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
   if (!Object.keys(holo).length && !Object.keys(cosmos).length) { makeTexture(scene, key, rows, ov); return pintarAccesorios(scene, key, av); }
@@ -968,6 +971,17 @@ function colorCosmico(x: number, y: number, t: number, brillo: number) {
   return `rgb(${c.map((v) => Math.round(Math.min(255, v * brillo))).join(',')})`;
 }
 
+/** v0.56 · Color «infrarrojo»: el calor se mueve en manchas y se pinta con la escala de una cámara térmica */
+function colorInfrarrojo(x: number, y: number, t: number, brillo: number) {
+  const tt = t / 25;
+  const calor = 0.5 + 0.25 * Math.sin(x * 0.35 + tt * 0.5) + 0.25 * Math.sin(y * 0.28 - tt * 0.7 + Math.sin(x * 0.2 + tt * 0.3));
+  const v = Math.max(0, Math.min(1, calor * brillo));
+  const escala = [[10, 0, 20], [60, 0, 110], [150, 0, 150], [230, 30, 50], [255, 140, 0], [255, 225, 60], [255, 255, 235]];
+  const p = v * (escala.length - 1), i = Math.min(escala.length - 2, Math.floor(p)), f = p - i;
+  const c = escala[i].map((a, j) => a + (escala[i + 1][j] - a) * f);
+  return `rgb(${c.map(Math.round).join(',')})`;
+}
+
 /** v0.54 · Color «veterano»: oro incandescente, un destello blanco que barre en diagonal y brasas rojas que titilan */
 function colorVeterano(x: number, y: number, t: number, brillo: number) {
   const tt = t / 20;
@@ -990,7 +1004,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const k = cosmos[row[x]];
-      if (k !== undefined) { ctx.fillStyle = k < 0 ? colorVeterano(x, y, t, -k) : colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
+      if (k !== undefined) { ctx.fillStyle = k < 0 ? colorVeterano(x, y, t, -k) : k >= 10 ? colorInfrarrojo(x, y, t, k - 10) : colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
       const h = holo[row[x]];
       if (!h) continue;
       // el tono va y viene dentro de su rango (rango 360 = arcoíris completo)

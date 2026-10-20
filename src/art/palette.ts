@@ -34,6 +34,8 @@ export interface Cosmetico {
   cosmos?: boolean;
   /** v0.54 · efecto «veterano»: oro incandescente con un destello que recorre la tela y brasas (por horas de juego) */
   veterano?: boolean;
+  /** v0.56 · efecto «infrarrojo»: como una cámara térmica (negro → violeta → rojo → amarillo → blanco), con calor que se mueve */
+  infrarrojo?: boolean;
   /** v0.36 · sólo se consigue con un set de la Tienda de Layla (no sale suelto en «Colores») */
   enSet?: boolean;
 }
@@ -99,6 +101,8 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Gabardina de los Whateley', c: '#6a7a3a', C: '#2a3418', logro: 'abismo_dunwich' },
   { name: 'Manto del Geómetra', c: '#9a6ad0', C: '#3a2458', holo: 260, rango: 60, logro: 'abismo_geometra' },
   { name: 'Manto del Desvelado (veterano)', c: '#e8b030', C: '#6a3a08', veterano: true, logro: 'abismo_veterano5' },
+  // v0.56 · infrarrojo (ley de Wien: lo más caliente brilla más blanco)
+  { name: 'Llama Infrarroja', c: '#ff5a1a', C: '#5a0a3a', infrarrojo: true, logro: 'abismo_calor3' },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -137,6 +141,7 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Túnica del Soñador de Celephaïs', l: '#d8c8ff', g: '#6a5ab8', holo: 250, rango: 50, logro: 'abismo_sueno1' },
   { name: 'Hábito del Acólito de Yog-Sothoth', l: '#5a4a9a', g: '#241a4a', logro: 'abismo_yogSothoth' },
   { name: 'Coraza de la Eternidad (veterano)', l: '#f0c040', g: '#7a4010', veterano: true, logro: 'abismo_veterano10' },
+  { name: 'Cuerpo Negro (infrarrojo)', l: '#ff8a2a', g: '#3a0a4a', infrarrojo: true, logro: 'abismo_calor6' },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },
