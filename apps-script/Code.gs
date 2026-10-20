@@ -321,8 +321,9 @@ var ACTIONS = {
       if (!who || !who.alias) return;
       if (soloGrupo && who.grupo !== u.grupo) return;
       if ((num_(p[7]) === 5) !== abismo) return; // acto 5 = Abismo
-      var b = best[p[1]] || (best[p[1]] = { alias: who.alias, avatar: who.avatar, grupo: who.grupo, puntaje: 0, piso: 0, victorias: 0, gravedad: 0, partidas: 0, yo: p[1] === u.mat });
+      var b = best[p[1]] || (best[p[1]] = { alias: who.alias, avatar: who.avatar, grupo: who.grupo, puntaje: 0, piso: 0, victorias: 0, gravedad: 0, partidas: 0, minutos: 0, yo: p[1] === u.mat });
       b.partidas++;
+      b.minutos += num_(p[19]); // v0.54 · tiempo jugado en este modo
       b.puntaje = Math.max(b.puntaje, num_(p[10]));
       b.piso = Math.max(b.piso, num_(p[8]));
       if (p[11] === 'victoria') {
@@ -337,7 +338,7 @@ var ACTIONS = {
     var top = list.slice(0, 25);
     if (mine >= 25) top.push(list[mine]);
     return { ok: true, modo: abismo ? 'abismo' : 'normal', grupo: u.grupo, total: list.length, lista: top.map(function (x) {
-      return { alias: x.alias, avatar: x.avatar, grupo: x.grupo, puntaje: x.puntaje, piso: x.piso, victorias: x.victorias, gravedad: x.gravedad, partidas: x.partidas, yo: x.yo, lugar: list.indexOf(x) + 1 };
+      return { alias: x.alias, avatar: x.avatar, grupo: x.grupo, puntaje: x.puntaje, piso: x.piso, victorias: x.victorias, gravedad: x.gravedad, partidas: x.partidas, minutos: Math.round(x.minutos), yo: x.yo, lugar: list.indexOf(x) + 1 };
     }) };
   },
 

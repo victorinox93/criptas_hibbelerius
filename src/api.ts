@@ -58,6 +58,7 @@ export interface RankRow {
   victorias: number;
   gravedad: number;
   partidas: number;
+  minutos?: number; // v0.54 · tiempo jugado (en el modo del ranking); falta si el servidor es viejo
   yo: boolean;
   lugar: number;
 }

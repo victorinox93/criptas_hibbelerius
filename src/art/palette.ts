@@ -32,6 +32,8 @@ export interface Cosmetico {
   id?: string; tienda?: number;
   /** v0.35 · efecto «cósmico»: nebulosa que se mueve y estrellas que titilan */
   cosmos?: boolean;
+  /** v0.54 · efecto «veterano»: oro incandescente con un destello que recorre la tela y brasas (por horas de juego) */
+  veterano?: boolean;
   /** v0.36 · sólo se consigue con un set de la Tienda de Layla (no sale suelto en «Colores») */
   enSet?: boolean;
 }
@@ -92,6 +94,11 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   // v0.51 · Las Tierras del Sueño
   { name: 'Bosque de los Mil Retoños', c: '#2a1a2a', C: '#0a060a', logro: 'abismo_shubNiggurath' },
   { name: 'Vela del Barco Blanco', c: '#e8ecff', C: '#9aa8d8', holo: 220, rango: 20, logro: 'abismo_suenos' },
+  // v0.54 · más ropa del mythos y el premio por horas de juego
+  { name: "Alas de R'lyeh", c: '#1e5a3a', C: '#0a2a1a', logro: 'abismo_cthulhu' },
+  { name: 'Gabardina de los Whateley', c: '#6a7a3a', C: '#2a3418', logro: 'abismo_dunwich' },
+  { name: 'Manto del Geómetra', c: '#9a6ad0', C: '#3a2458', holo: 260, rango: 60, logro: 'abismo_geometra' },
+  { name: 'Manto del Desvelado (veterano)', c: '#e8b030', C: '#6a3a08', veterano: true, logro: 'abismo_veterano5' },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -123,6 +130,13 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   // v0.51 · Las Tierras del Sueño
   { name: 'Escamas de Yig', l: '#5aa86a', g: '#1e4a2a', logro: 'abismo_yig' },
   { name: 'Piedra de las Cinco Cabezas', l: '#8a8478', g: '#3a362e', logro: 'abismo_cincoCabezas' },
+  // v0.54 · túnicas y ropa del mythos
+  { name: 'Túnica de la Orden Esotérica de Dagón', l: '#2a6a6a', g: '#0e2a2a', logro: 'abismo_dagon' },
+  { name: 'Saco de Tweed de la Miskatonic', l: '#8a6a44', g: '#3e2c1a', logro: 'abismo_diario8' },
+  { name: 'Sudario del Faraón Negro', l: '#2a2030', g: '#08060c', cosmos: true, logro: 'abismo_nyarlathotep' },
+  { name: 'Túnica del Soñador de Celephaïs', l: '#d8c8ff', g: '#6a5ab8', holo: 250, rango: 50, logro: 'abismo_sueno1' },
+  { name: 'Hábito del Acólito de Yog-Sothoth', l: '#5a4a9a', g: '#241a4a', logro: 'abismo_yogSothoth' },
+  { name: 'Coraza de la Eternidad (veterano)', l: '#f0c040', g: '#7a4010', veterano: true, logro: 'abismo_veterano10' },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },

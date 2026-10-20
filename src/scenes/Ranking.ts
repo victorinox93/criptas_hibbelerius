@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TRAMOS } from '../data/abismo_modo';
+import { PISOS_TRAMO, TRAMOS } from '../data/abismo_modo';
 import { api, isOnline, RankRow } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -15,6 +15,11 @@ import { button, Btn, dungeonBackground, embers, fadeTo, frame, title, txt } fro
 
 const PER_PAGE = 6;
 const ROW_H = 53;
+/** v0.54 · 135 → «2 h 15 min» */
+function tiempoJugado(min: number) {
+  const h = Math.floor(min / 60), m = Math.round(min % 60);
+  return h ? `${h} h ${m} min` : `${m} min`;
+}
 const COLS = [56, 100, 150, 420, 560, 680, 800];
 
 export class RankingScene extends Phaser.Scene {
@@ -119,7 +124,7 @@ export class RankingScene extends Phaser.Scene {
       makeHeroFromAvatar(this, { ...av, helm: av.helm ?? 'penacho', cape: av.cape ?? 0 }, key);
       R(this.add.image(COLS[1] + 20, y + 21, key).setScale(1.12));
       zona.on('pointerup', () => this.ficha(p, av, key));
-      const name = txt(this, COLS[2], y + 6, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
+      const name = txt(this, COLS[2], y + 2, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
       if (name.width > 250) name.setScale(250 / name.width, 1);
       R(name);
       // insignias: ojo rojo (venció a AM) y ojo morado (venció a un Primigenio del Abismo)
@@ -135,11 +140,14 @@ export class RankingScene extends Phaser.Scene {
         R(ojo2);
         this.tweens.add({ targets: ojo2, alpha: 0.5, duration: 1100, yoyo: true, repeat: -1 });
       }
-      R(txt(this, COLS[3], y + 10, p.grupo, 20, CSS.dim));
+      // v0.54 · partidas y tiempo jugado (el grupo pasa debajo del nombre)
+      R(txt(this, COLS[2], y + 32, p.grupo, 14, CSS.dim));
+      R(txt(this, COLS[3], y + 4, `${p.partidas} partida${p.partidas === 1 ? '' : 's'}`, 19, CSS.bone));
+      R(txt(this, COLS[3], y + 26, p.minutos === undefined ? '—' : tiempoJugado(p.minutos), 16, '#9ad8c8'));
       R(txt(this, COLS[4], y + 8, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
       if (this.modo === 'abismo') {
         // profundidad: tramo alcanzado (5+ = modo infinito)
-        const tramo = Math.floor(p.piso / 7) + 1;
+        const tramo = Math.floor(p.piso / (PISOS_TRAMO + 1)) + 1; // v0.54 · tramos de 10 pisos + jefe
         R(txt(this, COLS[5], y + 8, tramo > TRAMOS ? `∞ ${tramo}` : `Tramo ${tramo}`, 24, tramo > TRAMOS ? '#c8a8ff' : CSS.bone));
       } else R(txt(this, COLS[5], y + 8, p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} +IV` : `${p.piso}/${TOTAL_PISOS}`, 24, p.piso > TOTAL_PISOS ? '#e0a860' : CSS.bone));
       const g = p.victorias ? ` · ${gravityOf(p.gravedad || 1).name}` : '';
@@ -183,7 +191,9 @@ export class RankingScene extends Phaser.Scene {
     y += 26;
     const vic = p.victorias ? `${p.victorias} victoria${p.victorias === 1 ? '' : 's'} · gravedad máx. ${gravityOf(p.gravedad || 1).name}` : 'Aún sin victorias';
     L.add(txt(this, x, y, vic, 21, p.victorias ? CSS.green : CSS.dim, { wordWrap: { width: pw - 370 } }));
-    y += 36;
+    y += 30;
+    L.add(txt(this, x, y, `${p.partidas} partida${p.partidas === 1 ? '' : 's'}${p.minutos === undefined ? '' : ` · ${tiempoJugado(p.minutos)} jugando`}`, 19, '#9ad8c8'));
+    y += 30;
     if (av.insignia === 'am') {
       const ojo = this.add.image(x + 10, y + 11, 'i_ojo').setScale(2).setTint(0xff3a3a);
       L.add([ojo, txt(this, x + 28, y, 'Venció a AM', 21, '#ff6a5a')]);

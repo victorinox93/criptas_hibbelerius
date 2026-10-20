@@ -53,6 +53,9 @@ export const LOGROS: Record<string, Logro> = {
   abismo_mitos: { id: 'abismo_mitos', nombre: 'Los Mitos completos', como: `Abismo: vence a los ${PRIMIGENIOS.length} Primigenios`, check: () => PRIMIGENIOS.every((p) => flag(`abismo_vence_${p}`)) },
   // v0.51 · Las Tierras del Sueño
   abismo_bokrug: { id: 'abismo_bokrug', nombre: 'Vencer a Bokrug', como: 'Abismo: vence a Bokrug en el sueño de Sarnath', check: () => flag('abismo_vence_bokrug') },
+  // v0.54 · premio por dedicarle tiempo (cuenta todo el tiempo de juego, en cualquier modo)
+  abismo_veterano5: { id: 'abismo_veterano5', nombre: 'Desvelado', como: 'Juega 5 horas en total', check: () => (Game.codex.tiempo ?? 0) >= 5 * 3600 },
+  abismo_veterano10: { id: 'abismo_veterano10', nombre: 'Veterano de las Criptas', como: 'Juega 10 horas en total', check: () => (Game.codex.tiempo ?? 0) >= 10 * 3600 },
   abismo_sueno1: { id: 'abismo_sueno1', nombre: 'Soñador', como: 'Abismo: sueña tu primer sueño (nodo 🌙)', check: () => (Game.codex.suenos ?? []).length >= 1 },
   abismo_sueno3: { id: 'abismo_sueno3', nombre: 'Peregrino del sueño', como: 'Abismo: sueña 3 sueños distintos', check: () => (Game.codex.suenos ?? []).length >= 3 },
   abismo_suenos: { id: 'abismo_suenos', nombre: 'Señor de las Tierras del Sueño', como: `Abismo: sueña los ${SUENOS.length} sueños`, check: () => (Game.codex.suenos ?? []).length >= SUENOS.length },

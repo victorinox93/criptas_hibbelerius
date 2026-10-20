@@ -93,16 +93,21 @@ for x, y in ((6, 15), (15, 17), (10, 19)): P(g, x, y, 'L')
 shade(g, 'w', 'L', frac=0.3)
 S['martense'] = rows(outline(g))
 
-# ── Criatura alada de «El Festival» (1925): ni cuervo ni topo ni buitre ──
-g = canvas(34, 24)
-poly(g, [(16, 8), (2, 2), (5, 10), (1, 14), (8, 14), (14, 16)], 'P')
-poly(g, [(18, 8), (32, 2), (29, 10), (33, 14), (26, 14), (20, 16)], 'P')
-for x in (5, 9, 25, 29): line(g, 16 if x < 17 else 18, 9, x, 13, 'p')
-disc(g, 17, 13, 4.5, 'g', 6)
-disc(g, 17, 6, 3, 'g')
-poly(g, [(16, 7), (18, 7), (17, 11)], 'Y')       # pico
-P(g, 16, 5, 'E'); P(g, 18, 5, 'E')
-line(g, 15, 18, 13, 23, 'Y'); line(g, 19, 18, 21, 23, 'Y')
+# ── Dragón Shantak (v0.54): ave escamosa con cabeza de caballo (id 'aladoFestival' por compatibilidad) ──
+g = canvas(40, 30)
+poly(g, [(18, 14), (12, 1), (22, 6), (26, 0), (30, 10)], 'P')          # ala de murciélago (atrás)
+poly(g, [(20, 15), (30, 3), (33, 9), (39, 6), (34, 18)], 'P')          # ala (adelante)
+for x0, y0 in ((14, 3), (24, 3), (33, 7)): line(g, 22, 15, x0, y0, 'p')  # varillas del ala
+disc(g, 22, 19, 9, 'G', 5.5)                                            # cuerpo escamoso
+for x, y in ((17, 17), (21, 20), (25, 18), (19, 22), (27, 21), (23, 16)): P(g, x, y, 't')  # escamas
+poly(g, [(15, 15), (9, 10), (11, 8), (17, 13)], 'G')                    # cuello largo
+poly(g, [(9, 8), (2, 10), (1, 13), (4, 14), (10, 12), (12, 9)], 'S')   # cabeza de caballo (hocico largo)
+P(g, 8, 9, 'F'); line(g, 2, 13, 5, 13, 'k')                              # ojo y boca
+poly(g, [(10, 7), (11, 4), (12, 7)], 'S')                               # oreja
+poly(g, [(30, 19), (39, 23), (31, 22)], 'G')                            # cola
+line(g, 19, 23, 17, 28, 'Y'); line(g, 25, 23, 26, 28, 'Y')             # patas con garras
+P(g, 16, 29, 'Y'); P(g, 18, 29, 'Y'); P(g, 25, 29, 'Y'); P(g, 27, 29, 'Y')
+shade(g, 'G', 'g', frac=0.3)
 shade(g, 'P', 'p', frac=0.25)
 S['aladoFestival'] = rows(outline(g))
 
