@@ -26,6 +26,7 @@ export interface Avatar {
   arma?: number; // arma (caballero) o bastón (arcanista)
   extra?: number; // escudo (caballero) o barba (arcanista)
   piel?: number; // tono de piel
+  mascota?: string; // v0.55 · compañero cosmético: id de un familiar que ya conociste (src/ui/mascota.ts)
 }
 
 export interface Profile {

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { mascotaActual, mascotaJunto } from '../ui/mascota';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
@@ -3957,7 +3958,12 @@ export class CombatScene extends Phaser.Scene {
 
   private showFamiliar() {
     const fam = Game.run!.familiar;
-    if (!fam) return;
+    if (!fam) {
+      // v0.55 · sin familiar de verdad, aparece tu compañero cosmético (no hace nada en combate)
+      const m = mascotaJunto(this, this.heroX - 100, 318, 3.2);
+      if (m) { m.setInteractive(); this.tip.attach(m, `Tu compañero: ${FAMILIARS[mascotaActual()!].name}`, 'Te acompaña sólo de adorno. Los familiares que ganas en la expedición sí pelean.'); }
+      return;
+    }
     const def = FAMILIARS[fam.id];
     if (!def) return;
     const img = this.add.image(this.heroX - 100, 318, def.sprite).setOrigin(0.5, 1).setScale(3.5);

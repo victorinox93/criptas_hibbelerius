@@ -3,6 +3,8 @@ import { enqueue } from '../api';
 import { ARMORS, CAPES, Cosmetico, CSS, UI, VISORS } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
+import { FAMILIARS } from '../data/familiars';
+import { mascotaDesbloqueada } from '../ui/mascota';
 import { W } from '../config';
 import { Game, nivelActual, saveLocal } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, Tooltip, txt } from '../ui/widgets';
@@ -39,7 +41,8 @@ export class VestidorScene extends Phaser.Scene {
     this.tip = new Tooltip(this);
     this.layer = this.add.container(0, 0);
     // v0.49: 5 pestañas (la última, «Abismo», junta lo exclusivo del Abismo de los Ejes)
-    this.tabs = [...PARTES.map((p) => p.nombre), 'Accesorios', 'Abismo'].map((_, i) => button(this, W / 2 + (i - 2) * 178, 98, 170, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 17 }));
+    // v0.55: 6 pestañas (la última, «Compañero», elige un familiar que te acompaña de adorno)
+    this.tabs = [...PARTES.map((p) => p.nombre), 'Accesorios', 'Abismo', 'Compañero'].map((_, i) => button(this, W / 2 + (i - 2.5) * 152, 98, 146, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 15 }));
     this.events.once('shutdown', () => this.pararAnimaciones());
     button(this, W / 2, 516, 200, 36, 'Volver', () => fadeTo(this, 'Menu'), { size: 21 });
     this.draw();
@@ -99,6 +102,47 @@ export class VestidorScene extends Phaser.Scene {
   }
 
   /** Accesorios de la Tienda de Layla: los comprados se equipan aquí */
+  /** v0.55 · Compañero: un familiar que ya conociste te acompaña (sólo de adorno) */
+  private drawCompanero() {
+    const prof = Game.profile!;
+    const av = prof.avatar!;
+    const ids = Object.keys(FAMILIARS);
+    const porPag = COLS * FILAS;
+    const pags = Math.ceil(ids.length / porPag);
+    this.layer.add(txt(this, W / 2, 516 - 34, 'Los familiares que ya te acompañaron en una expedición se pueden quedar contigo (sólo de adorno).', 14, CSS.dim).setOrigin(0.5));
+    ids.slice(this.pag * porPag, (this.pag + 1) * porPag).forEach((id, k) => {
+      const f = FAMILIARS[id];
+      const x = X0 + (k % COLS) * (CW + GAP), y = 124 + Math.floor(k / COLS) * (CH + 8);
+      const tiene = mascotaDesbloqueada(id);
+      const puesto = av.mascota === id;
+      const g = this.add.graphics();
+      frame(g, x, y, CW, CH, puesto ? 0x142a20 : 0x0e0b12, puesto ? 0x9af0c8 : tiene ? 0x4a8a74 : UI.border, 0.95);
+      this.layer.add(g);
+      const im = this.add.image(x + CW / 2, y + 66, f.sprite).setOrigin(0.5, 1).setScale(3);
+      if (!tiene) im.setTint(0x1a1820);
+      else this.tweens.add({ targets: im, y: y + 62, duration: 900 + k * 40, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.layer.add(im);
+      const nombre = txt(this, x + CW / 2, y + 70, tiene ? f.name : '???', 15, tiene ? CSS.bone : '#6a6478', { align: 'center' }).setOrigin(0.5, 0);
+      if (nombre.width > CW - 10) nombre.setScale((CW - 10) / nombre.width, 1);
+      this.layer.add(nombre);
+      const estado = !tiene ? `🔒 Consíguelo en una expedición${f.abismo ? ' del Abismo' : ''}` : puesto ? '✓ Contigo · clic para quitar' : 'Clic para llevarlo';
+      this.layer.add(txt(this, x + CW / 2, y + 92, estado, 12, !tiene ? '#8a7a6a' : puesto ? CSS.green : CSS.dim, { align: 'center', wordWrap: { width: CW - 10 } }).setOrigin(0.5, 0));
+      const z = this.add.zone(x, y, CW, CH).setOrigin(0).setInteractive({ useHandCursor: tiene });
+      z.on('pointerover', () => this.tip.show(x + CW / 2, y + CH + 4, tiene ? f.name : 'Familiar sin descubrir', tiene ? `${f.text}\n${f.lore}\n\nComo compañero sólo te acompaña de adorno.` : 'Cuando un familiar te acompañe en una expedición, podrás llevarlo aquí.'));
+      z.on('pointerout', () => this.tip.hide());
+      z.on('pointerdown', () => {
+        if (!tiene) { audio.sfx('wrong'); return; }
+        av.mascota = puesto ? undefined : id;
+        saveLocal();
+        if (!prof.offline) enqueue('saveProfile', { token: prof.token, alias: av.alias, avatar: JSON.stringify(av) });
+        audio.sfx('click');
+        this.draw();
+      });
+      this.layer.add(z);
+    });
+    if (pags > 1) this.layer.add(button(this, W - 90, 516, 120, 32, this.pag + 1 < pags ? 'Más ▸' : '◂ Inicio', () => { this.pag = (this.pag + 1) % pags; this.draw(); }, { size: 17 }));
+  }
+
   private drawAcc() {
     const prof = Game.profile!;
     const av = prof.avatar!;
@@ -158,6 +202,7 @@ export class VestidorScene extends Phaser.Scene {
     const av = prof.avatar!;
     const nivel = nivelActual();
     this.pararAnimaciones();
+    this.tweens.killTweensOf(this.layer.list); // v0.55 · los compañeros flotan con tweens
     this.layer.removeAll(true);
     PARTES.forEach((p, i) => {
       const n = p.lista.filter((c) => !bloqueado(c, nivel)).length;
@@ -167,6 +212,9 @@ export class VestidorScene extends Phaser.Scene {
     this.tabs[3].label.setText(`Accesorios ${ACCESORIOS.filter((a) => compras.includes(a.id)).length}/${ACCESORIOS.length}`).setColor(this.tab === 3 ? CSS.gold : CSS.dim);
     const items = this.itemsAbismo();
     this.tabs[4].label.setText(`Abismo ◈ ${items.filter((x) => x.tiene).length}/${items.length}`).setColor(this.tab === 4 ? '#c8a8ff' : CSS.dim);
+    const fams = Object.keys(FAMILIARS);
+    this.tabs[5].label.setText(`Compañero ${fams.filter(mascotaDesbloqueada).length}/${fams.length}`).setColor(this.tab === 5 ? '#9af0c8' : CSS.dim);
+    if (this.tab === 5) return this.drawCompanero();
     if (this.tab === 3) return this.drawAcc();
     if (this.tab === 4) return this.drawAbismo(items);
     const parte = PARTES[this.tab];

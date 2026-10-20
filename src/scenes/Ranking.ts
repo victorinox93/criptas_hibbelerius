@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PISOS_TRAMO, TRAMOS } from '../data/abismo_modo';
+import { FAMILIARS } from '../data/familiars';
 import { api, isOnline, RankRow } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -171,6 +172,13 @@ export class RankingScene extends Phaser.Scene {
     L.add(this.add.ellipse(cx, piso + 4, 190, 26, 0x000000, 0.55));
     const heroe = this.add.image(cx, piso + 8, key).setOrigin(0.5, 1).setScale(6.4);
     L.add(heroe);
+    // v0.55 · su compañero (familiar de adorno), si lleva uno
+    const mid = (av as { mascota?: string }).mascota;
+    if (mid && FAMILIARS[mid]) {
+      const pm = this.add.image(cx - 110, piso + 6, FAMILIARS[mid].sprite).setOrigin(0.5, 1).setScale(3.4);
+      L.add(pm);
+      this.tweens.add({ targets: pm, y: piso + 1, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
     this.tweens.add({ targets: heroe, y: piso + 2, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     // datos
     const x = px0 + 345;
