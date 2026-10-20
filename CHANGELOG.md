@@ -2,6 +2,30 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.57.0 · La Calculadora Primigenia (beta)
+
+- **Jefe nuevo de tramo: La Calculadora Primigenia.** La calculadora de Montemayor, con un ojo en la pantalla y tentáculos.
+  - **MODE → RAD:** cambia tu calculadora a radianes y tus Ataques hacen ×0.6 hasta que juegues una Habilidad («revisas el modo»).
+  - **Math ERROR (÷ 0):** se protege con 26 de Bloqueo.
+  - **MR:** te regresa parte de todo el daño que le hiciste y te mete un Error de Signo.
+  - **Batería baja:** con menos de 30 % de vida ya no ves sus intenciones.
+  - Premio: la **Calculadora Domada** (accesorio de mano).
+- **Cartas que hablan** (como en Inscryption): les sale un globo de diálogo cuando las robas, las juegas o se quedan en tu mano.
+  - **Pato de Hule Primigenio:** al robarlo te da una pista del turno («Cuac. X te va a pegar 12. ¿Y si bloqueas?»). No revela a los invisibles.
+  - **Calculadora de Bolsillo:** tu siguiente Ataque ×1.5… pero 1 de cada 4 veces está en RAD (×0.75).
+  - **El Hibbeler Maldito** (Poder): +6 de Bloqueo cada vez que detienes a un enemigo. Si terminas tu turno con 2 J o más sin usar, te regaña (−3 de Cordura).
+  - **La Tarea Olvidada:** se queda en tu mano y pega más cada turno (6 + 5 por turno). Mientras no la entregas se queja y te quita 2 de Cordura.
+  - **El Diagrama que Habla:** Bloqueo extra por cada enemigo que te va a atacar («¡me olvidaste la fricción!»).
+- **Remiendos, el que Siempre Sonríe** (alma traidora del Abismo, homenaje a los traidores de los «Souls»):
+  - Se ofrece a ayudarte. Si desconfías de él, se va con 15 de tus Ergios.
+  - En élites y jefes, al final de tu turno:
+    - 55 %: ataca (7 de daño).
+    - 20 %: te roba Ergios.
+    - 15 %: te golpea «sin querer».
+    - 10 %: te asusta (−8 de Cordura).
+  - En el mapa, 3 de cada 10 veces «conoce un atajo» y **elige el camino por ti**.
+  - Al terminar el tramo desaparece riendo… con hasta 30 Ergios.
+
 ## v0.56.0 · Infrarrojo (beta)
 
 - **ARREGLO IMPORTANTE:** al iniciar sesión se perdían las hojas del diario de Montemayor, las cartas de Providence cumplidas y los sueños soñados. El juego junta lo guardado en el navegador con lo del servidor, y esos tres datos no se incluían en la mezcla. Ahora se conservan; los logros del diario y de los sueños ya se pueden completar.

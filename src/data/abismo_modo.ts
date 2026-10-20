@@ -253,11 +253,12 @@ export const JEFES: Record<string, JefeInfo> = {
   yogSothoth: { nombre: 'Yog-Sothoth', titulo: 'Primigenio · la Llave y la Puerta', tema: 'Ejes paralelos (I = I₀ + m·d²)', desventaja: 'Sólo robas 4 cartas por turno.', origen: '«The Dunwich Horror», H. P. Lovecraft (1929)', primigenio: true },
   // v0.51 · Las Tierras del Sueño
   yig: { nombre: 'Yig, Padre de las Serpientes', titulo: 'Jefe del tramo', tema: 'Fuerza centrípeta (F = m·v²/r)', desventaja: 'Cada vez que juegas una Defensa, una serpiente te muerde: −2 de vida. Su mordida deja HEMORRAGIA 3.', origen: '«La maldición de Yig», H. P. Lovecraft y Zealia Bishop (1929)' },
+  calculadora: { nombre: 'La Calculadora Primigenia', titulo: 'Jefe del tramo', tema: 'Unidades y modos (grados vs. radianes)', desventaja: 'MODE → RAD: tus Ataques hacen ×0.6 hasta que juegues una Habilidad (revisas el modo). Con poca batería (menos de 30 % de vida) no ves sus intenciones.', origen: 'Original de este juego (todos hemos sufrido con la calculadora)' },
   cincoCabezas: { nombre: 'El Dios de las Cinco Cabezas', titulo: 'Jefe del tramo', tema: 'Equilibrio (ΣF = 0 y ΣM = 0)', desventaja: 'Al inicio de cada uno de tus turnos gana 6 de Bloqueo. Su Peso de la Piedra te ATURDE.', origen: '«Bajo las pirámides», H. P. Lovecraft y Harry Houdini (1924)' },
   shubNiggurath: { nombre: 'Shub-Niggurath', titulo: 'Primigenio · la Cabra Negra de los Mil Retoños', tema: 'Masa variable (dm/dt)', desventaja: 'Cada 3 turnos nace un Retoño; al inicio de su turno se cura 6 por cada Retoño vivo.', origen: '«El horror de Dunwich», H. P. Lovecraft (1929)', primigenio: true },
   hastur: { nombre: 'Hastur', titulo: 'Primigenio · el Rey de Amarillo', tema: 'Impulso y cantidad de movimiento', desventaja: 'Tus cartas de Ataque cuestan +1 J.', origen: '«El Rey de Amarillo», R. W. Chambers (1895)', primigenio: true },
 };
-export const JEFES_TRAMO = ['geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'yig', 'cincoCabezas'];
+export const JEFES_TRAMO = ['geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'yig', 'cincoCabezas', 'calculadora'];
 export const PRIMIGENIOS = ['nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur', 'shubNiggurath'];
 /** v0.51 · el jefe del sueño: no sale como jefe de tramo, sólo en el sueño de Sarnath (src/scenes/Sueno.ts) */
 export const BOKRUG: JefeInfo = { nombre: 'Bokrug, el Gran Lagarto de Agua', titulo: 'Jefe del sueño', tema: 'Flotación (E = ρ·g·V)', desventaja: 'Cada 3 turnos el lago sube: pierdes todo tu Bloqueo antes de su golpe.', origen: '«La perdición que cayó sobre Sarnath», H. P. Lovecraft (1920)' };

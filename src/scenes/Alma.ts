@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
-import { ALMA_CONSUELO, ALMAS } from '../data/almas';
+import { ALMA_CONSUELO, ALMAS , ROBO_REMIENDOS } from '../data/almas';
 import { PUNTOS, sumar } from '../data/puntaje';
 import { addErgios, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { T } from '../textos';
@@ -102,6 +102,11 @@ export class AlmaScene extends Phaser.Scene {
     if (!ok) {
       msg = a.triste;
       audio.sfx('wrong');
+      if (a.traidor) {
+        // v0.57 · Remiendos: si desconfías, se va… con tus Ergios
+        const robo = Math.min(run.ergios, ROBO_REMIENDOS);
+        if (robo) { addErgios(-robo); extra = `−${robo} ${T.moneda} (Remiendos te los «tomó prestados»)`; }
+      }
     } else if (run.aliado && !(a.abismo && run.aliadoTramo !== undefined && run.aliadoTramo !== (run.tramo ?? 1))) {
       msg = a.yaTienes;
       addErgios(ALMA_CONSUELO);

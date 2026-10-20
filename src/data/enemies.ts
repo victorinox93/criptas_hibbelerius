@@ -18,6 +18,7 @@ interface IntentExtras {
   vertigo?: number; // El Abismo: robas N cartas menos en tu siguiente turno
   perfora?: boolean; // v0.51 · su golpe atraviesa tu Bloqueo (Sabueso de Tíndalos)
   inunda?: boolean; // v0.51 · antes del golpe pierdes todo tu Bloqueo (Bokrug)
+  radianes?: boolean; // v0.57 · cambia tu calculadora a RAD: tus Ataques ×0.6 hasta que juegues una Habilidad
 
 }
 
@@ -652,6 +653,18 @@ export const ENEMIES: Record<string, EnemyDef> = {
     desc: 'Un árbol oscuro que camina sobre pezuñas. Mientras viva, cura a su madre. Derríbalo primero.',
     next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 7, label: 'Rama con boca' } : { kind: 'block', block: 6, dmg: 4, label: 'Raíces' }),
   },
+  calculadora: {
+    id: 'calculadora', name: 'La Calculadora Primigenia', sprite: 'calculadora', scale: 3.2, hp: [270, 270], mass: 0.2, umbral: 18, act: 5, imparable: 1,
+    desc: 'Jefe del tramo. La calculadora de Montemayor, que se quedó demasiado tiempo junto al Necronomicón. Cambia tu modo a RADIANES (tus Ataques ×0.6 hasta que juegues una Habilidad para revisar el modo), divide entre cero para protegerse y te regresa con MR lo que le hiciste. Con la batería baja ya no ves sus intenciones.',
+    next: (e) => {
+      switch (e.turn % 4) {
+        case 0: return { kind: 'attack', dmg: 8, radianes: true, label: 'MODE → RAD' };
+        case 1: return { kind: 'attack', dmg: 6, hits: 3, label: 'Σ de golpes' };
+        case 2: return { kind: 'block', block: 26, label: 'Math ERROR (÷ 0)' };
+        default: return { kind: 'attack', dmg: 10 + Math.floor((e.recibido ?? 0) * 0.12), add: { id: 'errorSigno', n: 1, to: 'draw' }, label: 'MR: te regreso lo que me hiciste' };
+      }
+    },
+  },
   // ── Criaturas del sueño (sólo en los pesadillas: src/scenes/Sueno.ts) ──
   serIb: {
     id: 'serIb', name: 'Ser de Ib', sprite: 'serIb', scale: 4.4, hp: [26, 30], mass: 60, act: 5,
@@ -730,7 +743,7 @@ export const ENCOUNTERS_5 = {
     ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense']],
   elite: [['vigia'], ['hidra'], ['wilbur'], ['sabueso']],
   // el jefe de cada tramo se sortea (run.jefe, src/data/abismo_modo.ts); esta lista sólo los marca como jefes
-  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug']],
+  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug'], ['calculadora']],
 };
 
 /** v0.51 · pesadillas (src/scenes/Sueno.ts): el sueño decide contra quién peleas */

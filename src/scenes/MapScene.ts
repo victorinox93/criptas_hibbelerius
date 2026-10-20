@@ -262,6 +262,22 @@ export class MapScene extends Phaser.Scene {
       z.on('pointerout', () => { ruta.clear(); tip.hide(); });
       z.on('pointerdown', () => {
         if (!isAvail) return;
+        // v0.57 · Remiendos a veces «conoce un atajo» y elige el camino por ti
+        const otros = [...available].filter((id) => id !== n.id).map((id) => run.map.find((m) => m.id === id)!).filter((m) => m && m.type !== 'jefe');
+        if (act5 && run.aliado === 'remiendos' && run.aliadoTramo === (run.tramo ?? 1) && otros.length && n.type !== 'jefe' && Math.random() < 0.3) {
+          const elegido = Phaser.Utils.Array.GetRandom(otros);
+          const aviso = txt(this, W / 2, 470, `Remiendos: «¡Nooo, por ahí no! Yo conozco un atajo…» → te lleva a ${NODE_INFO[elegido.type].name}`, 18, '#ffb040').setOrigin(0.5).setDepth(900).setStroke('#000', 4);
+          this.tweens.add({ targets: aviso, alpha: 0.4, duration: 400, yoyo: true, repeat: 2 });
+          this.input.enabled = false;
+          this.time.delayedCall(1800, () => {
+            this.input.enabled = true;
+            run.visited = [...(run.visited ?? []), elegido.id];
+            run.pos = elegido.id;
+            saveLocal();
+            this.enter(elegido);
+          });
+          return;
+        }
         run.visited = [...(run.visited ?? []), n.id];
         run.pos = n.id;
         saveLocal();

@@ -27,6 +27,7 @@ export interface AlmaDef {
   habilidad: string; // texto de su habilidad en combate
   final: string; // lo que dice si vencen juntos a Hibbelerius
   abismo?: boolean; // v0.49 · alma del Abismo: te acompaña sólo hasta el final del tramo
+  traidor?: boolean; // v0.57 · a veces ayuda… y a veces te traiciona (Remiendos)
 }
 
 export const ALMAS: Record<string, AlmaDef> = {
@@ -426,6 +427,32 @@ Object.assign(ALMAS, {
 
 /** Almas del modo normal (las del Abismo no cuentan para «Coleccionista de almas») */
 export const ALMA_IDS = Object.keys(ALMAS).filter((id) => !ALMAS[id].abismo);
+// v0.57 · REMIENDOS, EL QUE SIEMPRE SONRÍE (homenaje a los traidores sonrientes de los «Souls»):
+// se ofrece a ayudarte, pelea a tu lado… y a veces te roba, te golpea, te asusta o elige el camino por ti.
+Object.assign(ALMAS, {
+  remiendos: {
+    id: 'remiendos', name: 'Remiendos, el que Siempre Sonríe', abismo: true, traidor: true,
+    look: { clase: 'caballero', helm: 'cerrado', arma: 2, extra: 0 },
+    pal: { c: '#6a4a2a', C: '#3a2a18', l: '#8a8270', g: '#5a5446', E: '#ffb040', B: '#ffb040', s: '#e0b890', q: '#b08a6a' },
+    intro: 'Un hombre de armadura remendada te saluda desde una cornisa, con una sonrisa enorme.\n«¡Amigo! ¡Qué gusto ver a alguien vivo aquí abajo! Conozco un atajo buenísimo. Ven, ven… no te voy a empujar, te lo juro.»',
+    pregunta: '«Dime una cosa, amigo: ¿tú le das segundas oportunidades a la gente?»',
+    opciones: [
+      'Sí: todos merecen otra oportunidad.',
+      'No: el que traiciona una vez, traiciona siempre.',
+      'Depende de lo que me ofrezcas.',
+    ],
+    correcta: 0,
+    ayuda: { label: 'Darle 20 Ergios «para el camino»', ergios: 20 },
+    gracias: '«¡Sabía que eras de los buenos! Tú ve adelante, yo te cuido la espalda. Je, je, je.»',
+    triste: '«¡Qué desconfiado! Bueno, bueno, no pasa nada…» Se va riendo. Al rato notas que te faltan Ergios.',
+    yaTienes: '«Ah, ya traes compañía. Otro día será, amigo.» Te guiña un ojo. Revisas tus bolsillos: todo en orden… por ahora.',
+    habilidad: 'Al final de tu turno A VECES ataca (7 de daño)… y a veces te roba Ergios, te golpea o te asusta. Fuera de combate puede elegir el camino por ti. Te acompaña hasta el final del tramo.',
+    final: 'Remiendos se ríe: «¡Sin rencores, amigo!»',
+  },
+});
+/** v0.57 · Remiendos roba al irse o si desconfías de él */
+export const ROBO_REMIENDOS = 15;
+
 export const ALMA_IDS_ABISMO = Object.keys(ALMAS).filter((id) => ALMAS[id].abismo);
 /** Probabilidad de un alma del Abismo en un nodo «?» del Abismo */
 export const ALMA_ABISMO_CHANCE = 0.2;

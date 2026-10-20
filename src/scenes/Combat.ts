@@ -147,6 +147,10 @@ export class CombatScene extends Phaser.Scene {
   private mult = 1; // multiplicador del ataque en curso
   private pierce = false; // Efecto Túnel: ignorar Bloqueo este turno
   private masaDef = false; // Masa Inamovible
+  private calcBolsillo = 1; // v0.57 · Calculadora de Bolsillo: multiplicador del siguiente Ataque
+  private hibbelerM = 0; // v0.57 · El Hibbeler Maldito: Bloqueo al detener
+  private tareaT = new Map<number, number>(); // v0.57 · La Tarea Olvidada: turnos en la mano (uid)
+  private radianes = false; // v0.57 · la Calculadora Primigenia te cambió a RAD: Ataques ×0.6
   private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
   private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
   private blockPerTurn = 0; // Resistencia del Material
@@ -187,6 +191,10 @@ export class CombatScene extends Phaser.Scene {
     this.kind = data.kind;
     this.floor = data.floor;
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
+    this.radianes = false;
+    this.calcBolsillo = 1;
+    this.hibbelerM = 0;
+    this.tareaT = new Map();
     this.enemies = [];
     this.hand = [];
     this.discard = [];
@@ -837,6 +845,7 @@ export class CombatScene extends Phaser.Scene {
     if (i.vertigo) r.d += `\nVÉRTIGO: en tu siguiente turno robarás ${i.vertigo} carta(s) menos.`;
     if (i.perfora) r.d += '\nPERFORA: sale de un ángulo y su golpe atraviesa tu Bloqueo.';
     if (i.inunda) r.d += '\nEL LAGO SUBE: antes del golpe pierdes TODO tu Bloqueo.';
+    if (i.radianes) r.d += '\nMODE → RAD: tu calculadora pasa a radianes. Tus Ataques harán ×0.6 hasta que juegues una Habilidad (revisas el modo).';
     if (i.add) r.d += `\nMeterá ${i.add.n} «${CARDS[i.add.id].name}» a tu ${i.add.to === 'draw' ? 'mazo de robo' : 'descarte'}.`;
     return r;
   }
@@ -847,7 +856,7 @@ export class CombatScene extends Phaser.Scene {
     ev.blockT.setText(st.block > 0 ? `🛡${st.block}` : '');
     ev.intentC.removeAll(true);
     const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
-    if (!ev.dead && (st.def.oculto || noche) && st.intent.kind !== 'stunned' && !this.diente('ojo') && Game.run?.familiar?.id !== 'pezLinterna') {
+    if (!ev.dead && !this.intencionVisible(ev)) {
       // invisible: no se ve qué hará, sólo sus huellas
       const ic = icon(this, -14, 0, 'i_fog', 3.2);
       ev.intentC.add([ic, txt(this, 2, -12, '???', 26, '#9a93a8')]);
@@ -873,6 +882,7 @@ export class CombatScene extends Phaser.Scene {
         if (ii.vertigo) { ev.intentC.add(icon(this, ex, 0, 'i_momentum', 3).setTint(0x9ad8f0)); ex += 30; }
         if (ii.perfora) { ev.intentC.add(icon(this, ex, 0, 'i_combat', 3).setTint(0x9a6ad0)); ex += 30; }
         if (ii.inunda) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3).setTint(0x3a8ac8)); ex += 30; }
+        if (ii.radianes) { ev.intentC.add(txt(this, ex - 10, -12, 'RAD', 20, '#ff6a7a')); ex += 44; }
       }
       this.tip.attach(ic, 'Intención', it.d);
       this.tweens.add({ targets: ev.intentC, y: ev.intentC.y - 4, duration: 600, yoyo: true, repeat: 1 });
@@ -997,6 +1007,15 @@ export class CombatScene extends Phaser.Scene {
       const v = cardView(this, 62, 510, inst, this.ctx()).setScale(0.2).setDepth(200);
       this.setupCard(v);
       this.hand.push(v);
+      // v0.57 · cartas que hablan al robarlas
+      const dv = CARDS[inst.id];
+      if (inst.id === 'patoHule' && this.alive().length) {
+        // el Pato sólo te dice lo que se puede ver (no revela a los invisibles ni la Noche sin Estrellas)
+        const vis = this.alive().filter((e) => this.intencionVisible(e));
+        const peor = vis.map((e) => { const it = e.st.intent; return { e, d: it.kind === 'attack' ? it.dmg * (it.hits ?? 1) : it.kind === 'block' || it.kind === 'buff' ? it.dmg ?? 0 : 0 }; }).sort((a, b) => b.d - a.d)[0];
+        const pista = !vis.length ? 'No veo qué van a hacer… guarda Bloqueo por si acaso.' : peor.d ? `${peor.e.st.def.name} te va a pegar ${peor.d}. ¿Y si bloqueas?` : 'Nadie te va a pegar este turno: ¡ataca con todo!';
+        this.time.delayedCall(900, () => v.active && this.hablar('Pato', `Cuac. ${pista}`, v.x, HAND_Y - 150));
+      } else if (dv.voz?.robar && Math.random() < 0.7) this.time.delayedCall(900, () => v.active && this.hablar(dv.name.replace(/^(El|La) /, ''), Phaser.Utils.Array.GetRandom(dv.voz!.robar!), v.x, HAND_Y - 150));
     }
     this.layoutHand();
     this.refreshPlayer();
@@ -1076,6 +1095,7 @@ export class CombatScene extends Phaser.Scene {
       case 'energiaRotacional': { const w = Math.min(6, this.played + 1); return b({ dmg: Math.round(2 * w * w), nota: `ω = ${w}: juega más cartas antes para que pegue más.` }); }
       case 'centroPercusion': return b({ dmg: F(), nota: 'Si lo detienes, robas 2.' });
       case 'anguloRecto': return b({ dmg: F(), ignora: true });
+      case 'tareaOlvidada': { const n = Math.min(6, this.tareaT.get(v.inst.uid) ?? 0); return b({ dmg: (st.block ?? 6) + (st.extra ?? 5) * n, nota: `Lleva ${n} turno(s) en tu mano. Si la guardas, sube +${st.extra} por turno (máx. 6).` }); }
       case 'fmaCuadrado': return b({ dmg: Math.round((F() * F()) / 5) });
       case 'pesoMuerto': return b({ dmg: Math.round(((st.m ?? 0) + this.masa) * this.grav.g), ignora: true });
       case 'despertar': {
@@ -1164,11 +1184,13 @@ export class CombatScene extends Phaser.Scene {
     const tv = boonLevel('co_travail');
     if (tv && this.attacksTurn) add(tv * this.attacksTurn, 'Travail');
     add(this.derivadaBono, 'Derivada');
+    if (this.calcBolsillo !== 1) por(this.calcBolsillo, 'Calculadora de Bolsillo');
     if (this.palanca) por(2, 'Palanca');
     if (ed === 'lamina') add(5, 'Lámina');
     if (ed === 'poli') por(1.5, 'Polícroma');
     if (ed === 'cristal') por(2, 'Cristal');
     if (this.necro('steiner') && !this.steinerUsed) por(2, 'Steiner');
+    if (this.radianes) por(0.6, 'Modo RAD (juega una Habilidad para arreglarlo)');
     if (Game.run?.modo === 'abismo') {
       const d = this.dientesBonos(def, this.attacksTurn + 1);
       suma += d.suma;
@@ -1290,6 +1312,7 @@ export class CombatScene extends Phaser.Scene {
       case 'dclTentaculos': baseB = (st.block ?? 4) * this.alive().length; break;
       case 'muroMasa': baseB = (st.block ?? 4) + 3 * Math.max(0, this.masa); break;
       case 'patoHule': baseB = (st.block ?? 3) * (this.confusa ? 3 : 1); break;
+      case 'dclParlante': baseB = (st.block ?? 5) + (st.extra ?? 3) * this.alive().filter((e) => e.st.intent.kind === 'attack' || (e.st.intent.kind === 'block' && !!e.st.intent.dmg)).length; break;
       case 'conservacion': baseB = (st.extra ?? 3) * quedan; break;
       case 'barrera': baseB = Math.round((st.extra ?? 1.5) * this.vel); break;
       case 'retro': baseB = Math.round((st.extra ?? 3) * Math.min(4, this.vel)); break;
@@ -1313,6 +1336,29 @@ export class CombatScene extends Phaser.Scene {
     else if (marea) out.push('Marea Alta (Dagón): cada Bloqueo da la mitad');
     if (baseB || bonos.length) out.push(`── Total: +${total} de Bloqueo (tendrías ${this.block + total}) ──`);
     return [...out, ...L];
+  }
+
+  /** ¿Se ve la intención de este enemigo? (invisibles, Noche sin Estrellas y la batería baja de la Calculadora la ocultan) */
+  private intencionVisible(ev: EnemyView) {
+    const st = ev.st;
+    const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
+    const bateria = st.def.id === 'calculadora' && st.hp < st.maxHp * 0.3; // v0.57 · batería baja
+    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && Game.run?.familiar?.id !== 'pezLinterna');
+  }
+
+  /** v0.57 · Globo de diálogo de una carta que habla (como en Inscryption) */
+  private hablar(quien: string, texto: string, x: number, y: number) {
+    const c = this.add.container(Phaser.Math.Clamp(x, 150, W - 150), y).setDepth(880);
+    const t = txt(this, 0, 0, `${quien}: «${texto}»`, 16, '#1a1420', { wordWrap: { width: 260 }, align: 'center' }).setOrigin(0.5);
+    const w = t.width + 24, h = t.height + 16;
+    const g = this.add.graphics();
+    g.fillStyle(0xf4ead2, 0.97).fillRoundedRect(-w / 2, -h / 2, w, h, 10);
+    g.fillTriangle(-8, h / 2 - 1, 8, h / 2 - 1, 0, h / 2 + 10);
+    g.lineStyle(2, 0x3a2a1a, 1).strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
+    c.add([g, t]).setScale(0.6).setAlpha(0);
+    this.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 160, ease: 'Back.out' });
+    this.tweens.add({ targets: c, alpha: 0, y: y - 16, delay: 2600, duration: 400, onComplete: () => c.destroy() });
+    audio.sfx('hover');
   }
 
   private calc(line: string) {
@@ -1571,6 +1617,8 @@ export class CombatScene extends Phaser.Scene {
     }
     if (def.type === 'Ataque') this.firstAttack = true;
     if (def.type === 'Poder') this.poderes++;
+    if (def.voz?.jugar) this.hablar(def.name.replace(/^(El|La) /, ''), Phaser.Utils.Array.GetRandom(def.voz.jugar), this.heroX + 40, 170);
+    if (def.type === 'Habilidad' && this.radianes) { this.radianes = false; this.calc('Revisas el modo de tu calculadora: DEG otra vez. Tus Ataques vuelven a la normalidad'); this.floatText(this.heroX, 200, 'DEG ✓', CSS.green); }
     // Curie · Polonio: los ataques pegan más
     const pol = boonLevel('m_polonio');
     this.polonio = def.type === 'Ataque' && pol ? (pol === 2 ? 5 : 3) : 0;
@@ -1604,9 +1652,14 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Derivada: +${this.derivadaBono} a este ataque`);
         this.derivadaBono = 0;
       }
+      if (this.calcBolsillo !== 1) {
+        this.mult *= this.calcBolsillo;
+        this.calc(`Calculadora de Bolsillo: ×${this.calcBolsillo}`);
+        this.calcBolsillo = 1;
+      }
       if (this.palanca) {
         this.palanca = false;
-        this.mult = 2;
+        this.mult *= 2;
         this.calc('Palanca de Arquímedes: brazo doble → momento doble: ×2');
       }
     }
@@ -1738,6 +1791,33 @@ export class CombatScene extends Phaser.Scene {
         this.necroDin = true;
         this.calc('Necronomicón de Dinámica: cada vez que detengas a alguien, +1 J y robas 1');
         break;
+      // ── v0.57 · cartas que hablan ──
+      case 'calculadoraBolsillo': {
+        const rad = Math.random() < 0.25;
+        this.calcBolsillo = rad ? 0.75 : st.extra ?? 1.5;
+        this.calc(rad ? 'Calculadora de Bolsillo: estaba en RAD… tu siguiente Ataque ×0.75' : `Calculadora de Bolsillo: tu siguiente Ataque ×${st.extra}`);
+        break;
+      }
+      case 'hibbelerMaldito':
+        this.hibbelerM += st.block ?? 6;
+        this.calc('El Hibbeler Maldito: detener a un enemigo te da Bloqueo… y te regañará si desperdicias J');
+        break;
+      case 'tareaOlvidada': {
+        const n = Math.min(6, this.tareaT.get(inst.uid) ?? 0);
+        const dmg = (st.block ?? 6) + (st.extra ?? 5) * n;
+        this.tareaT.delete(inst.uid);
+        this.calc(`La Tarea Olvidada: ${st.block} + ${st.extra}×${n} turno(s) en tu mano = ${dmg}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, dmg);
+        break;
+      }
+      case 'dclParlante': {
+        const atacan = this.alive().filter((e) => e.st.intent.kind === 'attack' || (e.st.intent.kind === 'block' && !!e.st.intent.dmg)).length;
+        const b = (st.block ?? 5) + (st.extra ?? 3) * atacan;
+        this.gainBlock(b);
+        this.calc(`El Diagrama que Habla: ${st.block} + ${st.extra}×${atacan} enemigo(s) que atacan = +${b} de Bloqueo`);
+        break;
+      }
       case 'volanteAbisal':
         this.jPerTurn += 1;
         this.calc('Volante Abisal: K = ½Iω² → +1 J al inicio de cada turno');
@@ -2665,6 +2745,7 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`${st.def.name}: área negativa → el golpe a todos le hace la mitad`);
     }
     if (cardHit && this.mult !== 1) F = Math.round(F * this.mult);
+    if (cardHit && this.radianes) F = Math.round(F * 0.6); // v0.57 · ¡estaba en radianes!
     const ttest = boonLevel('tu_test');
     if (cardHit && ttest && st.def.act === 4) F += ttest === 2 ? 6 : 3; // Test de Turing: contra autómatas y AM
     if (cardHit && this.pierce) ignoreBlock = true;
@@ -2725,6 +2806,7 @@ export class CombatScene extends Phaser.Scene {
         this.floatText(ev.baseX, 140, T.combate.detenido, CSS.gold);
         audio.sfx('stop');
         logEvent('detener', '1a ley', true, { enemigo: st.def.id, F, umbral });
+        if (this.hibbelerM) { this.block += this.hibbelerM; this.calc(`El Hibbeler Maldito: «¡Así se aplica la 1ª ley!» +${this.hibbelerM} de Bloqueo`); this.time.delayedCall(80, () => this.hablar('Hibbeler', Phaser.Utils.Array.GetRandom(['¡Así se aplica la 1ª ley!', 'Página 47. Te lo dije.', 'Eso sí viene en el examen.']), this.heroX + 40, 170)); }
         if (this.necroDin) { this.energy += 1; this.time.delayedCall(50, () => this.drawCards(1)); this.calc('Necronomicón de Dinámica: +1 J y robas 1'); }
         this.encargo(completarEncargo('detener'));
         // los jefes aprenden: la próxima vez necesitarás más fuerza para detenerlos
@@ -3394,6 +3476,23 @@ export class CombatScene extends Phaser.Scene {
     const pre = this.diente('premolar');
     if (pre && this.energy > 0) { this.gainBlock(2 * pre * this.energy); this.calc(`Premolar Paciente: ${this.energy} J sin usar → +${2 * pre * this.energy} de Bloqueo`); }
     if (this.played - this.jugadasIni >= 6) this.cartaLovecraft('seisCartas');
+    // v0.57 · El Hibbeler Maldito te regaña si desperdicias energía
+    if (this.hibbelerM && this.energy >= 2) {
+      addEntropia(3);
+      this.calc(`El Hibbeler Maldito: ${this.energy} J sin usar → −3 de Cordura`);
+      this.hablar('Hibbeler', Phaser.Utils.Array.GetRandom(['¿Y esa energía? ¿La vas a guardar para el examen?', 'Problema 13-27. Hazlo otra vez.', 'Te sobró energía. Me decepcionas.']), this.heroX + 40, 170);
+      this.hud.refresh();
+    }
+    // v0.57 · La Tarea Olvidada se queda en la mano, crece… y se queja
+    for (const c of this.hand.filter((x) => x.inst.id === 'tareaOlvidada')) {
+      const n = Math.min(6, (this.tareaT.get(c.inst.uid) ?? 0) + 1);
+      this.tareaT.set(c.inst.uid, n);
+      addEntropia(2);
+      const voz = CARDS.tareaOlvidada.voz!.mano!;
+      this.hablar('Tarea', Phaser.Utils.Array.GetRandom(voz).replace('{n}', String(n)), c.x, HAND_Y - 150);
+      this.calc(`La Tarea Olvidada sigue en tu mano (${n} turno(s)): −2 de Cordura`);
+      this.hud.refresh();
+    }
     // tareas pendientes: si siguen en la mano, cuestan vida
     const tareas = this.hand.filter((c) => c.inst.id === 'tarea').length;
     if (tareas) {
@@ -3403,14 +3502,15 @@ export class CombatScene extends Phaser.Scene {
       if (Game.run!.hp <= 0 && (await this.dies('la tarea pendiente'))) return;
     }
     // descartar mano (la Honda de David se queda y gana rapidez)
-    const hondas = this.hand.filter((c) => c.inst.id === 'honda');
+    const hondas = this.hand.filter((c) => c.inst.id === 'honda' || c.inst.id === 'tareaOlvidada'); // v0.57 · la Tarea Olvidada también se queda
     for (const h of hondas) {
+      if (h.inst.id !== 'honda') continue;
       const st0 = statsOf(h.inst);
       const vv = Math.min(12, (this.hondaV.get(h.inst.uid) ?? (st0.extra ?? 4)) + 2);
       this.hondaV.set(h.inst.uid, vv);
       this.calc(`Honda de David: sigue girando → v = ${vv} m/s`);
     }
-    this.hand = this.hand.filter((c) => c.inst.id !== 'honda');
+    this.hand = this.hand.filter((c) => c.inst.id !== 'honda' && c.inst.id !== 'tareaOlvidada');
     for (const c of this.hand) {
       this.discard.push(c.inst);
       this.tweens.add({ targets: c, x: W - 62, y: 510, scale: 0.1, alpha: 0, duration: 220, onComplete: () => c.destroy() });
@@ -3523,6 +3623,11 @@ export class CombatScene extends Phaser.Scene {
             this.refreshPlayer();
           }
           this.perforaGolpe = !!it.perfora;
+          if (it.radianes && !this.radianes) {
+            this.radianes = true;
+            this.calc(`${st.def.name}: MODE → RAD. Tus Ataques harán ×0.6 hasta que juegues una Habilidad`);
+            this.anunciarEstado('MODO RAD', 'Tu calculadora está en radianes: Ataques ×0.6. Juega una Habilidad para revisar el modo.', 0xa83a4a, '#ff9aa8');
+          }
           for (let h = 0; h < (it.hits ?? 1); h++) {
             await this.hurtPlayer(it.dmg, ev);
             if (Game.run!.hp <= 0 || ev.dead) break;
@@ -4111,7 +4216,33 @@ export class CombatScene extends Phaser.Scene {
       g.lineStyle(4, 0xe8c15a, 0.9).lineBetween(img.x + 20, 250, to.baseX, 260);
       this.tweens.add({ targets: g, alpha: 0, duration: 350, onComplete: () => g.destroy() });
     };
-    if (a.id === 'buzo') {
+    if (a.id === 'remiendos') {
+      // v0.57 · el traidor sonriente: ayuda… a veces
+      const r = Math.random();
+      if (r < 0.55) {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        rayo(t);
+        this.calc(`${a.name}: «¡Toma esto!» → ${t.st.def.name} (7)`);
+        await this.hitEnemy(t, 7, false, 'res');
+      } else if (r < 0.75) {
+        const robo = Math.min(run.ergios, Phaser.Math.Between(8, 18));
+        run.ergios -= robo;
+        this.floatText(img.x, 200, `−${robo} Ergios`, '#ffb040');
+        this.calc(`${a.name} te «cuida» la cartera: −${robo} Ergios. «¿Yo? ¡Para nada!»`);
+        this.hud.refresh();
+      } else if (r < 0.9) {
+        this.calc(`${a.name}: «¡Uy, perdón! Se me resbaló la espada.» (6 de daño a ti)`);
+        await this.hurtPlayer(6, null);
+        if (Game.run!.hp <= 0 && (await this.dies('Remiendos'))) return;
+      } else {
+        addEntropia(8);
+        this.floatText(img.x, 200, '−8 Cordura', '#c8a8ff');
+        this.calc(`${a.name} te cuenta, sonriendo, lo que vio allá abajo: −8 de Cordura`);
+        this.hud.refresh();
+      }
+      this.refreshPlayer();
+      await this.wait(300);
+    } else if (a.id === 'buzo') {
       const t = this.alive().reduce((x, y) => (y.st.hp > x.st.hp ? y : x));
       rayo(t);
       this.calc(`${a.name}: arpón a ${t.st.def.name} (9)`);

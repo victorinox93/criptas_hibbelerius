@@ -627,7 +627,13 @@ export class AbismoScene extends Phaser.Scene {
     const cura = Math.ceil((run.maxHp - run.hp) * 0.4);
     if (!(run.seen ?? []).includes(`curaT${tramo}`)) { run.hp = Math.min(run.maxHp, run.hp + cura); (run.seen ??= []).push(`curaT${tramo}`); saveLocal(); }
     // v0.49 · el alma del Abismo se despide aquí
-    if (run.aliado && run.aliadoTramo !== undefined) L(txt(this, W / 2, 208, `${ALMAS[run.aliado]?.name ?? 'Tu acompañante'} se despide: «Hasta aquí llego. Sigue bajando tú».`, 17, '#e8c15a').setOrigin(0.5));
+    if (run.aliado === 'remiendos' && run.aliadoTramo !== undefined) {
+      // v0.57 · el traidor se va… con un recuerdito
+      const clave = `remiendosAdios${tramo}`;
+      let robo = 0;
+      if (!(run.seen ?? []).includes(clave)) { robo = Math.min(run.ergios, 30); run.ergios -= robo; (run.seen ??= []).push(clave); saveLocal(); }
+      L(txt(this, W / 2, 208, `Remiendos desaparece entre las rocas, riendo: «¡Sin rencores, amigo!»${robo ? ` (Te faltan ${robo} Ergios.)` : ''}`, 17, '#ffb040').setOrigin(0.5));
+    } else if (run.aliado && run.aliadoTramo !== undefined) L(txt(this, W / 2, 208, `${ALMAS[run.aliado]?.name ?? 'Tu acompañante'} se despide: «Hasta aquí llego. Sigue bajando tú».`, 17, '#e8c15a').setOrigin(0.5));
     if (tramo < TRAMOS) {
       L(title(this, W / 2, 80, `¡Tramo ${tramo} superado!`, 52, '#9ad8c8'));
       L(txt(this, W / 2, 132, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 22, CSS.bone).setOrigin(0.5));

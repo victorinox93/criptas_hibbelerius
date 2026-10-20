@@ -51,6 +51,8 @@ export interface CardDef {
   lock?: number; // nivel de Conocimiento necesario para que aparezca (src/data/progreso.ts)
   am?: boolean; // sólo aparece en las recompensas después de vencer a AM (cartas de cálculo)
   abismo?: boolean; // sólo sale en El Abismo de los Ejes (acto 5)
+  /** v0.57 · cartas que HABLAN (como en Inscryption): frases al robarla, al jugarla o si se queda en tu mano */
+  voz?: { robar?: string[]; jugar?: string[]; mano?: string[] };
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -833,6 +835,7 @@ export const CARDS: Record<string, CardDef> = {
     stats: (up) => ({ cost: 0, block: up ? 5 : 3 }),
     text: (s) => `Gana ${s.block} de Bloqueo.\nSi estás Confundido: ×3.\nCuac.`,
     lore: 'Principio de Arquímedes: desaloja su propio peso en agua y flota. Siempre flota. Incluso en el abismo. Nadie sabe de dónde salió.',
+    voz: { jugar: ['Cuac.', 'Cuac. Flotar también es un plan.', 'Cuac cuac. (Eso fue Arquímedes.)'] }, // al robarlo te da una pista (Combat.ts)
   },
   // ════════ v0.53 · más cartas del Abismo: dinámica del cuerpo rígido y las Tierras del Sueño ════════
   rodadura: {
@@ -906,6 +909,35 @@ export const CARDS: Record<string, CardDef> = {
     stats: (up) => ({ cost: up ? 1 : 2 }),
     text: () => `Cada vez que DETIENES\na un enemigo: +1 J\ny robas 1 carta.`,
     lore: 'El capítulo prohibido del Hibbeler: «un cuerpo en movimiento sigue en movimiento… a menos que tú lo detengas». Cada vez que lo logras, el libro te premia.',
+  },
+  // ════════ v0.57 · CARTAS QUE HABLAN ════════
+  calculadoraBolsillo: {
+    id: 'calculadoraBolsillo', name: 'Calculadora de Bolsillo', type: 'Habilidad', icon: 'i_bolt', concept: 'Unidades', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 0, extra: up ? 1.75 : 1.5 }),
+    text: (s) => `Tu siguiente Ataque ×${s.extra}.\nPero 1 de cada 4 veces\nestá en RAD: ×0.75.`,
+    lore: 'Siempre revisa el modo antes de un examen: sen(30) en radianes da −0.99, no 0.5. La calculadora no se equivoca… tú sí.',
+    voz: { jugar: ['Beep. Según mis cálculos… da 42.', '¿Grados o radianes? Mejor no preguntes.', 'Error de sintaxis. Es broma. ¿O no?', 'Ya calculé. Tú confía.'] },
+  },
+  hibbelerMaldito: {
+    id: 'hibbelerMaldito', name: 'El Hibbeler Maldito', type: 'Poder', icon: 'i_book', concept: '1ª ley', rarity: 'rara', target: 'self', cls: 'neutral', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 0 : 1, block: 6 }),
+    text: (s) => `Cada vez que DETIENES\na un enemigo: +${s.block} Bloqueo.\nSi acabas tu turno con 2+ J\nsin usar: −3 Cordura.`,
+    lore: 'El libro de texto del curso, poseído. Te premia cuando aplicas bien la 1ª ley y te regaña cuando desperdicias energía.',
+    voz: { jugar: ['Ábreme en la página 47.', 'Otra vez tú. ¿Ya hiciste los problemas impares?'] },
+  },
+  tareaOlvidada: {
+    id: 'tareaOlvidada', name: 'La Tarea Olvidada', type: 'Ataque', icon: 'i_note', concept: 'Impulso', rarity: 'rara', target: 'enemy', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, block: up ? 9 : 6, extra: 5 }),
+    text: (s) => `Inflige ${s.block} + ${s.extra} por cada\nturno que lleva en tu mano\n(máx. 6). Se queda en la mano;\nmientras, −2 Cordura por turno.`,
+    lore: 'Como el impulso (I = F·Δt): mientras más tiempo acumula, más pega. Pero mientras no la entregas, te pesa en la conciencia.',
+    voz: { robar: ['Hola. Soy la tarea que olvidaste.', 'La fecha límite era ayer.'], jugar: ['¡Por fin! Entregada.', 'Tarde, pero entregada.', '¿Ves? No era tan difícil.'], mano: ['Llevo {n} turno(s) aquí…', '¿Me vas a entregar o no?', 'El profe preguntó por mí.'] },
+  },
+  dclParlante: {
+    id: 'dclParlante', name: 'El Diagrama que Habla', type: 'Defensa', icon: 'i_shield', concept: 'Diagrama de cuerpo libre', rarity: 'común', target: 'self', cls: 'neutral', abismo: true,
+    stats: (up) => ({ cost: 1, block: up ? 7 : 5, extra: 3 }),
+    text: (s) => `Gana ${s.block} de Bloqueo\n+${s.extra} por cada enemigo\nque te va a atacar.`,
+    lore: 'Antes de calcular, dibuja todas las fuerzas: peso, normal, fricción, tensiones. Lo que no dibujas, no existe… hasta que te pega.',
+    voz: { jugar: ['Peso hacia abajo, normal hacia arriba… ¿y la fricción? ¡Me olvidaste la fricción!', 'Primero me dibujas, luego calculas. ¡Siempre!', 'Flechas, flechas, flechas. Así me gusta.'] },
   },
   susurro: {
     id: 'susurro', name: 'Susurro', type: 'Estado', icon: 'i_fog', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
