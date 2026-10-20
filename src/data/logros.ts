@@ -11,6 +11,7 @@ import { ARMORS, CAPES, VISORS } from '../art/palette';
 import { ACCESORIOS } from './tienda';
 import { JEFES, PRIMIGENIOS } from './abismo_modo';
 import { SUENOS } from './relatos';
+import { ASTROS, ASTRO_IDS } from './astros';
 
 export interface Logro {
   id: string;
@@ -60,6 +61,11 @@ export const LOGROS: Record<string, Logro> = {
   abismo_entropia: { id: 'abismo_entropia', nombre: 'ΔS ≥ 0', como: 'Abismo: tu Locura llega a 100 (Quiebre) y sigues peleando', check: () => flag('logro_quiebre_abismo') },
   abismo_calor3: { id: 'abismo_calor3', nombre: 'Radiación térmica', como: 'Abismo: vence a 3 jefes distintos', check: () => (Game.codex.flags ?? []).filter((f) => f.startsWith('abismo_vence_')).length >= 3 },
   abismo_calor6: { id: 'abismo_calor6', nombre: 'Cuerpo negro', como: 'Abismo: vence a 6 jefes distintos', check: () => (Game.codex.flags ?? []).filter((f) => f.startsWith('abismo_vence_')).length >= 6 },
+  // v0.59 · Astros Errantes: un cosmético por astro y uno por vencerlos a todos
+  ...Object.fromEntries(Object.values(ASTROS).map((a) => [`abismo_astro_${a.id}`, {
+    id: `abismo_astro_${a.id}`, nombre: `Vencer a ${a.nombre.split(',')[0]}`, como: `Abismo: vence al astro errante ${a.nombre.split(',')[0]} (nodo de planeta en el mapa)`, check: () => flag(`abismo_astro_${a.id}`),
+  }])),
+  abismo_astros: { id: 'abismo_astros', nombre: 'Sistema Solar', como: `Abismo: vence a los ${ASTRO_IDS.length} astros errantes`, check: () => ASTRO_IDS.every((id) => flag(`abismo_astro_${id}`)) },
   abismo_sueno1: { id: 'abismo_sueno1', nombre: 'Soñador', como: 'Abismo: sueña tu primer sueño (nodo 🌙)', check: () => (Game.codex.suenos ?? []).length >= 1 },
   abismo_sueno3: { id: 'abismo_sueno3', nombre: 'Peregrino del sueño', como: 'Abismo: sueña 3 sueños distintos', check: () => (Game.codex.suenos ?? []).length >= 3 },
   abismo_suenos: { id: 'abismo_suenos', nombre: 'Señor de las Tierras del Sueño', como: `Abismo: sueña los ${SUENOS.length} sueños`, check: () => (Game.codex.suenos ?? []).length >= SUENOS.length },

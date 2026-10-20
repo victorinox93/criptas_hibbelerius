@@ -8,6 +8,7 @@ import {
   HOJAS_POR_EXPEDICION, RARAS_ABISMO, sortearMutador, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
 import { RUEDA, RUEDA_COSTO, RUEDA_SUBE, ARRANCAR_PARASITO, cristalDe, defDiente, esParasito, HUECOS, nivelDiente, NOMBRE_RAREZA, PROB_PARASITO_SACAMUELAS, ponerDiente, RETIRAR_DIENTES, sortearDientes, sortearParasito } from '../data/dientes';
+import { ASTROS } from '../data/astros';
 import { ASTRONOMO, ASTRONOMO_MAL, FICHA_LOVECRAFT, FRASES_INFINITO, TELESCOPIO_COMBATES } from '../data/lovecraft';
 import { dentaduraView, dibujarDiente, etiquetaDiente, resumenCosmos, textoCristal } from '../ui/dentadura';
 import { ENEMIES } from '../data/enemies';
@@ -34,7 +35,9 @@ export interface AbismoData {
   debug?: boolean;
   tanque?: boolean; // Modo profesor: vida ×10
   saltarPrologo?: boolean;
-  fase?: 'tramo' | 'boca' | 'observatorio' | 'colocar'; // tramo = entre tramos; boca = Sacamuelas Ciego; observatorio = el Astrónomo de Providence
+  fase?: 'tramo' | 'boca' | 'observatorio' | 'colocar' | 'astro';
+  astro?: string; // v0.59 · astro vencido (fase 'astro': su sobre de premio)
+  nuevo?: boolean; // v0.59 · primera vez que vences a ese astro (ganaste su cosmético) // tramo = entre tramos; boca = Sacamuelas Ciego; observatorio = el Astrónomo de Providence
 }
 
 export class AbismoScene extends Phaser.Scene {
@@ -49,7 +52,7 @@ export class AbismoScene extends Phaser.Scene {
   private escritura: Phaser.Time.TimerEvent | null = null; // máquina de escribir del diario
   private gen = 0;
   /** Sobre de premio entre tramos (te quedas con 1); null = los 3 sobres del inicio */
-  private premio: { def: SobreDef; alTerminar: () => void } | null = null;
+  private premio: { def: SobreDef; alTerminar: () => void; titulo?: string; nota?: string } | null = null;
   private elige() { return this.premio ? 1 : ELIGES_POR_SOBRE; } // cambia en cada pantalla: las animaciones de una pantalla vieja ya no tocan la nueva
 
   constructor() { super('Abismo'); }
@@ -71,6 +74,15 @@ export class AbismoScene extends Phaser.Scene {
     else if (data.fase === 'boca') { this.giros = 0; this.sacamuelas('boca', () => fadeTo(this, 'Map')); }
     else if (data.fase === 'observatorio') { audio.play('abismo2'); this.observatorio(); }
     else if (data.fase === 'colocar') this.sacamuelas('colocar', () => fadeTo(this, 'Map'));
+    else if (data.fase === 'astro') {
+      // v0.59 · premio de un Astro Errante: un sobre (te quedas con 1 carta) y, la primera vez, su cosmético
+      const a = ASTROS[data.astro ?? 'mercurio'];
+      this.sobrePremio(() => fadeTo(this, 'Map'));
+      const corto = a.nombre.split(',')[0];
+      this.premio!.titulo = corto.startsWith('El ') ? `Premio del ${corto.slice(3)}` : `Premio de ${corto}`;
+      if (data.nuevo) this.premio!.nota = `¡Nuevo en el Vestidor: ${a.premio}!`;
+      this.sobre(0);
+    }
     else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);
   }
@@ -481,8 +493,8 @@ export class AbismoScene extends Phaser.Scene {
     const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
     const def = this.premio ? this.premio.def : SOBRES[n];
     const enMazo = this.premio ? Game.run!.deck.length : this.mazo.length;
-    L(title(this, W / 2, 46, this.premio ? 'Premio del tramo' : `Sobre ${n + 1} de ${SOBRES.length}`, 40, '#9ad8c8'));
-    L(txt(this, W / 2, 84, `${def.nombre}: ${def.texto} Trae 5 cartas; te quedas con ${this.elige()}. Tu mazo: ${enMazo} cartas.`, 18, CSS.bone, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+    L(title(this, W / 2, 46, this.premio ? this.premio.titulo ?? 'Premio del tramo' : `Sobre ${n + 1} de ${SOBRES.length}`, 40, '#9ad8c8'));
+    L(txt(this, W / 2, 84, `${def.nombre}: ${def.texto} Trae 5 cartas; te quedas con ${this.elige()}. Tu mazo: ${enMazo} cartas.${this.premio?.nota ? `\n${this.premio.nota}` : ''}`, 18, CSS.bone, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     this.botonGuia();
     const emp = L(this.empaque(def, W / 2, 300));
     this.tweens.add({ targets: emp, y: 292, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });

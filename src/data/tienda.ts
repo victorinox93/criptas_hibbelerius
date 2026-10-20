@@ -430,6 +430,17 @@ ACCESORIOS.push(
     rows: ['.....ay......', '....aYya..ay.', '...ayYa.ayYa.', '..aYya.aYya..', '.ayYa.ayYa.ay', 'aYyaYyaYyaYya', 'lllllllllllll'], ancla: [6, 6] },
   { id: 'calculadora_domada', nombre: 'Calculadora Domada', slot: 'mano', logro: 'abismo_calculadora', precio: 0, desc: 'Ya está en DEG. Ya no tiene tentáculos. Casi.',
     rows: ['llllll', 'lBBBBl', 'lBrBBl', 'llllll', 'lwlwyl', 'lwlwyl', 'lwlwRl', 'llllll', '.p..p.'], ancla: [2, 5] },
+  // v0.59 · Astros Errantes (un premio por planeta)
+  { id: 'sandalias_mercurio', nombre: 'Sandalias de Mercurio', slot: 'pies', logro: 'abismo_astro_mercurio', precio: 0, desc: 'Con alitas, como las del mensajero de los dioses. Mercurio da una vuelta al Sol en 88 días.',
+    rows: ['W.W...', '.WW...', '.yyy..', '.yyyyy', 'YYYYYY'], ancla: [3, 5] },
+  { id: 'yelmo_marte', nombre: 'Yelmo de Marte', slot: 'cabeza', logro: 'abismo_astro_marte', precio: 0, desc: 'Del dios de la guerra. En Marte pesarías sólo el 38 %: g = 3.71 m/s².',
+    rows: ['.....RRR.....', '....RrrrR....', '...rrrrrrr...', '..rrrRrRrrr..', '.rrrrrrrrrrr.', 'rrrrrrrrrrrrr'], ancla: [6, 6] },
+  { id: 'esc_gran_mancha', nombre: 'Escudo de la Gran Mancha', slot: 'escudo', logro: 'abismo_astro_jupiter', precio: 0, desc: 'Una tormenta más grande que la Tierra, que lleva más de 300 años girando. Te mira.',
+    rows: ['...TTTTTTT...', '.TTuuuuuuuTT.', 'TuuTTTTTTTuuT', 'TTTTToooTTTTT', 'TuuuoWkWouuuT', 'TTTTToooTTTTT', 'TuuTTTTTTTuuT', '.TTuuuuuuuTT.', '...TTTTTTT...'], ancla: [6, 4] },
+  { id: 'anillos_saturno', nombre: 'Anillos de Saturno', slot: 'cabeza', logro: 'abismo_astro_saturno', precio: 0, desc: 'Hielo y roca girando sobre tu cabeza. Saturno es tan poco denso que flotaría en el agua.',
+    rows: ['.....yyyyy.....', '..yyYYYYYYYyy..', 'yyY.........Yyy', '..yyYYYYYYYyy..', '.....yyyyy.....', '...............'], ancla: [7, 6] },
+  { id: 'corona_solar', nombre: 'Corona Solar', slot: 'cabeza', logro: 'abismo_astro_sol', precio: 0, desc: 'Plasma a un millón de grados. E = m·c²: el Sol pierde 4 millones de toneladas por segundo para brillar.',
+    rows: ['a.....a.....a', '.a...aaa...a.', '..a.aoooa.a..', 'aaaaoooooaaaa', '.aooooooooooa', 'ooooooooooooo'], ancla: [6, 6] },
   // v0.51 · Las Tierras del Sueño
   { id: 'cuernos_shub', nombre: 'Cuernos de la Cabra Negra', slot: 'cabeza', logro: 'abismo_shubNiggurath', precio: 0, desc: '¡Iä! ¡Shub-Niggurath! Mil retoños te reconocen como familia.',
     rows: ['N...............N', 'NN.............NN', '.NN...........NN.', '.NNh.........hNN.', '..NNh.......hNN..', '..dNNh.....hNNd..', '...ddddddddddd...'], ancla: [8, 6] },

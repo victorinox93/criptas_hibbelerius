@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ASTROS } from '../data/astros';
 import { mascotaActual, mascotaJunto } from '../ui/mascota';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
@@ -17,7 +18,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
-import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, pick, spawn } from '../data/enemies';
+import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
 import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
@@ -153,6 +154,7 @@ export class CombatScene extends Phaser.Scene {
   private telescopio = false; // v0.58 · ves las intenciones ocultas (telescopio del Astrónomo)
   private radianes = false; // v0.57 · la Calculadora Primigenia te cambió a RAD: Ataques ×0.6
   private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
+  private astro?: string; // v0.59 · Astro Errante (src/data/astros.ts)
   private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
   private blockPerTurn = 0; // Resistencia del Material
   private orbit = 0; // Órbita Cerrada (masa del satélite)
@@ -188,7 +190,8 @@ export class CombatScene extends Phaser.Scene {
 
   constructor() { super('Combat'); }
 
-  init(data: { kind: Kind; floor: number; sueno?: string }) {
+  init(data: { kind: Kind; floor: number; sueno?: string; astro?: string }) {
+    this.astro = data.astro;
     this.kind = data.kind;
     this.floor = data.floor;
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
@@ -566,6 +569,16 @@ export class CombatScene extends Phaser.Scene {
         }
         this.time.delayedCall(900, () => this.anunciarEstado('PESADILLA', 'La vida que pierdas en el sueño no es real: al despertar la recuperas. La Cordura, sí.', 0x5a4aa8, '#c8b8ff'));
       }
+      if (this.astro) {
+        // v0.59 · Astro Errante: el techo del Abismo se abre al espacio
+        this.add.rectangle(0, 0, W, H, 0x050418, 0.55).setOrigin(0).setDepth(-6);
+        for (let i = 0; i < 70; i++) {
+          const st = this.add.circle(Math.random() * W, 20 + Math.random() * 320, Math.random() < 0.15 ? 2 : 1, 0xfff4d8, 0.7).setDepth(-4);
+          this.tweens.add({ targets: st, alpha: 0.1, duration: 600 + Math.random() * 1800, yoyo: true, repeat: -1 });
+        }
+        const a = ASTROS[this.astro];
+        if (a) this.time.delayedCall(900, () => this.anunciarEstado(a.titulo.toUpperCase(), `${a.tema}. ${a.dato}`, 0x8a5a1a, '#ffd080'));
+      }
     } else if (this.acto >= 4) {
       audio.play(this.kind === 'boss' ? 'jefe4' : 'combate5');
       nucleoBackground(this, 400 + this.floor * 7, this.kind === 'boss');
@@ -601,7 +614,7 @@ export class CombatScene extends Phaser.Scene {
 
     // ── Enemigos ──
     // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
-    const enc = this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
+    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
 
@@ -693,7 +706,7 @@ export class CombatScene extends Phaser.Scene {
     this.showFantasma();
     this.refreshPlayer();
     const jefeA = this.acto === 5 && this.kind === 'boss' ? JEFES_ABISMO[run.jefe ?? 'geometra'] : null;
-    const arrancar = () => this.banner(this.kind === 'boss' ? (jefeA ? jefeA.nombre : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+    const arrancar = () => this.banner(this.kind === 'boss' ? (jefeA ? jefeA.nombre : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.astro ? ASTROS[this.astro]?.nombre ?? T.combate.bannerElite : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
       if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
@@ -807,7 +820,7 @@ export class CombatScene extends Phaser.Scene {
     sprite.on('pointerover', (p: Phaser.Input.Pointer) => {
       if (this.selected) sprite.setTint(0xffaaaa);
       const d = st.def;
-      let body = `Masa: ${d.mass} kg · Peso en ${this.grav.name}: ${Math.round(d.mass * this.grav.g)} N\n${d.desc}`;
+      let body = `Masa: ${masaTexto(d.mass)} kg · Peso en ${this.grav.name}: ${masaTexto(Math.round(d.mass * this.grav.g))} N\n${d.desc}`;
       if (d.umbral) body += `\n\nUmbral para detenerlo: F ≥ ${umbralDe(st)} N en un solo golpe (1ª ley).${(st.umbralMul ?? 1) > 1 ? ' Se adapta: cada vez que lo detienes, sube ×1.5.' : ''}`;
       this.tip.show(p.worldX + 16, p.worldY - 120, d.name, body);
     });
@@ -3878,6 +3891,19 @@ export class CombatScene extends Phaser.Scene {
       syncRun('victoria', 'Hibbelerius derrotado');
       await this.banner(T.combate.victoria);
       fadeTo(this, 'End', { victory: true });
+      return true;
+    }
+    if (this.astro) {
+      // v0.59 · Astro Errante vencido: cosmético (la primera vez) y un sobre
+      const a = ASTROS[this.astro];
+      const nuevo = !(Game.codex.flags ?? []).includes(`abismo_astro_${this.astro}`);
+      if (!run.debug) codexFlag(`abismo_astro_${this.astro}`);
+      (run.astrosVistos ??= []).push(this.astro);
+      logEvent('astro', '', true, { astro: this.astro, piso: this.floor, turnos: this.turn, vida: run.hp });
+      saveLocal();
+      syncRun('en curso', `${a?.nombre ?? 'Un astro'} vencido`);
+      await this.banner(`¡${a?.nombre.split(',')[0] ?? 'El astro'} cae!`);
+      fadeTo(this, 'Abismo', { fase: 'astro', clase: run.clase, astro: this.astro, nuevo: nuevo && !run.debug });
       return true;
     }
     if (this.sueno) {

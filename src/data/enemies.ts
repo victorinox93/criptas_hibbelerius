@@ -665,6 +665,85 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ── v0.59 · Los Astros Errantes (nodos especiales del Abismo: src/data/astros.ts) ──
+  astro_mercurio: {
+    id: 'astro_mercurio', name: 'Mercurio, el Mensajero Veloz', sprite: 'astro_mercurio', scale: 3.4, hp: [95, 105], mass: 3.3e23, umbral: 15, act: 5,
+    desc: 'Astro errante. El planeta más rápido: una vuelta al Sol en 88 días. Pega muchas veces seguidas y te marea. DETENLO con un golpe de F ≥ umbral.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 4, hits: 4, label: 'Órbita de 88 días' };
+        case 1: return { kind: 'attack', dmg: 11 + 3 * e.inercia, vertigo: 1, label: 'Perihelio: 47 km/s' };
+        default: return { kind: 'block', block: 14, dmg: 6, label: 'Noche de −173 °C' };
+      }
+    },
+  },
+  astro_venus: {
+    id: 'astro_venus', name: 'Venus, la Nube que Quema', sprite: 'astro_venus', scale: 3.4, hp: [100, 110], mass: 4.9e24, umbral: 16, act: 5,
+    desc: 'Astro errante. Lluvia de ácido sulfúrico y 92 atmósferas de presión: antes de su golpe más fuerte pierdes TODO tu Bloqueo. Gira al revés y te confunde.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 7, hemorragia: 3, label: 'Lluvia de ácido' };
+        case 1: return { kind: 'block', block: 16, dmg: 6, confusion: true, label: 'Gira al revés' };
+        default: return { kind: 'attack', dmg: 16 + 2 * e.inercia, inunda: true, label: 'Presión de 92 atm' };
+      }
+    },
+  },
+  astro_marte: {
+    id: 'astro_marte', name: 'Marte, el Ojo Rojo', sprite: 'astro_marte', scale: 3.2, hp: [88, 96], mass: 6.4e23, umbral: 17, act: 5,
+    desc: 'Astro errante. El dios de la guerra, con sus lunas Fobos (miedo) y Deimos (terror). Mientras nadie lo detenga, su golpe crece cada turno.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 17 + 3 * e.inercia, label: 'Dios de la guerra' };
+        case 1: return { kind: 'buff', shieldAll: 10, label: 'Sus lunas lo rodean' };
+        default: return { kind: 'attack', dmg: 7, hits: 2, hemorragia: 2, label: 'Tormenta de polvo rojo' };
+      }
+    },
+  },
+  astro_fobos: {
+    id: 'astro_fobos', name: 'Fobos (el Miedo)', sprite: 'astro_fobos', scale: 3.6, hp: [20, 24], mass: 1.1e16, act: 5,
+    desc: 'Luna de Marte. Gira tan cerca que algún día caerá sobre él. Te marea.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6, vertigo: 1, label: 'Miedo' } : { kind: 'block', block: 8, dmg: 4, label: 'Órbita baja' }),
+  },
+  astro_deimos: {
+    id: 'astro_deimos', name: 'Deimos (el Terror)', sprite: 'astro_deimos', scale: 3.6, hp: [16, 20], mass: 1.5e15, act: 5,
+    desc: 'Luna pequeña de Marte. Te confunde con su terror.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 5, confusion: true, label: 'Terror' } : { kind: 'attack', dmg: 7, label: 'Roca' }),
+  },
+  astro_jupiter: {
+    id: 'astro_jupiter', name: 'Júpiter, el Gigante', sprite: 'astro_jupiter', scale: 2.6, hp: [140, 150], mass: 1.9e27, umbral: 22, act: 5, imparable: 2,
+    desc: 'Astro errante. 318 veces la masa de la Tierra y una tormenta que es un ojo. Su gravedad (24.8 m/s²) te ATURDE. Después de detenerlo queda IMPARABLE 2 turnos.',
+    next: (e) => {
+      switch (e.turn % 4) {
+        case 0: return { kind: 'attack', dmg: 12, aturde: true, label: 'Gravedad de 24.8 m/s²' };
+        case 1: return { kind: 'attack', dmg: 6, hits: 3, label: 'La Gran Mancha Roja' };
+        case 2: return { kind: 'block', block: 24, label: 'Campo magnético' };
+        default: return { kind: 'attack', dmg: 22 + 3 * e.inercia, label: 'Marea de Ío' };
+      }
+    },
+  },
+  astro_saturno: {
+    id: 'astro_saturno', name: 'Saturno, el que Devora a sus Hijos', sprite: 'astro_saturno', scale: 2.6, hp: [128, 136], mass: 5.7e26, umbral: 19, act: 5,
+    desc: 'Astro errante. Tan poco denso que flotaría en el agua. Sus anillos de dientes lo protegen, se cura devorando una de sus lunas y te roba J.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 9, hits: 2, label: 'Anillo de dientes' };
+        case 1: return { kind: 'block', block: 14, heal: 16, label: 'Devora a una de sus lunas' };
+        default: return { kind: 'attack', dmg: 18 + 3 * e.inercia, drain: 1, label: 'Hexágono del polo norte' };
+      }
+    },
+  },
+  astro_sol: {
+    id: 'astro_sol', name: 'El Sol, el Ojo que Arde', sprite: 'astro_sol', scale: 2.6, hp: [165, 175], mass: 2e30, umbral: 22, act: 5, imparable: 1,
+    desc: 'Astro errante, el más fuerte. Te transfiere CALOR, sus llamaradas atraviesan tu Bloqueo y se cura con fusión nuclear (E = m·c²).',
+    next: (e) => {
+      switch (e.turn % 4) {
+        case 0: return { kind: 'attack', dmg: 9, calor: 3, label: 'Viento solar' };
+        case 1: return { kind: 'attack', dmg: 14, perfora: true, hemorragia: 2, label: 'Llamarada' };
+        case 2: return { kind: 'buff', heal: 18, shieldAll: 12, label: 'Fusión: 4 H → He' };
+        default: return { kind: 'attack', dmg: 26 + 4 * e.inercia, aturde: true, label: 'Eyección de masa coronal' };
+      }
+    },
+  },
   // ── Criaturas del sueño (sólo en los pesadillas: src/scenes/Sueno.ts) ──
   serIb: {
     id: 'serIb', name: 'Ser de Ib', sprite: 'serIb', scale: 4.4, hp: [26, 30], mass: 60, act: 5,
@@ -757,6 +836,14 @@ export const ENCOUNTERS_SUENO: Record<string, string[]> = {
 export function encounters(acto: number) {
   if (acto === 5) return ENCOUNTERS_5;
   return acto >= 4 ? ENCOUNTERS_4 : acto === 3 ? ENCOUNTERS_3 : acto === 2 ? ENCOUNTERS_2 : ENCOUNTERS;
+}
+
+/** v0.59 · Masa legible: los planetas se escriben en notación científica (5.7 × 10²⁶) */
+export function masaTexto(m: number) {
+  if (m < 1e6) return String(m);
+  const e = Math.floor(Math.log10(m));
+  const sup = String(e).split('').map((c) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]).join('');
+  return `${(m / 10 ** e).toFixed(1)} × 10${sup}`;
 }
 
 /** Multiplicador global de la vida de los enemigos (v0.12: +20 %) */
