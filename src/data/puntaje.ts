@@ -32,7 +32,7 @@ export const JEFES = ['colossus', 'bruja', 'hibbelerius',
   // El Abismo (v0.41): jefes de tramo y Primigenios
   'geometra', 'dagon', 'colorCielo', 'bailarina', 'dunwich', 'nyarlathotep', 'cthulhu', 'yogSothoth', 'hastur',
   // v0.51 · Las Tierras del Sueño
-  'yig', 'cincoCabezas', 'shubNiggurath', 'bokrug'];
+  'yig', 'cincoCabezas', 'shubNiggurath', 'bokrug', 'calculadora'];
 
 interface RunLike {
   score: number;

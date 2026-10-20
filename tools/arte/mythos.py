@@ -252,6 +252,24 @@ for x in range(4, 46, 6): P(g, x, 36, 'c'); P(g, x + 3, 35, 'B')  # agua
 shade(g, 'G', 'g', frac=0.3)
 S['bokrug'] = rows(outline(g))
 
+# ── v0.57 · La Calculadora Primigenia: calculadora científica gigante con tentáculos ──
+g = canvas(40, 50)
+for x0, x1 in ((8, 3), (14, 11), (20, 21), (26, 29), (32, 37)):   # tentáculos que salen por abajo
+    line(g, x0, 40, x1, 49, 'M', 2)
+    P(g, x1, 49, 'm')
+poly(g, [(5, 2), (35, 2), (36, 42), (4, 42)], 'l')                  # carcasa
+rect(g, 8, 5, 32, 15, 'U')                                          # pantalla (LCD)
+rect(g, 9, 6, 31, 14, 'c')
+disc(g, 20, 10, 3.2, 'W', 2.6); disc(g, 20, 10, 1.6, 'F'); P(g, 20, 10, 'k')   # un ojo en la pantalla
+for x in (11, 13, 27, 29): P(g, x, 12, 'U')                          # dígitos rotos
+rect(g, 8, 17, 32, 18, 'n')                                         # rendija solar
+for fila in range(5):                                               # teclas
+    for col in range(5):
+        x, y = 8 + col * 5, 21 + fila * 4
+        rect(g, x, y, x + 3, y + 2, 'R' if (fila, col) == (4, 4) else 'y' if col == 4 else 'L')
+shade(g, 'l', 'S', frac=0.25)
+S['calculadora'] = rows(outline(g))
+
 # los enemigos están a la derecha y miran hacia el héroe (izquierda)
 for k in ('necrofago', 'reptilSinNombre', 'sabueso', 'bokrug'):
     S[k] = [r[::-1] for r in S[k]]
