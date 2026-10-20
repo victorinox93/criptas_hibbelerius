@@ -603,6 +603,57 @@ const ABISMO_GEN: (() => Problem)[] = [
 ];
 GENERATORS.push(...ABISMO_GEN);
 
+// v0.58 · Movimiento circular: las preguntas del Astrónomo de Providence (sólo salen en el Observatorio)
+export const ORBITA_CONCEPTS = ['Movimiento circular'];
+const ORBITA_GEN: (() => Problem)[] = [
+  () => {
+    const v = ri(4, 20), r = ri(2, 25);
+    return {
+      concept: 'Movimiento circular', title: 'La Órbita del Byakhee',
+      prompt: `Un Byakhee vuela en círculos alrededor de una torre a ${v} m/s, con un radio de ${r} m.\n¿Cuál es su aceleración centrípeta?`,
+      unit: 'm/s²', answer: (v * v) / r, tol: 0.02,
+      solution: ['a = v² / r', `a = ${v}² / ${r}`, `a = ${f2((v * v) / r)} m/s² (hacia el centro)`],
+    };
+  },
+  () => {
+    const m = ri(1, 8), v = ri(3, 12), r = f2(ri(5, 30) / 10);
+    return {
+      concept: 'Movimiento circular', title: 'La Honda del Cultista',
+      prompt: `Un cultista gira una piedra de ${m} kg con una cuerda de ${r} m, a ${v} m/s (ignora el peso).\n¿Qué tensión tiene la cuerda?`,
+      unit: 'N', answer: (m * v * v) / r, tol: 0.02,
+      solution: ['T = m·v² / r (la tensión es la fuerza centrípeta)', `T = ${m}·${v}² / ${r}`, `T = ${f2((m * v * v) / r)} N`],
+    };
+  },
+  () => {
+    const r = ri(2, 40) * 100, T = ri(20, 120);
+    return {
+      concept: 'Movimiento circular', title: 'La Luna de Yuggoth',
+      prompt: `Una luna de Yuggoth da una vuelta completa en ${T} s, en una órbita de ${r} m de radio.\n¿Qué rapidez lleva?`,
+      unit: 'm/s', answer: (2 * Math.PI * r) / T, tol: 0.02,
+      solution: ['v = 2π·r / T (una vuelta = el perímetro del círculo)', `v = 2π·${r} / ${T}`, `v = ${f2((2 * Math.PI * r) / T)} m/s`],
+    };
+  },
+  () => {
+    const s = shuffleChoices(['Se multiplica por 4', 'Se duplica', 'Se queda igual', 'Se reduce a la mitad'], 0);
+    return {
+      concept: 'Movimiento circular', title: 'El Doble de Rápido',
+      prompt: 'Un cuerpo gira en un círculo de radio fijo. Si duplicas su rapidez, ¿qué le pasa a su aceleración centrípeta?',
+      unit: '', ...s,
+      solution: ['a = v² / r: la rapidez va al cuadrado.', '(2v)² = 4·v², así que la aceleración se multiplica por 4.'],
+    };
+  },
+  () => {
+    const s = shuffleChoices(['Hacia el centro del círculo', 'Hacia afuera del círculo', 'En la misma dirección que la velocidad', 'No tiene aceleración: la rapidez es constante'], 0);
+    return {
+      concept: 'Movimiento circular', title: 'La Fuerza que No Se Ve',
+      prompt: 'Un planeta gira con rapidez constante alrededor de su estrella. ¿Hacia dónde apunta su aceleración?',
+      unit: '', ...s,
+      solution: ['Aunque la rapidez no cambia, la dirección de la velocidad sí cambia.', 'Ese cambio es la aceleración centrípeta y apunta hacia el centro (a = v²/r).', 'La «fuerza centrífuga» no existe en un marco inercial.'],
+    };
+  },
+];
+GENERATORS.push(...ORBITA_GEN);
+
 /** Temas del Acto III: no salen en los altares de los actos anteriores */
 export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques', 'Impulso angular'];
 
@@ -611,7 +662,7 @@ export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques',
  * Con probabilidad MCQ_SHARE prefiere una pregunta de opción múltiple.
  */
 export function randomProblem(concepts?: string[]): Problem {
-  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept) && !ABISMO_CONCEPTS.includes(p.concept));
+  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept) && !ABISMO_CONCEPTS.includes(p.concept) && !ORBITA_CONCEPTS.includes(p.concept));
   const wantChoice = Math.random() < MCQ_SHARE;
   let fallback: Problem | null = null;
   for (let i = 0; i < 200; i++) {

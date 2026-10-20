@@ -86,6 +86,8 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Cobre', c: '#b06a3a', C: '#6a3a1a', id: 'col_capa_cobre', tienda: 6, enSet: true },
   { name: 'Traje Espacial', c: '#e0e0e8', C: '#9a9aa8', id: 'col_capa_espacial', tienda: 6, enSet: true },
   { name: 'Lentejuela Dorada', c: '#ffd040', C: '#a87a10', holo: 45, rango: 20, id: 'col_capa_lentejuela', tienda: 6, enSet: true },
+  // v0.58 · set del Cazador de Ecos
+  { name: 'Gabardina de Ceniza', c: '#3a404c', C: '#181b22', id: 'col_capa_ceniza', tienda: 6, enSet: true },
   // v0.46 · El Abismo de los Ejes (logros)
   { name: 'Agua Negra', c: '#0e3a36', C: '#06201e', logro: 'abismo_tramo' },
   { name: 'Abismo sin Fondo', c: '#2a1a4a', C: '#0a0618', cosmos: true, logro: 'abismo_infinito' },
@@ -101,8 +103,9 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Gabardina de los Whateley', c: '#6a7a3a', C: '#2a3418', logro: 'abismo_dunwich' },
   { name: 'Manto del Geómetra', c: '#9a6ad0', C: '#3a2458', holo: 260, rango: 60, logro: 'abismo_geometra' },
   { name: 'Manto del Desvelado (veterano)', c: '#e8b030', C: '#6a3a08', veterano: true, logro: 'abismo_veterano5' },
-  // v0.56 · infrarrojo (ley de Wien: lo más caliente brilla más blanco)
-  { name: 'Llama Infrarroja', c: '#ff5a1a', C: '#5a0a3a', infrarrojo: true, logro: 'abismo_calor3' },
+  // v0.56 · efecto infrarrojo (ley de Wien: lo más caliente brilla más blanco); v0.58 · se llama «Carcosa»,
+  // la ciudad del Rey de Amarillo, donde arden soles negros
+  { name: 'Llama de Carcosa', c: '#ff5a1a', C: '#5a0a3a', infrarrojo: true, logro: 'abismo_calor3' },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -141,7 +144,7 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Túnica del Soñador de Celephaïs', l: '#d8c8ff', g: '#6a5ab8', holo: 250, rango: 50, logro: 'abismo_sueno1' },
   { name: 'Hábito del Acólito de Yog-Sothoth', l: '#5a4a9a', g: '#241a4a', logro: 'abismo_yogSothoth' },
   { name: 'Coraza de la Eternidad (veterano)', l: '#f0c040', g: '#7a4010', veterano: true, logro: 'abismo_veterano10' },
-  { name: 'Cuerpo Negro (infrarrojo)', l: '#ff8a2a', g: '#3a0a4a', infrarrojo: true, logro: 'abismo_calor6' },
+  { name: 'Coraza de Carcosa (cuerpo negro)', l: '#ff8a2a', g: '#3a0a4a', infrarrojo: true, logro: 'abismo_calor6' },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },

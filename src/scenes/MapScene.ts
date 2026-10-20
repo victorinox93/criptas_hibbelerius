@@ -133,7 +133,9 @@ export class MapScene extends Phaser.Scene {
     if (act5 && run.pos >= 0 && !(run.seen ?? []).includes(clave)) {
       (run.seen ??= []).push(clave);
       const tipo = run.map.find((n) => n.id === run.pos)?.type ?? 'combate';
-      if ((run.diario ?? 0) < HOJAS_POR_EXPEDICION && Math.random() < (PROB_HOJA[tipo] ?? 0.05)) {
+      const segura = !!run.hojaSegura; // v0.58 · el Astrónomo te la señaló
+      run.hojaSegura = false;
+      if ((run.diario ?? 0) < HOJAS_POR_EXPEDICION && (segura || Math.random() < (PROB_HOJA[tipo] ?? 0.05))) {
         const i = encontrarHoja(PROLOGO.length);
         if (i !== null) {
           hayHoja = true;

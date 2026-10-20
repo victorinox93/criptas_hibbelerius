@@ -2,6 +2,16 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.58.0 · El Astrónomo de Providence (beta)
+
+- **El Astrónomo, de cuerpo entero:** traje gris, leyendo un libro, con tentáculos que se mecen detrás de él (de lo que está leyendo).
+- **Favores del Astrónomo:** después de subir tu constelación, eliges uno.
+  - **Pregunta de órbitas** (movimiento circular: a = v²/r, T = m·v²/r, v = 2πr/T). Si aciertas, la constelación sube otro nivel; si fallas, −8 de Cordura.
+  - **Que te preste el telescopio:** en tus 2 siguientes combates ves las intenciones ocultas (invisibles, de noche y la Calculadora sin batería).
+  - **Una hoja de Montemayor:** te señala dónde cayó; la encuentras al volver al mapa.
+- **El efecto infrarrojo ahora se llama «Carcosa»** (la ciudad del Rey de Amarillo): Llama de Carcosa (capa) y Coraza de Carcosa (armadura).
+- **Set nuevo en la Tienda de Layla: Cazador de Ecos.** Capucha con broche de plata, antifaz con lentes de latón, ballesta de resorte (E = ½·k·x²) y gabardina de ceniza.
+
 ## v0.57.0 · La Calculadora Primigenia (beta)
 
 - **Jefe nuevo de tramo: La Calculadora Primigenia.** La calculadora de Montemayor, con un ojo en la pantalla y tentáculos.

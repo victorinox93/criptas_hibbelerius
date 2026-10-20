@@ -150,6 +150,7 @@ export class CombatScene extends Phaser.Scene {
   private calcBolsillo = 1; // v0.57 · Calculadora de Bolsillo: multiplicador del siguiente Ataque
   private hibbelerM = 0; // v0.57 · El Hibbeler Maldito: Bloqueo al detener
   private tareaT = new Map<number, number>(); // v0.57 · La Tarea Olvidada: turnos en la mano (uid)
+  private telescopio = false; // v0.58 · ves las intenciones ocultas (telescopio del Astrónomo)
   private radianes = false; // v0.57 · la Calculadora Primigenia te cambió a RAD: Ataques ×0.6
   private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
   private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
@@ -192,6 +193,9 @@ export class CombatScene extends Phaser.Scene {
     this.floor = data.floor;
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
     this.radianes = false;
+    // v0.58 · el telescopio prestado del Astrónomo: dura unos combates
+    this.telescopio = (Game.run?.telescopio ?? 0) > 0;
+    if (this.telescopio && Game.run) Game.run.telescopio = Game.run.telescopio! - 1;
     this.calcBolsillo = 1;
     this.hibbelerM = 0;
     this.tareaT = new Map();
@@ -1343,7 +1347,7 @@ export class CombatScene extends Phaser.Scene {
     const st = ev.st;
     const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
     const bateria = st.def.id === 'calculadora' && st.hp < st.maxHp * 0.3; // v0.57 · batería baja
-    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && Game.run?.familiar?.id !== 'pezLinterna');
+    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && !this.telescopio && Game.run?.familiar?.id !== 'pezLinterna');
   }
 
   /** v0.57 · Globo de diálogo de una carta que habla (como en Inscryption) */

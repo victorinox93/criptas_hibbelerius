@@ -10,7 +10,8 @@ import { cardName, CARDS } from '../data/cards';
 import { EFFECTS } from '../data/effects';
 import { EVENTS, Outcome } from '../data/events';
 import { RELICS } from '../data/relics';
-import { ABISMO_CONCEPTS, CALCULO_CONCEPTS, checkAnswer, IMPULSE_CONCEPTS, Problem, randomProblem } from '../data/runes';
+import { ABISMO_CONCEPTS, CALCULO_CONCEPTS, checkAnswer, IMPULSE_CONCEPTS, ORBITA_CONCEPTS, Problem, randomProblem } from '../data/runes';
+import { ASTRONOMO_MAL } from '../data/lovecraft';
 import { multRacha, PUNTOS, sumar } from '../data/puntaje';
 import { ENTROPIA } from '../data/abismo';
 import { CORDURA } from '../data/abismo_modo';
@@ -25,7 +26,7 @@ import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, panel, TextField, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
 
-export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario' | 'relato';
+export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario' | 'relato' | 'observatorio';
 
 export interface RuneData {
   floor: number;
@@ -35,6 +36,7 @@ export interface RuneData {
   reto?: boolean; // eco molesto: reto de reconciliación (si fallas, se va)
   relatoId?: string; // v0.43 · Relato del Abismo (src/data/relatos.ts)
   opcion?: number;
+  constelacion?: [string, string]; // v0.58 · pregunta de órbitas del Astrónomo: [id del diente, nombre]
 }
 
 /** Aplica el resultado de un encuentro y devuelve una descripción */
@@ -120,12 +122,16 @@ export class RuneScene extends Phaser.Scene {
       : ['2a ley', 'Friccion', 'Trabajo', 'Energia cinetica', 'Conservacion', 'Impulso', 'Cantidad de movimiento', 'Impulso angular'];
     const rel = data.relatoId ? RELATO(data.relatoId) : undefined;
     const relP = rel && data.opcion !== undefined ? rel.opciones[data.opcion]?.pregunta : undefined;
-    this.p = randomProblem(relP ? relP.concepts : acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
+    this.p = randomProblem(data.source === 'observatorio' ? ORBITA_CONCEPTS : relP ? relP.concepts : acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);
       this.tweens.add({ targets: por, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, fig.name, 34, '#9ad8f0');
+    } else if (data.source === 'observatorio') {
+      const por = this.add.image(70, 170, 'fig_astronomo').setScale(2.4);
+      this.tweens.add({ targets: por, y: 166, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      title(this, W / 2, 86, p.title, 34, '#c8b8ff');
     } else if (rel) {
       const im = this.add.image(62, 150, rel.icono).setScale(6).setTint(rel.tinte);
       this.tweens.add({ targets: im, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -145,6 +151,7 @@ export class RuneScene extends Phaser.Scene {
       regateo: '«Resuélvelo y te rebajo los precios.»',
       santuario: T.santuario.siAciertas,
       relato: relP ? `Si aciertas: ${relP.bien.texto.split('.')[0]}.` : '',
+      observatorio: data.constelacion ? `«Si acierta, ${data.constelacion[1]} brillará todavía más.»` : '',
     };
     txt(this, W / 2, 156, sub[data.source], 20, CSS.dim).setOrigin(0.5);
 
@@ -280,7 +287,7 @@ export class RuneScene extends Phaser.Scene {
       // Actualización Bayesiana (Bayes): un error no borra la evidencia acumulada
       if (!this.amUsado && !boonLevel('by_actualiza')) run.stats.racha = 0;
     }
-    if (this.d.source !== 'regateo') run.floor = this.d.floor + 1;
+    if (this.d.source !== 'regateo' && this.d.source !== 'observatorio') run.floor = this.d.floor + 1;
     saveLocal();
     syncRun('en curso');
     this.hud.refresh(); // el semáforo de Cordura cambia al instante
@@ -342,6 +349,28 @@ export class RuneScene extends Phaser.Scene {
       c.add(button(this, W - 210, 496, 220, 40, reto && !ok ? T.runa.continuar : T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
         floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok, reto,
       }), { size: 22, color: ok ? UI.gold : UI.border }));
+      return;
+    }
+
+    if (this.d.source === 'observatorio') {
+      const run = Game.run!;
+      const [id, nom] = this.d.constelacion ?? ['marte', 'ATAQUE'];
+      let res: string;
+      if (ok) {
+        (run.cosmos ??= {})[id] = (run.cosmos[id] ?? 0) + 1;
+        res = `${nom} sube otro nivel.`;
+      } else {
+        addEntropia(ASTRONOMO_MAL);
+        res = `−${ASTRONOMO_MAL} de Cordura: entre las estrellas viste algo que te miró.`;
+      }
+      saveLocal();
+      this.hud.refresh();
+      logEvent('observatorio', p.concept, ok, { constelacion: id });
+      this.apilar(c, [
+        txt(this, 0, 0, ok ? '«¡Exacto! Las órbitas no mienten.»' : '«Hmm. Vuelva a mirar: siempre apunta hacia el centro.»', 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 300 } }),
+        txt(this, 0, 0, res, 18, CSS.gold, { wordWrap: { width: 300 } }),
+      ]);
+      contBtn();
       return;
     }
 

@@ -365,6 +365,13 @@ export const ACCESORIOS: Accesorio[] = [
   { id: 'bandera_exp', nombre: 'Bandera de la Expedición', slot: 'mano', cat: 'scifi', precio: 5, desc: 'En la Luna, g = 1.62 m/s²: la bandera casi flota.', rows: ["nyyyyy", "nykkky", "nyyyyy", "n.....", "n.....", "n.....", "n.....", "n.....", "n.....", "n....."], ancla: [0, 7] },
   { id: 'cinturon', nombre: 'Cinturón de Campeón', slot: 'mano', cat: 'mexico', precio: 8, desc: 'Impulso = F·Δt: la plancha desde la tercera cuerda.', rows: ["kk.....kk", "kyyyyyyyk", "kyYrrrYyk", "kyyyyyyyk", "kk.....kk"], ancla: [4, 2] },
   { id: 'colmillos', nombre: 'Colmillos', slot: 'cara', cat: 'halloween', precio: 4, desc: 'Para morder los problemas difíciles.', rows: ["WkkkkW", ".W..W."], ancla: [2.5, -3] },
+  // v0.58 · set «Cazador de Ecos» (original): capucha con broche de plata, antifaz de cuero con lentes de latón y ballesta de resorte
+  { id: 'capucha_cazador', nombre: 'Capucha del Cazador', slot: 'cabeza', cat: 'criptas', precio: 7, desc: 'Cuero encerado contra la lluvia de las criptas. El broche de plata es para las noches largas.',
+    rows: ['.....kkkk.....', '...kkJJJJkk...', '..kJJJHHJJJk..', '.kJJHHHHHHJJk.', '.kJHHJJJJHHJk.', 'kJJHJk..kJHJJk', 'kJJJk....kJJJk', 'kJJk......kJJk', 'kJJk......kJJk', 'kiJk......kJJk', '.kk........kk.'], ancla: [7, 5] },
+  { id: 'antifaz_cazador', nombre: 'Antifaz del Cazador', slot: 'cara', cat: 'criptas', precio: 5, desc: 'Lentes de latón ahumado: ves los ecos sin que los ecos te vean a ti.',
+    rows: ['NNNNNNNNNNN', 'NUyUNNNUyUN', 'NUUUN.NUUUN', '.NNN...NNN.'], ancla: [5, 1] },
+  { id: 'ballesta_resorte', nombre: 'Ballesta de Resorte', slot: 'mano', cat: 'armas', precio: 8, desc: 'E = ½·k·x²: mientras más estiras la cuerda, más energía guarda el virote.',
+    rows: ['.......kl..', '.......l.w.', '......l..w.', 'NNNNNNNNNNy', 'nnnnnnNl.w.', '..nn...l.w.', '..nn....kl.', '..nn.......'], ancla: [3, 5] },
   { id: 'candelabro', nombre: 'Candelabro', slot: 'mano', cat: 'criptas', precio: 7, desc: 'Tres llamas, la misma presión atmosférica.', rows: ["y.y.y", "o.o.o", "W.W.W", "W.W.W", "YYYYY", "..Y..", "..Y..", ".YYY."], ancla: [2, 6] },
 ];
 
@@ -388,6 +395,7 @@ const SETS: { id: string; nombre: string; desc: string; piezas: string[]; capa: 
   { id: 'set_conde', nombre: 'Conde de las Criptas', desc: 'Colmillos, candelabro y capa de terciopelo. Un aristócrata gótico que nunca ve el sol.', piezas: ['colmillos', 'candelabro', 'copa'], capa: 'col_capa_terciopelo' },
   { id: 'set_alquimista', nombre: 'Alquimista de Vapor', desc: 'Goggles de latón, matraz, sombrero de copa y capa de cobre. PV = nRT con estilo.', piezas: ['goggles', 'matraz', 'copa'], capa: 'col_capa_cobre' },
   { id: 'set_astronauta', nombre: 'Astronauta de las Criptas', desc: 'Escafandra, botas lunares, bandera y traje blanco. En la Luna, g = 1.62 m/s².', piezas: ['astronauta', 'botas_espacio', 'bandera_exp'], capa: 'col_capa_espacial' },
+  { id: 'set_cazador', nombre: 'Cazador de Ecos', desc: 'Capucha con broche de plata, antifaz de latón, ballesta de resorte y gabardina de ceniza. Caza de noche, estudia de día.', piezas: ['capucha_cazador', 'antifaz_cazador', 'ballesta_resorte'], capa: 'col_capa_ceniza' },
   { id: 'set_luchador', nombre: 'Luchador', desc: 'Máscara, cinturón de campeón y capa de lentejuela. Impulso = F·Δt desde la tercera cuerda.', piezas: ['mascara_luchador', 'cinturon'], capa: 'col_capa_lentejuela' },
 ];
 // v0.46 · premios del Abismo de los Ejes (no están a la venta; se ganan con logros)
