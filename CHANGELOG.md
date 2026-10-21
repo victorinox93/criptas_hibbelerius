@@ -2,6 +2,28 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.65.0 · El Taller de Newton (beta)
+
+- El Crisol ahora se llama **Taller de Newton**.
+- Al elegir cartas en el Taller se ven las **cartas de verdad** (la primera, la segunda y lo que sale), no sólo sus nombres.
+- **Cualquier pareja se puede combinar.** Si no forman una receta secreta, sale una **mezcla intermedia** según el tipo de las dos cartas (superposición: los efectos se suman, pero más débiles que una fusión perfecta). Hay 10 mezclas:
+
+  | Pareja | Mezcla | Efecto |
+  |---|---|---|
+  | Ataque + Ataque | Golpe Doble | 2 golpes de 6 |
+  | Ataque + Defensa | Golpe con Guardia | 8 de daño y +7 de Bloqueo |
+  | Ataque + Habilidad | Golpe Calculado | 9 de daño y robas 1 |
+  | Ataque + Poder | Golpe Concentrado | 13 de daño (se agota) |
+  | Defensa + Defensa | Muralla | +14 de Bloqueo |
+  | Defensa + Habilidad | Guardia Ágil | +8 de Bloqueo y robas 1 |
+  | Defensa + Poder | Coraza Constante | +3 de Bloqueo cada turno |
+  | Habilidad + Habilidad | Doble Truco | Robas 2 y +1 J |
+  | Habilidad + Poder | Estudio Constante | Robas 1 más cada turno |
+  | Poder + Poder | Motor Perpetuo (casi) | +1 J cada turno |
+
+  - Las mezclas también llevan pregunta: si aciertas, salen mejoradas.
+  - Las recetas secretas siguen dando las cartas más fuertes.
+
 ## v0.64.0 · El Crisol de Newton (beta)
 
 - **Fusiones de cartas (como en Ball x Pit).** Nueva opción en TODAS las Fogatas: el **Crisol de Newton**.

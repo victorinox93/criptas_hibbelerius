@@ -961,7 +961,7 @@ export function starterDeck(clase: string) {
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */
 export function rewardPool(clase: string, acto = 1, nivel = 99, am = false): string[] {
-  const ok = (c: CardDef) => (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel && (!c.am || am) && (!c.abismo || acto === 5);
+  const ok = (c: CardDef) => !c.fusion && (c.act ?? 1) <= acto && (c.lock ?? 0) <= nivel && (!c.am || am) && (!c.abismo || acto === 5);
   const own = Object.values(CARDS).filter((c) => ok(c) &&
     c.rarity !== 'estado' && c.rarity !== 'legendaria' && (c.cls ?? 'caballero') === (clase || 'caballero'));
   const neutral = Object.values(CARDS).filter((c) => c.cls === 'neutral' && c.rarity !== 'estado' && c.rarity !== 'legendaria' && ok(c));
@@ -1051,6 +1051,31 @@ ganas +2 J. Se agota.`,
     lore: 'Fusión de Derivada e Integral. Derivar e integrar se deshacen una a la otra: ∫ f′(x) dx = f(x).',
   },
 } as Record<string, CardDef>);
+
+// v0.65 · MEZCLAS del Taller de Newton: cualquier pareja SIN receta se combina en una carta «intermedia»
+// que depende de los TIPOS de las dos cartas (superposición: los efectos se suman, pero más débiles que una receta)
+const mezcla = (id: string, name: string, type: CardType, icon: string, target: 'enemy' | 'self', stats: (up: boolean) => CardStats, text: (s: CardStats) => string, exhaust = false): CardDef =>
+  ({ id, name, type, icon, concept: 'Superposición', rarity: 'rara', target, cls: 'neutral', fusion: true, exhaust, stats, text: (s) => text(s), lore: 'Mezcla del Taller de Newton: sin receta exacta, los efectos de las dos cartas se SUPERPONEN (se suman), aunque más débiles que una fusión perfecta.' });
+Object.assign(CARDS, {
+  m_aa: mezcla('m_aa', 'Golpe Doble', 'Ataque', 'i_bolt', 'enemy', (up) => ({ cost: 1, extra: up ? 8 : 6 }), (s) => `Golpea 2 veces\npor ${s.extra}.`),
+  m_ad: mezcla('m_ad', 'Golpe con Guardia', 'Ataque', 'i_shield', 'enemy', (up) => ({ cost: 1, extra: up ? 10 : 8, block: up ? 9 : 7 }), (s) => `Inflige ${s.extra}\ny ganas ${s.block} de Bloqueo.`),
+  m_ah: mezcla('m_ah', 'Golpe Calculado', 'Ataque', 'i_book', 'enemy', (up) => ({ cost: 1, extra: up ? 11 : 9 }), (s) => `Inflige ${s.extra}.\nRobas 1 carta.`),
+  m_ap: mezcla('m_ap', 'Golpe Concentrado', 'Ataque', 'i_crystal', 'enemy', (up) => ({ cost: 1, extra: up ? 16 : 13 }), (s) => `Inflige ${s.extra}.\nSe agota.`, true),
+  m_dd: mezcla('m_dd', 'Muralla', 'Defensa', 'i_shield', 'self', (up) => ({ cost: 1, block: up ? 18 : 14 }), (s) => `+${s.block} de Bloqueo.`),
+  m_dh: mezcla('m_dh', 'Guardia Ágil', 'Defensa', 'i_shield', 'self', (up) => ({ cost: 1, block: up ? 10 : 8 }), (s) => `+${s.block} de Bloqueo.\nRobas 1 carta.`),
+  m_dp: mezcla('m_dp', 'Coraza Constante', 'Poder', 'i_shield', 'self', (up) => ({ cost: 1, block: up ? 4 : 3 }), (s) => `+${s.block} de Bloqueo al inicio\nde cada turno.\nSe agota.`, true),
+  m_hh: mezcla('m_hh', 'Doble Truco', 'Habilidad', 'i_book', 'self', (up) => ({ cost: 0, extra: up ? 3 : 2 }), (s) => `Robas ${s.extra} cartas\ny ganas +1 J.\nSe agota.`, true),
+  m_hp: mezcla('m_hp', 'Estudio Constante', 'Poder', 'i_book', 'self', (up) => ({ cost: up ? 0 : 1 }), () => 'Robas 1 carta más\nal inicio de cada turno.\nSe agota.', true),
+  m_pp: mezcla('m_pp', 'Motor Perpetuo (casi)', 'Poder', 'i_bolt', 'self', (up) => ({ cost: up ? 1 : 2 }), () => '+1 J al inicio de\ncada turno.\nSe agota.', true),
+});
+/** v0.65 · la mezcla que sale de dos cartas sin receta (según sus tipos) */
+export function mezclaDe(a: string, b: string): string | null {
+  const ord = ['Ataque', 'Defensa', 'Habilidad', 'Poder'];
+  const L = ['a', 'd', 'h', 'p'];
+  const ta = ord.indexOf(CARDS[a]?.type), tb = ord.indexOf(CARDS[b]?.type);
+  if (ta < 0 || tb < 0) return null;
+  return `m_${L[Math.min(ta, tb)]}${L[Math.max(ta, tb)]}`;
+}
 
 export const LEGENDARIAS = Object.values(CARDS).filter((c) => c.rarity === 'legendaria' && !c.fusion).map((c) => c.id);
 

@@ -151,6 +151,7 @@ export class CombatScene extends Phaser.Scene {
   private calcBolsillo = 1; // v0.57 · Calculadora de Bolsillo: multiplicador del siguiente Ataque
   private hibbelerM = 0; // v0.57 · El Hibbeler Maldito: Bloqueo al detener
   private tareaT = new Map<number, number>(); // v0.57 · La Tarea Olvidada: turnos en la mano (uid)
+  private robaTurno = 0; // v0.65 · Estudio Constante: cartas extra al inicio de cada turno
   private pendCosmico = 0; // v0.64 · Péndulo Cósmico: golpe al inicio de cada turno
   private ultimoGolpe = 0; // v0.62 · el último golpe de carta (el Gemelo de Espejo te lo regresa)
   private gemeloUsado = false;
@@ -201,6 +202,7 @@ export class CombatScene extends Phaser.Scene {
     this.radianes = false;
     this.ultimoGolpe = 0;
     this.pendCosmico = 0;
+    this.robaTurno = 0;
     this.gemeloUsado = false;
     // v0.58 · el telescopio prestado del Astrónomo: dura unos combates
     this.telescopio = (Game.run?.telescopio ?? 0) > 0;
@@ -1108,6 +1110,11 @@ export class CombatScene extends Phaser.Scene {
       case 'golpe': case 'fuerzaNeta': case 'martillo': return b({ dmg: F() });
       // v0.64 · cartas fusionadas
       case 'f_momentum': return b({ dmg: F(), ignora: true });
+      // v0.65 · mezclas del Taller
+      case 'm_aa': return b({ dmg: st.extra ?? 6, golpes: 2 });
+      case 'm_ad': return b({ dmg: st.extra ?? 8, nota: `Y ganas ${st.block} de Bloqueo.` });
+      case 'm_ah': return b({ dmg: st.extra ?? 9, nota: 'Y robas 1 carta.' });
+      case 'm_ap': return b({ dmg: st.extra ?? 13 });
       case 'f_impulso': return b({ dmg: F(), golpes: 3 });
       case 'f_conservacion': return b({ dmg: K(), nota: `Antes ganas +${st.extra} J.` });
       case 'f_cohete': return b({ dmg: 0, sinDano: `No hace daño directo: +${st.extra} de Calor a todos (y quemas 4 kg).` });
@@ -2240,6 +2247,54 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Ecuación del Cohete: +${st.extra} de Calor a todos`);
         break;
       }
+      // ── v0.65 · mezclas del Taller de Newton (superposición) ──
+      case 'm_aa':
+        this.calc(`Golpe Doble: 2 golpes de ${st.extra}`);
+        for (let i = 0; i < 2 && target && !target.dead; i++) { await this.heroLunge(); await this.hitEnemy(target, st.extra ?? 6); }
+        break;
+      case 'm_ad':
+        this.calc(`Golpe con Guardia: ${st.extra} de daño y +${st.block} de Bloqueo`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.extra ?? 8);
+        this.gainBlock(st.block ?? 7);
+        break;
+      case 'm_ah':
+        this.calc(`Golpe Calculado: ${st.extra} de daño y robas 1`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.extra ?? 9);
+        this.drawCards(1);
+        break;
+      case 'm_ap':
+        this.calc(`Golpe Concentrado: ${st.extra} de daño`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.extra ?? 13);
+        break;
+      case 'm_dd':
+        this.gainBlock(st.block ?? 14);
+        this.calc(`Muralla: +${st.block} de Bloqueo`);
+        break;
+      case 'm_dh':
+        this.gainBlock(st.block ?? 8);
+        this.drawCards(1);
+        this.calc(`Guardia Ágil: +${st.block} de Bloqueo y robas 1`);
+        break;
+      case 'm_dp':
+        this.blockPerTurn += st.block ?? 3;
+        this.calc(`Coraza Constante: +${st.block} de Bloqueo cada turno`);
+        break;
+      case 'm_hh':
+        this.drawCards(st.extra ?? 2);
+        this.energy += 1;
+        this.calc(`Doble Truco: robas ${st.extra} y +1 J`);
+        break;
+      case 'm_hp':
+        this.robaTurno += 1;
+        this.calc('Estudio Constante: robarás 1 carta más cada turno');
+        break;
+      case 'm_pp':
+        this.jPerTurn += 1;
+        this.calc('Motor Perpetuo (casi): +1 J cada turno');
+        break;
       case 'f_teorema':
         this.drawCards(st.extra ?? 3);
         this.energy += 2;
@@ -3415,6 +3470,7 @@ export class CombatScene extends Phaser.Scene {
     }
     const fam = Game.run!.familiar;
     if (fam?.id === 'lechuza' || fam?.id === 'pezLinterna') draw += 1;
+    draw += this.robaTurno; // v0.65
     if (this.isPen && this.turn > 1 && this.vel > 0) {
       const v0 = this.vel;
       this.vel = Math.max(0, Math.round((this.vel - 2) * 10) / 10);

@@ -60,8 +60,8 @@ export class CampfireScene extends Phaser.Scene {
     button(this, xs[1], 470, bw, 64, T.fogata.estudiar, () => {
       fadeTo(this, 'Rune', { floor: data.floor, source: 'fogata' });
     }, { color: 0x8e5bb0, size: 22, enabled: canUp });
-    const crisol = button(this, xs[2], 470, bw, 64, 'Crisol de Newton\nfundir 2 cartas', () => fadeTo(this, 'Crisol', { floor: data.floor }), { color: 0xc8701a, size: 19 });
-    tip.attach(crisol, 'El Crisol de Newton', 'Eliges 2 cartas: si su física se combina (p = m·v, J = F·Δt…), se funden en una carta nueva. Las recetas son secretas: descúbrelas.');
+    const crisol = button(this, xs[2], 470, bw, 64, 'Taller de Newton\ncombinar 2 cartas', () => fadeTo(this, 'Crisol', { floor: data.floor }), { color: 0xc8701a, size: 19 });
+    tip.attach(crisol, 'El Taller de Newton', 'Combinas 2 cartas en una nueva. Si su física encaja (p = m·v, J = F·Δt…) descubres una receta secreta; si no, sale una mezcla intermedia.');
     if (libro) {
       const b = button(this, xs[3], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Locura`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });
       tip.attach(b, RELICS.necronomicon.name, 'Eliges un Problema Prohibido: poder permanente con un costo. Tu Locura sube.');
