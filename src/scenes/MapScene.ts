@@ -42,9 +42,11 @@ const NODE_INFO = Object.fromEntries(
 ) as Record<NodeType, { icon: string; color: number; name: string; desc: string }>;
 
 /** Posición de un nodo; el ancho entre pisos se ajusta a cuántos pisos tiene el mapa */
-/** v0.62 · Pérez, el Ratón de los Dientes: empieza RATON_VENTAJA pisos detrás de ti en cada tramo */
+/** v0.62 · Roído, el Coleccionista de Sonrisas: empieza RATON_VENTAJA pisos detrás de ti en cada tramo */
 export const RATON_VENTAJA = 3;
-/** nodos donde te detienes a descansar o a comprar: ahí Pérez avanza el doble */
+/** v0.63 · Roído aparece desde este tramo (en el primero era muy agresivo) */
+export const RATON_DESDE = 2;
+/** nodos donde te detienes a descansar o a comprar: ahí Roído avanza el doble */
 const RATON_LENTO: NodeType[] = ['fogata', 'santuario', 'mercader', 'boca', 'observatorio', 'gabinete'];
 
 export const nodeAt = (n: MapNode, maxFloor = FLOORS, izq = 60) => ({
@@ -525,16 +527,17 @@ export class MapScene extends Phaser.Scene {
     });
     layer.add(button(this, W / 2, 432, 200, 32, 'Pelear solo', () => ir(), { size: 17 }));
   }
-  /** v0.62 · Pérez avanza cuando tú avanzas: 1 piso por nodo, 2 si te detienes a descansar o comprar (y a veces 1 extra) */
+  /** v0.62 · Roído avanza cuando tú avanzas: 1 piso por nodo, 2 si te detienes a descansar o comprar (y a veces 1 extra) */
   private avanzaRaton(n: MapNode) {
     const run = Game.run!;
     if ((run.acto ?? 1) !== 5 || !run.raton || run.raton.tramo !== (run.tramo ?? 1)) return;
     run.raton.piso += (RATON_LENTO.includes(n.type) ? 2 : 1) + (Math.random() < 0.12 ? 1 : 0);
   }
 
-  /** v0.62 · Pérez, el Ratón de los Dientes: te persigue por el mapa; si te alcanza, te arranca un diente */
+  /** v0.62 · Roído, el Coleccionista de Sonrisas: te persigue por el mapa; si te alcanza, te arranca un diente */
   private ratonPerez(run: Run, current: MapNode | null, nodeXY: (n: MapNode) => { x: number; y: number }, tip: Tooltip, hayHoja: boolean) {
     const tramo = run.tramo ?? 1;
+    if (tramo < RATON_DESDE) return; // v0.63 · en el primer tramo todavía no aparece
     if (!run.raton || run.raton.tramo !== tramo) { run.raton = { piso: -RATON_VENTAJA, tramo }; saveLocal(); }
     const r = run.raton;
     const miPiso = current ? current.floor : -1;
@@ -557,15 +560,15 @@ export class MapScene extends Phaser.Scene {
       r.piso = miPiso - RATON_VENTAJA;
       saveLocal();
     }
-    // en el mapa: Pérez va detrás de ti, en tu mismo carril
+    // en el mapa: Roído va detrás de ti, en tu mismo carril
     const yo = current ? nodeXY(current) : { x: 84, y: 280 };
     const px = Math.max(96, nodeXY({ id: -9, floor: Math.max(-1, r.piso), lane: current?.lane ?? 2, type: 'combate', next: [] }).x - (r.piso < -1 ? 30 * (-1 - r.piso) : 0));
     const gap = miPiso - r.piso;
     const raton = this.add.image(px, yo.y + 30, 'fig_perez').setScale(2.2).setFlipX(true).setDepth(6).setInteractive();
     this.tweens.add({ targets: raton, y: raton.y - 3, duration: 260, yoyo: true, repeat: -1 });
-    tip.attach(raton, 'Pérez, el Ratón de los Dientes', `Va ${gap} piso(s) detrás de ti y colecciona dientes.\nTú avanzas 1 piso por nodo; él también… pero avanza 2 cuando te detienes a descansar o comprar (Fogata, Eco, Mercader, Sacamuelas, Observatorio, Gabinete): velocidad relativa.\nSi te alcanza, te arranca un diente.`, 20);
+    tip.attach(raton, 'Roído, el Coleccionista de Sonrisas', `Va ${gap} piso(s) detrás de ti y colecciona dientes.\nTú avanzas 1 piso por nodo; él también… pero avanza 2 cuando te detienes a descansar o comprar (Fogata, Eco, Mercader, Sacamuelas, Observatorio, Gabinete): velocidad relativa.\nSi te alcanza, te arranca un diente.`, 20);
     if (gap <= 1 && !robo) {
-      const av = txt(this, px, yo.y + 58, gap <= 0 ? '¡Te alcanza!' : '¡Pérez está a 1 piso!', 14, '#ff8a8a').setOrigin(0.5).setStroke('#000', 3).setDepth(6);
+      const av = txt(this, px, yo.y + 58, gap <= 0 ? '¡Te alcanza!' : '¡Roído está a 1 piso!', 14, '#ff8a8a').setOrigin(0.5).setStroke('#000', 3).setDepth(6);
       this.tweens.add({ targets: av, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
     }
     if (robo) this.time.delayedCall(900, () => {
@@ -575,8 +578,8 @@ export class MapScene extends Phaser.Scene {
       frame(g, W / 2 - 280, 150, 560, 230, 0x140c10, 0xc84a4a, 0.97);
       c.add(g);
       c.add(this.add.image(W / 2 - 190, 262, 'fig_perez').setScale(5));
-      c.add(title(this, W / 2 + 60, 176, '¡Pérez te alcanzó!', 30, '#ff9a9a'));
-      c.add(txt(this, W / 2 + 60, 212, `Unas pinzas frías, un tirón… y Pérez sale corriendo con su costal.\n${robo}\nVuelve a empezar ${RATON_VENTAJA} pisos detrás de ti.`, 16, CSS.bone, { align: 'center', wordWrap: { width: 300 } }).setOrigin(0.5, 0));
+      c.add(title(this, W / 2 + 60, 176, '¡Roído te alcanzó!', 30, '#ff9a9a'));
+      c.add(txt(this, W / 2 + 60, 212, `Unas pinzas frías, un tirón… y Roído sale corriendo con su costal de sonrisas.\n${robo}\nVuelve a empezar ${RATON_VENTAJA} pisos detrás de ti.`, 16, CSS.bone, { align: 'center', wordWrap: { width: 300 } }).setOrigin(0.5, 0));
       c.add(button(this, W / 2 + 60, 346, 160, 36, 'Ay…', () => c.destroy(), { size: 18, color: 0x8a3a3a }));
       audio.sfx('wrong');
       this.cameras.main.shake(200, 0.006);

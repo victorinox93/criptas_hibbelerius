@@ -86,7 +86,7 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
     ]),
     ov: { m: '#e070a0', M: '#9a3a6a', w: '#7a6a9a', r: '#c86a7a', R: '#7a2a3a' },
   },
-  // v0.62 · Pérez, el Ratón de los Dientes (te persigue por el mapa): pinzas y costal de dientes
+  // v0.62 · Roído, el Coleccionista de Sonrisas (te persigue por el mapa): pinzas y costal de dientes
   fig_perez: {
     rows: [
       '.....kk.....kk....', '....kppk...kppk...', '....kkkkkkkkkkk...', '..kkGGGGGGGGGGGk..', '.kGGGrGGGGGrGGGk..', 'kGGGGGGGGGGGGGGk..', 'NGGGGGGWWGGGGGGk..', '.kkGGGWWGGGGGGGk..', '...kkGGGGGGGGGk...', '....kGGGGGGGGGkk..', '..ll.kGGGGGGGGGkkk', '.l..lkGGGGGGGGGk.k', '..ll..kGGGGGGGk..k', '......kSSSSSSSk...', '......kk.kk.kk....',

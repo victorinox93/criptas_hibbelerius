@@ -113,7 +113,7 @@ export interface Run {
   gemelo?: number; // v0.62 · tramo en que tu reflejo te sigue (usa tu último golpe contra ti, 1 vez por combate)
   cilindro?: number; // v0.62 · tramo con el cerebro en el cilindro del Mi-Go (la Cordura no baja; −15 de Vida máxima)
   sombraAlias?: string; // v0.62 · nombre de la Sombra del Alumno Anterior
-  raton?: { piso: number; tramo: number }; // v0.62 · Pérez, el Ratón de los Dientes: en qué piso va (te persigue) // v0.61 · préstamo del Prestamista: se cobra al terminar el tramo
+  raton?: { piso: number; tramo: number }; // v0.62 · Roído, el Coleccionista de Sonrisas: en qué piso va (te persigue) // v0.61 · préstamo del Prestamista: se cobra al terminar el tramo
   alineacion?: number; // v0.61 · tramo con Alineación Planetaria (+1 J en el primer turno de cada combate)
   astrosVistos?: string[]; // v0.59 · astros ambulantes ya enfrentados en esta partida (no se repiten)
   telescopio?: number; // v0.58 · combates que te quedan con el telescopio prestado del Astrónomo (ves las intenciones ocultas)
