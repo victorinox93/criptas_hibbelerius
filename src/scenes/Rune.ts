@@ -17,7 +17,8 @@ import { ENTROPIA } from '../data/abismo';
 import { CORDURA } from '../data/abismo_modo';
 import { AM_ENTROPIA, PACTO_AM } from '../data/am';
 import { completarEncargo } from '../data/encargos';
-import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun } from '../state';
+import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
+import { marcarReceta, RECETAS_CARTAS } from '../data/fusiones';
 import { FIGURES } from '../data/figures';
 import { gravityOf } from '../data/gravity';
 import { T } from '../textos';
@@ -26,7 +27,7 @@ import { deckOverlay, topBar } from '../ui/hud';
 import { button, Btn, embers, fadeTo, frame, icon, panel, TextField, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { grantRelic, randomRelics } from './Reward';
 
-export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario' | 'relato' | 'observatorio';
+export type RuneSource = 'altar' | 'fogata' | 'evento' | 'regateo' | 'santuario' | 'relato' | 'observatorio' | 'fusion';
 
 export interface RuneData {
   floor: number;
@@ -36,7 +37,9 @@ export interface RuneData {
   reto?: boolean; // eco molesto: reto de reconciliación (si fallas, se va)
   relatoId?: string; // v0.43 · Relato del Abismo (src/data/relatos.ts)
   opcion?: number;
-  constelacion?: [string, string]; // v0.58 · pregunta de órbitas del Astrónomo: [id del diente, nombre]
+  constelacion?: [string, string];
+  receta?: string; // v0.64 · fusión del Crisol de Newton (src/data/fusiones.ts)
+  uids?: [number, number]; // las dos cartas que se funden // v0.58 · pregunta de órbitas del Astrónomo: [id del diente, nombre]
 }
 
 /** Aplica el resultado de un encuentro y devuelve una descripción */
@@ -122,12 +125,17 @@ export class RuneScene extends Phaser.Scene {
       : ['2a ley', 'Friccion', 'Trabajo', 'Energia cinetica', 'Conservacion', 'Impulso', 'Cantidad de movimiento', 'Impulso angular'];
     const rel = data.relatoId ? RELATO(data.relatoId) : undefined;
     const relP = rel && data.opcion !== undefined ? rel.opciones[data.opcion]?.pregunta : undefined;
-    this.p = randomProblem(data.source === 'observatorio' ? ORBITA_CONCEPTS : relP ? relP.concepts : acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
+    const receta = data.receta ? RECETAS_CARTAS.find((r) => r.id === data.receta) : undefined;
+    this.p = randomProblem(receta?.concepts ? receta.concepts : data.source === 'observatorio' ? ORBITA_CONCEPTS : relP ? relP.concepts : acto === 5 ? fig?.concepts ?? ev?.concepts ?? abismoC : acto >= 4 ? CALCULO_CONCEPTS : ev?.concepts ?? fig?.concepts ?? actC);
     const p = this.p;
     if (fig) {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);
       this.tweens.add({ targets: por, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, fig.name, 34, '#9ad8f0');
+    } else if (receta) {
+      const crisol = this.add.image(62, 150, 'i_crystal').setScale(6).setTint(0xffb060);
+      this.tweens.add({ targets: crisol, angle: 8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      title(this, W / 2, 86, `El Crisol de Newton · ${receta.formula}`, 32, '#ffc080');
     } else if (data.source === 'observatorio') {
       const por = this.add.image(70, 170, 'fig_astronomo').setScale(2.4);
       this.tweens.add({ targets: por, y: 166, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -153,6 +161,7 @@ export class RuneScene extends Phaser.Scene {
       regateo: '«Resuélvelo y te rebajo los precios.»',
       santuario: T.santuario.siAciertas,
       relato: relP ? `Si aciertas: ${conAlias(relP.bien.texto).split('.')[0]}.` : '',
+      fusion: '«Si aciertas, la carta fusionada sale MEJORADA (+).»',
       observatorio: data.constelacion ? `«Si acierta, ${data.constelacion[1]} brillará todavía más.»` : '',
     };
     txt(this, W / 2, 156, sub[data.source], 20, CSS.dim).setOrigin(0.5);
@@ -351,6 +360,25 @@ export class RuneScene extends Phaser.Scene {
       c.add(button(this, W - 210, 496, 220, 40, reto && !ok ? T.runa.continuar : T.santuario.elegirDon, () => fadeTo(this, 'Sanctuary', {
         floor: this.d.floor, figureId: this.d.figureId, phase: 'elegir', epic: ok, reto,
       }), { size: 22, color: ok ? UI.gold : UI.border }));
+      return;
+    }
+
+    if (this.d.source === 'fusion') {
+      // v0.64 · nace la carta fusionada: mejorada si acertaste
+      const run = Game.run!;
+      const rc = RECETAS_CARTAS.find((r) => r.id === this.d.receta)!;
+      const [u1, u2] = this.d.uids ?? [-1, -1];
+      run.deck = run.deck.filter((x) => x.uid !== u1 && x.uid !== u2);
+      addCard(rc.res, ok);
+      marcarReceta(rc.id);
+      unlock('cards', rc.res);
+      saveLocal();
+      logEvent('fusion', p.concept, ok, { receta: rc.id });
+      this.apilar(c, [
+        txt(this, 0, 0, `¡Nace ${CARDS[rc.res].name}${ok ? '+' : ''}!`, 22, ok ? CSS.green : '#ffc080', { wordWrap: { width: 300 } }),
+        txt(this, 0, 0, `${CARDS[rc.a].name} + ${CARDS[rc.b].name} → ${rc.formula}. ${rc.explica}`, 15, CSS.bone, { wordWrap: { width: 300 } }),
+      ]);
+      contBtn();
       return;
     }
 

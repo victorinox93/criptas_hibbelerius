@@ -207,7 +207,7 @@ export function abrirSobre(tipo: string, clase: string): CartaSobre[] {
   const out: CartaSobre[] = [];
   for (let i = 0; i < 3; i++) out.push({ id: saca(comunes), up: Math.random() < 0.15 });
   // espacio raro: 12 % legendaria (del Abismo en su sobre; de las demás en los otros)
-  const legs = Object.values(CARDS).filter((c) => c.rarity === 'legendaria' && !!c.abismo === (tipo === 'abismo') && (tipo !== 'clase' || propia(c.id))).map((c) => c.id);
+  const legs = Object.values(CARDS).filter((c) => c.rarity === 'legendaria' && !c.fusion && !!c.abismo === (tipo === 'abismo') && (tipo !== 'clase' || propia(c.id))).map((c) => c.id);
   out.push({ id: legs.length && Math.random() < 0.12 ? saca(legs) : saca(raras.length ? raras : comunes), up: false });
   // espacio brillante: cualquier carta del sobre con edición garantizada
   let r = Math.random(), ed: Edicion = 'lamina';

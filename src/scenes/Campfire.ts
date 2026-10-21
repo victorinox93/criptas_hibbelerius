@@ -39,9 +39,9 @@ export class CampfireScene extends Phaser.Scene {
     const heal = sinCura ? 0 : Math.round(run.maxHp * gravityOf(run.gravity).heal * (omega ? 0.5 : 1) * (nivelDiente(run.dientes, 'branquia') ? 0.5 : 1)); // ☣ Branquia del Profundo: la mitad
     const calma = prohib.includes('p_abismo') ? 0 : ENTROPIA.fogata;
     const libro = run.relics.includes('necronomicon') && PROHIBIDO_IDS.some((id) => !prohib.includes(id));
-    // con el Necronomicón hay 3 opciones
-    const xs = libro ? [W / 2 - 300, W / 2, W / 2 + 300] : [W / 2 - 170, W / 2 + 170];
-    const bw = libro ? 280 : 300;
+    // v0.64 · Crisol de Newton: 3 opciones (4 con el Necronomicón)
+    const xs = libro ? [W / 2 - 345, W / 2 - 115, W / 2 + 115, W / 2 + 345] : [W / 2 - 300, W / 2, W / 2 + 300];
+    const bw = libro ? 222 : 280;
     const salir = () => {
       run.floor = data.floor + 1;
       saveLocal();
@@ -60,8 +60,10 @@ export class CampfireScene extends Phaser.Scene {
     button(this, xs[1], 470, bw, 64, T.fogata.estudiar, () => {
       fadeTo(this, 'Rune', { floor: data.floor, source: 'fogata' });
     }, { color: 0x8e5bb0, size: 22, enabled: canUp });
+    const crisol = button(this, xs[2], 470, bw, 64, 'Crisol de Newton\nfundir 2 cartas', () => fadeTo(this, 'Crisol', { floor: data.floor }), { color: 0xc8701a, size: 19 });
+    tip.attach(crisol, 'El Crisol de Newton', 'Eliges 2 cartas: si su física se combina (p = m·v, J = F·Δt…), se funden en una carta nueva. Las recetas son secretas: descúbrelas.');
     if (libro) {
-      const b = button(this, xs[2], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Locura`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });
+      const b = button(this, xs[3], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Locura`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });
       tip.attach(b, RELICS.necronomicon.name, 'Eliges un Problema Prohibido: poder permanente con un costo. Tu Locura sube.');
     }
   }

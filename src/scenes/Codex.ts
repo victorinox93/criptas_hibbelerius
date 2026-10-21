@@ -16,6 +16,7 @@ import { CodexKind, Game, nivelActual } from '../state';
 import { DESBLOQUEOS, NIVELES, nivelDe, siguienteNivel } from '../data/progreso';
 import { T } from '../textos';
 import { cardView } from '../ui/card';
+import { recetario } from '../ui/recetario';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
 import { describeOutcome } from './Rune';
 
@@ -54,6 +55,7 @@ export class CodexScene extends Phaser.Scene {
     this.grid = this.add.container(0, 0);
     this.detail = this.add.container(0, 0);
     button(this, W / 2, 518, 200, 36, T.grimorio.volver, () => fadeTo(this, 'Menu'), { size: 22 });
+    button(this, 110, 40, 180, 32, '📜 Recetario', () => recetario(this), { size: 17, color: 0x6a4a2a }); // v0.64
     this.show(data.tab ?? 0);
   }
 
@@ -184,7 +186,7 @@ export class CodexScene extends Phaser.Scene {
           },
         }));
       case 3:
-        return Object.values(CARDS).map((cd) => ({
+        return Object.values(CARDS).filter((cd) => !cd.fusion).map((cd) => ({
           kind: 'cards', id: cd.id, tex: cd.icon, name: cd.name,
           detail: (c) => {
             L(c, cardView(this, DX + 90, 280, { uid: -1, id: cd.id, up: false }));

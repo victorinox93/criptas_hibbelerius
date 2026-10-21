@@ -151,6 +151,7 @@ export class CombatScene extends Phaser.Scene {
   private calcBolsillo = 1; // v0.57 · Calculadora de Bolsillo: multiplicador del siguiente Ataque
   private hibbelerM = 0; // v0.57 · El Hibbeler Maldito: Bloqueo al detener
   private tareaT = new Map<number, number>(); // v0.57 · La Tarea Olvidada: turnos en la mano (uid)
+  private pendCosmico = 0; // v0.64 · Péndulo Cósmico: golpe al inicio de cada turno
   private ultimoGolpe = 0; // v0.62 · el último golpe de carta (el Gemelo de Espejo te lo regresa)
   private gemeloUsado = false;
   private telescopio = false; // v0.58 · ves las intenciones ocultas (telescopio del Astrónomo)
@@ -199,6 +200,7 @@ export class CombatScene extends Phaser.Scene {
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
     this.radianes = false;
     this.ultimoGolpe = 0;
+    this.pendCosmico = 0;
     this.gemeloUsado = false;
     // v0.58 · el telescopio prestado del Astrónomo: dura unos combates
     this.telescopio = (Game.run?.telescopio ?? 0) > 0;
@@ -1104,6 +1106,11 @@ export class CombatScene extends Phaser.Scene {
     const b = (x: Base) => x;
     switch (def.id) {
       case 'golpe': case 'fuerzaNeta': case 'martillo': return b({ dmg: F() });
+      // v0.64 · cartas fusionadas
+      case 'f_momentum': return b({ dmg: F(), ignora: true });
+      case 'f_impulso': return b({ dmg: F(), golpes: 3 });
+      case 'f_conservacion': return b({ dmg: K(), nota: `Antes ganas +${st.extra} J.` });
+      case 'f_cohete': return b({ dmg: 0, sinDano: `No hace daño directo: +${st.extra} de Calor a todos (y quemas 4 kg).` });
       case 'embestida': return b({ dmg: F(), nota: `Retroceso: recibes ${Math.floor(F() / 4)} (¼ de F).` });
       case 'pendulo': return b({ dmg: F(), nota: 'Regresa al inicio de tu siguiente turno y golpea igual.' });
       case 'tajo': return b({ dmg: F(), nota: `Con θ = 60°: ${Math.round(F() * 0.5)} a TODOS (más bonos).` });
@@ -2181,6 +2188,63 @@ export class CombatScene extends Phaser.Scene {
         if (!(await this.radiate(10, 'Trinity'))) return;
         break;
       }
+      // ── v0.64 · cartas fusionadas (Crisol de Newton) ──
+      case 'f_momentum': {
+        const f = force(st, c);
+        this.calc(`Cantidad de Movimiento: F = ${r1(f.m)} kg × ${r1(f.a)} m/s² = ${f.F} N, ignora el Bloqueo (p = m·v)`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, f.F, true);
+        break;
+      }
+      case 'f_impulso': {
+        const f = force(st, c);
+        this.calc(`Impulso Brutal: J = F·Δt → 3 golpes de ${f.F} N`);
+        for (let i = 0; i < 3 && target && !target.dead; i++) {
+          await this.heroLunge();
+          await this.hitEnemy(target, f.F);
+        }
+        break;
+      }
+      case 'f_tercera':
+        this.gainBlock(st.block ?? 9);
+        this.reflect = true;
+        this.keepBlock = true;
+        this.calc(`Tercera Ley Absoluta: +${st.block} de Bloqueo; los golpes regresan y tu Bloqueo se conserva`);
+        break;
+      case 'f_inercia':
+        this.masaDef = true;
+        this.palanca = true;
+        this.blockPerTurn += st.block ?? 4;
+        this.calc(`Momento de Inercia: cada Defensa +1 kg, +${st.block} de Bloqueo cada turno y tu siguiente ataque al doble`);
+        break;
+      case 'f_conservacion': {
+        this.energy += st.extra ?? 2;
+        const k = kinetic(st, c);
+        this.calc(`Conservación Total: +${st.extra} J y K = ½·${r1(k.m)}·${k.v}² = ${k.K} J`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, k.K);
+        break;
+      }
+      case 'f_pendulo':
+        this.pendCosmico = Math.max(this.pendCosmico, st.extra ?? 9);
+        this.calc(`Péndulo Cósmico: golpeará por ${this.pendCosmico} al inicio de cada turno`);
+        break;
+      case 'f_choque':
+        this.gainBlock(st.block ?? 7);
+        this.restE = 1;
+        this.calc(`Choque Perfecto: +${st.block} de Bloqueo; los golpes rebotan completos (e = 1)`);
+        break;
+      case 'f_cohete': {
+        this.quemar(4, def.name);
+        for (const e of this.alive()) { e.st.calor += st.extra ?? 7; this.burst(e.baseX, 260, 0xc87533, 10); this.refreshEnemy(e); }
+        this.calc(`Ecuación del Cohete: +${st.extra} de Calor a todos`);
+        break;
+      }
+      case 'f_teorema':
+        this.drawCards(st.extra ?? 3);
+        this.energy += 2;
+        this.calc(`Teorema Fundamental: robas ${st.extra} y +2 J`);
+        break;
       case 'golpe':
       case 'embestida':
       case 'fuerzaNeta': {
@@ -3467,6 +3531,16 @@ export class CombatScene extends Phaser.Scene {
       if (await this.checkEnd()) return;
     }
     // Órbita Cerrada: el satélite golpea solo
+    if (this.pendCosmico && this.alive().length) {
+      // v0.64 · Péndulo Cósmico: va y vuelve, para siempre
+      this.busy = true;
+      const t = Phaser.Utils.Array.GetRandom(this.alive());
+      this.calc(`Péndulo Cósmico: regresa y golpea a ${t.st.def.name} (${this.pendCosmico})`);
+      this.beam(t, 0xc8a8ff);
+      await this.hitEnemy(t, this.pendCosmico, false, 'res');
+      this.busy = false;
+      if (await this.checkEnd()) return;
+    }
     if (this.orbit && this.alive().length) {
       this.busy = true;
       const t = Phaser.Utils.Array.GetRandom(this.alive());
