@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.63.0 · Roído (beta)
+
+- El ratón que te persigue ahora se llama **Roído, el Coleccionista de Sonrisas**, y aparece **desde el tramo 2** (en el primero era muy agresivo).
+- **Lluvia de Meteoritos:** si mueves al héroe con las flechas, al soltarlas ya no regresa a donde estaba el ratón. El ratón vuelve a mandar en cuanto lo mueves.
+
 ## v0.62.0 · Pérez y compañía (beta)
 
 - **Pérez, el Ratón de los Dientes:** te persigue por el mapa en cada tramo.

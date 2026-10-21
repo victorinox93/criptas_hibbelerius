@@ -194,10 +194,10 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'Más personajes (y un ratón)',
-    texto: 'Algunos ayudan, otros engañan. Y en cada tramo, Pérez, el Ratón de los Dientes, te persigue por el mapa.',
+    texto: 'Algunos ayudan, otros engañan. Y desde el tramo 2, Roído, el Coleccionista de Sonrisas, te persigue por el mapa.',
     dibujo: (s, L) => {
       const filas: [string, string, string, number, number?][] = [
-        ['fig_perez', 'Pérez, el Ratón de los Dientes', 'Empieza 3 pisos detrás de ti. Avanza 2 cuando descansas o compras. Si te alcanza, te arranca un diente.', 2.4],
+        ['fig_perez', 'Roído, el Coleccionista de Sonrisas', 'Desde el tramo 2. Empieza 3 pisos detrás de ti. Avanza 2 cuando descansas o compras. Si te alcanza, te arranca un diente.', 2.4],
         ['fig_cartografo', 'El Cartógrafo Ciego', 'Te vende un mapa: casi siempre marca Fogata y Mercader… a veces, Élites. Si sumas bien vectores, no te engaña.', 2.6],
         ['hero', 'El Gemelo de Espejo', 'Te regala una carta mejorada, pero una vez por combate usa tu último golpe contra ti (3ª ley).', 1.1, 0x8ab8ff],
         ['fig_migo', 'El Peregrino de Yuggoth', 'Lleva tu cerebro en un cilindro: la Cordura no baja todo el tramo, pero pierdes Vida máxima.', 2.6],

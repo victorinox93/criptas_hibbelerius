@@ -39,6 +39,7 @@ export class MeteoritosScene extends Phaser.Scene {
   private reloj!: Phaser.GameObjects.Text;
   private teclas?: Phaser.Types.Input.Keyboard.CursorKeys;
   private capa!: Phaser.GameObjects.Container;
+  private sigueRaton = true; // v0.63 · false al usar el teclado; vuelve a true cuando mueves el ratón
 
   constructor() { super('Meteoritos'); }
 
@@ -66,6 +67,8 @@ export class MeteoritosScene extends Phaser.Scene {
     this.hud = topBar(this, tip);
     this.heroe = this.add.image(W / 2, SUELO, 'hero').setScale(1.4).setDepth(5);
     this.teclas = this.input.keyboard?.createCursorKeys();
+    this.sigueRaton = true;
+    this.input.on('pointermove', () => { this.sigueRaton = true; });
     this.capa = this.add.container(0, 0).setDepth(20);
     this.instrucciones();
   }
@@ -129,9 +132,9 @@ export class MeteoritosScene extends Phaser.Scene {
     // movimiento del héroe: flechas o ratón
     const p = this.input.activePointer;
     let x = this.heroe.x;
-    if (this.teclas?.left.isDown) x -= 380 * dt;
-    else if (this.teclas?.right.isDown) x += 380 * dt;
-    else if (p.x > 0) x += (p.x - x) * Math.min(1, dt * 9);
+    if (this.teclas?.left.isDown) { x -= 380 * dt; this.sigueRaton = false; }
+    else if (this.teclas?.right.isDown) { x += 380 * dt; this.sigueRaton = false; }
+    else if (this.sigueRaton && p.x > 0) x += (p.x - x) * Math.min(1, dt * 9);
     this.heroe.x = Phaser.Math.Clamp(x, 40, W - 40);
     // nuevas rocas: cada vez más seguido
     this.siguiente -= dt;
