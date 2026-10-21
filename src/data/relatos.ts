@@ -26,12 +26,17 @@ export interface Efecto {
   pierdeDiente?: number; // v0.48 · pierdes N dientes al azar (no parásitos)
   maldicion?: [string, number]; // v0.48 · maldición de src/data/effects.ts por N combates
   combate?: string; // v0.51 · sólo en sueños: empieza una pesadilla (src/data/enemies.ts → ENCOUNTERS_SUENO)
+  prestamo?: number; // v0.61 · el Prestamista te da N Ergios; al final del tramo cobra N × INTERES_PRESTAMO
+  familiarExtra?: number; // v0.61 · tu familiar se queda N combates más
+  quitarCarta?: boolean; // v0.61 · alguien se lleva una carta de tu mazo (la elige al azar)
+  alineacion?: boolean; // v0.61 · +1 J en el primer turno de cada combate, hasta el final del tramo
+  meteoritos?: boolean; // v0.61 · empieza el minijuego de la Lluvia de Meteoritos (src/scenes/Meteoritos.ts)
 }
 
 export interface OpcionRelato {
   label: string;
   risk: string;
-  need?: { ergios?: number };
+  need?: { ergios?: number; familiar?: boolean };
   pregunta?: { concepts: string[]; bien: Efecto; mal: Efecto };
   salidas?: { p: number; e: Efecto }[];
 }
@@ -47,6 +52,9 @@ export interface RelatoDef {
   sueno?: boolean; // v0.51 · es un SUEÑO: sólo sale en el nodo 🌙 (src/scenes/Sueno.ts), no en los «?»
   intro: string;
   opciones: OpcionRelato[];
+  npc?: string; // v0.61 · retrato del personaje (textura) en lugar del ícono
+  pie?: string; // v0.61 · texto bajo el retrato (en lugar de «Basado en…»)
+  peso?: number; // v0.61 · probabilidad relativa de salir en un «?» (1 si no se dice)
 }
 
 /** Probabilidad de que un nodo «?» del Abismo sea un Relato (si quedan sin ver) */
@@ -243,6 +251,89 @@ RELATOS.push({
     IRSE,
   ],
 });
+
+/** v0.61 · El Prestamista cobra esto por cada Ergio prestado al final del tramo */
+export const INTERES_PRESTAMO = 1.5;
+
+// ════════════════════════════════════════════════════════════════
+//  v0.61 · PERSONAJES Y FENÓMENOS DEL ABISMO (originales, no vienen de un cuento)
+//  Salen en los nodos «?» con más probabilidad que los relatos (peso 2).
+// ════════════════════════════════════════════════════════════════
+RELATOS.push(
+  {
+    id: 'prestamista', titulo: 'La mesa del Prestamista', obra: '', anio: 0, icono: 'i_bag', tinte: 0xffd040, npc: 'fig_prestamista', pie: 'Personaje del Abismo\n(traidor)', peso: 2,
+    intro: 'Detrás de una mesa con una balanza, un hombre de chistera cuenta monedas con demasiados dedos. «¿Le faltan Ergios? Le presto. Me paga cuando termine el tramo… con un pequeño interés. Firme aquí.»',
+    opciones: [
+      { label: 'Pedir el préstamo grande (+60 Ergios)', risk: `Al terminar el tramo te cobra ${Math.round(60 * 1.5)}. Si no los tienes, te cobra el resto en VIDA.`, salidas: [
+        { p: 1, e: { texto: '«Excelente decisión.» Las monedas están tibias. La tinta del contrato todavía se mueve.', prestamo: 60 } },
+      ] },
+      { label: 'Pedir el préstamo chico (+30 Ergios)', risk: `Al terminar el tramo te cobra ${Math.round(30 * 1.5)}.`, salidas: [
+        { p: 1, e: { texto: '«Prudente. Me gusta la gente prudente: tarda más en arruinarse.»', prestamo: 30 } },
+      ] },
+      {
+        label: 'Revisar las cuentas del contrato', risk: 'Pregunta de trabajo y energía. Si aciertas, encuentras la trampa: te da 25 Ergios sin interés para que no lo denuncies. Si fallas: −8 de Cordura.',
+        pregunta: {
+          concepts: ['Trabajo', 'Trabajo-energia', 'Potencia'],
+          bien: { texto: 'Las cuentas no cuadran y se lo demuestras. El Prestamista suda. «Tome, tome… un regalo. Aquí no pasó nada.»', ergios: 25 },
+          mal: { texto: 'Los números se mueven en el papel mientras los lees. Te da dolor de cabeza y el Prestamista se ríe.', cordura: -8 },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'viuda', titulo: 'La casa de la Viuda de Arkham', obra: '', anio: 0, icono: 'i_fire', tinte: 0xc8c4d8, npc: 'fig_viuda', pie: 'Personaje del Abismo\n(amable, pero cobra)', peso: 2,
+    intro: 'En una casa torcida, una mujer de velo negro te abre la puerta. «Mi esposo era astrónomo; se cayó del observatorio una noche sin luna. Pasa. Sé curar criaturas… pero todo tiene un precio.»',
+    opciones: [
+      { label: 'Que cuide a tu familiar', need: { familiar: true }, risk: 'Tu familiar se queda 2 combates más. Ella se queda con una carta de tu mazo (la elige ella).', salidas: [
+        { p: 1, e: { texto: 'Le da a tu familiar un caldo que huele a estrellas. Luego mira tu mazo y saca una carta sin preguntar: «Ésta me la llevo.»', familiarExtra: 2, quitarCarta: true } },
+      ] },
+      { label: 'Tomar té y descansar (15 Ergios)', need: { ergios: 15 }, risk: '+15 de vida y +6 de Cordura.', salidas: [
+        { p: 1, e: { texto: 'El té está tibio y la silla es cómoda. Por un rato, el Abismo parece muy lejos.', ergios: -15, hp: 15, cordura: 6 } },
+      ] },
+      {
+        label: 'Preguntarle por la caída de su esposo', risk: 'Pregunta de energía. Si aciertas: un diente raro y +6 de Cordura. Si fallas: −8 de Cordura.',
+        pregunta: {
+          concepts: ['Energia potencial', 'Conservacion', 'Trabajo-energia'],
+          bien: { texto: 'Le explicas qué tan rápido cayó. Ella llora un poco y te da algo que él guardaba: un diente que brilla como estrella.', diente: 'raro', cordura: 6 },
+          mal: { texto: '«No, no fue así.» Se queda callada mirando la ventana. Tú también ves algo en la ventana.', cordura: -8 },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'alineacion', titulo: 'La Alineación Planetaria', obra: '', anio: 0, icono: 'i_astro', tinte: 0xffd080, npc: 'fig_alineacion', pie: 'Fenómeno del Abismo', peso: 2,
+    intro: 'El techo del Abismo se abre y ves tres planetas en fila, como cuentas de un collar. Sus gravedades tiran en la misma dirección: las fuerzas se SUMAN. Sientes que todo tu cuerpo se inclina hacia ellos.',
+    opciones: [
+      { label: 'Dejar que te jalen', risk: '+1 J en el primer turno de cada combate hasta el final del tramo. −6 de Cordura.', salidas: [
+        { p: 1, e: { texto: 'Te dejas llevar. La fuerza de los tres planetas te empuja: cada combate empiezas con más energía. Pero algo en ti ya no está alineado.', alineacion: true, cordura: -6 } },
+      ] },
+      {
+        label: 'Resistir: calcular la fuerza total', risk: 'Pregunta de fuerzas. Si aciertas: Caronte, el Barquero, te acompaña (te salva una vez de morir). Si fallas: −12 de vida.',
+        pregunta: {
+          concepts: ['2a ley', '1a ley', '2a ley (sistemas)'],
+          bien: { texto: 'Sumas las fuerzas, te plantas con los pies firmes y no te mueves. Desde muy lejos, una lunita encapuchada se acerca a ver quién resistió: Caronte.', familiar: 'caronte', cordura: 4 },
+          mal: { texto: 'La suma de fuerzas te gana: sales volando y caes de espaldas.', hp: -12 },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'meteoritos', titulo: 'Lluvia de Meteoritos', obra: '', anio: 0, icono: 'i_fire', tinte: 0xff8a2a, npc: 'fig_meteoro', pie: 'Fenómeno del Abismo', peso: 2,
+    intro: 'Un silbido. Luego otro. Del techo del Abismo caen rocas encendidas de todos los tamaños. Algunas son pequeñas y rapidísimas; otras, enormes y lentas. ¿Cuál pega más fuerte? Depende de su energía cinética: K = ½·m·v².',
+    opciones: [
+      { label: 'Esquivarlos (minijuego)', risk: 'Muévete con el ratón o las flechas. Recoge fragmentos brillantes (Ergios); cada golpe te quita vida según su ½·m·v².', salidas: [
+        { p: 1, e: { texto: '¡Ahí vienen!', meteoritos: true } },
+      ] },
+      { label: 'Cubrirte bajo una roca', risk: 'A veces sales ileso; a veces un meteorito pega cerca (−10 de vida) y deja fragmentos (+20 Ergios).', salidas: [
+        { p: 0.6, e: { texto: 'Esperas a que pase. Cuando sales, sólo hay humo.' } },
+        { p: 0.4, e: { texto: 'Uno cae justo al lado. Te zumban los oídos, pero entre el polvo brillan fragmentos de metal.', hp: -10, ergios: 20 } },
+      ] },
+    ],
+  },
+);
 
 // ════════════════════════════════════════════════════════════════
 //  v0.51 · LAS TIERRAS DEL SUEÑO: sueños basados en el «ciclo del sueño»

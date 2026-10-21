@@ -19,7 +19,7 @@ function umbralDe(st: EnemyState) {
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
 import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
-import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja } from '../state';
+import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
@@ -438,6 +438,9 @@ export class CombatScene extends Phaser.Scene {
     if (inc) this.robo1 += inc;
     const jup = this.diente('jupiter');
     if (jup) masaOVel(jup, `Diente de Júpiter (Gravedad nv ${jup})`);
+    // v0.61 · Alineación Planetaria: +1 J en tu primer turno durante el tramo
+    if (run.modo === 'abismo' && run.alineacion === (run.tramo ?? 1)) { this.bonusJ1 += 1; this.calc('Alineación Planetaria: las fuerzas se suman → +1 J en tu primer turno'); }
+    if (run.familiar?.id === 'europa') { this.block += 5; this.calc('Europa, la Luna de Hielo: +5 de Bloqueo'); }
     const cor = this.diente('cordal');
     if (cor) { this.bonusJ1 += cor; this.robo1 += cor; this.calc(`Cordal Despierta: +${cor} J y +${cor} carta en tu primer turno`); }
     const gar = this.diente('garrapata');
@@ -3564,6 +3567,13 @@ export class CombatScene extends Phaser.Scene {
         this.famHop();
         this.calc(`Gato de Ulthar: araña a ${t.st.def.name} (6)`);
         await this.hitEnemy(t, 6, false, 'res');
+      } else if (fam.id === 'fobos' && this.turn % 2 === 0) {
+        // v0.61 · Fobos: completa una vuelta cada 2 turnos y golpea
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        this.famHop();
+        this.beamFrom(this.heroX - 100, t, 0xff4a6a);
+        this.calc(`Fobos completa una órbita y golpea a ${t.st.def.name} (8)`);
+        await this.hitEnemy(t, 8, false, 'res');
       } else if (fam.id === 'cuervo') {
         const t = this.alive().reduce((a, b) => (b.st.hp < a.st.hp ? b : a));
         this.famHop();
@@ -3805,6 +3815,7 @@ export class CombatScene extends Phaser.Scene {
     if (run.familiar) {
       if (run.familiar.id === 'cuervo') extra += 6;
       if (run.familiar.id === 'gatoUlthar') addEntropia(-4); // v0.49 · +4 de Cordura
+      if (run.familiar.id === 'europa') { run.hp = Math.min(run.maxHp, run.hp + 6); this.calc('Europa, la Luna de Hielo: +6 de vida'); } // v0.61
       run.familiar.left--;
       if (run.familiar.left <= 0) run.familiar = null;
     }
@@ -3899,6 +3910,9 @@ export class CombatScene extends Phaser.Scene {
       const nuevo = !(Game.codex.flags ?? []).includes(`abismo_astro_${this.astro}`);
       if (!run.debug) codexFlag(`abismo_astro_${this.astro}`);
       (run.astrosVistos ??= []).push(this.astro);
+      // v0.61 · Marte suelta a Fobos y Júpiter a Europa (al volver al mapa eliges si te quedas con ella)
+      const luna = this.astro === 'marte' ? 'fobos' : this.astro === 'jupiter' ? 'europa' : null;
+      if (luna) addFamiliar(luna);
       logEvent('astro', '', true, { astro: this.astro, piso: this.floor, turnos: this.turn, vida: run.hp });
       saveLocal();
       syncRun('en curso', `${a?.nombre ?? 'Un astro'} vencido`);
@@ -3948,6 +3962,20 @@ export class CombatScene extends Phaser.Scene {
       await this.banner('¡Despiertas!', '#c8b8ff');
       fadeTo(this, 'Sueno', { floor: this.floor, fase: 'despertar', gano: false, combate: this.sueno, recupera });
       return true;
+    }
+    // v0.61 · Caronte, el Barquero: no te deja cruzar (una vez) y se va
+    if (run.familiar?.id === 'caronte') {
+      run.familiar = null;
+      run.hp = Math.min(run.maxHp, 12);
+      saveLocal();
+      this.hud.refresh();
+      logEvent('caronte', '', true, { piso: this.floor, enemigo: by });
+      audio.sfx('heal');
+      this.burst(this.heroX, 260, 0x7ad8ff, 40);
+      this.calc(`Caronte, el Barquero: «Todavía no te toca cruzar.» Te levantas con ${run.hp} de vida y él se aleja remando`);
+      await this.banner('¡Caronte te salva!', '#7ad8ff');
+      this.refreshPlayer();
+      return false;
     }
     const i = run.relics.indexOf('vidaExtra');
     if (i >= 0) {

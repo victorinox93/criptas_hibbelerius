@@ -65,6 +65,22 @@ Object.assign(FAMILIARS, {
     text: 'Robas 1 carta más cada turno y ves las intenciones de los enemigos invisibles.',
     lore: 'En el fondo del mar la luz es rara. Este pez la fabrica: bioluminiscencia.',
   },
+  // v0.61 · lunas del Abismo
+  fobos: {
+    id: 'fobos', name: 'Fobos, la Luna del Miedo', sprite: 'fam_fobos', combats: 4, abismo: true,
+    text: 'Gira a tu alrededor: cada 2 turnos, al final de tu turno, golpea a un enemigo al azar por 8.',
+    lore: 'La luna de Marte da una vuelta cada 7 h 39 min: más rápido de lo que Marte gira. Movimiento circular: siempre vuelve.',
+  },
+  europa: {
+    id: 'europa', name: 'Europa, la Luna de Hielo', sprite: 'fam_europa', combats: 4, abismo: true,
+    text: 'Al empezar cada combate te da 5 de Bloqueo, y al ganarlo te cura 6 de vida.',
+    lore: 'Bajo su hielo hay un océano de agua líquida, calentado por la marea de Júpiter que la estira y la aprieta.',
+  },
+  caronte: {
+    id: 'caronte', name: 'Caronte, el Barquero', sprite: 'fam_caronte', combats: 6, abismo: true,
+    text: 'Si tu vida llega a 0, Caronte no te deja cruzar: te levanta con 12 de vida y se va (una vez).',
+    lore: 'La luna de Plutón. Es tan grande comparada con Plutón que los dos giran alrededor de un punto entre ellos: su centro de masa.',
+  },
 } as Record<string, FamiliarDef>);
 
 /** Familiares que pueden salir al azar (los del Abismo sólo se consiguen allá) */

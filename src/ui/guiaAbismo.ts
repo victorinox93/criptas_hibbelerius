@@ -174,6 +174,25 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     },
   },
   {
+    titulo: 'Personajes, lunas y fenómenos',
+    texto: 'En los nodos «?» ahora también te esperan personajes que ayudan (o engañan) y fenómenos del cielo. Algunas lunas te acompañan como familiares.',
+    dibujo: (s, L) => {
+      const filas: [string, string, string, number][] = [
+        ['fig_prestamista', 'El Prestamista de Ergios', 'Te presta Ergios… y al terminar el tramo cobra 1.5 veces lo prestado. Si no tienes, cobra en vida.', 3.4],
+        ['fig_viuda', 'La Viuda de Arkham', 'Cuida a tu familiar (2 combates más) a cambio de una carta, o te da té y descanso.', 3.4],
+        ['fig_alineacion', 'Alineación Planetaria', 'Las gravedades se suman: +1 J al inicio de cada combate del tramo, o resiste y gana a Caronte.', 4],
+        ['fig_meteoro', 'Lluvia de Meteoritos', 'Minijuego: esquiva rocas. Cada golpe quita vida según K = ½·m·v².', 4],
+        ['fam_fobos', 'Lunas familiares', 'Fobos (lo suelta Marte): golpea cada 2 turnos. Europa (Júpiter): Bloqueo y cura. Caronte: te salva de morir una vez.', 4],
+      ];
+      filas.forEach(([k, nom, d, e], i) => {
+        const y = 196 + i * 56;
+        L(s.add.image(120, y + 18, k).setScale(e * 0.8));
+        L(txt(s, 170, y, nom, 19, CSS.gold));
+        L(txt(s, 170, y + 24, d, 15, CSS.bone, { wordWrap: { width: 700 } }));
+      });
+    },
+  },
+  {
     titulo: 'Las Tierras del Sueño',
     texto: 'En el nodo 🌙 te quedas dormido y eliges una de tres puertas. Cada una es un sueño de un cuento de Lovecraft. Colecciona los 7: hay premios en el Vestidor.',
     dibujo: (s, L) => {
