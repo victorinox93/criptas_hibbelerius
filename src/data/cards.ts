@@ -53,6 +53,8 @@ export interface CardDef {
   abismo?: boolean; // sólo sale en El Abismo de los Ejes (acto 5)
   /** v0.57 · cartas que HABLAN (como en Inscryption): frases al robarla, al jugarla o si se queda en tu mano */
   voz?: { robar?: string[]; jugar?: string[]; mano?: string[] };
+  /** v0.64 · nace en el Crisol de Newton (src/data/fusiones.ts): no sale en recompensas, tiendas ni sobres */
+  fusion?: boolean;
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -972,7 +974,85 @@ export function limiteDano(umbral: number) {
 }
 
 /** Cartas legendarias */
-export const LEGENDARIAS = Object.values(CARDS).filter((c) => c.rarity === 'legendaria').map((c) => c.id);
+// v0.64 · cartas FUSIONADAS (sólo nacen en el Crisol de Newton; src/data/fusiones.ts)
+Object.assign(CARDS, {
+  f_momentum: {
+    id: 'f_momentum', name: 'Cantidad de Movimiento', type: 'Ataque', icon: 'i_momentum', concept: 'Cantidad de movimiento', rarity: 'legendaria', target: 'enemy', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, m: up ? 6 : 5, a: 4 }),
+    text: (s: CardStats, c: CalcCtx) => `${fText(s, c)}
+p = m·v: IGNORA el
+Bloqueo (nada lo frena).`,
+    lore: 'Fusión de Forja Pesada y Carrera. Algo pesado Y rápido tiene mucha cantidad de movimiento: detenerlo exige un impulso enorme.',
+  },
+  f_impulso: {
+    id: 'f_impulso', name: 'Impulso Brutal', type: 'Ataque', icon: 'i_bolt', concept: 'Impulso', rarity: 'legendaria', target: 'enemy', fusion: true,
+    stats: (up: boolean) => ({ cost: 2, m: 3, a: up ? 4 : 3 }),
+    text: (s: CardStats, c: CalcCtx) => `${fText(s, c)}
+Golpea 3 VECES
+(J = F·Δt). Sin retroceso.`,
+    lore: 'Fusión de Golpe de Mazo y Embestida. Si la fuerza dura más tiempo, el impulso crece.',
+  },
+  f_tercera: {
+    id: 'f_tercera', name: 'Tercera Ley Absoluta', type: 'Defensa', icon: 'i_reflect', concept: '3ª ley', rarity: 'legendaria', target: 'self', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, block: up ? 13 : 9 }),
+    text: (s: CardStats) => `+${s.block} Bloqueo. Este turno
+cada golpe que recibas
+regresa al atacante, y tu
+Bloqueo se conserva.`,
+    lore: 'Fusión de Fuerza Normal y Acción-Reacción. La normal es una reacción: el suelo te regresa lo que le haces.',
+  },
+  f_inercia: {
+    id: 'f_inercia', name: 'Momento de Inercia', type: 'Poder', icon: 'i_pend', concept: 'Momento de inercia', rarity: 'legendaria', target: 'self', exhaust: true, fusion: true,
+    stats: (up: boolean) => ({ cost: up ? 0 : 1, block: 4 }),
+    text: (s: CardStats) => `I = m·r²: cada Defensa
+te da +1 kg, +${s.block} Bloqueo
+cada turno y tu siguiente
+ataque hace el doble.
+Se agota.`,
+    lore: 'Fusión de Palanca de Arquímedes y Masa Inamovible. Mucha masa lejos del eje: muy difícil de hacer girar.',
+  },
+  f_conservacion: {
+    id: 'f_conservacion', name: 'Conservación Total', type: 'Ataque', icon: 'i_crystal', concept: 'Conservación de la energía', rarity: 'legendaria', target: 'enemy', cls: 'arcanista', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, m: up ? 1.4 : 1, extra: 2 }),
+    text: (s: CardStats, c: CalcCtx) => `+${s.extra} J (U → trabajo).
+Luego ${kText(s, c)}`,
+    lore: 'Fusión de Energía Almacenada y Proyectil Arcano. La energía potencial se vuelve cinética sin perder nada.',
+  },
+  f_pendulo: {
+    id: 'f_pendulo', name: 'Péndulo Cósmico', type: 'Poder', icon: 'i_pend', concept: 'Movimiento periódico', rarity: 'legendaria', target: 'self', cls: 'arcanista', exhaust: true, fusion: true,
+    stats: (up: boolean) => ({ cost: up ? 0 : 1, extra: up ? 12 : 9 }),
+    text: (s: CardStats) => `Al inicio de cada turno
+golpea a un enemigo al
+azar por ${s.extra} (ida y vuelta,
+para siempre). Se agota.`,
+    lore: 'Fusión de Péndulo y Órbita Cerrada. Dos movimientos periódicos: vuelven al mismo punto cada periodo.',
+  },
+  f_choque: {
+    id: 'f_choque', name: 'Choque Perfecto (e = 1)', type: 'Defensa', icon: 'i_shield', concept: 'Choques', rarity: 'legendaria', target: 'self', cls: 'arcanista', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, block: up ? 10 : 7 }),
+    text: (s: CardStats) => `+${s.block} Bloqueo. Este turno
+los golpes rebotan
+COMPLETOS (e = 1).`,
+    lore: 'Fusión de Choque Elástico y Coeficiente de Restitución. Con e = 1 no se pierde energía en el choque.',
+  },
+  f_cohete: {
+    id: 'f_cohete', name: 'Ecuación del Cohete', type: 'Ataque', icon: 'i_fire', concept: 'Masa variable', rarity: 'legendaria', target: 'all', cls: 'penitente', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 9 : 7 }),
+    text: (s: CardStats, c: CalcCtx) => `${rText(4, c)}
+Tus gases: ${s.extra} de Calor
+a TODOS.`,
+    lore: 'Fusión de Empuje y Llamarada de Escape. Lo que expulsas te impulsa (3ª ley)… y sale ardiendo.',
+  },
+  f_teorema: {
+    id: 'f_teorema', name: 'Teorema Fundamental', type: 'Habilidad', icon: 'i_book', concept: 'Cálculo', rarity: 'legendaria', target: 'self', cls: 'neutral', exhaust: true, fusion: true,
+    stats: (up: boolean) => ({ cost: 0, extra: up ? 4 : 3 }),
+    text: (s: CardStats) => `Robas ${s.extra} cartas y
+ganas +2 J. Se agota.`,
+    lore: 'Fusión de Derivada e Integral. Derivar e integrar se deshacen una a la otra: ∫ f′(x) dx = f(x).',
+  },
+} as Record<string, CardDef>);
+
+export const LEGENDARIAS = Object.values(CARDS).filter((c) => c.rarity === 'legendaria' && !c.fusion).map((c) => c.id);
 
 /** Legendarias que aún no tienes en el mazo (una copia por expedición) */
 export function legendariasDisponibles(deck: CardInst[], n = 3, abismo = false) {

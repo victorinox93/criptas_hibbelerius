@@ -32,6 +32,7 @@ export interface DienteDef {
   color: number; // color del esmalte
   planeta?: number; // color del astro pintado sobre el diente
   peso?: number; // qué tan seguido sale dentro de su rareza (1 = normal)
+  fusion?: [string, string]; // v0.64 · diente fusionado: cuenta como estos dos, al doble (no sale al azar)
 }
 
 /** Probabilidad de cada rareza al sortear un diente */
@@ -113,6 +114,15 @@ export const DIENTES: Record<string, DienteDef> = {
   sol: { id: 'sol', rareza: 'legendario', nombre: 'Diente del Sol Negro', tipo: 'astro', color: 0x2a2a30, planeta: 0xffb030, texto: 'Tus ataques hacen +10 % por cada Astro en tu dentadura (contándolo a él).', lore: 'Un sol que no alumbra. Todos los planetas giran a su alrededor.', peso: 0.4 },
 };
 
+// v0.64 · dientes FUSIONADOS (Crisol de Newton, src/data/fusiones.ts): ocupan un hueco y cuentan como sus dos ingredientes AL DOBLE
+Object.assign(DIENTES, {
+  fu_eclipse: { id: 'fu_eclipse', rareza: 'legendario', nombre: 'Diente del Eclipse', tipo: 'astro', color: 0x2a2a3a, planeta: 0xd85a3a, fusion: ['marte', 'luna'], texto: 'Fusión: Diente de Marte + Diente Lunar, los dos AL DOBLE (Ataque +4 y Defensa +6 por nivel).', lore: 'Cuando la Luna tapa a Marte, la guerra y la marea se vuelven una sola mordida.' },
+  fu_alineacion: { id: 'fu_alineacion', rareza: 'legendario', nombre: 'Diente de la Alineación', tipo: 'astro', color: 0xf0e0b0, planeta: 0xc89a5a, fusion: ['jupiter', 'mercurio'], texto: 'Fusión: Diente de Júpiter + Diente de Mercurio, los dos AL DOBLE.', lore: 'El planeta más grande y el más rápido, en fila: sus fuerzas se suman.' },
+  fu_megalodon: { id: 'fu_megalodon', rareza: 'legendario', nombre: 'Diente de Megalodón', tipo: 'normal', color: 0xb8c8c8, fusion: ['colmillo', 'tiburon'], texto: 'Fusión: Colmillo de Profundo + Diente de Tiburón, los dos AL DOBLE (+4 de daño; +8 de Bloqueo cuando muere un enemigo).', lore: 'El tiburón más grande que existió tenía dientes del tamaño de una mano.' },
+  fu_conde: { id: 'fu_conde', rareza: 'legendario', nombre: 'Colmillo del Conde', tipo: 'normal', color: 0xf0c8a0, fusion: ['vampiro', 'oro'], texto: 'Fusión: Colmillo Vampiro + Diente de Oro, los dos AL DOBLE (+6 de vida por enemigo vencido; +40 Ergios por combate).', lore: 'Un aristócrata que muerde… y cobra.' },
+  fu_acorazada: { id: 'fu_acorazada', rareza: 'legendario', nombre: 'Muela Acorazada', tipo: 'normal', color: 0x7a90a8, fusion: ['muelaPlomo', 'protector'], texto: 'Fusión: Muela de Plomo + Protector Bucal, los dos AL DOBLE (12 de Bloqueo al empezar; no te aturden).', lore: 'Pesada y bien protegida: nada la mueve.' },
+} as Record<string, DienteDef>);
+
 export const D = (id: string) => DIENTES[id];
 /** Id sin la marca de Cristal («marte~3» → «marte») */
 export const base = (id: string) => id.split('~')[0];
@@ -134,8 +144,8 @@ export function sortearDientes(n: number, ya: string[] = [], astrosX = 1, opts: 
   for (let k = 0; k < n; k++) {
     let r = Math.random();
     const rz: RarezaDiente = opts.legendario ? 'legendario' : r < PROB_RAREZA.legendario ? 'legendario' : r < PROB_RAREZA.legendario + PROB_RAREZA.raro ? 'raro' : 'comun';
-    let libres = Object.values(DIENTES).filter((d) => d.rareza === rz && !out.some((o) => base(o) === d.id) && (!tengo.includes(d.id) || d.tipo === 'astro'));
-    if (!libres.length) libres = Object.values(DIENTES).filter((d) => d.rareza !== 'parasito' && !out.some((o) => base(o) === d.id));
+    let libres = Object.values(DIENTES).filter((d) => !d.fusion && d.rareza === rz && !out.some((o) => base(o) === d.id) && (!tengo.includes(d.id) || d.tipo === 'astro'));
+    if (!libres.length) libres = Object.values(DIENTES).filter((d) => !d.fusion && d.rareza !== 'parasito' && !out.some((o) => base(o) === d.id));
     if (!libres.length) break;
     const peso = (d: DienteDef) => (d.peso ?? 1) * (d.tipo === 'astro' ? astrosX : 1);
     const total = libres.reduce((a, d) => a + peso(d), 0);
@@ -166,7 +176,9 @@ export function dientesEfectivos(dent: (string | null)[] = []): string[] {
     const id = base(id0);
     // v0.46: el Espejo no copia legendarios ni a otro Espejo (izq = null después de un espejo)
     const real: string | null = id === 'espejo' ? (izq && DIENTES[izq]?.rareza !== 'legendario' ? izq : null) : id;
-    if (real) { out.push(real); if (cristalDe(id0) !== undefined) out.push(real); } // el Cristal cuenta doble
+    const fu = real ? DIENTES[real]?.fusion : undefined;
+    if (fu) { for (const x of fu) out.push(x, x); } // v0.64 · fusionado: sus dos ingredientes, al doble
+    else if (real) { out.push(real); if (cristalDe(id0) !== undefined) out.push(real); } // el Cristal cuenta doble
     izq = id === 'espejo' ? null : real;
   }
   return out;
