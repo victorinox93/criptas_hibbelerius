@@ -48,7 +48,39 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
       '...sssss', '...qssss', '....ssss', '....qsss', '..cccWWt', '.ccccWWt', 'cccccWtt', 'cccccctt', 'cccccccc',
     ]),
     ov: { h: '#1e1a16', s: '#e8d6c2', q: '#b89c86', k: '#2a2a34', c: '#2a2a36', W: '#eeeae0', t: '#5a3040' },
-  },  // v0.58 · el Astrónomo de cuerpo entero: traje gris, leyendo un libro (tools/arte/astronomo.py)
+  },  // v0.61 · El Prestamista de Ergios: chistera, cara verdosa, sonrisa enorme con un diente de oro
+  fig_prestamista: {
+    rows: mirror([
+      '...kkkkk', '...kkkkk', '...kkkkk', '..kkkkkk', '.kkkkkkk', '...sssss', '...syyss', '...sssss', '....ssss',
+      '...sWWWW', '...sWWYW', '....ssss', '..cccWWt', '.ccccWWt', 'cyccccWt', 'cccccctt', 'cccccccc',
+    ]),
+    ov: { k: '#141018', s: '#a8c098', y: '#ffd040', W: '#f0ece0', Y: '#e8b020', c: '#3a2448', t: '#8a1a2a' },
+  },
+  // v0.61 · La Viuda de Arkham: velo negro, cara pálida, ojos cansados y un broche de luna
+  fig_viuda: {
+    rows: mirror([
+      '....kkkk', '...kkkkk', '..kkkkkk', '..kkkkkk', '..kkssss', '..ksssss', '..ksqqss', '..ksssss', '..kkssss',
+      '..kksssq', '..kkksss', '.kkkkkkk', '.kkkkkkk', 'kkkkkkwi', 'kkkkkkkw', 'kkkkkkkk', 'kkkkkkkk',
+    ]),
+    ov: { k: '#16121c', s: '#e8dcd4', q: '#8a6a7a', w: '#c8c4d8', i: '#f0f0ff' },
+  },
+  // v0.61 · Lluvia de meteoritos: roca con estela de fuego
+  fig_meteoro: {
+    rows: [
+      'y...........', '.yy.........', '..oyy.......', '...ooyy.....', '....oooy....', '.....oorr...',
+      '......rRRr..', '.....rRRRRr.', '.....rRkRRr.', '.....rRRRkr.', '......rRRr..', '.......rr...',
+    ],
+    ov: { y: '#fff0a0', o: '#ff8a2a', r: '#5a4a4a', R: '#8a7a6a', k: '#2a2020' },
+  },
+  // v0.61 · Alineación planetaria: tres planetas en fila y una línea de fuerza
+  fig_alineacion: {
+    rows: [
+      '..........qq', '.........qqq', '.........qq.', '.......y....', '......y.....', '...zz.......',
+      '..zzzz......', '..zzZz......', '...zz.......', '.y..........', 'aa..........', 'aaa.........', 'aa..........',
+    ],
+    ov: { q: '#9a98a0', y: '#ffe070', z: '#d0582e', Z: '#8a2e16', a: '#f0dc9a' },
+  },
+  // v0.58 · el Astrónomo de cuerpo entero: traje gris, leyendo un libro (tools/arte/astronomo.py)
   fig_astronomo: {
     rows: [
       '...........kkkk...........',

@@ -109,6 +109,8 @@ export interface Run {
   jefesVistos?: string[]; // jefes que ya salieron en esta partida (para no repetir)
   cosmos?: Record<string, number>; // v0.43 · niveles de constelación del Observatorio (astro → niveles extra)
   carta?: { id: string; tramo: number; hecho?: boolean; cobrada?: boolean }; // v0.43 · carta del Astrónomo de Providence
+  deuda?: { monto: number; tramo: number }; // v0.61 · préstamo del Prestamista: se cobra al terminar el tramo
+  alineacion?: number; // v0.61 · tramo con Alineación Planetaria (+1 J en el primer turno de cada combate)
   astrosVistos?: string[]; // v0.59 · astros ambulantes ya enfrentados en esta partida (no se repiten)
   telescopio?: number; // v0.58 · combates que te quedan con el telescopio prestado del Astrónomo (ves las intenciones ocultas)
   hojaSegura?: boolean; // v0.58 · el Astrónomo te señaló una hoja de Montemayor: la encuentras al volver al mapa

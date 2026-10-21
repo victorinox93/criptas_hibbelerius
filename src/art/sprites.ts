@@ -1172,6 +1172,19 @@ const PROFE_ENOJADO = mirrorHalf([
 
 // Familiares (miran al frente)
 const FAMS: Record<string, { rows: string[]; ov: Record<string, string> }> = {
+  // v0.61 · lunas que te acompañan (se ganan con los Astros Ambulantes y la Alineación)
+  fam_fobos: {
+    rows: mirrorHalf(['...qqq', '.qqqqq', 'qQqqqW', 'qqqqWE', 'qqQqqW', '.qqqqq', '..qQqq', '...qqq']),
+    ov: { q: '#9a98a0', Q: '#5e5c66', W: '#f4f0e8', E: '#ff4a6a' },
+  },
+  fam_europa: {
+    rows: mirrorHalf(['...www', '.wwwww', 'wwbwww', 'wwwbWE', 'wbwwwW', 'wwwbww', '.wwwbw', '...www']),
+    ov: { w: '#e8e4dc', b: '#b8784a', W: '#ffffff', E: '#3a8ac8' },
+  },
+  fam_caronte: {
+    rows: mirrorHalf(['....kk', '...kkk', '..kkkk', '.kkkEk', '.kkkkk', '.kkqkk', 'kkkkkk', 'kkkkkk', 'kk.kkk']),
+    ov: { k: '#3a3448', E: '#7ad8ff', q: '#c8c0d8' },
+  },
   // v0.49 · familiares del Abismo
   fam_shoggoth: {
     rows: mirrorHalf(['...kkk', '.kkkkk', 'kkEkkk', 'kkkkEk', 'kEkkkk', 'kkkkkk', 'kkkEkk', '.kkkkk', 'k.k.kk']),

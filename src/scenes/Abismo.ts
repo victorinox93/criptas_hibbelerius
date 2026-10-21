@@ -648,6 +648,18 @@ export class AbismoScene extends Phaser.Scene {
       if (!(run.seen ?? []).includes(clave)) { robo = Math.min(run.ergios, 30); run.ergios -= robo; (run.seen ??= []).push(clave); saveLocal(); }
       L(txt(this, W / 2, 208, `Remiendos desaparece entre las rocas, riendo: «¡Sin rencores, amigo!»${robo ? ` (Te faltan ${robo} Ergios.)` : ''}`, 17, '#ffb040').setOrigin(0.5));
     } else if (run.aliado && run.aliadoTramo !== undefined) L(txt(this, W / 2, 208, `${ALMAS[run.aliado]?.name ?? 'Tu acompañante'} se despide: «Hasta aquí llego. Sigue bajando tú».`, 17, '#e8c15a').setOrigin(0.5));
+    // v0.61 · el Prestamista de Ergios cobra lo que le debes (si no alcanza, cobra en vida: 1 de vida por cada 2 Ergios)
+    if (run.deuda && run.deuda.tramo === tramo) {
+      const { monto } = run.deuda;
+      const paga = Math.min(run.ergios, monto);
+      const vida = Math.ceil((monto - paga) / 2);
+      run.ergios -= paga;
+      if (vida) run.hp = Math.max(1, run.hp - vida);
+      run.deuda = undefined;
+      logEvent('deuda', '', vida === 0, { monto, paga, vida });
+      saveLocal();
+      L(txt(this, W / 2, 228, `El Prestamista sale de la sombra: «Lo acordado: ${monto} Ergios.» Pagas ${paga}${vida ? ` y te cobra el resto en vida (−${vida})` : ''}.`, 17, vida ? '#ff8a7a' : '#ffd040', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5));
+    }
     if (tramo < TRAMOS) {
       L(title(this, W / 2, 80, `¡Tramo ${tramo} superado!`, 52, '#9ad8c8'));
       L(txt(this, W / 2, 132, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 22, CSS.bone).setOrigin(0.5));

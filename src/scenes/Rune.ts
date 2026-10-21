@@ -133,7 +133,7 @@ export class RuneScene extends Phaser.Scene {
       this.tweens.add({ targets: por, y: 166, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, p.title, 34, '#c8b8ff');
     } else if (rel) {
-      const im = this.add.image(62, 150, rel.icono).setScale(6).setTint(rel.tinte);
+      const im = rel.npc ? this.add.image(62, 150, rel.npc).setScale(Math.min(6, 110 / this.textures.get(rel.npc).getSourceImage().height)) : this.add.image(62, 150, rel.icono).setScale(6).setTint(rel.tinte);
       this.tweens.add({ targets: im, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, rel.titulo, 34, '#9ad8c8');
     } else if (ev) {

@@ -39,7 +39,9 @@ export class EventScene extends Phaser.Scene {
       }
       const libres = RELATOS.filter((r) => !r.sueno && !seen.includes(`relato_${r.id}`));
       if (libres.length && Math.random() < RELATO_CHANCE) {
-        const r = Phaser.Utils.Array.GetRandom(libres);
+        // v0.61 · los personajes y fenómenos nuevos pesan más (peso 2)
+        let x = Math.random() * libres.reduce((a, b) => a + (b.peso ?? 1), 0);
+        const r = libres.find((l) => (x -= l.peso ?? 1) < 0) ?? libres[0];
         seen.push(`relato_${r.id}`);
         saveLocal();
         this.scene.start('Relato', { floor: data.floor, id: r.id });

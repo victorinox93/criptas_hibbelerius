@@ -2,6 +2,26 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.61.0 · Lunas, préstamos y meteoritos (beta)
+
+- **Personajes nuevos en los nodos «?» del Abismo:**
+  - **El Prestamista de Ergios** (traidor): te presta 60 o 30 Ergios y al terminar el tramo cobra 1.5 veces lo prestado. Si no tienes, cobra el resto en VIDA (1 por cada 2 Ergios). Si revisas sus cuentas (pregunta de trabajo y energía) y aciertas, te paga 25 Ergios para que no lo denuncies.
+  - **La Viuda de Arkham** (amable, pero cobra):
+    - Cuida a tu familiar (+2 combates) a cambio de una carta de tu mazo.
+    - O te da té y descanso por 15 Ergios.
+    - Si le preguntas por la caída de su esposo astrónomo (pregunta de energía) y aciertas, te da un diente raro.
+- **Fenómenos nuevos:**
+  - **Alineación Planetaria:** las gravedades de tres planetas se suman.
+    - Si te dejas jalar: +1 J en el primer turno de cada combate del tramo (−6 de Cordura).
+    - Si resistes calculando la fuerza total y aciertas, ganas a Caronte.
+  - **Lluvia de Meteoritos** (minijuego): esquivas rocas con el ratón o las flechas. Cada roca muestra su masa y rapidez, y si te pega te quita vida según K = ½·m·v². Los fragmentos azules dan Ergios. Al final, una pregunta: ¿cuál pega más fuerte, la pesada y lenta o la ligera y rápida?
+- **Lunas familiares:**
+  - **Fobos** (lo suelta Marte al vencerlo): cada 2 turnos golpea a un enemigo por 8.
+  - **Europa** (la suelta Júpiter): +5 de Bloqueo al empezar cada combate y +6 de vida al ganarlo.
+  - **Caronte, el Barquero** (Alineación): si tu vida llega a 0, te levanta con 12 y se va.
+- Los personajes y fenómenos nuevos salen con el doble de probabilidad que un relato.
+- Página nueva en la Guía del Abismo: «Personajes, lunas y fenómenos».
+
 ## v0.60.0 · El Portal del Abismo (beta)
 
 - **Portal del Abismo en el menú** (para todos, bloqueado por ahora): un remolino verde y morado que llama la atención. Al pasar el cursor dice «Próximamente · Sólo para quienes hayan vencido a AM».

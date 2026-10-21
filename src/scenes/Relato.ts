@@ -5,7 +5,7 @@ import { W, H } from '../config';
 import { RARAS_ABISMO } from '../data/abismo_modo';
 import { CARDS } from '../data/cards';
 import { base, cristalDe, defDiente, DIENTES, esParasito, HUECOS, ponerDiente, sortearDientes, sortearParasito } from '../data/dientes';
-import { Efecto, OpcionRelato, RELATO } from '../data/relatos';
+import { Efecto, INTERES_PRESTAMO, OpcionRelato, RELATO } from '../data/relatos';
 import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { addCard, addEffect, addFamiliar, addEntropia, aplicarSarro, Game, logEvent, saveLocal, sonarSueno, syncRun } from '../state';
@@ -88,6 +88,30 @@ export function aplicarEfecto(e: Efecto): string {
     const fid = addFamiliar(e.familiar);
     partes.push(r.familiarOferta?.id === fid ? `${FAMILIARS[fid].name} quiere acompañarte: al volver al mapa eliges con qué familiar te quedas` : `Te acompaña: ${FAMILIARS[fid].name} (${FAMILIARS[fid].combats} combates)`);
   }
+  // v0.61 · personajes y fenómenos del Abismo
+  if (e.prestamo) {
+    const cobro = Math.round(e.prestamo * INTERES_PRESTAMO);
+    r.ergios += e.prestamo;
+    const antes = r.deuda?.tramo === (r.tramo ?? 1) ? r.deuda.monto : 0;
+    r.deuda = { monto: antes + cobro, tramo: r.tramo ?? 1 };
+    partes.push(`+${e.prestamo} Ergios. Al terminar el tramo el Prestamista cobra ${r.deuda.monto}.`);
+  }
+  if (e.familiarExtra && r.familiar) {
+    r.familiar.left += e.familiarExtra;
+    partes.push(`${FAMILIARS[r.familiar.id]?.name ?? 'Tu familiar'} se queda ${e.familiarExtra} combates más (le quedan ${r.familiar.left})`);
+  }
+  if (e.quitarCarta) {
+    const c = r.deck.filter((x) => CARDS[x.id].rarity !== 'estado');
+    if (c.length > 5) {
+      const x = Phaser.Utils.Array.GetRandom(c);
+      r.deck = r.deck.filter((y) => y !== x);
+      partes.push(`Se lleva: ${CARDS[x.id].name}`);
+    } else partes.push('Mira tu mazo flaquito y no se lleva nada: «Pobrecito.»');
+  }
+  if (e.alineacion) {
+    r.alineacion = r.tramo ?? 1;
+    partes.push('+1 J en el primer turno de cada combate (hasta el final del tramo)');
+  }
   if (e.pierdeDiente) {
     // v0.48 · pierdes dientes al azar (los parásitos no se sueltan)
     const dent = r.dientes ?? [];
@@ -135,9 +159,9 @@ export class RelatoScene extends Phaser.Scene {
     // ilustración: el objeto del cuento, grande y flotando, con un halo
     const halo = this.add.circle(200, 270, 120, rel.tinte, 0.08);
     this.tweens.add({ targets: halo, scale: 1.15, alpha: 0.03, duration: 1800, yoyo: true, repeat: -1 });
-    const ic = this.add.image(200, 270, rel.icono).setScale(12).setTint(rel.tinte);
+    const ic = rel.npc ? this.add.image(200, 270, rel.npc).setScale(Math.min(12, 190 / this.textures.get(rel.npc).getSourceImage().height)) : this.add.image(200, 270, rel.icono).setScale(12).setTint(rel.tinte);
     this.tweens.add({ targets: ic, y: 262, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    txt(this, 200, 400, rel.propio ? `Del diario de Ignacio Montemayor\n(${rel.anio})` : `${sueno ? 'Sueño basado en' : 'Basado en'} «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, sueno ? '#9a8ac0' : '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
+    txt(this, 200, 400, rel.pie ? rel.pie : rel.propio ? `Del diario de Ignacio Montemayor\n(${rel.anio})` : `${sueno ? 'Sueño basado en' : 'Basado en'} «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, sueno ? '#9a8ac0' : '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
 
     const tt = title(this, W / 2 + 90, 70, rel.titulo, 36, sueno ? '#c8b8ff' : '#9ad8c8');
     if (tt.width > 600) tt.setScale(600 / tt.width);
@@ -155,7 +179,7 @@ export class RelatoScene extends Phaser.Scene {
     };
     rel.opciones.forEach((o, i) => {
       const y = 290 + i * 74;
-      const falta = o.need?.ergios && run.ergios < o.need.ergios;
+      const falta = (o.need?.ergios && run.ergios < o.need.ergios) || (o.need?.familiar && !run.familiar);
       const b = button(this, 655, y, 540, 44, o.label, () => {
         if (falta) return;
         audio.sfx('card');
@@ -173,7 +197,10 @@ export class RelatoScene extends Phaser.Scene {
         resultado.add(rg);
         resultado.add(txt(this, 400, 286, e.texto, 19, '#d8c8a0', { wordWrap: { width: 510 }, lineSpacing: 3 }));
         resultado.add(txt(this, 400, 370, res, 18, CSS.gold, { wordWrap: { width: 510 } }));
-        if (e.combate) {
+        if (e.meteoritos) {
+          // v0.61 · Lluvia de meteoritos: minijuego (src/scenes/Meteoritos.ts)
+          resultado.add(button(this, 655, 496, 260, 40, '¡Esquivar!', () => fadeTo(this, 'Meteoritos', { floor: data.floor }), { size: 20, color: 0xc8541a }));
+        } else if (e.combate) {
           // v0.51 · pesadilla: la vida que pierdas allá no es real
           const pelear = () => {
             run.suenoHp = run.hp;
@@ -185,7 +212,7 @@ export class RelatoScene extends Phaser.Scene {
       }, { size: 19, color: i === rel.opciones.length - 1 ? UI.border : 0x2c5a4e });
       if (falta) b.setEnabled(false);
       opciones.add(b);
-      opciones.add(txt(this, 655, y + 26, o.risk + (falta ? ` (te faltan Ergios)` : ''), 14, CSS.dim, { align: 'center', wordWrap: { width: 540 } }).setOrigin(0.5, 0));
+      opciones.add(txt(this, 655, y + 26, o.risk + (falta ? (o.need?.familiar && !run.familiar ? ' (no traes familiar)' : ' (te faltan Ergios)') : ''), 14, CSS.dim, { align: 'center', wordWrap: { width: 540 } }).setOrigin(0.5, 0));
     });
   }
 }
