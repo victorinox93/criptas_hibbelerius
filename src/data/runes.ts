@@ -654,6 +654,41 @@ const ORBITA_GEN: (() => Problem)[] = [
 ];
 GENERATORS.push(...ORBITA_GEN);
 
+// v0.62 · Vectores: las preguntas del Cartógrafo Ciego (sólo salen con él)
+export const VECTOR_CONCEPTS = ['Vectores'];
+const VECTOR_GEN: (() => Problem)[] = [
+  () => {
+    const [a, b] = pick([[3, 4], [6, 8], [5, 12], [8, 15], [7, 24], [9, 12]]);
+    return {
+      concept: 'Vectores', title: 'El Mapa del Cartógrafo',
+      prompt: `Caminas ${a} km al norte y luego ${b} km al este.\n¿A qué distancia quedas del punto de partida (magnitud del desplazamiento)?`,
+      unit: 'km', answer: Math.hypot(a, b), tol: 0.02,
+      solution: ['Los dos desplazamientos son perpendiculares: se usa Pitágoras.', `R = √(${a}² + ${b}²)`, `R = ${f2(Math.hypot(a, b))} km`],
+    };
+  },
+  () => {
+    const a = ri(3, 12), b = ri(3, 12);
+    const th = (Math.atan2(a, b) * 180) / Math.PI;
+    return {
+      concept: 'Vectores', title: 'La Brújula Ciega',
+      prompt: `Caminas ${b} km al este y luego ${a} km al norte.\n¿Qué ángulo forma tu desplazamiento total con la dirección este (en grados)?`,
+      unit: '°', answer: th, tol: 0.03,
+      solution: ['tan θ = cateto opuesto / cateto adyacente = norte / este', `θ = tan⁻¹(${a} / ${b})`, `θ = ${f2(th)}° al norte del este`],
+    };
+  },
+  () => {
+    const d = ri(3, 9);
+    const s = shuffleChoices(['0 km', `${2 * d} km`, `${d} km`, `${d * d} km`], 0);
+    return {
+      concept: 'Vectores', title: 'El Camino de Ida y Vuelta',
+      prompt: `Caminas ${d} km al norte y luego ${d} km al sur. ¿Cuál es la magnitud de tu DESPLAZAMIENTO?`,
+      unit: '', ...s,
+      solution: ['El desplazamiento es la flecha del inicio al final, no la distancia recorrida.', `Recorriste ${2 * d} km, pero terminaste donde empezaste: desplazamiento = 0.`],
+    };
+  },
+];
+GENERATORS.push(...VECTOR_GEN);
+
 /** Temas del Acto III: no salen en los altares de los actos anteriores */
 export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques', 'Impulso angular'];
 
@@ -662,7 +697,7 @@ export const IMPULSE_CONCEPTS = ['Impulso', 'Cantidad de movimiento', 'Choques',
  * Con probabilidad MCQ_SHARE prefiere una pregunta de opción múltiple.
  */
 export function randomProblem(concepts?: string[]): Problem {
-  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept) && !ABISMO_CONCEPTS.includes(p.concept) && !ORBITA_CONCEPTS.includes(p.concept));
+  const okTopic = (p: Problem) => (concepts?.length ? concepts.includes(p.concept) : !IMPULSE_CONCEPTS.includes(p.concept) && !CALCULO_CONCEPTS.includes(p.concept) && !ABISMO_CONCEPTS.includes(p.concept) && !ORBITA_CONCEPTS.includes(p.concept) && !VECTOR_CONCEPTS.includes(p.concept));
   const wantChoice = Math.random() < MCQ_SHARE;
   let fallback: Problem | null = null;
   for (let i = 0; i < 200; i++) {

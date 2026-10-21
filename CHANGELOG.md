@@ -2,6 +2,26 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.62.0 · Pérez y compañía (beta)
+
+- **Pérez, el Ratón de los Dientes:** te persigue por el mapa en cada tramo.
+  - Empieza 3 pisos detrás de ti. Avanza 1 piso por cada nodo que visitas, 2 cuando te detienes a descansar o comprar, y a veces 1 extra (velocidad relativa).
+  - Si te alcanza, te arranca un diente; si no tienes, se lleva 20 Ergios. Luego vuelve a empezar 3 pisos atrás.
+  - Se ve en el mapa y avisa cuando está a 1 piso.
+- **El Cartógrafo Ciego:**
+  - Te vende un mapa por 20 Ergios. Casi siempre 2 combates de adelante se vuelven Fogata y Mercader; a veces miente y se vuelven Élites.
+  - Si aciertas una pregunta de vectores (suma de desplazamientos), el mapa es verdadero y gratis.
+- **El Gemelo de Espejo:**
+  - Te regala una copia mejorada de una carta, pero hasta el final del tramo usa tu último golpe contra ti una vez por combate (3ª ley).
+  - Si rompes el espejo y aciertas la pregunta de la 3ª ley, te quedas con la carta sin reflejo.
+- **El Peregrino de Yuggoth (un Mi-Go):**
+  - Lleva tu cerebro en un cilindro: la Cordura no baja el resto del tramo, pero pierdes 15 de Vida máxima (la recuperas al terminar el tramo).
+  - Su pregunta de órbitas da un diente de planeta.
+- **La Sombra del Alumno Anterior:** el eco de un compañero real que dejó huella en el Abismo. Si ganas su reto, te da su mejor carta (rara, en Lámina).
+- **Remiendos y Zurcido:** acertijo de lógica y física. Uno siempre miente: el que dice algo falso de física señala el camino malo. Si aciertas, ganas un tesoro (Ergios y un diente raro); si fallas, Remiendos te roba.
+- El Prestamista ya no usa la palabra «chistera» (ahora: sombrero de copa).
+- Página nueva en la Guía del Abismo: «Más personajes (y un ratón)».
+
 ## v0.61.0 · Lunas, préstamos y meteoritos (beta)
 
 - **Personajes nuevos en los nodos «?» del Abismo:**

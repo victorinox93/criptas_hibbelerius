@@ -193,6 +193,27 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     },
   },
   {
+    titulo: 'Más personajes (y un ratón)',
+    texto: 'Algunos ayudan, otros engañan. Y en cada tramo, Pérez, el Ratón de los Dientes, te persigue por el mapa.',
+    dibujo: (s, L) => {
+      const filas: [string, string, string, number, number?][] = [
+        ['fig_perez', 'Pérez, el Ratón de los Dientes', 'Empieza 3 pisos detrás de ti. Avanza 2 cuando descansas o compras. Si te alcanza, te arranca un diente.', 2.4],
+        ['fig_cartografo', 'El Cartógrafo Ciego', 'Te vende un mapa: casi siempre marca Fogata y Mercader… a veces, Élites. Si sumas bien vectores, no te engaña.', 2.6],
+        ['hero', 'El Gemelo de Espejo', 'Te regala una carta mejorada, pero una vez por combate usa tu último golpe contra ti (3ª ley).', 1.1, 0x8ab8ff],
+        ['fig_migo', 'El Peregrino de Yuggoth', 'Lleva tu cerebro en un cilindro: la Cordura no baja todo el tramo, pero pierdes Vida máxima.', 2.6],
+        ['hero', 'La Sombra del Alumno Anterior', 'El eco de un compañero que bajó antes que tú. Gánale su reto y te da su mejor carta.', 1.1, 0x3a4a6a],
+        ['fig_hermano', 'Remiendos y Zurcido', 'Uno siempre miente. Descubre cuál dice algo falso de física y elige el camino correcto.', 2.6],
+      ];
+      filas.forEach(([k, nom, d, e, tinte], i) => {
+        const y = 178 + i * 46;
+        const im = L(s.add.image(120, y + 16, k).setScale(e * 0.8));
+        if (tinte !== undefined) im.setTint(tinte);
+        L(txt(s, 170, y, nom, 18, CSS.gold));
+        L(txt(s, 170, y + 22, d, 14, CSS.bone, { wordWrap: { width: 720 } }));
+      });
+    },
+  },
+  {
     titulo: 'Las Tierras del Sueño',
     texto: 'En el nodo 🌙 te quedas dormido y eliges una de tres puertas. Cada una es un sueño de un cuento de Lovecraft. Colecciona los 7: hay premios en el Vestidor.',
     dibujo: (s, L) => {

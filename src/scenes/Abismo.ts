@@ -648,6 +648,14 @@ export class AbismoScene extends Phaser.Scene {
       if (!(run.seen ?? []).includes(clave)) { robo = Math.min(run.ergios, 30); run.ergios -= robo; (run.seen ??= []).push(clave); saveLocal(); }
       L(txt(this, W / 2, 208, `Remiendos desaparece entre las rocas, riendo: «¡Sin rencores, amigo!»${robo ? ` (Te faltan ${robo} Ergios.)` : ''}`, 17, '#ffb040').setOrigin(0.5));
     } else if (run.aliado && run.aliadoTramo !== undefined) L(txt(this, W / 2, 208, `${ALMAS[run.aliado]?.name ?? 'Tu acompañante'} se despide: «Hasta aquí llego. Sigue bajando tú».`, 17, '#e8c15a').setOrigin(0.5));
+    // v0.62 · el Mi-Go te devuelve el cerebro (y la Vida máxima)
+    if (run.cilindro === tramo && !(run.seen ?? []).includes(`cilindro${tramo}`)) {
+      (run.seen ??= []).push(`cilindro${tramo}`);
+      run.maxHp += 15;
+      run.cilindro = undefined;
+      saveLocal();
+      L(txt(this, W / 2, 190, 'El Peregrino de Yuggoth te regresa el cerebro a su lugar: recuperas 15 de Vida máxima.', 16, '#e070a0').setOrigin(0.5));
+    }
     // v0.61 · el Prestamista de Ergios cobra lo que le debes (si no alcanza, cobra en vida: 1 de vida por cada 2 Ergios)
     if (run.deuda && run.deuda.tramo === tramo) {
       const { monto } = run.deuda;
