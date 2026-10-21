@@ -44,6 +44,7 @@ import { RelatoScene } from './scenes/Relato';
 import { SuenoScene } from './scenes/Sueno';
 import { GabineteScene } from './scenes/Gabinete';
 import { MeteoritosScene } from './scenes/Meteoritos';
+import { HermanosScene } from './scenes/Hermanos';
 import { TitleScene } from './scenes/Title';
 import { Game } from './state';
 import { mostrarArranque } from './consola/arranque';
@@ -70,7 +71,7 @@ const game = new Phaser.Game({
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
   scene: [BootScene, TitleScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, VestidorScene, TiendaScene, MyriamScene, EstadisticasScene, DiagnosticoScene, MusicaScene, AMScene, TabernaScene, TiroBlancoScene, TiraAflojaScene, MasMenosScene, DebugScene, AbismoScene, RelatoScene, SuenoScene, GabineteScene, MeteoritosScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, VestidorScene, TiendaScene, MyriamScene, EstadisticasScene, DiagnosticoScene, MusicaScene, AMScene, TabernaScene, TiroBlancoScene, TiraAflojaScene, MasMenosScene, DebugScene, AbismoScene, RelatoScene, SuenoScene, GabineteScene, MeteoritosScene, HermanosScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda

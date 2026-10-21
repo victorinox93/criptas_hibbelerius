@@ -31,6 +31,12 @@ export interface Efecto {
   quitarCarta?: boolean; // v0.61 · alguien se lleva una carta de tu mazo (la elige al azar)
   alineacion?: boolean; // v0.61 · +1 J en el primer turno de cada combate, hasta el final del tramo
   meteoritos?: boolean; // v0.61 · empieza el minijuego de la Lluvia de Meteoritos (src/scenes/Meteoritos.ts)
+  mapa?: 'verdad' | 'mentira'; // v0.62 · el Cartógrafo Ciego cambia 2 combates de adelante: verdad → Fogata y Mercader; mentira → 2 Élites
+  gemelo?: boolean; // v0.62 · tu reflejo te sigue el resto del tramo: una vez por combate usa tu último golpe contra ti
+  mejorarCarta?: boolean; // v0.62 · ganas una copia MEJORADA de una carta de tu mazo
+  cilindro?: boolean; // v0.62 · el Mi-Go lleva tu cerebro: la Cordura no baja este tramo, pero −15 de Vida máxima (se recupera al terminar)
+  cartaRara?: boolean; // v0.62 · una carta rara del Abismo en Lámina
+  hermanos?: boolean; // v0.62 · empieza el acertijo de Remiendos y Zurcido (src/scenes/Hermanos.ts)
 }
 
 export interface OpcionRelato {
@@ -55,6 +61,8 @@ export interface RelatoDef {
   npc?: string; // v0.61 · retrato del personaje (textura) en lugar del ícono
   pie?: string; // v0.61 · texto bajo el retrato (en lugar de «Basado en…»)
   peso?: number; // v0.61 · probabilidad relativa de salir en un «?» (1 si no se dice)
+  npcTinte?: number; // v0.62 · tinte del retrato (el reflejo, la sombra)
+  npcEspejo?: boolean; // v0.62 · el retrato se voltea (el reflejo)
 }
 
 /** Probabilidad de que un nodo «?» del Abismo sea un Relato (si quedan sin ver) */
@@ -262,7 +270,7 @@ export const INTERES_PRESTAMO = 1.5;
 RELATOS.push(
   {
     id: 'prestamista', titulo: 'La mesa del Prestamista', obra: '', anio: 0, icono: 'i_bag', tinte: 0xffd040, npc: 'fig_prestamista', pie: 'Personaje del Abismo\n(traidor)', peso: 2,
-    intro: 'Detrás de una mesa con una balanza, un hombre de chistera cuenta monedas con demasiados dedos. «¿Le faltan Ergios? Le presto. Me paga cuando termine el tramo… con un pequeño interés. Firme aquí.»',
+    intro: 'Detrás de una mesa con una balanza, un hombre con sombrero de copa cuenta monedas con demasiados dedos. «¿Le faltan Ergios? Le presto. Me paga cuando termine el tramo… con un pequeño interés. Firme aquí.»',
     opciones: [
       { label: 'Pedir el préstamo grande (+60 Ergios)', risk: `Al terminar el tramo te cobra ${Math.round(60 * 1.5)}. Si no los tienes, te cobra el resto en VIDA.`, salidas: [
         { p: 1, e: { texto: '«Excelente decisión.» Las monedas están tibias. La tinta del contrato todavía se mueve.', prestamo: 60 } },
@@ -331,6 +339,92 @@ RELATOS.push(
         { p: 0.6, e: { texto: 'Esperas a que pase. Cuando sales, sólo hay humo.' } },
         { p: 0.4, e: { texto: 'Uno cae justo al lado. Te zumban los oídos, pero entre el polvo brillan fragmentos de metal.', hp: -10, ergios: 20 } },
       ] },
+    ],
+  },
+);
+
+// v0.62 · más personajes del Abismo (peso 2). {alias} se cambia por el nombre de la sombra (src/scenes/Event.ts)
+RELATOS.push(
+  {
+    id: 'cartografo', titulo: 'El Cartógrafo Ciego', obra: '', anio: 0, icono: 'i_book', tinte: 0xe8d8a8, npc: 'fig_cartografo', pie: 'Personaje del Abismo\n(¿dice la verdad?)', peso: 2,
+    intro: 'Un viejo con los ojos vendados dibuja mapas sin mirar. «Yo conozco este tramo mejor que nadie. Te vendo un mapa: te marco dónde descansar y dónde comprar.» Su mano tiembla un poquito. ¿Miente?',
+    opciones: [
+      { label: 'Comprarle su mapa (20 Ergios)', need: { ergios: 20 }, risk: 'Casi siempre dice la verdad: 2 combates de adelante se vuelven Fogata y Mercader. A veces miente: se vuelven Élites.', salidas: [
+        { p: 0.7, e: { texto: 'Sigues las marcas del mapa… y ahí están: un lugar para descansar y otro para comprar.', ergios: -20, mapa: 'verdad' } },
+        { p: 0.3, e: { texto: 'Las marcas del mapa llevan justo a donde esperan las criaturas más grandes. El viejo se ríe en la oscuridad.', ergios: -20, mapa: 'mentira' } },
+      ] },
+      {
+        label: 'Pedirle que te enseñe a leer el mapa', risk: 'Pregunta de vectores (suma de desplazamientos). Si aciertas: el mapa es VERDADERO y gratis. Si fallas: −6 de Cordura.',
+        pregunta: {
+          concepts: ['Vectores'],
+          bien: { texto: '«Sabes sumar caminos: no te puedo engañar.» Te da el mapa bueno, sin cobrarte.', mapa: 'verdad' },
+          mal: { texto: 'Te pierdes leyendo flechas que apuntan a todos lados.', cordura: -6 },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'gemelo', titulo: 'El Gemelo de Espejo', obra: '', anio: 0, icono: 'i_shrine', tinte: 0x8ab8ff, npc: 'hero', npcTinte: 0x8ab8ff, npcEspejo: true, pie: 'Personaje del Abismo\n(traidor)', peso: 2,
+    intro: 'Un espejo roto en medio del camino. Tu reflejo no hace lo que tú haces: sonríe cuando tú no sonríes. Sale del espejo y te ofrece la mano. «Te regalo algo… si me dejas acompañarte.»',
+    opciones: [
+      { label: 'Dejar que tu reflejo te siga', risk: 'Ganas una copia MEJORADA de una carta de tu mazo. Pero hasta el final del tramo, una vez por combate, usa tu último golpe contra ti (3ª ley).', salidas: [
+        { p: 1, e: { texto: 'Tu reflejo te entrega una carta igual a una tuya, pero más fuerte. Luego se pone detrás de ti. No lo ves, pero lo sientes.', mejorarCarta: true, gemelo: true } },
+      ] },
+      {
+        label: 'Romper el espejo', risk: 'Pregunta de la 3ª ley. Si aciertas: la copia mejorada, sin reflejo. Si fallas: −10 de vida y el reflejo te sigue igual.',
+        pregunta: {
+          concepts: ['3a ley'],
+          bien: { texto: 'Golpeas el espejo sabiendo exactamente cuánto te va a regresar. El reflejo se rompe y deja caer su regalo.', mejorarCarta: true, cordura: 4 },
+          mal: { texto: 'El espejo te regresa el golpe (acción y reacción) y tu reflejo se escapa… detrás de ti.', hp: -10, gemelo: true },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'peregrino', titulo: 'El Peregrino de Yuggoth', obra: '', anio: 0, icono: 'i_astro', tinte: 0xe070a0, npc: 'fig_migo', pie: 'Personaje del Abismo\n(ayuda… a su manera)', peso: 2,
+    intro: 'Un ser rosado con cabeza de hongo y alas de membrana zumba frente a ti. Viene de Yuggoth, en el borde del sistema solar. «Tu cerebro sufre aquí abajo. Yo lo puedo llevar en un cilindro de metal. No sentirás miedo. Tampoco sentirás… mucho más.»',
+    opciones: [
+      { label: 'Dejar que lleve tu cerebro en un cilindro', risk: 'Hasta el final del tramo tu Cordura NO BAJA. A cambio, −15 de Vida máxima (la recuperas al terminar el tramo).', salidas: [
+        { p: 1, e: { texto: 'Un clic, un frío en la nuca… y de pronto nada te asusta. Tampoco te sientes del todo entero.', cilindro: true } },
+      ] },
+      {
+        label: 'Preguntarle por la órbita de Yuggoth', risk: 'Pregunta de movimiento circular. Si aciertas: un diente de planeta y +6 de Cordura. Si fallas: −10 de Cordura.',
+        pregunta: {
+          concepts: ['Movimiento circular'],
+          bien: { texto: 'El Mi-Go zumba contento: casi nadie entiende las órbitas. Te regala un diente que viene de muy lejos.', diente: 'astro', cordura: 6 },
+          mal: { texto: 'El Mi-Go te explica la respuesta con imágenes directo en tu cabeza. Ojalá no lo hubiera hecho.', cordura: -10 },
+        },
+      },
+      IRSE,
+    ],
+  },
+  {
+    id: 'sombra', titulo: 'La Sombra del Alumno Anterior', obra: '', anio: 0, icono: 'i_skull', tinte: 0x6a7a9a, npc: 'hero', npcTinte: 0x3a4a6a, pie: 'Eco de alguien que bajó antes', peso: 2,
+    intro: 'Una figura con tu misma armadura, pero gris y transparente, te cierra el paso: es la sombra de {alias}, que bajó al Abismo antes que tú. «¿Crees que sabes más que yo? Demuéstralo.»',
+    opciones: [
+      {
+        label: 'Aceptar su reto', risk: 'Una pregunta. Si aciertas: te da su mejor carta (rara del Abismo, en Lámina). Si fallas: −8 de Cordura y −10 Ergios.',
+        pregunta: {
+          concepts: ['Centroide', 'Momento de inercia', '2a ley', 'Energia cinetica', 'Impulso', 'Trabajo'],
+          bien: { texto: 'La sombra de {alias} asiente despacio. «Sabes más de lo que yo sabía.» Te deja su mejor carta antes de desvanecerse.', cartaRara: true },
+          mal: { texto: 'La sombra de {alias} se ríe y te quita algo del bolsillo antes de irse.', cordura: -8, ergios: -10 },
+        },
+      },
+      { label: 'Honrar su memoria', risk: '+6 de Cordura.', salidas: [
+        { p: 1, e: { texto: 'Le dices que llegó lejos. La sombra sonríe y se va tranquila. Tú también te sientes mejor.', cordura: 6 } },
+      ] },
+    ],
+  },
+  {
+    id: 'hermanos', titulo: 'Remiendos y Zurcido', obra: '', anio: 0, icono: 'i_shrine', tinte: 0xc8a060, npc: 'fig_hermano', pie: 'Personajes del Abismo\n(uno siempre miente)', peso: 2,
+    intro: 'Dos hombres idénticos, con la misma armadura remendada y la misma sonrisa. «¡Amigo! Somos Remiendos y Zurcido. Uno de nosotros SIEMPRE miente y el otro NUNCA. Hay dos caminos: uno lleva a un tesoro y el otro… bueno.»',
+    opciones: [
+      { label: 'Escuchar a los dos hermanos', risk: 'Un acertijo de lógica… y de física: descubre quién miente y elige el camino.', salidas: [
+        { p: 1, e: { texto: '«Pregúntanos lo que quieras.»', hermanos: true } },
+      ] },
+      IRSE,
     ],
   },
 );

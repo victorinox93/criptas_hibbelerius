@@ -43,6 +43,12 @@ export class EventScene extends Phaser.Scene {
         let x = Math.random() * libres.reduce((a, b) => a + (b.peso ?? 1), 0);
         const r = libres.find((l) => (x -= l.peso ?? 1) < 0) ?? libres[0];
         seen.push(`relato_${r.id}`);
+        if (r.id === 'sombra') {
+          // v0.62 · la sombra es de un compañero real que dejó huella (lápida o signo) en este acto, si hay
+          const yo = Game.profile?.avatar?.alias;
+          const otros = [...(run.huellas?.lapidas ?? []), ...(run.huellas?.signos ?? [])].map((h) => h.alias).filter((a) => a && a !== yo);
+          run.sombraAlias = otros.length ? `«${Phaser.Utils.Array.GetRandom(otros)}»` : undefined;
+        }
         saveLocal();
         this.scene.start('Relato', { floor: data.floor, id: r.id });
         return;

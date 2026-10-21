@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { nivelDiente } from '../data/dientes';
 import { cumplirCarta } from '../data/lovecraft';
 import { RELATO } from '../data/relatos';
-import { aplicarEfecto } from './Relato';
+import { aplicarEfecto, conAlias } from './Relato';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -134,8 +134,10 @@ export class RuneScene extends Phaser.Scene {
       title(this, W / 2, 86, p.title, 34, '#c8b8ff');
     } else if (rel) {
       const im = rel.npc ? this.add.image(62, 150, rel.npc).setScale(Math.min(6, 110 / this.textures.get(rel.npc).getSourceImage().height)) : this.add.image(62, 150, rel.icono).setScale(6).setTint(rel.tinte);
+      if (rel.npcTinte !== undefined) im.setTint(rel.npcTinte);
+      if (rel.npcEspejo) im.setFlipX(true);
       this.tweens.add({ targets: im, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      title(this, W / 2, 86, rel.titulo, 34, '#9ad8c8');
+      title(this, W / 2, 86, conAlias(rel.titulo), 34, '#9ad8c8');
     } else if (ev) {
       const npc = this.add.image(62, 150, ev.npc).setScale(4);
       this.tweens.add({ targets: npc, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -150,7 +152,7 @@ export class RuneScene extends Phaser.Scene {
       evento: ev ? `${T.evento.siAciertas}: ${describeOutcome(ev.bless)}` : '',
       regateo: '«Resuélvelo y te rebajo los precios.»',
       santuario: T.santuario.siAciertas,
-      relato: relP ? `Si aciertas: ${relP.bien.texto.split('.')[0]}.` : '',
+      relato: relP ? `Si aciertas: ${conAlias(relP.bien.texto).split('.')[0]}.` : '',
       observatorio: data.constelacion ? `«Si acierta, ${data.constelacion[1]} brillará todavía más.»` : '',
     };
     txt(this, W / 2, 156, sub[data.source], 20, CSS.dim).setOrigin(0.5);
@@ -382,7 +384,7 @@ export class RuneScene extends Phaser.Scene {
       this.hud.refresh();
       logEvent('relato', p.concept, ok, { id: rel.id, resultado: res });
       this.apilar(c, [
-        txt(this, 0, 0, e.texto, 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 300 } }),
+        txt(this, 0, 0, conAlias(e.texto), 20, ok ? CSS.green : '#e08a8a', { wordWrap: { width: 300 } }),
         txt(this, 0, 0, res, 18, CSS.gold, { wordWrap: { width: 300 } }),
       ]);
       contBtn();

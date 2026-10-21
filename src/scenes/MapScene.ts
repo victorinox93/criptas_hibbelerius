@@ -11,7 +11,8 @@ import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { W, H } from '../config';
-import { addEntropia, encontrarHoja, addErgios, FLOORS, Game, MapNode, NodeType, saveLocal, unlock } from '../state';
+import { addEntropia, aplicarSarro, encontrarHoja, addErgios, FLOORS, Game, MapNode, NodeType, Run, saveLocal, unlock } from '../state';
+import { defDiente, esParasito } from '../data/dientes';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { cargarHuellas, datosDe, HONRA_ERGIOS, MAX_LAPIDAS, usarHuella } from '../huellas';
 import { ENEMIES } from '../data/enemies';
@@ -41,6 +42,11 @@ const NODE_INFO = Object.fromEntries(
 ) as Record<NodeType, { icon: string; color: number; name: string; desc: string }>;
 
 /** Posición de un nodo; el ancho entre pisos se ajusta a cuántos pisos tiene el mapa */
+/** v0.62 · Pérez, el Ratón de los Dientes: empieza RATON_VENTAJA pisos detrás de ti en cada tramo */
+export const RATON_VENTAJA = 3;
+/** nodos donde te detienes a descansar o a comprar: ahí Pérez avanza el doble */
+const RATON_LENTO: NodeType[] = ['fogata', 'santuario', 'mercader', 'boca', 'observatorio', 'gabinete'];
+
 export const nodeAt = (n: MapNode, maxFloor = FLOORS, izq = 60) => ({
   x: n.type === 'jefe' ? 884 : izq + n.floor * ((850 - izq) / maxFloor),
   y: n.type === 'jefe' ? 280 : 112 + n.lane * 82,
@@ -279,6 +285,7 @@ export class MapScene extends Phaser.Scene {
           this.input.enabled = false;
           this.time.delayedCall(1800, () => {
             this.input.enabled = true;
+            this.avanzaRaton(elegido);
             run.visited = [...(run.visited ?? []), elegido.id];
             run.pos = elegido.id;
             saveLocal();
@@ -286,6 +293,7 @@ export class MapScene extends Phaser.Scene {
           });
           return;
         }
+        this.avanzaRaton(n);
         run.visited = [...(run.visited ?? []), n.id];
         run.pos = n.id;
         saveLocal();
@@ -298,6 +306,7 @@ export class MapScene extends Phaser.Scene {
     if (run.huellas?.acto === (run.acto ?? 1)) lapidas();
     else void cargarHuellas(() => { if (this.scene.isActive()) lapidas(); });
 
+    if (act5) this.ratonPerez(run, current, nodeXY, tip, hayHoja);
     // héroe en el mapa
     const hp = current ? nodeXY(current) : { x: act5 ? 84 : 30, y: 280 };
     const masc = mascotaJunto(this, hp.x - 20, hp.y - 26, 1); // v0.55 · compañero cosmético
@@ -516,4 +525,62 @@ export class MapScene extends Phaser.Scene {
     });
     layer.add(button(this, W / 2, 432, 200, 32, 'Pelear solo', () => ir(), { size: 17 }));
   }
+  /** v0.62 · Pérez avanza cuando tú avanzas: 1 piso por nodo, 2 si te detienes a descansar o comprar (y a veces 1 extra) */
+  private avanzaRaton(n: MapNode) {
+    const run = Game.run!;
+    if ((run.acto ?? 1) !== 5 || !run.raton || run.raton.tramo !== (run.tramo ?? 1)) return;
+    run.raton.piso += (RATON_LENTO.includes(n.type) ? 2 : 1) + (Math.random() < 0.12 ? 1 : 0);
+  }
+
+  /** v0.62 · Pérez, el Ratón de los Dientes: te persigue por el mapa; si te alcanza, te arranca un diente */
+  private ratonPerez(run: Run, current: MapNode | null, nodeXY: (n: MapNode) => { x: number; y: number }, tip: Tooltip, hayHoja: boolean) {
+    const tramo = run.tramo ?? 1;
+    if (!run.raton || run.raton.tramo !== tramo) { run.raton = { piso: -RATON_VENTAJA, tramo }; saveLocal(); }
+    const r = run.raton;
+    const miPiso = current ? current.floor : -1;
+    const clave = `raton:${tramo}:${run.pos}`;
+    let robo = '';
+    if (current && current.type !== 'jefe' && r.piso >= miPiso && !hayHoja && !(run.seen ?? []).includes(clave)) {
+      (run.seen ??= []).push(clave);
+      const dent = run.dientes ?? [];
+      const idx = dent.map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
+      if (idx.length) {
+        const i = Phaser.Utils.Array.GetRandom(idx);
+        robo = `Te arranca: ${defDiente(dent[i]!).nombre}.`;
+        dent[i] = null;
+        aplicarSarro(run);
+      } else {
+        const e = Math.min(run.ergios, 20);
+        run.ergios -= e;
+        robo = `No encuentra dientes buenos y se lleva ${e} Ergios «para comprar más».`;
+      }
+      r.piso = miPiso - RATON_VENTAJA;
+      saveLocal();
+    }
+    // en el mapa: Pérez va detrás de ti, en tu mismo carril
+    const yo = current ? nodeXY(current) : { x: 84, y: 280 };
+    const px = Math.max(96, nodeXY({ id: -9, floor: Math.max(-1, r.piso), lane: current?.lane ?? 2, type: 'combate', next: [] }).x - (r.piso < -1 ? 30 * (-1 - r.piso) : 0));
+    const gap = miPiso - r.piso;
+    const raton = this.add.image(px, yo.y + 30, 'fig_perez').setScale(2.2).setFlipX(true).setDepth(6).setInteractive();
+    this.tweens.add({ targets: raton, y: raton.y - 3, duration: 260, yoyo: true, repeat: -1 });
+    tip.attach(raton, 'Pérez, el Ratón de los Dientes', `Va ${gap} piso(s) detrás de ti y colecciona dientes.\nTú avanzas 1 piso por nodo; él también… pero avanza 2 cuando te detienes a descansar o comprar (Fogata, Eco, Mercader, Sacamuelas, Observatorio, Gabinete): velocidad relativa.\nSi te alcanza, te arranca un diente.`, 20);
+    if (gap <= 1 && !robo) {
+      const av = txt(this, px, yo.y + 58, gap <= 0 ? '¡Te alcanza!' : '¡Pérez está a 1 piso!', 14, '#ff8a8a').setOrigin(0.5).setStroke('#000', 3).setDepth(6);
+      this.tweens.add({ targets: av, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
+    }
+    if (robo) this.time.delayedCall(900, () => {
+      const c = this.add.container(0, 0).setDepth(950);
+      c.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.6).setOrigin(0).setInteractive());
+      const g = this.add.graphics();
+      frame(g, W / 2 - 280, 150, 560, 230, 0x140c10, 0xc84a4a, 0.97);
+      c.add(g);
+      c.add(this.add.image(W / 2 - 190, 262, 'fig_perez').setScale(5));
+      c.add(title(this, W / 2 + 60, 176, '¡Pérez te alcanzó!', 30, '#ff9a9a'));
+      c.add(txt(this, W / 2 + 60, 212, `Unas pinzas frías, un tirón… y Pérez sale corriendo con su costal.\n${robo}\nVuelve a empezar ${RATON_VENTAJA} pisos detrás de ti.`, 16, CSS.bone, { align: 'center', wordWrap: { width: 300 } }).setOrigin(0.5, 0));
+      c.add(button(this, W / 2 + 60, 346, 160, 36, 'Ay…', () => c.destroy(), { size: 18, color: 0x8a3a3a }));
+      audio.sfx('wrong');
+      this.cameras.main.shake(200, 0.006);
+    });
+  }
+
 }

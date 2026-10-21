@@ -112,6 +112,31 @@ export function aplicarEfecto(e: Efecto): string {
     r.alineacion = r.tramo ?? 1;
     partes.push('+1 J en el primer turno de cada combate (hasta el final del tramo)');
   }
+  // v0.62 · más personajes
+  if (e.mapa) {
+    const piso = r.map.find((n) => n.id === r.pos)?.floor ?? 0;
+    const ult = Math.max(...r.map.map((n) => n.floor));
+    const cand = Phaser.Utils.Array.Shuffle(r.map.filter((n) => n.type === 'combate' && n.floor > piso && n.floor < ult - 1)).slice(0, 2);
+    const tipos = e.mapa === 'verdad' ? (['fogata', 'mercader'] as const) : (['elite', 'elite'] as const);
+    cand.forEach((n, i) => { n.type = tipos[i]; });
+    partes.push(cand.length ? (e.mapa === 'verdad' ? `En tu mapa: ${cand.length === 2 ? 'una Fogata y un Mercader' : 'una Fogata'} donde había combates` : `En tu mapa: ${cand.length} Élite(s) donde había combates`) : 'Ya no quedan combates que cambiar en este tramo');
+  }
+  if (e.mejorarCarta) {
+    const c = r.deck.filter((x) => CARDS[x.id].rarity !== 'estado');
+    if (c.length) { const x = Phaser.Utils.Array.GetRandom(c); addCard(x.id, true, x.ed); partes.push(`Ganas: ${CARDS[x.id].name}+ (mejorada)`); }
+  }
+  if (e.gemelo) { r.gemelo = r.tramo ?? 1; partes.push('Tu reflejo te sigue hasta el final del tramo'); }
+  if (e.cilindro && r.cilindro !== (r.tramo ?? 1)) {
+    r.cilindro = r.tramo ?? 1;
+    r.maxHp = Math.max(10, r.maxHp - 15);
+    r.hp = Math.min(r.hp, r.maxHp);
+    partes.push('La Cordura no baja hasta el final del tramo · −15 de Vida máxima (la recuperas al terminar el tramo)');
+  }
+  if (e.cartaRara) {
+    const nueva = Phaser.Utils.Array.GetRandom(RARAS_ABISMO);
+    addCard(nueva, false, 'lamina');
+    partes.push(`Ganas: ${CARDS[nueva].name} (Lámina)`);
+  }
   if (e.pierdeDiente) {
     // v0.48 · pierdes dientes al azar (los parásitos no se sueltan)
     const dent = r.dientes ?? [];
@@ -126,6 +151,11 @@ export function aplicarEfecto(e: Efecto): string {
   aplicarSarro(r);
   saveLocal();
   return partes.join('\n');
+}
+
+/** v0.62 · cambia {alias} por el nombre de la Sombra del Alumno Anterior */
+export function conAlias(s: string) {
+  return s.split('{alias}').join(Game.run?.sombraAlias ?? 'un alumno de otra generación');
 }
 
 /** Tira el azar de una opción sin pregunta */
@@ -160,14 +190,16 @@ export class RelatoScene extends Phaser.Scene {
     const halo = this.add.circle(200, 270, 120, rel.tinte, 0.08);
     this.tweens.add({ targets: halo, scale: 1.15, alpha: 0.03, duration: 1800, yoyo: true, repeat: -1 });
     const ic = rel.npc ? this.add.image(200, 270, rel.npc).setScale(Math.min(12, 190 / this.textures.get(rel.npc).getSourceImage().height)) : this.add.image(200, 270, rel.icono).setScale(12).setTint(rel.tinte);
+    if (rel.npcTinte !== undefined) ic.setTint(rel.npcTinte).setAlpha(rel.id === 'sombra' ? 0.75 : 1);
+    if (rel.npcEspejo) ic.setFlipX(true);
     this.tweens.add({ targets: ic, y: 262, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     txt(this, 200, 400, rel.pie ? rel.pie : rel.propio ? `Del diario de Ignacio Montemayor\n(${rel.anio})` : `${sueno ? 'Sueño basado en' : 'Basado en'} «${rel.obra}»\nH. P. Lovecraft (${rel.anio})`, 15, sueno ? '#9a8ac0' : '#6a8a80', { align: 'center' }).setOrigin(0.5, 0);
 
-    const tt = title(this, W / 2 + 90, 70, rel.titulo, 36, sueno ? '#c8b8ff' : '#9ad8c8');
+    const tt = title(this, W / 2 + 90, 70, conAlias(rel.titulo), 36, sueno ? '#c8b8ff' : '#9ad8c8');
     if (tt.width > 600) tt.setScale(600 / tt.width);
     const g = this.add.graphics();
     frame(g, 380, 100, 550, 150, sueno ? 0x0e0a1c : 0x080e0e, sueno ? 0x5a4aa8 : 0x2c5a4e, 0.95);
-    txt(this, 398, 114, rel.intro, 18, CSS.bone, { wordWrap: { width: 514 }, lineSpacing: 3 });
+    txt(this, 398, 114, conAlias(rel.intro), 18, CSS.bone, { wordWrap: { width: 514 }, lineSpacing: 3 });
 
     const opciones = this.add.container(0, 0);
     const resultado = this.add.container(0, 0);
@@ -195,9 +227,12 @@ export class RelatoScene extends Phaser.Scene {
         const rg = this.add.graphics();
         frame(rg, 380, 270, 550, 200, 0x0c0a12, UI.gold, 0.97);
         resultado.add(rg);
-        resultado.add(txt(this, 400, 286, e.texto, 19, '#d8c8a0', { wordWrap: { width: 510 }, lineSpacing: 3 }));
+        resultado.add(txt(this, 400, 286, conAlias(e.texto), 19, '#d8c8a0', { wordWrap: { width: 510 }, lineSpacing: 3 }));
         resultado.add(txt(this, 400, 370, res, 18, CSS.gold, { wordWrap: { width: 510 } }));
-        if (e.meteoritos) {
+        if (e.hermanos) {
+          // v0.62 · el acertijo de los hermanos (src/scenes/Hermanos.ts)
+          resultado.add(button(this, 655, 496, 260, 40, 'Escucharlos', () => fadeTo(this, 'Hermanos', { floor: data.floor }), { size: 20, color: 0x8a6a3a }));
+        } else if (e.meteoritos) {
           // v0.61 · Lluvia de meteoritos: minijuego (src/scenes/Meteoritos.ts)
           resultado.add(button(this, 655, 496, 260, 40, '¡Esquivar!', () => fadeTo(this, 'Meteoritos', { floor: data.floor }), { size: 20, color: 0xc8541a }));
         } else if (e.combate) {

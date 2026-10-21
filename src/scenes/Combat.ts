@@ -151,6 +151,8 @@ export class CombatScene extends Phaser.Scene {
   private calcBolsillo = 1; // v0.57 · Calculadora de Bolsillo: multiplicador del siguiente Ataque
   private hibbelerM = 0; // v0.57 · El Hibbeler Maldito: Bloqueo al detener
   private tareaT = new Map<number, number>(); // v0.57 · La Tarea Olvidada: turnos en la mano (uid)
+  private ultimoGolpe = 0; // v0.62 · el último golpe de carta (el Gemelo de Espejo te lo regresa)
+  private gemeloUsado = false;
   private telescopio = false; // v0.58 · ves las intenciones ocultas (telescopio del Astrónomo)
   private radianes = false; // v0.57 · la Calculadora Primigenia te cambió a RAD: Ataques ×0.6
   private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
@@ -196,6 +198,8 @@ export class CombatScene extends Phaser.Scene {
     this.floor = data.floor;
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
     this.radianes = false;
+    this.ultimoGolpe = 0;
+    this.gemeloUsado = false;
     // v0.58 · el telescopio prestado del Astrónomo: dura unos combates
     this.telescopio = (Game.run?.telescopio ?? 0) > 0;
     if (this.telescopio && Game.run) Game.run.telescopio = Game.run.telescopio! - 1;
@@ -2766,6 +2770,7 @@ export class CombatScene extends Phaser.Scene {
     }
     if (cardHit && this.mult !== 1) F = Math.round(F * this.mult);
     if (cardHit && this.radianes) F = Math.round(F * 0.6); // v0.57 · ¡estaba en radianes!
+    if (cardHit) this.ultimoGolpe = F; // v0.62 · lo recuerda tu reflejo
     const ttest = boonLevel('tu_test');
     if (cardHit && ttest && st.def.act === 4) F += ttest === 2 ? 6 : 3; // Test de Turing: contra autómatas y AM
     if (cardHit && this.pierce) ignoreBlock = true;
@@ -3603,6 +3608,18 @@ export class CombatScene extends Phaser.Scene {
       if (await this.checkEnd()) return;
     }
 
+    // v0.62 · el Gemelo de Espejo: una vez por combate te regresa tu último golpe (3ª ley)
+    const run0 = Game.run!;
+    if (run0.modo === 'abismo' && run0.gemelo === (run0.tramo ?? 1) && !this.gemeloUsado && this.ultimoGolpe > 0 && this.alive().length) {
+      this.gemeloUsado = true;
+      const d = Math.min(15, this.ultimoGolpe);
+      const refl = this.add.image(this.heroX + 90, 272, 'hero').setScale(2.5).setFlipX(true).setTint(0x8ab8ff).setAlpha(0);
+      this.tweens.add({ targets: refl, alpha: 0.85, duration: 250, yoyo: true, hold: 500, onComplete: () => refl.destroy() });
+      this.calc(`Tu reflejo usa tu último golpe contra ti: ${d} (acción y reacción)`);
+      await this.wait(300);
+      await this.hurtPlayer(d, null);
+      if (Game.run!.hp <= 0 && (await this.dies('tu propio reflejo'))) return;
+    }
     for (const ev of this.alive()) {
       const st = ev.st;
       st.block = 0;

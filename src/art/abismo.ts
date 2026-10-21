@@ -48,7 +48,8 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
       '...sssss', '...qssss', '....ssss', '....qsss', '..cccWWt', '.ccccWWt', 'cccccWtt', 'cccccctt', 'cccccccc',
     ]),
     ov: { h: '#1e1a16', s: '#e8d6c2', q: '#b89c86', k: '#2a2a34', c: '#2a2a36', W: '#eeeae0', t: '#5a3040' },
-  },  // v0.61 · El Prestamista de Ergios: chistera, cara verdosa, sonrisa enorme con un diente de oro
+  },
+  // v0.61 · El Prestamista de Ergios: sombrero de copa, cara verdosa, sonrisa enorme con un diente de oro
   fig_prestamista: {
     rows: mirror([
       '...kkkkk', '...kkkkk', '...kkkkk', '..kkkkkk', '.kkkkkkk', '...sssss', '...syyss', '...sssss', '....ssss',
@@ -63,6 +64,34 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
       '..kksssq', '..kkksss', '.kkkkkkk', '.kkkkkkk', 'kkkkkkwi', 'kkkkkkkw', 'kkkkkkkk', 'kkkkkkkk',
     ]),
     ov: { k: '#16121c', s: '#e8dcd4', q: '#8a6a7a', w: '#c8c4d8', i: '#f0f0ff' },
+  },
+  // v0.62 · El Cartógrafo Ciego: venda en los ojos, barba gris y un mapa enrollado
+  fig_cartografo: {
+    rows: mirror([
+      '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hbbbbb', '..hbbbbb', '..hsssss', '..wsssqs', '..wwssss', '..wwwwss', '..wwwwww', '...wwwww', '..ccwwww', '.cccccww', 'cccyyycc', 'cccyyyyy', 'cccccccc',
+    ]),
+    ov: { h: '#8a8a8a', s: '#d8b898', b: '#3a2a5a', q: '#a88a6a', w: '#c8c4bc', c: '#3a4a3a', y: '#e8d8a8' },
+  },
+  // v0.62 · Remiendos y Zurcido: hermanos idénticos (capucha remendada y sonrisa enorme)
+  fig_hermano: {
+    rows: mirror([
+      '....nnnn', '...nnnnn', '..nnNnnn', '..nnssss', '..nsssss', '..nskkss', '..nsssss', '..nsWWWW', '..nssWkW', '...sssss', '....ssss', '..llllll', '.llLllll', 'llllLlll', 'llllllll', 'lllLllll', 'llllllll',
+    ]),
+    ov: { n: '#6a4a2a', N: '#c8a060', s: '#e0b890', k: '#2a1a10', W: '#f0ece0', l: '#8a8270', L: '#b8a888' },
+  },
+  // v0.62 · El Peregrino de Yuggoth (un Mi-Go): cabeza de hongo, cuerpo de crustáceo, alas de membrana
+  fig_migo: {
+    rows: mirror([
+      '....mmmm', '...mMmMm', '..mmmmmm', '...MmMmM', '....mmmm', 'ww...rrr', 'www.rrrr', 'wwwwrRrr', '.wwwrrrr', '..wwrRrr', '...rrrrr', '..r..rrr', '.r...r.r', 'r....r..',
+    ]),
+    ov: { m: '#e070a0', M: '#9a3a6a', w: '#7a6a9a', r: '#c86a7a', R: '#7a2a3a' },
+  },
+  // v0.62 · Pérez, el Ratón de los Dientes (te persigue por el mapa): pinzas y costal de dientes
+  fig_perez: {
+    rows: [
+      '.....kk.....kk....', '....kppk...kppk...', '....kkkkkkkkkkk...', '..kkGGGGGGGGGGGk..', '.kGGGrGGGGGrGGGk..', 'kGGGGGGGGGGGGGGk..', 'NGGGGGGWWGGGGGGk..', '.kkGGGWWGGGGGGGk..', '...kkGGGGGGGGGk...', '....kGGGGGGGGGkk..', '..ll.kGGGGGGGGGkkk', '.l..lkGGGGGGGGGk.k', '..ll..kGGGGGGGk..k', '......kSSSSSSSk...', '......kk.kk.kk....',
+    ],
+    ov: { k: '#141018', G: '#6a6470', p: '#e0a0b0', r: '#ff3a3a', N: '#e070a0', W: '#f8f4e8', l: '#a8a8b8', S: '#8a6a3a' },
   },
   // v0.61 · Lluvia de meteoritos: roca con estela de fuego
   fig_meteoro: {
