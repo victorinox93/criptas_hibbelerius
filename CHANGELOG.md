@@ -2,6 +2,30 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.64.0 · El Crisol de Newton (beta)
+
+- **Fusiones de cartas (como en Ball x Pit).** Nueva opción en TODAS las Fogatas: el **Crisol de Newton**.
+  - Eliges 2 cartas de tu mazo. Si su física se combina, se funden en una carta nueva y las dos se van.
+  - Al fundir hay una pregunta del tema: si aciertas, la carta sale mejorada (+).
+  - Si dos cartas no se combinan, no pasa nada y puedes probar otra pareja.
+- **9 recetas SECRETAS** (sólo se ve una pista hasta que las descubres):
+  - Forja Pesada + Carrera → **Cantidad de Movimiento** (p = m·v: ignora el Bloqueo).
+  - Golpe de Mazo + Embestida → **Impulso Brutal** (J = F·Δt: golpea 3 veces).
+  - Fuerza Normal + Acción-Reacción → **Tercera Ley Absoluta**.
+  - Palanca de Arquímedes + Masa Inamovible → **Momento de Inercia** (I = m·r²).
+  - Energía Almacenada + Proyectil Arcano → **Conservación Total** (U → K).
+  - Péndulo + Órbita Cerrada → **Péndulo Cósmico** (golpea cada turno, para siempre).
+  - Choque Elástico + Coeficiente de Restitución → **Choque Perfecto (e = 1)**.
+  - Empuje + Llamarada de Escape → **Ecuación del Cohete**.
+  - Derivada + Integral → **Teorema Fundamental**.
+- **Fusiones de dientes** (en el Crisol del Abismo, pestaña «Dientes»). El diente fusionado ocupa un solo hueco y cuenta como sus dos ingredientes AL DOBLE:
+  - Diente del Eclipse (Marte + Lunar).
+  - Diente de la Alineación (Júpiter + Mercurio).
+  - Diente de Megalodón (Colmillo + Tiburón).
+  - Colmillo del Conde (Vampiro + Oro).
+  - Muela Acorazada (Plomo + Protector).
+- **Recetario** (en el Crisol y en el Grimorio): las recetas descubiertas, con su fórmula y por qué se combinan. Se guardan para siempre.
+
 ## v0.63.0 · Roído (beta)
 
 - El ratón que te persigue ahora se llama **Roído, el Coleccionista de Sonrisas**, y aparece **desde el tramo 2** (en el primero era muy agresivo).
