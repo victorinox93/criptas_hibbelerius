@@ -55,6 +55,8 @@ export interface CardDef {
   voz?: { robar?: string[]; jugar?: string[]; mano?: string[] };
   /** v0.64 · nace en el Crisol de Newton (src/data/fusiones.ts): no sale en recompensas, tiendas ni sobres */
   fusion?: boolean;
+  /** v0.66 · pieza de un CONJUNTO (como Exodia): sola no se juega; con todas sus piezas en la mano se desata su poder */
+  pieza?: string;
   stats: (up: boolean) => CardStats;
   text: (s: CardStats, c: CalcCtx) => string;
   lore: string; // explicación física corta (tooltip)
@@ -1068,6 +1070,40 @@ Object.assign(CARDS, {
   m_hp: mezcla('m_hp', 'Estudio Constante', 'Poder', 'i_book', 'self', (up) => ({ cost: up ? 0 : 1 }), () => 'Robas 1 carta más\nal inicio de cada turno.\nSe agota.', true),
   m_pp: mezcla('m_pp', 'Motor Perpetuo (casi)', 'Poder', 'i_bolt', 'self', (up) => ({ cost: up ? 1 : 2 }), () => '+1 J al inicio de\ncada turno.\nSe agota.', true),
 });
+// ════════ v0.66 · CONJUNTOS (como Exodia en Yu-Gi-Oh!) ════════
+// Cada pieza sola NO se puede jugar. Con TODAS las piezas de su conjunto en la mano,
+// cualquiera de ellas se juega y desata el poder del conjunto (todas se agotan).
+// El efecto está en src/scenes/Combat.ts (completarConjunto).
+export interface ConjuntoDef { id: string; nombre: string; piezas: string[]; poder: string; abismo?: boolean }
+export const CONJUNTOS: Record<string, ConjuntoDef> = {
+  principia: { id: 'principia', nombre: 'Principia', piezas: ['p_ley1', 'p_ley2', 'p_ley3'], poder: 'Daño a TODOS (la suma de las 3 leyes), +15 de Bloqueo y los enemigos (no jefes) quedan detenidos 1 turno.' },
+  resultante: { id: 'resultante', nombre: 'La Fuerza Resultante', piezas: ['r_fx', 'r_fy'], poder: 'Un golpe de R = √(Fx² + Fy²) que ignora el Bloqueo.' },
+  kepler: { id: 'kepler', nombre: 'Las Leyes de Kepler', piezas: ['k_elipse', 'k_areas', 'k_periodo'], poder: 'Jefes, astros y élites pierden 25 % de su vida; los demás enemigos quedan detenidos 1 turno.', abismo: true },
+};
+const pieza = (id: string, conj: string, n: number, name: string, icon: string, target: 'enemy' | 'self', formula: string, stats: (up: boolean) => CardStats, aporta: (s: CardStats) => string, lore: string, abismo = false): CardDef => {
+  const cj = CONJUNTOS[conj];
+  return {
+    id, name, type: 'Habilidad', icon, concept: cj.nombre, rarity: 'común', target, cls: 'neutral', exhaust: true, pieza: conj, abismo, stats, lore,
+    text: (s) => `PIEZA ${n}/${cj.piezas.length} · ${cj.nombre.toUpperCase()}\n${formula}\n${aporta(s)}\nSola no se juega.`,
+  };
+};
+Object.assign(CARDS, {
+  p_ley1: pieza('p_ley1', 'principia', 1, 'Primera Ley', 'i_shield', 'self', 'ΣF = 0 → v constante', (up) => ({ cost: 1, extra: up ? 11 : 9 }), (s) => `Aporta ${s.extra} de daño.`, 'Newton, Principia (1687), Ley I: todo cuerpo sigue en reposo o en movimiento rectilíneo uniforme si nada lo obliga a cambiar.'),
+  p_ley2: pieza('p_ley2', 'principia', 2, 'Segunda Ley', 'i_momentum', 'self', 'ΣF = m·a', (up) => ({ cost: 1, extra: up ? 11 : 9 }), (s) => `Aporta ${s.extra} de daño.`, 'Ley II: el cambio de movimiento es proporcional a la fuerza aplicada y va en su dirección.'),
+  p_ley3: pieza('p_ley3', 'principia', 3, 'Tercera Ley', 'i_reflect', 'self', 'F₁₂ = −F₂₁', (up) => ({ cost: 1, extra: up ? 11 : 9 }), (s) => `Aporta ${s.extra} de daño.`, 'Ley III: a toda acción se opone siempre una reacción igual.'),
+  r_fx: pieza('r_fx', 'resultante', 1, 'Componente Fx', 'i_angle', 'enemy', 'Fx = F·cos θ', (up) => ({ cost: 1, extra: up ? 15 : 12 }), (s) => `Fx = ${s.extra} N.`, 'La parte horizontal de una fuerza. Sola sólo empuja de lado; junto con Fy forma la fuerza completa.'),
+  r_fy: pieza('r_fy', 'resultante', 2, 'Componente Fy', 'i_angle', 'enemy', 'Fy = F·sen θ', (up) => ({ cost: 1, extra: up ? 20 : 16 }), (s) => `Fy = ${s.extra} N.`, 'La parte vertical de una fuerza. Con Fx, Pitágoras da la resultante: R = √(Fx² + Fy²).'),
+  k_elipse: pieza('k_elipse', 'kepler', 1, 'Órbitas Elípticas', 'i_pend', 'self', '1ª ley de Kepler', (up) => ({ cost: up ? 1 : 2 }), () => 'Los planetas giran en elipses.', 'Kepler (1609): cada planeta recorre una elipse con el Sol en uno de sus focos.', true),
+  k_areas: pieza('k_areas', 'kepler', 2, 'Áreas Iguales', 'i_pend', 'self', '2ª ley de Kepler', (up) => ({ cost: up ? 1 : 2 }), () => 'Áreas iguales en tiempos iguales.', 'La línea Sol-planeta barre áreas iguales en tiempos iguales: cerca del Sol el planeta va más rápido.', true),
+  k_periodo: pieza('k_periodo', 'kepler', 3, 'Ley de los Periodos', 'i_pend', 'self', 'T² ∝ a³', (up) => ({ cost: up ? 1 : 2 }), () => 'Más lejos, más lento.', 'Kepler (1619): el cuadrado del periodo es proporcional al cubo del tamaño de la órbita.', true),
+  repaso: {
+    id: 'repaso', name: 'Repasar los Apuntes', type: 'Habilidad', icon: 'i_book', concept: 'Análisis', rarity: 'común', target: 'self', cls: 'neutral',
+    stats: (up: boolean) => ({ cost: up ? 0 : 1 }),
+    text: () => 'Busca en tu mazo una\nPIEZA que te falte y la\npone en tu mano.\nSi no hay, robas 1.',
+    lore: 'Repasar los apuntes es juntar las piezas sueltas de lo que aprendiste.',
+  },
+} as Record<string, CardDef>);
+
 /** v0.65 · la mezcla que sale de dos cartas sin receta (según sus tipos) */
 export function mezclaDe(a: string, b: string): string | null {
   const ord = ['Ataque', 'Defensa', 'Habilidad', 'Poder'];

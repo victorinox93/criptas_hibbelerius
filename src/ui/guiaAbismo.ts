@@ -202,7 +202,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         ['hero', 'El Gemelo de Espejo', 'Te regala una carta mejorada, pero una vez por combate usa tu último golpe contra ti (3ª ley).', 1.1, 0x8ab8ff],
         ['fig_migo', 'El Peregrino de Yuggoth', 'Lleva tu cerebro en un cilindro: la Cordura no baja todo el tramo, pero pierdes Vida máxima.', 2.6],
         ['hero', 'La Sombra del Alumno Anterior', 'El eco de un compañero que bajó antes que tú. Gánale su reto y te da su mejor carta.', 1.1, 0x3a4a6a],
-        ['fig_hermano', 'Remiendos y Zurcido', 'Uno siempre miente. Descubre cuál dice algo falso de física y elige el camino correcto.', 2.6],
+        ['fig_hermano', 'Acción y Reacción', 'Hermanos iguales y opuestos: uno siempre miente. Descubre cuál dice algo falso de física y elige el camino correcto.', 2.6],
       ];
       filas.forEach(([k, nom, d, e, tinte], i) => {
         const y = 178 + i * 46;

@@ -9,7 +9,7 @@ import { darDiente } from './Relato';
 
 /**
  * v0.62 · REMIENDOS Y ZURCIDO (acertijo de un nodo «?» del Abismo, src/data/relatos.ts → 'hermanos').
- * Dos hermanos idénticos: uno SIEMPRE miente (Remiendos) y el otro NUNCA (Zurcido).
+ * Dos hermanos idénticos: Acción y Reacción (v0.66; antes Remiendos y Zurcido), iguales y opuestos: uno SIEMPRE miente y el otro NUNCA.
  * Cada uno dice una frase de física y señala un camino. El que dice la frase FALSA es el mentiroso,
  * así que su camino es el malo: hay que saber física para saber en quién confiar.
  */
@@ -41,7 +41,7 @@ export class HermanosScene extends Phaser.Scene {
     vignette(this);
     const tip = new Tooltip(this);
     const hud = topBar(this, tip);
-    title(this, W / 2, 70, 'Remiendos y Zurcido', 34, '#e8c890');
+    title(this, W / 2, 70, 'Acción y Reacción', 34, '#e8c890');
     txt(this, W / 2, 98, 'Uno SIEMPRE miente y el otro NUNCA. El que dice algo FALSO de física es el mentiroso… y su camino es el malo.', 16, CSS.dim, { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0);
 
     // ¿quién está a la izquierda?, ¿dónde está el tesoro?
@@ -56,7 +56,7 @@ export class HermanosScene extends Phaser.Scene {
       const im = this.add.image(x, 230, 'fig_hermano').setScale(6);
       if (i === 1) im.setFlipX(true);
       this.tweens.add({ targets: im, y: 226, duration: 1300 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      txt(this, x, 306, i === 0 ? 'El hermano de la izquierda' : 'El hermano de la derecha', 16, '#c8a060').setOrigin(0.5, 0);
+      txt(this, x, 306, i === 0 ? 'Acción (a la izquierda)' : 'Reacción (a la derecha)', 16, '#c8a060').setOrigin(0.5, 0);
       const bg = this.add.graphics();
       frame(bg, x - 200, 330, 400, 92, 0x120e0a, 0x6a5a3a, 0.95);
       txt(this, x, 340, dice(honesto), 15, CSS.bone, { align: 'center', wordWrap: { width: 380 } }).setOrigin(0.5, 0);
@@ -74,7 +74,7 @@ export class HermanosScene extends Phaser.Scene {
       } else {
         const r = Math.min(run.ergios, ROBO);
         run.ergios -= r;
-        res = `El camino termina en una pared. Cuando regresas, Remiendos se ríe: te faltan ${r} Ergios.`;
+        res = `El camino termina en una pared. Cuando regresas, el hermano mentiroso se ríe: te faltan ${r} Ergios.`;
         addEntropia(4);
         audio.sfx('wrong');
       }

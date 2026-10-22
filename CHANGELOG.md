@@ -2,6 +2,16 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.66.0 · Conjuntos (beta)
+
+- **Cartas en conjunto (como Exodia en Yu-Gi-Oh!).** Cada pieza sola NO se puede jugar. Con todas las piezas de su conjunto en la mano, cualquiera se juega y desata el poder del conjunto (todas se agotan).
+  - **Principia** (3 piezas: 1ª, 2ª y 3ª Ley): daño a TODOS (9 + 9 + 9), +15 de Bloqueo y los enemigos (no jefes) quedan detenidos 1 turno.
+  - **La Fuerza Resultante** (2 piezas: Componente Fx y Fy): un golpe de R = √(Fx² + Fy²) que ignora el Bloqueo (12 y 16 → 20).
+  - **Las Leyes de Kepler** (3 piezas, sólo en el Abismo): jefes, astros y élites pierden 25 % de su vida; los demás quedan detenidos.
+  - Si ya tienes una pieza, en las recompensas a veces sale una de las que te faltan.
+  - Carta nueva **Repasar los Apuntes**: busca en tu mazo una pieza que te falte.
+- Los hermanos del acertijo ahora se llaman **Acción y Reacción**: iguales y opuestos, como en la 3ª ley.
+
 ## v0.65.0 · El Taller de Newton (beta)
 
 - El Crisol ahora se llama **Taller de Newton**.

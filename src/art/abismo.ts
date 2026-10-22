@@ -72,7 +72,7 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
     ]),
     ov: { h: '#8a8a8a', s: '#d8b898', b: '#3a2a5a', q: '#a88a6a', w: '#c8c4bc', c: '#3a4a3a', y: '#e8d8a8' },
   },
-  // v0.62 · Remiendos y Zurcido: hermanos idénticos (capucha remendada y sonrisa enorme)
+  // v0.62 · Acción y Reacción (antes Remiendos y Zurcido): hermanos idénticos (capucha remendada y sonrisa enorme)
   fig_hermano: {
     rows: mirror([
       '....nnnn', '...nnnnn', '..nnNnnn', '..nnssss', '..nsssss', '..nskkss', '..nsssss', '..nsWWWW', '..nssWkW', '...sssss', '....ssss', '..llllll', '.llLllll', 'llllLlll', 'llllllll', 'lllLllll', 'llllllll',
