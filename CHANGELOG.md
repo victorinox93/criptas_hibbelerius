@@ -2,6 +2,15 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.67.0 · Dithering (beta)
+
+- **Los astros ahora tienen sombreado en dithering** (patrón de puntos tipo Bayer, como en los juegos de los 90) en vez de la sombra plana en diagonal: se ven redondos y con volumen.
+- **La Locura «pixela» el fondo** del combate y del mapa:
+  - Locura de 40 a 69: el fondo se redibuja con pocos tonos y un patrón de puntos (verde en el Abismo), cada vez más fuerte.
+  - Locura 70+: el fondo se vuelve violeta y el patrón vibra.
+  - Sólo afecta el fondo: personajes, cartas, textos y barras siguen nítidos. Necesita WebGL; en computadoras sin WebGL el juego se ve como antes.
+- Arreglo: el letrero con el dato de cada astro ya no se sale de la pantalla (el texto se acomoda en dos renglones).
+
 ## v0.66.0 · Conjuntos (beta)
 
 - **Cartas en conjunto (como Exodia en Yu-Gi-Oh!).** Cada pieza sola NO se puede jugar. Con todas las piezas de su conjunto en la mano, cualquiera se juega y desata el poder del conjunto (todas se agotan).
