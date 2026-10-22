@@ -1,6 +1,7 @@
 import { HOJAS_DEBILIDAD, HOJAS_POR_EXPEDICION, JEFES as JEFES_ABISMO, MUTADOR, nombreTramo, PROB_HOJA, PROLOGO, TRAMOS } from '../data/abismo_modo';
 import { ASTRONOMO, CartaDef, nuevaCarta } from '../data/lovecraft';
 import { ASTROS, elegirAstro } from '../data/astros';
+import { ditherLocura } from '../fx/dither';
 import { hojaDiario } from '../ui/diario';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import Phaser from 'phaser';
@@ -309,6 +310,7 @@ export class MapScene extends Phaser.Scene {
     else void cargarHuellas(() => { if (this.scene.isActive()) lapidas(); });
 
     if (act5) this.ratonPerez(run, current, nodeXY, tip, hayHoja);
+    if (run.modo === 'abismo' || (run.entropia ?? 0) > 0) ditherLocura(this); // v0.67
     // héroe en el mapa
     const hp = current ? nodeXY(current) : { x: act5 ? 84 : 30, y: 280 };
     const masc = mascotaJunto(this, hp.x - 20, hp.y - 26, 1); // v0.55 · compañero cosmético

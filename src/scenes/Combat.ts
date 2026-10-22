@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ASTROS } from '../data/astros';
+import { ditherLocura } from '../fx/dither';
 import { mascotaActual, mascotaJunto } from '../ui/mascota';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
@@ -628,6 +629,7 @@ export class CombatScene extends Phaser.Scene {
     const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
+    ditherLocura(this); // v0.67 · con mucha Locura el fondo se pixela (sólo el fondo)
 
     // ── UI de combate ──
     const orb = this.add.graphics();
@@ -3147,7 +3149,10 @@ export class CombatScene extends Phaser.Scene {
     g.fillStyle(0x000000, 0.75).fillRect(-W / 2, -46, W, 92);
     g.fillStyle(color, 0.9).fillRect(-W / 2, -46, W, 4).fillRect(-W / 2, 42, W, 4);
     const t = txt(this, 0, -14, titulo, 46, css).setOrigin(0.5).setStroke('#000', 6);
-    const st = txt(this, 0, 24, sub, 20, CSS.bone).setOrigin(0.5);
+    const st = txt(this, 0, 24, sub, 20, CSS.bone, { align: 'center', wordWrap: { width: W - 60 } }).setOrigin(0.5);
+    // v0.67 · textos largos (los datos de los astros): se encogen y el letrero crece para que quepan
+    for (let f = 19; st.height > 44 && f >= 14; f--) st.setFontSize(f);
+    if (st.height > 26) { const extra = st.height - 22; g.clear(); g.fillStyle(0x000000, 0.75).fillRect(-W / 2, -46, W, 92 + extra); g.fillStyle(color, 0.9).fillRect(-W / 2, -46, W, 4).fillRect(-W / 2, 42 + extra, W, 4); st.setY(24 + extra / 2); }
     c.add([g, t, st]);
     this.tweens.add({ targets: c, alpha: 1, duration: 180 });
     this.tweens.add({ targets: t, scale: { from: 1.4, to: 1 }, duration: 260, ease: 'Back.out' });

@@ -50,15 +50,20 @@ def outline(g, ch='k'):
                 if 0 <= xx < w and 0 <= yy < h and g[yy][xx] not in '.k': out[y][x] = ch; break
     return out
 def esfera(g, cx, cy, r, luz, sombra, oscuro=None):
-    """Esfera con luz arriba a la izquierda y terminador abajo a la derecha"""
-    disc(g, cx, cy, r, luz)
+    """Esfera con luz arriba a la izquierda. v0.67: sombreado con DITHERING ordenado (Bayer 4×4),
+    como en los juegos de los 90: los tonos se mezclan con un patrón de puntos en vez de un corte plano."""
+    B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+    tonos = [oscuro or sombra, sombra, luz]
+    L = (-0.55, -0.6, 0.58)  # dirección de la luz (normalizada a ojo)
     for y in range(len(g)):
         for x in range(len(g[0])):
-            d = math.hypot(x - cx, y - cy)
-            if d <= r:
-                k = ((x - cx) + (y - cy)) / (r * 1.4)
-                if k > 0.35: g[y][x] = sombra
-                if oscuro and k > 0.75: g[y][x] = oscuro
+            dx, dy = (x - cx) / r, (y - cy) / r
+            d2 = dx * dx + dy * dy
+            if d2 > 1: continue
+            dz = math.sqrt(1 - d2)
+            l = max(0.0, dx * L[0] + dy * L[1] + dz * L[2])
+            v = l * (len(tonos) - 1) + (B[y % 4][x % 4] / 16 - 0.5) * 0.9
+            g[y][x] = tonos[max(0, min(len(tonos) - 1, int(round(v))))]
 def ojo(g, cx, cy, r, iris='F', ry=None):
     ry = ry or r * 0.7
     disc(g, cx, cy, r, 'W', ry); disc(g, cx, cy, max(1, ry * 0.9), iris, ry * 0.9); rect(g, int(cx), int(cy - ry * 0.7), int(cx), int(cy + ry * 0.7), 'k')
