@@ -38,7 +38,8 @@ export interface RuneData {
   relatoId?: string; // v0.43 · Relato del Abismo (src/data/relatos.ts)
   opcion?: number;
   constelacion?: [string, string];
-  receta?: string; // v0.64 · fusión del Crisol de Newton (src/data/fusiones.ts)
+  receta?: string; // v0.64 · fusión del Taller de Newton (src/data/fusiones.ts)
+  mezcla?: string; // v0.65 · mezcla sin receta: la carta que sale (m_*)
   uids?: [number, number]; // las dos cartas que se funden // v0.58 · pregunta de órbitas del Astrónomo: [id del diente, nombre]
 }
 
@@ -132,10 +133,10 @@ export class RuneScene extends Phaser.Scene {
       const por = this.add.image(62, 150, fig.sprite).setScale(4).setTint(0xd8ecff);
       this.tweens.add({ targets: por, y: 146, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       title(this, W / 2, 86, fig.name, 34, '#9ad8f0');
-    } else if (receta) {
+    } else if (receta || data.mezcla) {
       const crisol = this.add.image(62, 150, 'i_crystal').setScale(6).setTint(0xffb060);
       this.tweens.add({ targets: crisol, angle: 8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      title(this, W / 2, 86, `El Crisol de Newton · ${receta.formula}`, 32, '#ffc080');
+      title(this, W / 2, 86, `El Taller de Newton · ${receta ? receta.formula : 'Superposición'}`, 32, '#ffc080');
     } else if (data.source === 'observatorio') {
       const por = this.add.image(70, 170, 'fig_astronomo').setScale(2.4);
       this.tweens.add({ targets: por, y: 166, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -366,9 +367,24 @@ export class RuneScene extends Phaser.Scene {
     if (this.d.source === 'fusion') {
       // v0.64 · nace la carta fusionada: mejorada si acertaste
       const run = Game.run!;
-      const rc = RECETAS_CARTAS.find((r) => r.id === this.d.receta)!;
       const [u1, u2] = this.d.uids ?? [-1, -1];
+      const ings = [u1, u2].map((u) => run.deck.find((x) => x.uid === u)?.id ?? '');
       run.deck = run.deck.filter((x) => x.uid !== u1 && x.uid !== u2);
+      if (this.d.mezcla) {
+        // v0.65 · mezcla sin receta: los efectos se superponen
+        const res = this.d.mezcla;
+        addCard(res, ok);
+        unlock('cards', res);
+        saveLocal();
+        logEvent('fusion', p.concept, ok, { mezcla: res, de: ings });
+        this.apilar(c, [
+          txt(this, 0, 0, `¡Sale ${CARDS[res].name}${ok ? '+' : ''}!`, 22, ok ? CSS.green : '#ffc080', { wordWrap: { width: 300 } }),
+          txt(this, 0, 0, `${ings.map((i) => CARDS[i]?.name ?? '?').join(' + ')}: sin receta exacta, sus efectos se SUPERPONEN (se suman, pero más débiles que una fusión perfecta).`, 15, CSS.bone, { wordWrap: { width: 300 } }),
+        ]);
+        contBtn();
+        return;
+      }
+      const rc = RECETAS_CARTAS.find((r) => r.id === this.d.receta)!;
       addCard(rc.res, ok);
       marcarReceta(rc.id);
       unlock('cards', rc.res);
