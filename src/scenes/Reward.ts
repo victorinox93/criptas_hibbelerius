@@ -5,7 +5,7 @@ import { CSS, UI } from '../art/palette';
 import { W } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { CARDS, rewardPool } from '../data/cards';
+import { CARDS, CONJUNTOS, rewardPool } from '../data/cards';
 import { RELIC_POOL, RELICS, cuentaTope, MAX_RELIQUIAS } from '../data/relics';
 import { addCard, addFamiliar, Game, saveLocal, unlock, nivelActual, amVencido } from '../state';
 import { FAMILIARS } from '../data/familiars';
@@ -109,6 +109,11 @@ export class RewardScene extends Phaser.Scene {
       : Game.run!.acto >= 3 ? [...base, ...base.filter((id) => CARDS[id].act === 3)] : base;
     const pool = Phaser.Utils.Array.Shuffle(weighted.filter((id) => CARDS[id].rarity !== 'rara' || Math.random() < 0.35));
     const picks = [...new Set(pool)].slice(0, 3);
+    // v0.66 · si ya tienes alguna pieza de un conjunto, a veces sale una de las que te faltan
+    const enMazo = new Set(Game.run!.deck.map((c) => c.id));
+    const faltantes = Object.values(CONJUNTOS).filter((cj) => (!cj.abismo || abismo) && cj.piezas.some((p) => enMazo.has(p)))
+      .flatMap((cj) => cj.piezas.filter((p) => !enMazo.has(p) && !picks.includes(p)));
+    if (faltantes.length && Math.random() < 0.6) picks[2] = Phaser.Utils.Array.GetRandom(faltantes);
     // a veces una élite suelta una carta LEGENDARIA (una copia por expedición)
     if (data.kind === 'elite' && Math.random() < 0.15) {
       const [leg] = legendariasDisponibles(Game.run!.deck, 1, abismo);

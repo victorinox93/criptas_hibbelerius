@@ -36,7 +36,7 @@ export interface Efecto {
   mejorarCarta?: boolean; // v0.62 · ganas una copia MEJORADA de una carta de tu mazo
   cilindro?: boolean; // v0.62 · el Mi-Go lleva tu cerebro: la Cordura no baja este tramo, pero −15 de Vida máxima (se recupera al terminar)
   cartaRara?: boolean; // v0.62 · una carta rara del Abismo en Lámina
-  hermanos?: boolean; // v0.62 · empieza el acertijo de Remiendos y Zurcido (src/scenes/Hermanos.ts)
+  hermanos?: boolean; // v0.62 · empieza el acertijo de Acción y Reacción (src/scenes/Hermanos.ts)
 }
 
 export interface OpcionRelato {
@@ -418,8 +418,8 @@ RELATOS.push(
     ],
   },
   {
-    id: 'hermanos', titulo: 'Remiendos y Zurcido', obra: '', anio: 0, icono: 'i_shrine', tinte: 0xc8a060, npc: 'fig_hermano', pie: 'Personajes del Abismo\n(uno siempre miente)', peso: 2,
-    intro: 'Dos hombres idénticos, con la misma armadura remendada y la misma sonrisa. «¡Amigo! Somos Remiendos y Zurcido. Uno de nosotros SIEMPRE miente y el otro NUNCA. Hay dos caminos: uno lleva a un tesoro y el otro… bueno.»',
+    id: 'hermanos', titulo: 'Acción y Reacción', obra: '', anio: 0, icono: 'i_shrine', tinte: 0xc8a060, npc: 'fig_hermano', pie: 'Personajes del Abismo\n(uno siempre miente)', peso: 2,
+    intro: 'Dos hermanos idénticos, uno frente al otro como en un espejo, con la misma sonrisa. «Somos Acción y Reacción: iguales y opuestos, como en la 3ª ley. Uno de nosotros SIEMPRE miente y el otro NUNCA. Hay dos caminos: uno lleva a un tesoro y el otro… bueno.»',
     opciones: [
       { label: 'Escuchar a los dos hermanos', risk: 'Un acertijo de lógica… y de física: descubre quién miente y elige el camino.', salidas: [
         { p: 1, e: { texto: '«Pregúntanos lo que quieras.»', hermanos: true } },

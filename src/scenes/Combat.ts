@@ -4,7 +4,7 @@ import { mascotaActual, mascotaJunto } from '../ui/mascota';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CardDef, CARDS, CardInst, CardStats, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+import { CalcCtx, CardDef, CARDS, CardInst, CardStats, CONJUNTOS, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
 const VMAX_PEN = 14;
@@ -1009,7 +1009,7 @@ export class CombatScene extends Phaser.Scene {
       this.tip.attach(im, h, b);
       this.pStatus.add([im, tt]);
     });
-    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && !(this.condJefe === 'sinHabilidades' && CARDS[c.inst.id].type === 'Habilidad') && this.cost(c) <= this.energy));
+    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && this.piezaLista(c) && !(this.condJefe === 'sinHabilidades' && CARDS[c.inst.id].type === 'Habilidad') && this.cost(c) <= this.energy));
   }
 
   private cost(c: CardView) {
@@ -1376,6 +1376,62 @@ export class CombatScene extends Phaser.Scene {
     return [...out, ...L];
   }
 
+  /** v0.66 · una pieza de conjunto sólo se juega si TODAS sus piezas están en la mano (las demás cartas: siempre) */
+  private piezaLista(v: CardView) {
+    const pz = CARDS[v.inst.id].pieza;
+    if (!pz) return true;
+    return CONJUNTOS[pz].piezas.every((id) => this.hand.some((h) => h.inst.id === id));
+  }
+
+  /** v0.66 · ¡Conjunto completo! Las demás piezas se agotan y se desata su poder */
+  private async completarConjunto(conj: string, jugada: CardView, target: EnemyView | undefined) {
+    const cj = CONJUNTOS[conj];
+    const piezas: CardView[] = [jugada];
+    for (const id of cj.piezas) {
+      if (id === jugada.inst.id) continue;
+      const v = this.hand.find((h) => h.inst.id === id);
+      if (v) piezas.push(v);
+    }
+    const stats = piezas.map((p) => ({ id: p.inst.id, st: statsOf(p.inst) }));
+    for (const p of piezas.slice(1)) {
+      this.hand = this.hand.filter((h) => h !== p);
+      this.exhaust.push(p.inst);
+      this.tweens.add({ targets: p, x: W / 2, y: 200, scale: 0.3, alpha: 0, duration: 380, onComplete: () => p.destroy() });
+    }
+    this.layoutHand();
+    this.anunciarEstado(`¡${cj.nombre.toUpperCase()}!`, cj.poder, 0xc8a040, '#ffe080');
+    this.cameras.main.flash(500, 255, 230, 160);
+    audio.sfx('victory');
+    await this.wait(600);
+    if (conj === 'principia') {
+      const total = stats.reduce((a, s) => a + (s.st.extra ?? 9), 0);
+      this.calc(`Principia: las tres leyes juntas → ${stats.map((s) => s.st.extra).join(' + ')} = ${total} a TODOS, +15 de Bloqueo`);
+      this.gainBlock(15);
+      for (const e of [...this.alive()]) await this.hitEnemy(e, total);
+      for (const e of this.alive()) {
+        if (JEFES.includes(e.st.def.id)) continue;
+        e.st.stunned = 1;
+        e.st.intent = { kind: 'stunned' };
+        this.refreshEnemy(e);
+      }
+    } else if (conj === 'resultante') {
+      const fx = stats.find((s) => s.id === 'r_fx')?.st.extra ?? 12, fy = stats.find((s) => s.id === 'r_fy')?.st.extra ?? 16;
+      const R = Math.round(Math.hypot(fx, fy));
+      this.calc(`Fuerza Resultante: R = √(${fx}² + ${fy}²) = ${R} N (ignora el Bloqueo)`);
+      await this.heroLunge();
+      const t = target && !target.dead ? target : this.alive()[0];
+      if (t) await this.hitEnemy(t, R, true);
+    } else if (conj === 'kepler') {
+      this.calc('Leyes de Kepler: conoces sus órbitas → los grandes pierden 25 % de su vida; los demás se detienen');
+      for (const e of [...this.alive()]) {
+        const grande = JEFES.includes(e.st.def.id) || !!e.st.def.umbral || !!this.astro;
+        if (grande) await this.hitEnemy(e, Math.ceil(e.st.hp * 0.25), true, 'res');
+        else { e.st.stunned = 1; e.st.intent = { kind: 'stunned' }; this.refreshEnemy(e); }
+      }
+    }
+    logEvent('conjunto', cj.nombre, true, { conjunto: conj, piso: this.floor });
+  }
+
   /** ¿Se ve la intención de este enemigo? (invisibles, Noche sin Estrellas y la batería baja de la Calculadora la ocultan) */
   private intencionVisible(ev: EnemyView) {
     const st = ev.st;
@@ -1422,6 +1478,14 @@ export class CombatScene extends Phaser.Scene {
     if (this.discardMode > 0) return this.discardFromHand(v);
     if (this.condJefe === 'sinHabilidades' && CARDS[v.inst.id].type === 'Habilidad') {
       this.hint('MENTE EN BLANCO: no puedes jugar Habilidades en esta pelea.');
+      this.tweens.add({ targets: v, x: v.x + 6, duration: 40, yoyo: true, repeat: 3 });
+      return;
+    }
+    if (!this.piezaLista(v)) {
+      // v0.66 · pieza de un conjunto: sola no se juega
+      const cj = CONJUNTOS[CARDS[v.inst.id].pieza!];
+      const faltan = cj.piezas.filter((id) => !this.hand.some((h) => h.inst.id === id)).map((id) => CARDS[id].name);
+      this.hint(`${cj.nombre}: te faltan en la mano ${faltan.join(', ')}.`);
       this.tweens.add({ targets: v, x: v.x + 6, duration: 40, yoyo: true, repeat: 3 });
       return;
     }
@@ -2245,6 +2309,22 @@ export class CombatScene extends Phaser.Scene {
         this.quemar(4, def.name);
         for (const e of this.alive()) { e.st.calor += st.extra ?? 7; this.burst(e.baseX, 260, 0xc87533, 10); this.refreshEnemy(e); }
         this.calc(`Ecuación del Cohete: +${st.extra} de Calor a todos`);
+        break;
+      }
+      // ── v0.66 · conjuntos (como Exodia) ──
+      case 'p_ley1': case 'p_ley2': case 'p_ley3': case 'r_fx': case 'r_fy': case 'k_elipse': case 'k_areas': case 'k_periodo':
+        await this.completarConjunto(def.pieza!, v, target);
+        break;
+      case 'repaso': {
+        // busca una pieza que te falte de un conjunto del que ya tengas alguna en la mano o en el mazo
+        const tengo = new Set([...this.hand.map((h) => h.inst.id), ...this.draw.map((x) => x.id), ...this.discard.map((x) => x.id)]);
+        const i = this.draw.findIndex((x) => CARDS[x.id].pieza && !this.hand.some((h) => h.inst.id === x.id) && CONJUNTOS[CARDS[x.id].pieza!].piezas.some((p) => tengo.has(p)));
+        if (i >= 0) {
+          const [x] = this.draw.splice(i, 1);
+          this.draw.push(x);
+          this.calc(`Repasar los Apuntes: encuentras ${CARDS[x.id].name}`);
+        } else this.calc('Repasar los Apuntes: no falta ninguna pieza en tu mazo; robas 1');
+        this.drawCards(1);
         break;
       }
       // ── v0.65 · mezclas del Taller de Newton (superposición) ──
