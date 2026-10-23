@@ -17,6 +17,8 @@ export const RELICS: Record<string, RelicDef> = {
   ascua: { id: 'ascua', name: 'Corazón de Ascua', icon: 'i_heart', text: '+10 Vida máxima (y te cura 10).', lore: 'Energía almacenada para después.' },
   // especial: sólo la da el Profe Victorino (no sale en botines ni en la tienda)
   necronomicon: { id: 'necronomicon', especial: true, name: 'Necronomicón de Hibbeler', icon: 'i_necro', text: 'En cada fogata puedes leer un Problema Prohibido: un poder permanente con un costo. Cada lectura: +20 de Locura.', lore: 'Una edición que nunca se publicó. Los ejercicios impares no tienen respuesta al final del libro. Los pares, tampoco.' },
+  // v0.68 · se compra con el Mercader (250 Ergios): otra vida extra
+  cordon: { id: 'cordon', especial: true, name: 'Cordón Umbilical', icon: 'i_heart', text: 'Si tu vida llega a 0, te reconecta con la vida: te levantas con la mitad de tu vida máxima. Se gasta al usarla.', lore: 'Lo que te une a la vida… literalmente. El Mercader no dice de dónde lo sacó.' },
   vidaExtra: { id: 'vidaExtra', especial: true, name: 'Vida Extra del Profe', icon: 'i_book', text: 'Si tu vida llega a 0, te levantas con la mitad de tu vida máxima. Se gasta al usarla.', lore: '«No le digan a los otros grupos.» — V. S. A.' },
   // ── Reliquias de JEFE: se elige una al vencer al jefe del Acto I y del Acto II. Poderosas, pero con costo. ──
   reactor: { id: 'reactor', jefe: true, name: 'Reactor de Fisión', icon: 'i_rad', text: '+1 J cada turno.\nCosto: pierdes 2 de vida (radiación) al iniciar cada combate.', lore: 'Energía nuclear portátil. ¿Qué podría salir mal?' },

@@ -7,7 +7,9 @@
 import { MUSIC_FILES } from './config';
 
 export type TrackId = 'menu' | 'mapa' | 'combate' | 'combate2' | 'jefe' | 'calma' | 'santuario' | 'mapa2' | 'combate3' | 'jefe2' | 'mapa3' | 'combate4' | 'jefe3' | 'mapa4' | 'combate5' | 'jefe4' | 'funk' | 'abismo' | 'combate6' | 'jefe5' | 'abismo2' | 'combate7';
-export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover';
+export type Sfx = 'click' | 'card' | 'hit' | 'block' | 'heal' | 'correct' | 'wrong' | 'coin' | 'stop' | 'victory' | 'defeat' | 'hover'
+  // v0.68 · sensación de combate: un sonido por tipo de carta, golpes fuertes y combos
+  | 'ataque' | 'defensa' | 'habilidad' | 'poder' | 'golpeFuerte' | 'brutal' | 'combo';
 
 const LEVELS = [0, 0.3, 0.6, 1];
 const mtof = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
@@ -1006,7 +1008,8 @@ export class AudioEngine {
   }
 
   // ───────── efectos ─────────
-  sfx(name: Sfx) {
+  /** n: para 'combo', el número de ataques seguidos (el tono sube con cada uno) */
+  sfx(name: Sfx, n = 0) {
     const ctx = this.ctx;
     if (!ctx || this.level === 0) return;
     const t = ctx.currentTime + 0.005;
@@ -1059,6 +1062,39 @@ export class AudioEngine {
       case 'victory':
         [0, 3, 7, 12, 15].forEach((s, i) => tone('triangle', mtof(64 + s), t + i * 0.09, 0.5, 0.1));
         break;
+      // ── v0.68 · un sonido por tipo de carta ──
+      case 'ataque': // un tajo: ruido que baja como un «fsss»
+        this.noiseHit(out, t, 'bandpass', 3200, 0.22, 0.09, 4);
+        tone('sawtooth', 520, t, 0.08, 0.05, 180);
+        break;
+      case 'defensa': // escudo: golpe metálico con resonancia
+        tone('square', 330, t, 0.05, 0.08);
+        tone('triangle', 990, t + 0.01, 0.22, 0.09);
+        tone('triangle', 1485, t + 0.01, 0.16, 0.05);
+        break;
+      case 'habilidad': // destello: tres notas rápidas hacia arriba
+        [0, 5, 9].forEach((s, i) => tone('sine', mtof(84 + s), t + i * 0.035, 0.12, 0.07));
+        break;
+      case 'poder': // algo que se despierta: acorde grave que crece
+        tone('sawtooth', mtof(43), t, 0.5, 0.06, mtof(55));
+        tone('triangle', mtof(55), t + 0.05, 0.45, 0.08);
+        tone('sine', mtof(62), t + 0.12, 0.4, 0.06);
+        break;
+      case 'golpeFuerte': // golpe pesado: bombo + crujido
+        this.kick(out, t, 0.8);
+        this.noiseHit(out, t, 'lowpass', 1400, 0.45, 0.2);
+        break;
+      case 'brutal': // golpe enorme: bombo, crujido y un «bum» que cae
+        this.kick(out, t, 1);
+        this.noiseHit(out, t, 'lowpass', 2200, 0.6, 0.35);
+        tone('sawtooth', 160, t, 0.45, 0.14, 30);
+        break;
+      case 'combo': { // cada ataque seguido suena más agudo
+        const base = 67 + Math.min(12, (n - 3) * 2);
+        tone('square', mtof(base), t, 0.07, 0.07);
+        tone('square', mtof(base + 7), t + 0.06, 0.1, 0.07);
+        break;
+      }
       case 'defeat':
         [12, 8, 5, 0].forEach((s, i) => tone('triangle', mtof(52 + s), t + i * 0.18, 0.6, 0.1));
         break;

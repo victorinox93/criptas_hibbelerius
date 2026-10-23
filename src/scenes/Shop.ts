@@ -15,6 +15,9 @@ import { randomRelics } from './Reward';
 import { elegirFamiliar } from '../ui/familiarElegir';
 import { grantRelic } from './Reward';
 
+/** v0.68 · precio del Cordón Umbilical (vida extra) */
+export const PRECIO_CORDON = 250;
+
 /** Cuánto paga el mercader por una carta de tu mazo */
 export function precioVenta(ci: CardInst) {
   const r = CARDS[ci.id].rarity;
@@ -36,6 +39,7 @@ function makeStock(node: number, ambulante = false): ShopState {
     familiar: Math.random() < 0.6 ? { id: Phaser.Utils.Array.GetRandom(FAMILIAR_POOL), price: Phaser.Math.Between(55, 70), sold: false } : null,
     pociones: Phaser.Utils.Array.Shuffle(pocionesDisponibles(nivelActual())).slice(0, 2).map((id) => ({ id, price: Phaser.Math.Between(22, 34), sold: false })),
     heal: { price: 30, sold: false },
+    cordon: { price: PRECIO_CORDON, sold: false },
     remove: { price: 55, sold: false },
     discount: ambulante, // el ambulante ya trae precios rebajados
     haggled: ambulante,
@@ -92,7 +96,7 @@ export class ShopScene extends Phaser.Scene {
     this.layer = this.add.container(0, 0);
     this.draw();
 
-    button(this, 130, 470, 200, 44, T.mercader.salir, () => {
+    button(this, 130, 506, 200, 40, T.mercader.salir, () => {
       run.floor = this.floor + 1;
       saveLocal();
       syncRun('en curso');
@@ -186,6 +190,30 @@ export class ShopScene extends Phaser.Scene {
       z.on('pointerdown', () => this.buy(s.relic!, `reliquia ${rel.id}`, () => grantRelic(rel.id)));
       L(z);
       this.tag(860, 334, s.relic);
+    }
+
+    // v0.68 · Cordón Umbilical: vida extra (sólo uno a la vez)
+    s.cordon ??= { price: PRECIO_CORDON, sold: false };
+    {
+      const r0 = Game.run!;
+      const tiene = r0.relics.includes('cordon');
+      const g = this.add.graphics();
+      frame(g, 30, 384, 200, 92, UI.panel, s.cordon.sold || tiene ? UI.border : 0xd05a7a);
+      L(g);
+      const im = this.add.image(62, 420, 'i_heart').setScale(4).setTint(0xf07a9a).setAlpha(s.cordon.sold || tiene ? 0.3 : 1);
+      L(im);
+      if (!s.cordon.sold && !tiene) this.tweens.add({ targets: im, scale: 4.5, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      L(txt(this, 92, 394, 'Cordón Umbilical', 17, '#f0a0b8'));
+      L(txt(this, 92, 416, tiene && !s.cordon.sold ? 'Ya traes uno' : 'Vida extra', 15, CSS.bone));
+      const z = this.add.zone(30, 384, 200, 92).setOrigin(0).setInteractive({ useHandCursor: !s.cordon.sold && !tiene });
+      z.on('pointerover', (p: Phaser.Input.Pointer) => this.tip.show(p.worldX + 30, p.worldY - 120, RELICS.cordon.name, `${RELICS.cordon.text}\n${RELICS.cordon.lore}\n(Sólo puedes traer uno a la vez.)`));
+      z.on('pointerout', () => this.tip.hide());
+      z.on('pointerdown', () => {
+        if (tiene) return this.say('Ya traes un Cordón Umbilical.');
+        this.buy(s.cordon!, 'cordon umbilical', () => { r0.relics.push('cordon'); audio.sfx('heal'); });
+      });
+      L(z);
+      this.tag(150, 452, s.cordon);
     }
 
     // familiar en una jaula
