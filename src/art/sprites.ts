@@ -1242,6 +1242,27 @@ const DIL: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     rows: mirrorHalf(['......', '.pppp.', 'pGGGGp', 'pGwwwG', 'pGwLkw', 'pGwwwG', 'pppppp', '....nn', '....nn', '....nn', '...nnn', '.nnnnn']),
     ov: { p: '#2a1a3a', G: '#3d4a22', w: '#c8d0a0', L: '#9bf07a', k: '#0d0b10', n: '#3a2a1e' },
   },
+  // v0.69 · El Ídolo y la Roca, el Explorador Caído, la Biblioteca Hundida, el Muro Viviente y la Calavera Avara
+  d_idolo: {
+    rows: mirrorHalf(['...kkk', '..kkkk', '..kkkk', '...kkk', '......', '....yy', '...yYY', '...yYk', '...yYY', '....yy', '...nnn', '..nnnn', '.nnnnn']),
+    ov: { k: '#5a5048', y: '#c89a30', Y: '#f0d060', n: '#4a3a2e' },
+  },
+  d_explorador: {
+    rows: mirrorHalf(['......', '...bbb', '..bwwb', '..bkwk', '..bwwb', '...bbb', '.aaaaa', 'aaccaa', 'aacca.', '.aaaa.', '.a..a.', '.a..a.', 'gg..gg']),
+    ov: { b: '#6a5a40', w: '#d8d0b8', k: '#0d0b10', a: '#5a6070', c: '#8a3030', g: '#3a3028' },
+  },
+  d_biblioteca: {
+    rows: mirrorHalf(['nnnnnn', 'nrbgyn', 'nrbgyn', 'nnnnnn', 'nybrgn', 'nybrgn', 'nnnnnn', 'ngryLn', 'ngryLn', 'nnnnnn']),
+    ov: { n: '#3a2a1e', r: '#8a3030', b: '#30508a', g: '#3a6a3a', y: '#a88a3a', L: '#9bf07a' },
+  },
+  d_muro: {
+    rows: mirrorHalf(['ssSsss', 'sSssSs', 'ssssss', 'sEkssE', 'ssssss', 'smmmss', 'ssssss', 'SsssSs', 'ssSsss', 'sssssS']),
+    ov: { s: '#5a5450', S: '#3a3632', E: '#c8a0ff', k: '#0d0b10', m: '#2a1a1a' },
+  },
+  d_calavera: {
+    rows: mirrorHalf(['...yyy', '..yyyy', '.yyyyy', '.ykkyy', '.ykkyy', '.yyyyk', '..yyyy', '..ywyw', '...yyy', '......', '..nnnn', '.nnnnn']),
+    ov: { y: '#d8b048', k: '#0d0b10', w: '#f0e8c8', n: '#3a2a1e' },
+  },
   // Myriam, la hechicera oscura: sombrero puntiagudo, cabello negro largo y ojos violeta
   npc_myriam: {
     rows: mirrorHalf([

@@ -18,6 +18,9 @@ import { button, embers, fadeTo, frame, icon, mist, title, Tooltip, txt, vignett
 import { describeOutcome } from './Rune';
 import { explicar } from '../ui/explicar';
 
+/** v0.69 · probabilidad de que un «?» sea el Memorama de Fórmulas (una vez por partida) */
+const MEMORAMA_CHANCE = 0.16;
+
 export class EventScene extends Phaser.Scene {
   constructor() { super('Event'); }
 
@@ -60,6 +63,12 @@ export class EventScene extends Phaser.Scene {
       if (!seen.includes('myriam') && data.floor >= 2 && Math.random() < MYRIAM_CHANCE) {
         // Myriam, la hechicera oscura: sólo maldiciones (src/data/myriam.ts)
         this.scene.start('Myriam', { floor: data.floor });
+        return;
+      } else if (!seen.includes('memorama') && Math.random() < MEMORAMA_CHANCE) {
+        // v0.69 · el Memorama de Fórmulas (src/scenes/Memorama.ts)
+        seen.push('memorama');
+        saveLocal();
+        this.scene.start('Memorama', { floor: data.floor });
         return;
       } else if (!profeVisto && data.floor >= 2 && Math.random() < PROFE_ENOJADO_CHANCE) {
         ev = EVENTS.find((e) => e.id === 'profe_enojado')!;

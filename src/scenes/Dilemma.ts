@@ -103,70 +103,76 @@ export class DilemmaScene extends Phaser.Scene {
     button(this, 690, 494, 220, 44, T.runa.continuar, () => fadeTo(this, 'Map'), { size: 22 });
   }
 
-  /** Aplica un resultado y devuelve qué cambió */
-  private apply(r: Result): string[] {
-    const run = Game.run!;
-    const out: string[] = [];
-    if (r.maxHp) {
-      run.maxHp = Math.max(10, run.maxHp + r.maxHp);
-      out.push(`${r.maxHp > 0 ? '+' : ''}${r.maxHp} de Vida máxima`);
-    }
-    if (r.hp) {
-      const before = run.hp;
-      run.hp = Phaser.Math.Clamp(run.hp + r.hp, 1, run.maxHp);
-      out.push(`${run.hp - before >= 0 ? '+' : ''}${run.hp - before} de vida`);
-    }
-    run.hp = Math.min(run.hp, run.maxHp);
-    if (r.ergios) {
-      const n = r.ergios < 0 ? -Math.min(run.ergios, -r.ergios) : r.ergios;
-      addErgios(n);
-      out.push(`${n >= 0 ? '+' : ''}${n} ${T.moneda}`);
-    }
-    if (r.entropia) {
-      const n = addEntropia(r.entropia);
-      if (n) out.push(`${n > 0 ? '+' : ''}${n} de Locura`);
-    }
-    if (r.score) {
-      sumar(run, 'Dilemas', r.score * PUNTOS.dilema);
-      out.push(`+${r.score} puntos`);
-    }
-    const fx: [string, number][] = [...(r.effects ?? [])];
-    if (r.effect) fx.push([r.effect, r.combats ?? 1]);
-    for (const [eid, n] of fx) {
-      addEffect(eid, n);
-      const e = EFFECTS[eid];
-      out.push(`${e.good ? T.evento.bendicion : T.evento.maldicion}: ${e.name} (${n} combate${n > 1 ? 's' : ''})`);
-    }
-    if (r.relic) {
-      const rid = r.relic === 'random' ? randomRelics(1)[0] : r.relic;
-      if (rid) {
-        grantRelic(rid);
-        out.push(`Reliquia: ${RELICS[rid].name} — ${RELICS[rid].text}`);
-      } else {
-        addErgios(40);
-        out.push(`Ya tienes todas las reliquias: +40 ${T.moneda}`);
-      }
-    }
-    if (r.card) {
-      const pool = rewardPool(run.clase, run.acto, nivelActual(), amVencido()).filter((id) => r.card === 'random' || r.card !== 'rara' || CARDS[id].rarity === 'rara');
-      const cid = r.card === 'rara' || r.card === 'random' ? Phaser.Utils.Array.GetRandom(pool) : r.card;
-      addCard(cid, !!r.cardUp);
-      out.push(`Carta: ${CARDS[cid].name}${r.cardUp ? '+' : ''}`);
-    }
-    if (r.junk) {
-      for (let i = 0; i < r.junk.n; i++) addCard(r.junk.id);
-      out.push(`${r.junk.n} «${CARDS[r.junk.id].name}» a tu mazo`);
-    }
-    if (r.removeRandom && run.deck.length > 5) {
-      const i = Math.floor(Math.random() * run.deck.length);
-      const [c] = run.deck.splice(i, 1);
-      out.push(`Olvidaste: ${cardName(c)}`);
-    }
-    if (r.familiar) {
-      const fid = addFamiliar(r.familiar, r.famCombats);
-      const f = FAMILIARS[fid];
-      out.push(run.familiarOferta?.id === fid ? `Familiar: ${f.name} quiere unirse — al volver al mapa eliges con cuál te quedas` : `Familiar: ${f.name} (${run.familiar!.left} combates) — ${f.text}`);
-    }
-    return out;
+  private apply(r: Result) { return aplicarResultado(r); }
+}
+
+/** Aplica un resultado y devuelve qué cambió (v0.69: también lo usa el Memorama) */
+export function aplicarResultado(r: Result): string[] {
+  const run = Game.run!;
+  const out: string[] = [];
+  if (r.maxHp) {
+    run.maxHp = Math.max(10, run.maxHp + r.maxHp);
+    out.push(`${r.maxHp > 0 ? '+' : ''}${r.maxHp} de Vida máxima`);
   }
+  if (r.hp) {
+    const before = run.hp;
+    run.hp = Phaser.Math.Clamp(run.hp + r.hp, 1, run.maxHp);
+    out.push(`${run.hp - before >= 0 ? '+' : ''}${run.hp - before} de vida`);
+  }
+  run.hp = Math.min(run.hp, run.maxHp);
+  if (r.ergios) {
+    const n = r.ergios < 0 ? -Math.min(run.ergios, -r.ergios) : r.ergios;
+    addErgios(n);
+    out.push(`${n >= 0 ? '+' : ''}${n} ${T.moneda}`);
+  }
+  if (r.entropia) {
+    const n = addEntropia(r.entropia);
+    if (n) out.push(`${n > 0 ? '+' : ''}${n} de Locura`);
+  }
+  if (r.score) {
+    sumar(run, 'Dilemas', r.score * PUNTOS.dilema);
+    out.push(`+${r.score} puntos`);
+  }
+  const fx: [string, number][] = [...(r.effects ?? [])];
+  if (r.effect) fx.push([r.effect, r.combats ?? 1]);
+  for (const [eid, n] of fx) {
+    addEffect(eid, n);
+    const e = EFFECTS[eid];
+    out.push(`${e.good ? T.evento.bendicion : T.evento.maldicion}: ${e.name} (${n} combate${n > 1 ? 's' : ''})`);
+  }
+  if (r.relic) {
+    const rid = r.relic === 'random' ? randomRelics(1)[0] : r.relic;
+    if (rid) {
+      grantRelic(rid);
+      out.push(`Reliquia: ${RELICS[rid].name} — ${RELICS[rid].text}`);
+    } else {
+      addErgios(40);
+      out.push(`Ya tienes todas las reliquias: +40 ${T.moneda}`);
+    }
+  }
+  if (r.card) {
+    const pool = rewardPool(run.clase, run.acto, nivelActual(), amVencido()).filter((id) => r.card === 'random' || r.card !== 'rara' || CARDS[id].rarity === 'rara');
+    const cid = r.card === 'rara' || r.card === 'random' ? Phaser.Utils.Array.GetRandom(pool) : r.card;
+    addCard(cid, !!r.cardUp);
+    out.push(`Carta: ${CARDS[cid].name}${r.cardUp ? '+' : ''}`);
+  }
+  if (r.junk) {
+    for (let i = 0; i < r.junk.n; i++) addCard(r.junk.id);
+    out.push(`${r.junk.n} «${CARDS[r.junk.id].name}» a tu mazo`);
+  }
+  if (r.upgradeRandom) {
+    const c = run.deck.filter((x) => !x.up && CARDS[x.id].rarity !== 'estado' && !CARDS[x.id].pieza);
+    if (c.length) { const x = Phaser.Utils.Array.GetRandom(c); x.up = true; out.push(`Mejorada: ${cardName(x)}`); }
+  }
+  if (r.removeRandom && run.deck.length > 5) {
+    const i = Math.floor(Math.random() * run.deck.length);
+    const [c] = run.deck.splice(i, 1);
+    out.push(`Olvidaste: ${cardName(c)}`);
+  }
+  if (r.familiar) {
+    const fid = addFamiliar(r.familiar, r.famCombats);
+    const f = FAMILIARS[fid];
+    out.push(run.familiarOferta?.id === fid ? `Familiar: ${f.name} quiere unirse — al volver al mapa eliges con cuál te quedas` : `Familiar: ${f.name} (${run.familiar!.left} combates) — ${f.text}`);
+  }
+  return out;
 }

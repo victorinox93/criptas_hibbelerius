@@ -207,6 +207,13 @@ export const CARDS: Record<string, CardDef> = {
     text: () => `Al inicio de cada turno\ngana +1 J.\nSe agota.`,
     lore: 'Un resorte comprimido almacena U = ½·k·x² y la libera poco a poco.',
   },
+  // v0.69 · como Wraith Form de Slay the Spire
+  neutrino: {
+    id: 'neutrino', name: 'Forma de Neutrino', type: 'Poder', icon: 'i_ojo', concept: 'Interacción débil', rarity: 'legendaria', target: 'self', cls: 'neutral', exhaust: true,
+    stats: (up) => ({ cost: 3, extra: up ? 3 : 2 }),
+    text: (s) => `Durante ${s.extra} turnos, TODO\ngolpe te hace sólo 1.\nDespués tus Defensas dan\n−1 de Bloqueo más cada turno.`,
+    lore: 'Billones de neutrinos te atraviesan cada segundo sin tocar un átomo: casi no interactúan con la materia. Ser uno tiene sus ventajas… y su precio.',
+  },
   diagrama: {
     id: 'diagrama', name: 'Diagrama de Cuerpo Libre', type: 'Habilidad', icon: 'i_rune', concept: 'Análisis', rarity: 'común', target: 'self', cls: 'neutral',
     stats: (up) => ({ cost: up ? 0 : 1, extra: 2 }),

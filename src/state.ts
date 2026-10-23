@@ -83,6 +83,7 @@ export interface Run {
   debug?: boolean; // partida de prueba del Modo profesor: no se registra
   pociones?: string[]; // frascos (máx. 3)
   temas?: Record<string, { ok: number; total: number }>; // aciertos por concepto (para el repaso final)
+  revs?: number; // v0.69 · Contador de Revoluciones: ataques jugados en la partida
   entropia?: number; // Entropía mental 0–100 (src/data/abismo.ts)
   entropiaMax?: number; // la Locura más alta de la expedición (logros)
   prohibidos?: string[]; // Problemas Prohibidos leídos del Necronomicón
