@@ -2,6 +2,17 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.68.0 · Impacto (beta)
+
+- **Golpes que se sienten:**
+  - **Golpe fuerte** (18+ de daño, o una buena parte de la vida del enemigo): número más grande, letrero «¡FUERTE!», una pausa de impacto cortita y temblor.
+  - **Golpe brutal** (35+ de daño): número enorme en naranja, «¡BRUTAL!», pausa más larga, destello y chispas.
+- **Contador de combo:** al jugar 3 o más Ataques en el mismo turno aparece «COMBO ×3», «×4»… sobre tu héroe, y cada ataque suena más agudo. Se reinicia cada turno.
+- **Un sonido para cada tipo de carta:** Ataque (tajo), Defensa (escudo metálico), Habilidad (destello) y Poder (acorde grave que crece). Los golpes fuertes y brutales también tienen su propio sonido.
+- **Cordón Umbilical** en la tienda del Mercader: **250 Ergios**, vida extra.
+  - Si tu vida llega a 0, te levantas con la mitad de tu vida máxima.
+  - Sólo puedes traer uno a la vez.
+
 ## v0.67.0 · Dithering (beta)
 
 - **Los astros ahora tienen sombreado en dithering** (patrón de puntos tipo Bayer, como en los juegos de los 90) en vez de la sombra plana en diagonal: se ven redondos y con volumen.

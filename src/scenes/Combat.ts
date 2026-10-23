@@ -152,7 +152,9 @@ export class CombatScene extends Phaser.Scene {
   private calcBolsillo = 1; // v0.57 · Calculadora de Bolsillo: multiplicador del siguiente Ataque
   private hibbelerM = 0; // v0.57 · El Hibbeler Maldito: Bloqueo al detener
   private tareaT = new Map<number, number>(); // v0.57 · La Tarea Olvidada: turnos en la mano (uid)
-  private robaTurno = 0; // v0.65 · Estudio Constante: cartas extra al inicio de cada turno
+  private robaTurno = 0;
+  private comboT?: Phaser.GameObjects.Container; // v0.68 · contador de combo
+  private pausas = 0; // v0.68 · pausas de impacto en curso // v0.65 · Estudio Constante: cartas extra al inicio de cada turno
   private pendCosmico = 0; // v0.64 · Péndulo Cósmico: golpe al inicio de cada turno
   private ultimoGolpe = 0; // v0.62 · el último golpe de carta (el Gemelo de Espejo te lo regresa)
   private gemeloUsado = false;
@@ -197,6 +199,8 @@ export class CombatScene extends Phaser.Scene {
 
   init(data: { kind: Kind; floor: number; sueno?: string; astro?: string }) {
     this.astro = data.astro;
+    this.pausas = 0;
+    this.tweens.timeScale = 1; // v0.68 · por si la escena se cerró en plena pausa de impacto
     this.kind = data.kind;
     this.floor = data.floor;
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
@@ -269,6 +273,8 @@ export class CombatScene extends Phaser.Scene {
     this.desvioUsed = false;
     this.carry = 0;
     this.attacksTurn = 0;
+    this.comboT?.destroy(); // v0.68 · el combo se reinicia cada turno
+    this.comboT = undefined;
     this.drainNext = 0;
     this.palanca = false;
     this.mult = 1;
@@ -1695,7 +1701,9 @@ export class CombatScene extends Phaser.Scene {
     this.clearZones();
     this.hintT.setAlpha(0);
     this.tip.hide();
-    audio.sfx('card');
+    // v0.68 · cada tipo de carta suena distinto
+    const tipo = CARDS[v.inst.id].type;
+    audio.sfx(tipo === 'Ataque' ? 'ataque' : tipo === 'Defensa' ? 'defensa' : tipo === 'Poder' ? 'poder' : tipo === 'Habilidad' ? 'habilidad' : 'card');
     this.energy -= costo;
     this.hand = this.hand.filter((c) => c !== v);
     v.disableInteractive();
@@ -1751,6 +1759,7 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Travail (Coriolis): +${tv * this.attacksTurn} por ${this.attacksTurn} ataque(s) previos`);
       }
       this.attacksTurn++;
+      if (this.attacksTurn >= 3) this.mostrarCombo(this.attacksTurn); // v0.68
       if (this.derivadaBono) {
         this.polonio += this.derivadaBono;
         this.calc(`Derivada: +${this.derivadaBono} a este ataque`);
@@ -3006,11 +3015,23 @@ export class CombatScene extends Phaser.Scene {
     this.time.delayedCall(80, () => ev.sprite.clearTint());
     this.tweens.add({ targets: ev.root, x: ev.baseX + 14, duration: 50, yoyo: true, repeat: 1 });
     this.burst(ev.baseX, 280, kind === 'calor' ? 0xc87533 : 0xb8b0c8, 12);
-    audio.sfx('hit');
-    if (F >= 12) this.cameras.main.shake(140, 0.005);
-    const t = txt(this, ev.baseX + Phaser.Math.Between(-20, 20), 230, `${dmg}`, 40, '#f0d090').setOrigin(0.5).setDepth(700).setStroke('#000', 5);
+    // v0.68 · sensación de golpe: mientras más fuerte, número más grande, pausa de impacto y temblor
+    const brutal = dmg >= 35 || (dmg >= 20 && dmg >= st.maxHp * 0.3);
+    const fuerte = !brutal && (dmg >= 18 || (dmg >= 10 && dmg >= st.maxHp * 0.2));
+    audio.sfx(brutal ? 'brutal' : fuerte ? 'golpeFuerte' : 'hit');
+    if (brutal) { this.pausaImpacto(150); this.cameras.main.shake(260, 0.012); this.cameras.main.flash(90, 255, 240, 220); this.burst(ev.baseX, 260, 0xffd080, 26); }
+    else if (fuerte) { this.pausaImpacto(80); this.cameras.main.shake(180, 0.008); }
+    else if (F >= 12) this.cameras.main.shake(140, 0.005);
+    const tam = brutal ? 76 : fuerte ? 56 : dmg >= 10 ? 44 : 36;
+    const t = txt(this, ev.baseX + Phaser.Math.Between(-20, 20), 230, `${dmg}`, tam, brutal ? '#ff7a3a' : fuerte ? '#ffd060' : '#f0d090').setOrigin(0.5).setDepth(700).setStroke('#000', brutal ? 8 : 5);
     if (absorbed) txt(this, ev.baseX + 40, 250, `(🛡${absorbed})`, 22, CSS.block).setOrigin(0.5).setDepth(700).setAlpha(0.9).setData('tmp', 1);
-    this.tweens.add({ targets: t, y: 170, alpha: 0, duration: 900, onComplete: () => t.destroy() });
+    if (brutal || fuerte) {
+      t.setScale(1.7);
+      this.tweens.add({ targets: t, scale: 1, duration: 220, ease: 'Back.out' });
+      const et = txt(this, t.x, 186, brutal ? '¡BRUTAL!' : '¡FUERTE!', brutal ? 26 : 20, brutal ? '#ff9a5a' : '#ffe08a').setOrigin(0.5).setDepth(701).setStroke('#000', 5);
+      this.tweens.add({ targets: et, y: 150, alpha: 0, delay: 350, duration: 800, onComplete: () => et.destroy() });
+    }
+    this.tweens.add({ targets: t, y: 170, alpha: 0, delay: brutal ? 380 : fuerte ? 220 : 0, duration: 900, onComplete: () => t.destroy() });
 
     let stopped = false;
     const umbral = umbralDe(st);
@@ -3194,6 +3215,30 @@ export class CombatScene extends Phaser.Scene {
     });
     this.tweens.add({ targets: c, y: 164, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.estadosC = c;
+  }
+
+  /** v0.68 · pausa de impacto (hit-stop): todo se congela un instante en los golpes fuertes */
+  private pausaImpacto(ms: number) {
+    this.pausas++;
+    this.tweens.timeScale = 0.04;
+    this.time.delayedCall(ms, () => { this.pausas = Math.max(0, this.pausas - 1); if (!this.pausas) this.tweens.timeScale = 1; });
+  }
+
+  /** v0.68 · contador de combo: 3 o más ataques en el mismo turno */
+  private mostrarCombo(n: number) {
+    audio.sfx('combo', n);
+    if (!this.comboT || !this.comboT.active) {
+      const c = this.add.container(this.heroX + 10, 168).setDepth(720);
+      c.add(txt(this, 0, 0, '', 34, '#ffd060').setOrigin(0.5).setStroke('#000', 6));
+      c.add(txt(this, 0, 28, '', 15, '#ffe8b0').setOrigin(0.5).setStroke('#000', 4));
+      this.comboT = c;
+    }
+    const [t, sub] = this.comboT.list as Phaser.GameObjects.Text[];
+    t.setText(`COMBO ×${n}`).setColor(n >= 6 ? '#ff6a3a' : n >= 4 ? '#ffb040' : '#ffd060');
+    sub.setText(n >= 6 ? '¡imparable!' : n >= 4 ? '¡sigue así!' : 'ataques seguidos');
+    this.tweens.killTweensOf(this.comboT);
+    this.comboT.setScale(1.5).setAlpha(1).setAngle(Phaser.Math.Between(-6, 6));
+    this.tweens.add({ targets: this.comboT, scale: 1, angle: 0, duration: 240, ease: 'Back.out' });
   }
 
   private floatText(x: number, y: number, s: string, color: string) {
@@ -3463,6 +3508,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.carry) this.calc(`${this.pacto('volante') ? 'Pacto del Volante' : this.has('volante') ? 'Volante' : 'Simetría en el Tiempo (Noether)'}: conservas ${this.carry} J`);
     this.carry = 0;
     this.attacksTurn = 0;
+    this.comboT?.destroy(); // v0.68 · el combo se reinicia cada turno
+    this.comboT = undefined;
     const kres = boonLevel('k_resorte');
     if (kres) {
       this.gainBlock(2 * kres);
@@ -4221,6 +4268,21 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`${RELICS.vidaExtra.name}: ¡te levantas con ${run.hp} de vida!`);
       await this.banner('¡Vida extra!');
       this.floatText(this.heroX, 180, '«Ándale, sigue.»', CSS.gold);
+      this.refreshPlayer();
+      return false;
+    }
+    // v0.68 · Cordón Umbilical (se compra con el Mercader)
+    const k = run.relics.indexOf('cordon');
+    if (k >= 0) {
+      run.relics.splice(k, 1);
+      run.hp = Math.ceil(run.maxHp / 2);
+      saveLocal();
+      this.hud.refresh();
+      logEvent('cordon', '', true, { piso: this.floor, enemigo: by });
+      audio.sfx('heal');
+      this.burst(this.heroX, 260, 0xf07a9a, 40);
+      this.calc(`Cordón Umbilical: te reconecta con la vida → te levantas con ${run.hp}`);
+      await this.banner('¡Cordón Umbilical!', '#f0a0b8');
       this.refreshPlayer();
       return false;
     }

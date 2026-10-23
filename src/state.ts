@@ -144,6 +144,7 @@ export interface ShopState {
   discount: boolean;
   haggled: boolean;
   vendidas?: number; // cartas que le vendiste en esta visita (máx. 2)
+  cordon?: ShopItem; // v0.68 · Cordón Umbilical: vida extra por 250 Ergios
   ambulante?: boolean; // mercader ambulante (encuentro)
 }
 
