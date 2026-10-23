@@ -142,6 +142,9 @@ export class CombatScene extends Phaser.Scene {
   // v0.10: cartas desbloqueables
   private palanca = false; // el siguiente ataque hace el doble
   private derivadaBono = 0; // Derivada: daño extra para el siguiente ataque
+  private neutrinoT = 0; // v0.69 · Forma de Neutrino: turnos en que todo golpe te hace sólo 1
+  private neutrinoPen = 0; // v0.69 · después, tus Defensas dan este Bloqueo menos
+  private arieteUsed = false; // v0.69 · Ariete: primer ataque del combate +8
   private ley3 = false; // Asimov: la Tercera Ley ya se activó en este combate
   private isoRobo = false; // Péndulo Isócrono: robar 1 carta extra este turno
   private jugadasIni = 0; // cartas jugadas al empezar el turno (Máquina de Turing)
@@ -275,6 +278,9 @@ export class CombatScene extends Phaser.Scene {
     this.attacksTurn = 0;
     this.comboT?.destroy(); // v0.68 · el combo se reinicia cada turno
     this.comboT = undefined;
+    this.neutrinoT = 0;
+    this.neutrinoPen = 0;
+    this.arieteUsed = false;
     this.drainNext = 0;
     this.palanca = false;
     this.mult = 1;
@@ -1229,6 +1235,8 @@ export class CombatScene extends Phaser.Scene {
     if (hc && !this.centriUsed) add(6 * hc, 'Centrípeta');
     const tv = boonLevel('co_travail');
     if (tv && this.attacksTurn) add(tv * this.attacksTurn, 'Travail');
+    if (this.has('ariete') && !this.arieteUsed) add(8, 'Ariete');
+    if (this.has('contador') && ((Game.run!.revs ?? 0) + 1) % 10 === 0) por(2, 'Contador de Revoluciones');
     add(this.derivadaBono, 'Derivada');
     if (this.calcBolsillo !== 1) por(this.calcBolsillo, 'Calculadora de Bolsillo');
     if (this.palanca) por(2, 'Palanca');
@@ -1760,6 +1768,30 @@ export class CombatScene extends Phaser.Scene {
       }
       this.attacksTurn++;
       if (this.attacksTurn >= 3) this.mostrarCombo(this.attacksTurn); // v0.68
+      // v0.69 · reliquias de ataque
+      if (this.has('ariete') && !this.arieteUsed) {
+        this.arieteUsed = true;
+        this.polonio += 8;
+        this.calc('Ariete: p = m·v → +8 a tu primer ataque del combate');
+      }
+      if (this.has('contador')) {
+        const run = Game.run!;
+        run.revs = (run.revs ?? 0) + 1;
+        if (run.revs % 10 === 0) {
+          this.mult *= 2;
+          this.calc(`Contador de Revoluciones: ¡vuelta ${run.revs}! Este ataque hace ×2`);
+          this.floatText(this.heroX, 180, '¡10.ª vuelta! ×2', '#ffd27a');
+        }
+      }
+      if (this.attacksTurn % 3 === 0) {
+        if (this.has('abanico')) { this.block += 4; this.floatText(this.heroX, 220, '+4 🛡', CSS.block); this.calc('Abanico de Bernoulli: 3 ataques → +4 de Bloqueo'); }
+        if (this.has('estrella')) {
+          if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 1);
+          else this.masa += 1;
+          this.calc(`Estrella de Momento: 3 ataques → +1 ${this.usaVel ? 'm/s' : 'kg'} el resto del combate`);
+        }
+        this.refreshPlayer();
+      }
       if (this.derivadaBono) {
         this.polonio += this.derivadaBono;
         this.calc(`Derivada: +${this.derivadaBono} a este ataque`);
@@ -1875,6 +1907,14 @@ export class CombatScene extends Phaser.Scene {
         this.penduloB += st.block ?? 6;
         this.calc(`Péndulo Físico: +${st.block} de Bloqueo… y regresará el siguiente turno`);
         break;
+      case 'neutrino': {
+        const n = st.extra ?? 2;
+        this.neutrinoT = Math.max(this.neutrinoT, 0) + n;
+        this.calc(`Forma de Neutrino: durante ${n} turnos, TODO golpe te hace sólo 1. Después tus Defensas se debilitan`);
+        this.anunciarEstado('FORMA DE NEUTRINO', 'La materia te atraviesa: cada golpe te hace 1', 0x3a6a8a, '#c8f0ff');
+        this.tweens.add({ targets: this.hero, alpha: 0.45, duration: 400, yoyo: true, repeat: 2 });
+        break;
+      }
       case 'giroscopio':
         this.giroscopio += st.block ?? 3;
         this.calc(`Giroscopio: H = I·ω → +${st.block} de Bloqueo cada turno y ya no te aturden`);
@@ -2954,6 +2994,10 @@ export class CombatScene extends Phaser.Scene {
       this.floatText(this.heroX, 220, 'Sin Defensa', '#ff9aa8');
       return;
     }
+    if (this.neutrinoPen > 0 && this.neutrinoT === 0 && this.cartaTipo === 'Defensa' && n > 0) {
+      n = Math.max(0, n - this.neutrinoPen);
+      this.calc(`Secuela del Neutrino: −${this.neutrinoPen} de Bloqueo (${n})`);
+    }
     if (this.jefeVivo('dagon') && this.turn % 3 === 0 && n > 0) {
       n = Math.floor(n / 2);
       this.calc(`MAREA ALTA (Padre Dagón): tu Bloqueo da la mitad (${n})`);
@@ -3095,6 +3139,11 @@ export class CombatScene extends Phaser.Scene {
         st.phase3 = true;
         this.hibPhase(ev, 'Fase III · Integral', `«Llevo la cuenta de cada golpe: ${st.recibido ?? 0} de daño. Te lo voy a devolver, integrado.»`, 'AM se reprograma');
       }
+    }
+    // v0.69 · algunos jefes se levantan UNA vez (como el Despierto de Slay the Spire)
+    if (st.hp <= 0 && st.def.revive && !st.revivido) {
+      await this.revivir(ev);
+      return stopped;
     }
     const overkill = st.hp < 0 ? -st.hp : 0;
     if (st.hp <= 0) {
@@ -3371,7 +3420,16 @@ export class CombatScene extends Phaser.Scene {
     const absorbed = this.perforaGolpe && from ? 0 : Math.min(this.block, dmg);
     if (this.perforaGolpe && from && this.block > 0) this.floatText(this.heroX, 240, 'Perfora', '#c8a8ff');
     this.block -= absorbed;
-    const real = dmg - absorbed;
+    let real = dmg - absorbed;
+    // v0.69 · Forma de Neutrino, Amortiguador de Hule y Barra de Tungsteno
+    if (real > 1 && this.neutrinoT > 0) {
+      this.calc(`Forma de Neutrino: el golpe de ${real} casi no interactúa contigo → 1`);
+      this.floatText(this.heroX, 240, 'ν', '#c8f0ff');
+      real = 1;
+    } else if (real > 0) {
+      if (this.has('hule') && real >= 2 && real <= 5) { this.calc(`Amortiguador de Hule: F = Δp/Δt → ${real} se vuelve 1`); real = 1; }
+      if (this.has('tungsteno')) { real -= 1; if (!real) this.calc('Barra de Tungsteno: el golpe no te hace daño'); }
+    }
     const antesHp = run.hp;
     run.hp -= real;
     const l3 = boonLevel('as_ley3');
@@ -3516,6 +3574,22 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Ut tensio, sic vis (Hooke): +${2 * kres} de Bloqueo`);
     }
 
+    // v0.69 · Forma de Neutrino: casi no interactúas con la materia… y luego cuesta
+    if (this.neutrinoT > 0) {
+      this.neutrinoT--;
+      if (this.neutrinoT === 0) {
+        this.neutrinoPen = Math.max(1, this.neutrinoPen);
+        this.calc(`La Forma de Neutrino se acaba: tus Defensas dan −${this.neutrinoPen} de Bloqueo (y empeora cada turno)`);
+      } else this.calc(`Forma de Neutrino: ${this.neutrinoT} turno(s) más en que todo golpe te hace 1`);
+    } else if (this.neutrinoPen > 0) {
+      this.neutrinoPen++;
+      this.calc(`Secuela del Neutrino: tus Defensas dan −${this.neutrinoPen} de Bloqueo`);
+    }
+    if (this.has('mercurio') && this.alive().length) {
+      this.calc('Reloj de Arena de Mercurio: 3 de daño a todos');
+      await this.rayoTodos(3);
+      if (await this.checkEnd()) return;
+    }
     const ta = boonLevel('t_alterna');
     if (ta && (ta === 2 || this.turn % 2 === 1) && this.alive().length) {
       this.calc('Corriente Alterna (Tesla): un rayo cae sobre todos (4)');
@@ -3574,7 +3648,10 @@ export class CombatScene extends Phaser.Scene {
       }
       if (this.has('coloso')) { this.energy = Math.max(0, this.energy - 1); this.calc('Corazón del Coloso: −1 J en tu primer turno'); }
       if (this.has('volante')) draw -= 1;
+      if (this.has('mochila')) { draw += 2; this.calc('Mochila de Apuntes: +2 cartas en tu primer turno'); }
+      if (this.has('lampara')) { this.energy += 1; this.calc('Lámpara de Carburo: +1 J en tu primer turno'); }
     }
+    if (this.has('foucault') && this.turn % 3 === 0) { this.energy += 1; this.calc('Péndulo de Foucault: el plano ya giró → +1 J'); }
     const hr = boonLevel('h_reloj');
     if ((hr === 1 && this.turn % 2 === 0) || (hr === 2 && this.turn >= 2)) {
       draw += 1;
@@ -3787,6 +3864,20 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Tarea Pendiente ×${tareas}: pierdes ${3 * tareas} de vida`);
       this.floatText(this.heroX, 200, `-${3 * tareas} tarea`, '#e08a8a');
       if (Game.run!.hp <= 0 && (await this.dies('la tarea pendiente'))) return;
+    }
+    // v0.69 · Escudo de Equilibrio y Calendario de Kepler
+    if (this.has('oricalco') && this.block === 0) {
+      this.block = 6;
+      this.floatText(this.heroX, 220, '+6 🛡', CSS.block);
+      this.calc('Escudo de Equilibrio: terminaste sin Bloqueo → +6');
+      this.refreshPlayer();
+    }
+    if (this.has('calendario') && this.turn === 7 && this.alive().length) {
+      this.calc('Calendario de Kepler: la órbita se completó → 52 a TODOS');
+      this.anunciarEstado('¡EL CALENDARIO SE CUMPLE!', 'T² ∝ a³: 52 de daño a todos los enemigos', 0x3a5a8a, '#9ad8ff');
+      this.cameras.main.flash(400, 160, 200, 255);
+      await this.rayoTodos(52);
+      if (await this.checkEnd()) return;
     }
     // descartar mano (la Honda de David se queda y gana rapidez)
     const hondas = this.hand.filter((c) => c.inst.id === 'honda' || c.inst.id === 'tareaOlvidada'); // v0.57 · la Tarea Olvidada también se queda
@@ -4088,6 +4179,10 @@ export class CombatScene extends Phaser.Scene {
     if (da && run.hp < run.maxHp / 2) {
       run.maxHp += da === 2 ? 5 : 3;
       this.calc(`El Más Apto (Darwin): sobreviviste → +${da === 2 ? 5 : 3} Vida máxima`);
+    }
+    if (this.has('termo') && run.hp > 0 && run.hp <= run.maxHp / 2) {
+      run.hp = Math.min(run.maxHp, run.hp + 12);
+      this.calc('Termo de Caldo: +12 de vida');
     }
     let extra = 0;
     if (this.cond?.id === 'ecos') extra += 15;
@@ -4924,6 +5019,48 @@ export class CombatScene extends Phaser.Scene {
         });
       }
     });
+  }
+
+  /** v0.69 · el jefe muere… y se levanta con una fase nueva */
+  private async revivir(ev: EnemyView) {
+    const st = ev.st;
+    const rv = st.def.revive!;
+    st.revivido = true;
+    st.maxHp = Math.round(st.maxHp * rv.frac);
+    st.hp = 0;
+    st.block = 0;
+    st.calor = 0;
+    st.fatiga = 0;
+    st.stunned = 0;
+    st.detenido = false;
+    st.inercia = 0;
+    st.turn = 0;
+    st.umbralMul = 1;
+    this.refreshEnemy(ev);
+    this.calc(`${st.def.name} cae… pero no muere`);
+    ev.sprite.setTintFill(0x000000);
+    this.tweens.add({ targets: ev.sprite, alpha: 0.2, duration: 500 });
+    await this.wait(800);
+    this.cameras.main.flash(500, 120, 40, 160);
+    this.cameras.main.shake(500, 0.015);
+    audio.sfx('brutal');
+    this.tweens.add({ targets: ev.sprite, alpha: 1, duration: 400 });
+    ev.sprite.clearTint();
+    ev.sprite.setTint(0xc8a0ff);
+    this.burst(ev.baseX, 200, 0xb08aff, 50);
+    // la vida se llena poco a poco
+    const tope = st.maxHp;
+    for (let i = 1; i <= 10; i++) {
+      st.hp = Math.round((tope * i) / 10);
+      this.refreshEnemy(ev);
+      await this.wait(45);
+    }
+    st.intent = this.scaleIntent(st.def.next(st), st);
+    this.refreshEnemy(ev);
+    this.anunciarEstado(`¡${st.def.name.toUpperCase()} SE LEVANTA!`, rv.titulo, 0x5a3a8a, '#d8b8ff');
+    this.calc(`${rv.titulo} (${tope} de vida)`);
+    this.calc(rv.frase);
+    logEvent('revive', st.def.id, true, { piso: this.floor });
   }
 
   private hibPhase(ev: EnemyView, cap: string, quote: string, quien = 'Hibbelerius pasa la página') {

@@ -2,6 +2,21 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.69.0 · Segunda Vida (beta)
+
+- **Nueva carta legendaria: Forma de Neutrino** (Poder, 3 J; como Wraith Form de Slay the Spire).
+  - Durante 2 turnos (3 mejorada), TODO golpe te hace sólo 1 de daño: los neutrinos casi no interactúan con la materia.
+  - El precio: al terminar, tus cartas de Defensa dan −1 de Bloqueo, y empeora 1 más cada turno.
+- **Jefes que se levantan** (como el Despierto de Slay the Spire): al llegar a 0, se levantan UNA vez con una fase nueva.
+  - **Hibbelerius** (Acto III): «Edición Revisada · Cap. 16: Cuerpo Rígido», con 40 % de su vida (v = ω × r, Centro instantáneo, Rodar sin deslizar).
+  - **Cthulhu** (Abismo): «Lo que está muerto puede yacer eternamente», con 40 %.
+  - **Nyarlathotep** (Abismo): «La Máscara Siguiente» (el Faraón Negro), con 35 %.
+- **13 reliquias nuevas** (inspiradas en Slay the Spire, con su física): Lámpara de Carburo (+1 J el primer turno), Mochila de Apuntes (+2 cartas el primer turno), Ariete (+8 al primer ataque), Contador de Revoluciones (cada 10.º ataque ×2), Abanico de Bernoulli (3 ataques → +4 de Bloqueo), Estrella de Momento (3 ataques → +1 kg o +1 m/s), Escudo de Equilibrio (terminas sin Bloqueo → +6), Péndulo de Foucault (+1 J cada 3 turnos), Reloj de Arena de Mercurio (3 a todos cada turno), Calendario de Kepler (52 a todos al final del turno 7), Barra de Tungsteno (−1 a cada daño), Amortiguador de Hule (golpes de 2 a 5 → 1) y Termo de Caldo (+12 de vida al ganar si tienes 50 % o menos).
+- **Encuentros nuevos en los «?»:**
+  - **El Memorama de Fórmulas** (como «Match and Keep»): 12 cartas, 6 fórmulas y sus conceptos. Las ves 4 segundos, se voltean y tienes 5 intentos. Cada par te da su premio (reliquia, carta rara, Ergios, vida, vida máxima… o una maldición).
+  - **El Ídolo y la Roca** (m·g·h → ½·m·v²), **El Explorador Caído**, **La Biblioteca Hundida**, **El Muro Viviente** (olvida, cambia o hace crecer una carta) y **La Calavera Avara**.
+- Modo profesor: botón «Memorama» (el final se sigue probando con «Fin + alma»).
+
 ## v0.68.0 · Impacto (beta)
 
 - **Golpes que se sienten:**

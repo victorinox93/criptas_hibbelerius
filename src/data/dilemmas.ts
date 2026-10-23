@@ -34,6 +34,7 @@ export interface Result {
   familiar?: string;
   famCombats?: number;
   removeRandom?: boolean;
+  upgradeRandom?: boolean; // v0.69 · mejora una carta al azar de tu mazo
   score?: number;
   entropia?: number; // Entropía mental (src/data/abismo.ts)
 }
@@ -182,6 +183,103 @@ export const DILEMMAS: DilemmaDef[] = [
         label: 'Dar la vuelta', risk: 'Fatiga (1 combate)',
         outcomes: [{ p: 1, r: { text: 'El rodeo es largo y te cansa.', effect: 'fatiga', combats: 1 } }],
       },
+    ],
+  },
+  // ── v0.69 · encuentros inspirados en Slay the Spire, con su física ──
+  {
+    id: 'idolo', name: 'El Ídolo y la Roca', sprite: 'd_idolo',
+    intro: 'Sobre un pedestal brilla un ídolo dorado. Arriba, en una rampa, una roca enorme espera. Si el pedestal pierde peso, la roca se suelta… y baja ganando energía: m·g·h → ½·m·v².',
+    choices: [
+      {
+        label: 'Tomarlo y correr', risk: '60 %: reliquia · 40 %: reliquia y −14 de vida',
+        outcomes: [
+          { p: 0.6, r: { text: 'Corres más rápido que la roca: tu ventaja inicial la gana la distancia.', relic: 'random' } },
+          { p: 0.4, r: { text: 'La roca gana rapidez cuesta abajo: v = √(2·g·h). Te roza. Duele, pero el ídolo es tuyo.', relic: 'random', hp: -14 } },
+        ],
+      },
+      {
+        label: 'Cambiarlo por una bolsa de arena', risk: '−20 Ergios · 50 %: reliquia · 50 %: −8 de vida', need: { ergios: 20 },
+        outcomes: [
+          { p: 0.5, r: { text: 'La normal del pedestal no cambia: N = m·g. La roca ni se entera. Te llevas el ídolo.', ergios: -20, relic: 'random' } },
+          { p: 0.5, r: { text: 'La arena pesaba menos. El pedestal sube, la roca baja, y tú sales sin el ídolo.', ergios: -20, hp: -8 } },
+        ],
+      },
+      LEAVE,
+    ],
+  },
+  {
+    id: 'explorador', name: 'El Explorador Caído', sprite: 'd_explorador',
+    intro: 'Un explorador quedó recargado contra la pared, con la mochila todavía llena. Algo le dejó marcas de garras en la armadura… y no se ve por ningún lado.',
+    choices: [
+      {
+        label: 'Revisar la mochila con cuidado', risk: '75 %: +45 Ergios · 25 %: −10 de vida',
+        outcomes: [
+          { p: 0.75, r: { text: 'Entre apuntes húmedos y una brújula rota encuentras su bolsa de Ergios.', ergios: 45 } },
+          { p: 0.25, r: { text: 'Un rasguño en la oscuridad. Sales corriendo con las manos vacías.', hp: -10 } },
+        ],
+      },
+      {
+        label: 'Revisarlo todo a fondo', risk: '+30 Ergios · 45 %: reliquia · 55 %: −18 de vida',
+        outcomes: [
+          { p: 0.45, r: { text: 'Bajo la armadura guardaba algo valioso. Te lo llevas antes de que vuelva lo que lo mató.', relic: 'random', ergios: 30 } },
+          { p: 0.55, r: { text: 'Tardaste demasiado. La criatura regresa y te ataca; escapas con lo que alcanzaste a tomar.', hp: -18, ergios: 30 } },
+        ],
+      },
+      LEAVE,
+    ],
+  },
+  {
+    id: 'biblioteca', name: 'La Biblioteca Hundida', sprite: 'd_biblioteca',
+    intro: 'Estantes que llegan hasta donde no alcanza la luz. Libros de mecánica de todas las épocas: Principia, Hibbeler, Beer & Johnston… y uno sin título que respira.',
+    choices: [
+      {
+        label: 'Estudiar un capítulo', risk: 'Una carta rara',
+        outcomes: [{ p: 1, r: { text: 'Lees con calma y entiendes algo que antes sólo memorizabas.', card: 'rara' } }],
+      },
+      {
+        label: 'Repasar tus apuntes', risk: 'Mejoras una carta al azar de tu mazo',
+        outcomes: [{ p: 1, r: { text: 'Vuelves a hacer un problema que ya habías hecho… y ahora te sale mejor.', upgradeRandom: true } }],
+      },
+      {
+        label: 'Dormir entre los libros', risk: '+20 de vida',
+        outcomes: [{ p: 1, r: { text: 'El silencio de una biblioteca es el mejor descanso.', hp: 20 } }],
+      },
+    ],
+  },
+  {
+    id: 'muro', name: 'El Muro Viviente', sprite: 'd_muro',
+    intro: 'Un muro de piedra con tres caras te bloquea el paso. «Para pasar, ofrece algo», dicen al mismo tiempo. Una olvida, otra cambia, otra hace crecer.',
+    choices: [
+      {
+        label: 'La cara que olvida', risk: 'Olvidas una carta al azar de tu mazo',
+        outcomes: [{ p: 1, r: { text: 'Sientes un hueco en la memoria… y un mazo más ligero.', removeRandom: true } }],
+      },
+      {
+        label: 'La cara que cambia', risk: 'Olvidas una carta al azar y ganas otra al azar',
+        outcomes: [{ p: 1, r: { text: 'Lo que sabías se transforma: la energía no se crea ni se destruye.', removeRandom: true, card: 'random' } }],
+      },
+      {
+        label: 'La cara que hace crecer', risk: 'Mejoras una carta al azar',
+        outcomes: [{ p: 1, r: { text: 'Una de tus cartas brilla: ahora entiendes el porqué.', upgradeRandom: true } }],
+      },
+    ],
+  },
+  {
+    id: 'calavera', name: 'La Calavera Avara', sprite: 'd_calavera',
+    intro: 'Una calavera dorada te sonríe. «Cada pregunta que me hagas cuesta sangre. Pero pago bien: la energía se conserva… sólo cambia de manos.»',
+    choices: [
+      {
+        label: 'Una pregunta', risk: '−5 de vida → +35 Ergios',
+        outcomes: [{ p: 1, r: { text: '«Justo y conservativo.» Te paga.', hp: -5, ergios: 35 } }],
+      },
+      {
+        label: 'Tres preguntas', risk: '−14 de vida → +100 Ergios · 25 %: y una reliquia',
+        outcomes: [
+          { p: 0.75, r: { text: 'La calavera ríe con cada pago.', hp: -14, ergios: 100 } },
+          { p: 0.25, r: { text: '«Me caes bien.» Además de los Ergios, te da algo de su colección.', hp: -14, ergios: 100, relic: 'random' } },
+        ],
+      },
+      LEAVE,
     ],
   },
   // ── Horror cósmico: el Necronomicón (Actos II y III, rara vez) ──

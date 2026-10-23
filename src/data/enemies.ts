@@ -48,6 +48,7 @@ export interface EnemyState {
   impulso: number; // daño de un Impulso Sostenido pendiente
   impulsoLeft: number; // turnos que le quedan a ese impulso
   imparableT?: number; // v0.49 · turnos que le quedan de IMPARABLE (tras ser detenido)
+  revivido?: boolean; // v0.69 · ya usó su segunda vida
   recibido?: number; // daño total que ha recibido (los autómatas integradores lo usan)
 }
 
@@ -67,6 +68,8 @@ export interface EnemyDef {
   vuelco?: boolean; // El Abismo: si lo golpeas 2 veces en el mismo turno, se vuelca (pierde su turno)
   hueco?: boolean; // El Abismo: área negativa; los golpes a TODOS le hacen la mitad
   oculto?: boolean; // El Abismo: invisible, sus intenciones no se ven (Engendro de Dunwich)
+  /** v0.69 · como el Despierto de Slay the Spire: al llegar a 0 se levanta UNA vez con esta fracción de su vida y una fase nueva */
+  revive?: { frac: number; titulo: string; frase: string };
   imparable?: number; // v0.49 · El Abismo: después de que lo detienes, queda IMPARABLE estos turnos (no se le puede volver a detener)
   next: (e: EnemyState) => Intent;
 }
@@ -228,8 +231,17 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   hibbelerius: {
     id: 'hibbelerius', name: 'Hibbelerius, el Autor Eterno', sprite: 'hibbelerius', scale: 3.6, hp: [330, 330], mass: 80, umbral: 20, act: 3,
-    desc: 'El autor de todos los problemas. Pelea capítulo por capítulo: Fuerza (13), Energía (14) e Impulso (15). En el último, DETENLO antes de su Impulso Final.',
+    desc: 'El autor de todos los problemas. Pelea capítulo por capítulo: Fuerza (13), Energía (14) e Impulso (15). En el último, DETENLO antes de su Impulso Final. Y cuando crees que se acabó el libro… hay una edición nueva.',
+    revive: { frac: 0.4, titulo: 'Edición Revisada · Cap. 16: Cuerpo Rígido', frase: '«¿Creíste que era el final? Siempre hay una edición nueva… con más problemas.»' },
     next: (e) => {
+      if (e.revivido) {
+        // Capítulo 16 · Cinemática del cuerpo rígido
+        switch (e.turn % 3) {
+          case 0: return { kind: 'attack', dmg: 9, hits: 2, label: 'v = ω × r' };
+          case 1: return { kind: 'block', block: 14, add: { id: 'errorSigno', n: 1, to: 'draw' }, label: 'Centro instantáneo' };
+          default: return { kind: 'attack', dmg: 22, label: 'Rodar sin deslizar' };
+        }
+      }
       if (e.phase3) {
         // Capítulo 15 · Impulso: carga dos turnos y suelta todo
         return e.turn % 3 === 2
@@ -536,16 +548,26 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   nyarlathotep: {
     id: 'nyarlathotep', name: 'Nyarlathotep', sprite: 'nyarlathotep', scale: 3.4, hp: [320, 320], mass: 0, umbral: 21, act: 5, imparable: 2,
-    desc: 'El Caos que Repta. Cambia de forma: compacto (I chica, muchos golpes) o extendido (I grande, un golpe enorme). La primera carta que robas cada turno se descarta.',
+    desc: 'El Caos que Repta. Cambia de forma: compacto (I chica, muchos golpes) o extendido (I grande, un golpe enorme). La primera carta que robas cada turno se descarta. Tiene mil máscaras: matar una no basta.',
+    revive: { frac: 0.35, titulo: 'La Máscara Siguiente', frase: '«Mataste una máscara. Tengo mil. Esta se llama… Faraón Negro.»' },
     next: (e) => {
+      if (e.revivido) return e.turn % 2 === 0 ? { kind: 'attack', dmg: 6, hits: 4, label: 'Faraón Negro' } : { kind: 'block', block: 12, dmg: 10, confusion: true, label: 'Otra máscara' };
       if (e.turn % 3 === 2) return { kind: 'block', block: 14, dmg: 6, confusion: true, label: 'Mil máscaras' };
       return e.turn % 3 === 0 ? { kind: 'attack', dmg: 7, hits: 3, label: 'Forma compacta' } : { kind: 'attack', dmg: 26 + 3 * e.inercia, label: 'Forma extendida' };
     },
   },
   cthulhu: {
     id: 'cthulhu', name: 'Cthulhu', sprite: 'cthulhu', scale: 3.4, hp: [340, 340], mass: 99999, umbral: 22, act: 5, imparable: 2,
-    desc: "El Durmiente de R'lyeh. Pierdes 5 de Cordura cada turno. Despierta en 3 fases: ΣM = I·α, R'lyeh se alza, y ya no sueña.",
+    desc: "El Durmiente de R'lyeh. Pierdes 5 de Cordura cada turno. Despierta en 3 fases: ΣM = I·α, R'lyeh se alza, y ya no sueña. Y lo que está muerto puede yacer eternamente…",
+    revive: { frac: 0.4, titulo: 'Lo que está muerto puede yacer eternamente', frase: '«…y con eones extraños, incluso la muerte puede morir.» Cthulhu se recompone.' },
     next: (e) => {
+      if (e.revivido) {
+        switch (e.turn % 3) {
+          case 0: return { kind: 'attack', dmg: 11, hits: 2, label: 'Eones extraños' };
+          case 1: return { kind: 'block', block: 18, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Se recompone' };
+          default: return { kind: 'attack', dmg: 24 + 2 * e.inercia, label: 'L = I·ω' };
+        }
+      }
       const f = e.hp / e.maxHp;
       if (f > 2 / 3) return e.turn % 2 === 0 ? { kind: 'attack', dmg: 14 + 4 * e.inercia, label: 'ΣM = I·α' } : { kind: 'block', block: 16, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Sueña' };
       if (f > 1 / 3) return e.turn % 2 === 0 ? { kind: 'buff', summon: 'cultistaEje', dmg: 10, label: "R'lyeh se alza" } : { kind: 'attack', dmg: 12, hits: 2, label: 'Garra' };

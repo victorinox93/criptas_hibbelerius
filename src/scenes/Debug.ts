@@ -100,7 +100,7 @@ export class DebugScene extends Phaser.Scene {
       ['Mercader', () => { this.go(acto(), 'Shop', { floor: 4 }); Game.run!.ergios = Math.max(Game.run!.ergios, 200); }],
       ['Altar', () => this.go(acto(), 'Rune', { floor: 3, source: 'altar' })],
       ['Fogata', () => this.go(acto(), 'Campfire', { floor: 7 })],
-      ['Final', () => this.go(acto(), 'End', { victory: true })],
+      ['Memorama', () => this.go(acto(), 'Memorama', { floor: 3 })], // v0.69 (el final se prueba con «Fin + alma»)
       ['Taberna', () => this.go(acto(), 'Taberna', { floor: 3 })],
       ['Tiro al blanco', () => this.go(acto(), 'TiroBlanco', { floor: 3, volver: 'Debug' })],
       ['Tira y Afloja', () => { this.go(acto(), 'TiraAfloja', { floor: 3, volver: 'Debug' }); Game.run!.ergios = Math.max(Game.run!.ergios, 100); }],

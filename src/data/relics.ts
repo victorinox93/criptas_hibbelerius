@@ -15,6 +15,20 @@ export const RELICS: Record<string, RelicDef> = {
   botas: { id: 'botas', name: 'Botas de Agarre', icon: 'i_boots', text: 'Eres inmune a la Fricción.', lore: 'Con buen agarre, el lodo no roba tu aceleración.' },
   cristal: { id: 'cristal', name: 'Cristal Inercial', icon: 'i_crystal', text: 'Conservas la mitad de tu Bloqueo entre turnos.', lore: 'Lo que está quieto tiende a seguir quieto.' },
   ascua: { id: 'ascua', name: 'Corazón de Ascua', icon: 'i_heart', text: '+10 Vida máxima (y te cura 10).', lore: 'Energía almacenada para después.' },
+  // ── v0.69 · inspiradas en Slay the Spire, con su física ──
+  lampara: { id: 'lampara', name: 'Lámpara de Carburo', icon: 'i_lantern', text: '+1 J en tu primer turno de cada combate.', lore: 'CaC₂ + agua → acetileno: la energía química de los mineros, lista desde el primer momento.' },
+  mochila: { id: 'mochila', name: 'Mochila de Apuntes', icon: 'i_bag', text: 'Robas 2 cartas más en tu primer turno de cada combate.', lore: 'Traes tus apuntes. Bien hecho: así sí se llega a un examen.' },
+  ariete: { id: 'ariete', name: 'Ariete', icon: 'i_momentum', text: 'Tu primer ataque de cada combate hace +8 de daño.', lore: 'p = m·v: un tronco pesado a buena velocidad abre cualquier puerta… una vez.' },
+  contador: { id: 'contador', name: 'Contador de Revoluciones', icon: 'i_rune', text: 'Cada 10.º ataque que juegas (en toda la partida) hace el DOBLE de daño.', lore: 'Un tacómetro: cuenta vueltas. A la décima, ω ya acumuló suficiente.' },
+  abanico: { id: 'abanico', name: 'Abanico de Bernoulli', icon: 'i_wind', text: 'Cada vez que juegas 3 ataques en un turno, ganas 4 de Bloqueo.', lore: 'Donde el aire va más rápido, la presión baja: P + ½ρv² = constante.' },
+  estrella: { id: 'estrella', name: 'Estrella de Momento', icon: 'i_star', text: 'Cada 3 ataques en un turno: +1 kg (o +1 m/s) para el resto del combate.', lore: 'Un shuriken: masa en el borde, mucho momento angular.' },
+  oricalco: { id: 'oricalco', name: 'Escudo de Equilibrio', icon: 'i_shield', text: 'Si terminas tu turno con 0 de Bloqueo, ganas 6.', lore: 'ΣF = 0: si nadie te sostiene, la estructura se sostiene sola.' },
+  foucault: { id: 'foucault', name: 'Péndulo de Foucault', icon: 'i_pend', text: 'Cada 3 turnos: +1 J.', lore: 'Su plano de oscilación gira con la Tierra: prueba de que el mundo da vueltas… con calma.' },
+  mercurio: { id: 'mercurio', name: 'Reloj de Arena de Mercurio', icon: 'i_fog', text: 'Al empezar cada turno, haces 3 de daño a TODOS los enemigos.', lore: 'Mercurio: 13.6 veces más denso que el agua. Cae poco… pero pesa.' },
+  calendario: { id: 'calendario', name: 'Calendario de Kepler', icon: 'i_astro', text: 'Al terminar tu 7.º turno, haces 52 de daño a TODOS los enemigos.', lore: 'T² ∝ a³: si conoces la órbita, sabes exactamente cuándo llega el golpe.' },
+  tungsteno: { id: 'tungsteno', name: 'Barra de Tungsteno', icon: 'i_mass', text: 'Pierdes 1 de vida menos cada vez que te hacen daño.', lore: 'El metal con el punto de fusión más alto: 3422 °C. No cede fácil.' },
+  hule: { id: 'hule', name: 'Amortiguador de Hule', icon: 'i_reflect', text: 'Si un golpe te iba a hacer entre 2 y 5 de daño, sólo te hace 1.', lore: 'Más tiempo de contacto, menos fuerza: F = Δp / Δt.' },
+  termo: { id: 'termo', name: 'Termo de Caldo', icon: 'i_jarra', text: 'Al ganar un combate, si tienes 50 % de vida o menos, te curas 12.', lore: 'Un buen aislante térmico: la energía se queda donde la necesitas.' },
   // especial: sólo la da el Profe Victorino (no sale en botines ni en la tienda)
   necronomicon: { id: 'necronomicon', especial: true, name: 'Necronomicón de Hibbeler', icon: 'i_necro', text: 'En cada fogata puedes leer un Problema Prohibido: un poder permanente con un costo. Cada lectura: +20 de Locura.', lore: 'Una edición que nunca se publicó. Los ejercicios impares no tienen respuesta al final del libro. Los pares, tampoco.' },
   // v0.68 · se compra con el Mercader (250 Ergios): otra vida extra
