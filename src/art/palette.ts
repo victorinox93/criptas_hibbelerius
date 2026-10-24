@@ -36,6 +36,10 @@ export interface Cosmetico {
   veterano?: boolean;
   /** v0.56 · efecto «infrarrojo»: como una cámara térmica (negro → violeta → rojo → amarillo → blanco), con calor que se mueve */
   infrarrojo?: boolean;
+  /** v0.70 · efecto «fuego»: la tela arde (las llamas suben) y el héroe queda envuelto en llamas */
+  fuego?: boolean;
+  /** v0.70 · forma de la armadura: cota de malla, placas góticas, templario o caballero negro */
+  forma?: 'malla' | 'gotica' | 'templario' | 'negro';
   /** v0.36 · sólo se consigue con un set de la Tienda de Layla (no sale suelto en «Colores») */
   enSet?: boolean;
 }
@@ -109,6 +113,8 @@ export const CAPES: (Cosmetico & { c: string; C: string })[] = [
   { name: 'Nube de Venus', c: '#f0dc9a', C: '#8a6a2a', holo: 50, rango: 18, logro: 'abismo_astro_venus' },
   { name: 'Heliosfera', c: '#ffd060', C: '#3a1a6a', cosmos: true, logro: 'abismo_astros' },
   { name: 'Llama de Carcosa', c: '#ff5a1a', C: '#5a0a3a', infrarrojo: true, logro: 'abismo_calor3' },
+  // v0.70 · Tienda de Layla
+  { name: 'Capa en Llamas', c: '#ff6a1a', C: '#7a1008', fuego: true, id: 'col_capa_llamas', tienda: 14 },
 ];
 
 export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
@@ -148,6 +154,12 @@ export const ARMORS: (Cosmetico & { l: string; g: string })[] = [
   { name: 'Hábito del Acólito de Yog-Sothoth', l: '#5a4a9a', g: '#241a4a', logro: 'abismo_yogSothoth' },
   { name: 'Coraza de la Eternidad (veterano)', l: '#f0c040', g: '#7a4010', veterano: true, logro: 'abismo_veterano10' },
   { name: 'Coraza de Carcosa (cuerpo negro)', l: '#ff8a2a', g: '#3a0a4a', infrarrojo: true, logro: 'abismo_calor6' },
+  // v0.70 · Tienda de Layla: armadura en llamas y armaduras medievales (cambian la forma, no sólo el color)
+  { name: 'Ígnea', l: '#ff8a2a', g: '#8a1a0a', fuego: true, id: 'col_arm_ignea', tienda: 18 },
+  { name: 'Cota de Malla', l: '#a8acb4', g: '#5a5e68', forma: 'malla', id: 'col_arm_malla', tienda: 8 },
+  { name: 'Placas Góticas', l: '#b8bcc8', g: '#5a5e6e', forma: 'gotica', id: 'col_arm_gotica', tienda: 10 },
+  { name: 'Templario', l: '#b0b4bc', g: '#646872', forma: 'templario', id: 'col_arm_templario', tienda: 10 },
+  { name: 'Caballero Negro', l: '#34303a', g: '#16141a', forma: 'negro', id: 'col_arm_negro', tienda: 12 },
 ];
 export const VISORS: (Cosmetico & { c: string })[] = [
   { name: 'Ámbar', c: '#ffd27a' },

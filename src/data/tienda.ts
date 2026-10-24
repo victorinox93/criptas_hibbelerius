@@ -372,6 +372,11 @@ export const ACCESORIOS: Accesorio[] = [
     rows: ['NNNNNNNNNNN', 'NUyUNNNUyUN', 'NUUUN.NUUUN', '.NNN...NNN.'], ancla: [5, 1] },
   { id: 'ballesta_resorte', nombre: 'Ballesta de Resorte', slot: 'mano', cat: 'armas', precio: 8, desc: 'E = ½·k·x²: mientras más estiras la cuerda, más energía guarda el virote.',
     rows: ['.......kl..', '.......l.w.', '......l..w.', 'NNNNNNNNNNy', 'nnnnnnNl.w.', '..nn...l.w.', '..nn....kl.', '..nn.......'], ancla: [3, 5] },
+  // v0.70 · yelmos medievales (cubren el casco de cualquier clase)
+  { id: 'yelmo_cubeta', nombre: 'Yelmo de Cubeta', slot: 'cabeza', cat: 'clasicos', precio: 8, desc: 'El gran yelmo de los cruzados: pesado, cerrado y con respiraderos. Más masa en la cabeza, más momento de inercia.',
+    rows: ['..llllllll..', '.llllllllll.', 'lllllyylllll', 'lllllyylllll', 'lkkkkyykkkkl', 'lllllyylllll', 'llelelyylele', 'lllllyylllll', '.llllllllll.', '..eeeeeeee..'], ancla: [6, 4] },
+  { id: 'celada', nombre: 'Celada', slot: 'cabeza', cat: 'clasicos', precio: 7, desc: 'Yelmo del siglo XV con cola hacia atrás y una rendija para ver. Aerodinámica medieval.',
+    rows: ['....llllll..', '..llllllllll', '.lllllllllll', 'llllllllllll', 'llllkkkkkkkl', 'lll.........', 'll..........'], ancla: [6, 4] },
   { id: 'candelabro', nombre: 'Candelabro', slot: 'mano', cat: 'criptas', precio: 7, desc: 'Tres llamas, la misma presión atmosférica.', rows: ["y.y.y", "o.o.o", "W.W.W", "W.W.W", "YYYYY", "..Y..", "..Y..", ".YYY."], ancla: [2, 6] },
 ];
 
@@ -380,7 +385,7 @@ const NOMBRE_PARTE = { cape: 'Capa', armor: 'Armadura', visor: 'Visor' } as cons
 for (const [parte, lista] of [['cape', CAPES], ['armor', ARMORS], ['visor', VISORS]] as const) {
   lista.forEach((c, idx) => {
     if (c.tienda === undefined || !c.id || c.enSet) return;
-    const efecto = c.cosmos ? ' Efecto cósmico: nebulosa en movimiento y estrellas que titilan.' : c.holo !== undefined ? ' Holográfico: cambia de color con el tiempo.' : '';
+    const efecto = c.fuego ? ' En llamas: el fuego sube por la tela y te envuelve.' : c.forma ? ' Cambia la forma de la armadura, no sólo el color.' : c.cosmos ? ' Efecto cósmico: nebulosa en movimiento y estrellas que titilan.' : c.holo !== undefined ? ' Holográfico: cambia de color con el tiempo.' : '';
     ACCESORIOS.push({ id: c.id, nombre: `${NOMBRE_PARTE[parte]} ${c.name}`, slot: 'cabeza', cat: 'colores', precio: c.tienda, desc: `Color de ${NOMBRE_PARTE[parte].toLowerCase()}.${efecto}`, rows: [], ancla: [0, 0], color: { parte, idx } });
   });
 }

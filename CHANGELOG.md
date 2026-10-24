@@ -2,6 +2,25 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.70.0 · Regios y Ecos (beta)
+
+- **Probador del profe** (sólo administradores): botón «🔒 Probador» en el Vestidor y en la Tienda de Layla. Encendido, TODOS los cosméticos se ven desbloqueados para probarlos. No se guarda nada: al apagarlo o recargar, todo vuelve a como estaba.
+- **Tres Ecos Quebrados nuevos** en el Abismo:
+  - **Ettore Majorana**, el físico que desapareció: Desaparecer (los primeros golpes no te encuentran), Su Propia Antipartícula (cada Ataque te da Bloqueo) y Retiro en Silencio (+Cordura al empezar cada combate).
+  - **Kurt Gödel**, el lógico incompleto: Incompletitud (al bajar de media vida robas cartas y ganas J), Lo Indecidible (enemigos con menos vida) y Rigor Formal (las preguntas falladas quitan menos Cordura).
+  - **Évariste Galois**, el joven de la última noche: Teoría de Grupos (3 cartas del mismo tipo → +1 J), La Última Noche (más daño con poca vida) y Simetría de las Raíces (+Cordura si ganas sin perder vida).
+- **Enemigos con mecánicas nuevas:**
+  - **Escudero de Huesos** (Actos I y II): no ataca, cura y da Bloqueo a su guerrero.
+  - **Babosas Trillizas** (Acto I): si al final de tu turno queda alguna viva, las que mataste reviven con la mitad de su vida.
+  - **Ratero de Ergios** (Actos I y II): cada golpe te roba 15 Ergios y al cuarto turno huye. Si lo vences antes, recuperas todo.
+- **Enemigos regios (élites):**
+  - **Horno Alto de Fundidora** (Acto II): aviva el fuego y suelta una colada de arrabio que hace más daño y más Calor con cada carga.
+  - **Espíritu del Cerro de la Silla** (Acto III): masa enorme (umbral 26 N). Sentado en su silla se protege; a la mitad de su vida se levanta y pega con todo.
+- **Cosméticos nuevos** en la Tienda de Layla:
+  - **Armadura Ígnea** y **Capa en Llamas**: la tela arde, las llamas suben y el héroe queda envuelto en fuego, con chispas.
+  - **Armaduras medievales que cambian la forma**, no sólo el color: Cota de Malla, Placas Góticas, Templario (sobreveste blanca con cruz roja) y Caballero Negro (ribete rojo).
+  - **Yelmo de Cubeta** y **Celada** (accesorios de cabeza).
+
 ## v0.69.0 · Segunda Vida (beta)
 
 - **Nueva carta legendaria: Forma de Neutrino** (Poder, 3 J; como Wraith Form de Slay the Spire).

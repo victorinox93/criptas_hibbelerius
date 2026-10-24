@@ -145,6 +145,11 @@ export class CombatScene extends Phaser.Scene {
   private neutrinoT = 0; // v0.69 · Forma de Neutrino: turnos en que todo golpe te hace sólo 1
   private neutrinoPen = 0; // v0.69 · después, tus Defensas dan este Bloqueo menos
   private arieteUsed = false; // v0.69 · Ariete: primer ataque del combate +8
+  private trillizasCaidas: number[] = []; // v0.70 · x de las Babosas Trillizas que murieron (reviven si queda alguna)
+  private desaparece = 0; // v0.70 · Majorana: golpes que no te encuentran
+  private godelUsado = false; // v0.70 · Incompletitud ya se activó
+  private tiposTurno = new Map<string, number>(); // v0.70 · Galois: cartas de cada tipo este turno
+  private hpIni = 0; // v0.70 · vida al empezar el combate (Simetría de las Raíces)
   private ley3 = false; // Asimov: la Tercera Ley ya se activó en este combate
   private isoRobo = false; // Péndulo Isócrono: robar 1 carta extra este turno
   private jugadasIni = 0; // cartas jugadas al empezar el turno (Máquina de Turing)
@@ -275,6 +280,7 @@ export class CombatScene extends Phaser.Scene {
     this.retornoUsed = false;
     this.desvioUsed = false;
     this.carry = 0;
+    this.tiposTurno.clear();
     this.attacksTurn = 0;
     this.comboT?.destroy(); // v0.68 · el combo se reinicia cada turno
     this.comboT = undefined;
@@ -496,6 +502,8 @@ export class CombatScene extends Phaser.Scene {
     const al = boonLevel('ca_aleph');
     if (al === 2) this.jPerTurn += 1;
     else if (al) this.bonusJ1 += 1;
+    const ms = boonLevel('mj_silencio'); // v0.70 · Majorana
+    if (ms) { addEntropia(-2 * ms); this.calc(`Retiro en Silencio (Majorana): +${2 * ms} de Cordura`); }
   }
 
   private prohibido(id: string) {
@@ -525,6 +533,11 @@ export class CombatScene extends Phaser.Scene {
     if (this.prohibido('p_masaneg')) {
       if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 3);
       else this.masa += 3;
+    }
+    const gi = boonLevel('go_indecidible'); // v0.70 · Gödel
+    if (gi && this.kind !== 'boss') {
+      for (const e of this.alive()) { e.st.hp = Math.max(1, Math.round(e.st.hp * (1 - 0.1 * gi))); this.refreshEnemy(e); }
+      this.calc(`Lo Indecidible (Gödel): los enemigos empiezan con ${10 * gi} % menos vida`);
     }
     if (this.prohibido('p_omega')) {
       for (const e of this.alive()) { e.st.hp = Math.max(1, Math.round(e.st.hp * 0.85)); this.refreshEnemy(e); }
@@ -710,6 +723,11 @@ export class CombatScene extends Phaser.Scene {
     this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
     this.marco = boonLevel('e_marco');
+    this.desaparece = boonLevel('mj_desaparece');
+    this.godelUsado = false;
+    this.trillizasCaidas = [];
+    this.tiposTurno.clear();
+    this.hpIni = Game.run!.hp;
     this.abismoInicio();
     // ── condición del piso (azar) ──
     if (this.kind !== 'boss' && Math.random() < CONDITION_CHANCE) this.applyCondition(Phaser.Utils.Array.GetRandom(CONDITIONS));
@@ -880,6 +898,10 @@ export class CombatScene extends Phaser.Scene {
     if (i.summon) r.d += `\nInvocará: ${ENEMIES[i.summon]?.name ?? i.summon} (si hay lugar).`;
     if (i.shieldAll) r.d += `\nDará ${i.shieldAll} de Bloqueo a todos sus aliados.`;
     if (i.heal) r.d += `\nSe curará ${i.heal} de vida.`;
+    if (i.healAll) r.d += `\nCurará ${i.healAll} de vida a sus aliados.`;
+    if (i.shieldOthers) r.d += `\nDará ${i.shieldOthers} de Bloqueo a sus aliados.`;
+    if (i.robaErgios) r.d += `\nCada golpe te roba ${i.robaErgios} Ergios.`;
+    if (i.huye) r.d += '\nSe irá del combate con lo que te robó.';
     if (i.drain) r.d += `\nTe robará ${i.drain} J para tu siguiente turno.`;
     if (i.confusion) r.d += '\nTe CONFUNDIRÁ: cada carta que robes costará 0–3 J al azar.';
     if (i.aturde) r.d += '\nGOLPE ATURDIDOR: si te hace daño (no lo bloqueas completo), PIERDES tu siguiente turno.';
@@ -916,7 +938,9 @@ export class CombatScene extends Phaser.Scene {
         if (ii.add) { ev.intentC.add(icon(this, ex, 0, 'i_fog', 3)); ex += 30; }
         if (ii.summon) { ev.intentC.add(icon(this, ex, 0, 'i_skull', 3)); ex += 30; }
         if (ii.shieldAll) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3)); ex += 30; }
-        if (ii.heal) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3)); ex += 30; }
+        if (ii.heal || ii.healAll) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3)); ex += 30; }
+        if (ii.shieldOthers) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3)); ex += 30; }
+        if (ii.robaErgios || ii.huye) { ev.intentC.add(icon(this, ex, 0, 'i_coin', 3)); ex += 30; }
         if (ii.drain) { ev.intentC.add(icon(this, ex, 0, 'i_bolt', 3)); ex += 30; }
         if (ii.confusion) { ev.intentC.add(icon(this, ex, 0, 'i_ojo', 3).setTint(0xffa040)); ex += 30; }
         if (ii.aturde) { ev.intentC.add(icon(this, ex, 0, 'i_stun', 3).setTint(0xffd040)); ex += 30; }
@@ -1236,6 +1260,7 @@ export class CombatScene extends Phaser.Scene {
     const tv = boonLevel('co_travail');
     if (tv && this.attacksTurn) add(tv * this.attacksTurn, 'Travail');
     if (this.has('ariete') && !this.arieteUsed) add(8, 'Ariete');
+    if (boonLevel('ga_ultima') && Game.run!.hp < Game.run!.maxHp * 0.3) add(4 * boonLevel('ga_ultima'), 'Última Noche');
     if (this.has('contador') && ((Game.run!.revs ?? 0) + 1) % 10 === 0) por(2, 'Contador de Revoluciones');
     add(this.derivadaBono, 'Derivada');
     if (this.calcBolsillo !== 1) por(this.calcBolsillo, 'Calculadora de Bolsillo');
@@ -1737,6 +1762,19 @@ export class CombatScene extends Phaser.Scene {
     }
     if (def.type === 'Ataque') this.firstAttack = true;
     if (def.type === 'Poder') this.poderes++;
+    // v0.70 · Galois: Teoría de Grupos
+    const nt = (this.tiposTurno.get(def.type) ?? 0) + 1;
+    this.tiposTurno.set(def.type, nt);
+    const gg = boonLevel('ga_grupo');
+    if (gg && nt === 3) {
+      this.energy += 1;
+      if (gg >= 2) this.drawCards(1);
+      this.calc(`Teoría de Grupos (Galois): 3 cartas de ${def.type} → +1 J${gg >= 2 ? ' y robas 1' : ''}`);
+    }
+    if (def.type === 'Ataque') {
+      const mp = boonLevel('mj_particula');
+      if (mp) { this.block += mp + 1; this.floatText(this.heroX, 220, `+${mp + 1} 🛡`, CSS.block); }
+    }
     if (def.voz?.jugar) this.hablar(def.name.replace(/^(El|La) /, ''), Phaser.Utils.Array.GetRandom(def.voz.jugar), this.heroX + 40, 170);
     if (def.type === 'Habilidad' && this.radianes) { this.radianes = false; this.calc('Revisas el modo de tu calculadora: DEG otra vez. Tus Ataques vuelven a la normalidad'); this.floatText(this.heroX, 200, 'DEG ✓', CSS.green); }
     // Curie · Polonio: los ataques pegan más
@@ -1768,6 +1806,8 @@ export class CombatScene extends Phaser.Scene {
       }
       this.attacksTurn++;
       if (this.attacksTurn >= 3) this.mostrarCombo(this.attacksTurn); // v0.68
+      const gu = boonLevel('ga_ultima');
+      if (gu && Game.run!.hp < Game.run!.maxHp * 0.3) { this.polonio += 4 * gu; this.calc(`La Última Noche (Galois): +${4 * gu}`); }
       // v0.69 · reliquias de ataque
       if (this.has('ariete') && !this.arieteUsed) {
         this.arieteUsed = true;
@@ -3115,6 +3155,12 @@ export class CombatScene extends Phaser.Scene {
       this.floatText(ev.baseX, 110, '¡Gana masa! Umbral 18 N', '#e0a070');
       this.calc('El Coloso absorbe piedra: más masa → necesitas más fuerza para detenerlo.');
     }
+    if (st.def.id === 'cerroSilla' && !st.phase2 && st.hp <= st.maxHp / 2 && st.hp > 0) {
+      st.phase2 = true;
+      this.floatText(ev.baseX, 110, '¡Se levanta de la silla!', '#c8e0a0');
+      this.calc('El Cerro de la Silla se levanta: ya no se protege, ahora pega con todo su peso.');
+      this.cameras.main.shake(400, 0.012);
+    }
     if (st.def.id === 'bruja' && !st.phase2 && st.hp <= st.maxHp / 2 && st.hp > 0) {
       st.phase2 = true;
       this.floatText(ev.baseX, 110, 'μ máximo: sus golpes crecen', '#9bf07a');
@@ -3307,6 +3353,13 @@ export class CombatScene extends Phaser.Scene {
   private async killEnemy(ev: EnemyView) {
     if (ev.dead) return;
     ev.dead = true;
+    if (ev.st.def.id === 'babosaTrilliza') this.trillizasCaidas.push(ev.baseX);
+    if (ev.st.robado) {
+      addErgios(ev.st.robado);
+      this.calc(`${ev.st.def.name} suelta lo que robó: +${ev.st.robado} Ergios`);
+      this.floatText(ev.baseX, 150, `+${ev.st.robado} Ergios`, CSS.gold);
+      ev.st.robado = 0;
+    }
     {
       const run = Game.run!;
       const tib = this.diente('tiburon');
@@ -3402,6 +3455,14 @@ export class CombatScene extends Phaser.Scene {
       audio.sfx('block');
       return;
     }
+    if (from && this.desaparece > 0 && dmg > 0) {
+      this.desaparece--;
+      this.calc(`Desaparecer (Majorana): el golpe de ${from.st.def.name} no te encuentra`);
+      this.floatText(this.heroX, 200, '¿Dónde está?', '#b8b0d8');
+      this.tweens.add({ targets: this.hero, alpha: 0.15, duration: 160, yoyo: true });
+      audio.sfx('block');
+      return;
+    }
     // Coriolis · Efecto Coriolis: el primer golpe de cada turno enemigo se desvía
     const cd = boonLevel('co_desvio');
     if (from && cd && !this.desvioUsed && dmg > 0) {
@@ -3432,6 +3493,14 @@ export class CombatScene extends Phaser.Scene {
     }
     const antesHp = run.hp;
     run.hp -= real;
+    const gin = boonLevel('go_incompleto'); // v0.70 · Gödel
+    if (gin && !this.godelUsado && run.hp > 0 && run.hp < run.maxHp / 2 && antesHp >= run.maxHp / 2) {
+      this.godelUsado = true;
+      this.energy += gin;
+      this.drawCards(gin + 1);
+      this.calc(`Incompletitud (Gödel): hay más de lo que se puede probar → robas ${gin + 1} y +${gin} J`);
+      this.refreshPlayer();
+    }
     const l3 = boonLevel('as_ley3');
     if (l3 && !this.ley3 && run.hp > 0 && run.hp < run.maxHp / 2 && antesHp >= run.maxHp / 2) {
       this.ley3 = true;
@@ -3565,6 +3634,7 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.carry) this.calc(`${this.pacto('volante') ? 'Pacto del Volante' : this.has('volante') ? 'Volante' : 'Simetría en el Tiempo (Noether)'}: conservas ${this.carry} J`);
     this.carry = 0;
+    this.tiposTurno.clear();
     this.attacksTurn = 0;
     this.comboT?.destroy(); // v0.68 · el combo se reinicia cada turno
     this.comboT = undefined;
@@ -3973,6 +4043,25 @@ export class CombatScene extends Phaser.Scene {
       await this.hurtPlayer(d, null);
       if (Game.run!.hp <= 0 && (await this.dies('tu propio reflejo'))) return;
     }
+    // v0.70 · las Babosas Trillizas reviven si alguna sigue viva
+    if (this.trillizasCaidas.length) {
+      if (this.alive().some((e) => e.st.def.id === 'babosaTrilliza')) {
+        for (const x0 of this.trillizasCaidas) {
+          const x = this.freeX(x0);
+          if (x === null) continue;
+          const st = spawn('babosaTrilliza');
+          this.addEnemy(st, x);
+          st.hp = Math.max(1, Math.round(st.maxHp / 2));
+          const nv = this.enemies[this.enemies.length - 1];
+          this.refreshEnemy(nv);
+          this.burst(x, 260, 0xb48ad0, 24);
+          this.floatText(x, 190, '¡Revive!', '#d8b0ff');
+        }
+        this.calc('Babosas Trillizas: sus hermanas las reviven con la mitad de vida (mátalas a las tres en el mismo turno)');
+        await this.wait(500);
+      }
+      this.trillizasCaidas = [];
+    }
     for (const ev of this.alive()) {
       const st = ev.st;
       st.block = 0;
@@ -4004,6 +4093,20 @@ export class CombatScene extends Phaser.Scene {
         await this.wait(500);
       } else {
         await new Promise<void>((r) => this.tweens.add({ targets: ev.root, x: ev.baseX - 50, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => r() }));
+        if (it.kind === 'buff' && it.huye) {
+          // v0.70 · el Ratero se va con lo que robó
+          this.calc(`${st.def.name} huye${st.robado ? ` con ${st.robado} Ergios tuyos` : ''}`);
+          this.floatText(ev.baseX, 160, '¡Huye!', '#e0c060');
+          ev.dead = true;
+          ev.intentC.removeAll(true);
+          ev.statusC.removeAll(true);
+          ev.blockT.setText('');
+          this.tweens.add({ targets: ev.root, x: ev.baseX + 400, alpha: 0, duration: 600 });
+          this.tweens.add({ targets: [ev.hp.g, ev.hp.t, ev.nameT], alpha: 0, duration: 400 });
+          await this.wait(600);
+          if (await this.checkEnd()) return;
+          continue;
+        }
         if (it.kind === 'block') {
           st.block += it.block;
           if (it.charge) {
@@ -4031,6 +4134,16 @@ export class CombatScene extends Phaser.Scene {
             await this.wait(140);
           }
           this.perforaGolpe = false;
+          if (it.robaErgios && Game.run!.hp > 0) {
+            const r = Math.min(Game.run!.ergios, it.robaErgios);
+            if (r > 0) {
+              Game.run!.ergios -= r;
+              st.robado = (st.robado ?? 0) + r;
+              this.calc(`${st.def.name} te roba ${r} Ergios (lleva ${st.robado})`);
+              this.floatText(this.heroX, 170, `−${r} Ergios`, '#e0c060');
+              this.hud.refresh();
+            }
+          }
           if (it.release) st.carga = 0;
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
@@ -4056,6 +4169,19 @@ export class CombatScene extends Phaser.Scene {
         if (it.shieldAll) {
           for (const a of this.alive()) { a.st.block += it.shieldAll; this.refreshEnemy(a); }
           this.calc(`${st.def.name}: +${it.shieldAll} de Bloqueo a todos sus aliados`);
+        }
+        if (it.healAll || it.shieldOthers) {
+          const otros = this.alive().filter((a) => a !== ev);
+          if (!otros.length) {
+            this.calc(`${st.def.name} se quedó solo: golpea desesperado (5)`);
+            await this.hurtPlayer(5, ev);
+          }
+          for (const a of otros) {
+            if (it.healAll) { const c = Math.min(it.healAll, a.st.maxHp - a.st.hp); if (c > 0) { a.st.hp += c; this.floatText(a.baseX, 180, `+${c}`, CSS.green); } }
+            if (it.shieldOthers) a.st.block += it.shieldOthers;
+            this.refreshEnemy(a);
+          }
+          if (otros.length) this.calc(`${st.def.name}: ${it.healAll ? `cura ${it.healAll} y ` : ''}da ${it.shieldOthers ?? 0} de Bloqueo a sus aliados`);
         }
         if (it.heal) {
           st.hp = Math.min(st.maxHp, st.hp + it.heal);
@@ -4157,6 +4283,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.kind === 'boss' && this.acto === 3) sumar(run, 'Victoria', PUNTOS.victoria);
     if (this.kind === 'boss' && this.acto === 4) sumar(run, 'AM derrotado', PUNTOS.victoria * 2);
     if (this.kind === 'boss' && this.acto === 5) sumar(run, 'Geómetra derrotado', PUNTOS.victoria);
+    const gs = boonLevel('ga_simetria'); // v0.70 · Galois
+    if (gs && run.hp >= this.hpIni) { addEntropia(-5 * gs); this.calc(`Simetría de las Raíces (Galois): ganaste sin perder vida → +${5 * gs} de Cordura`); }
     const qc = boonLevel('qn_calma'); // Newton 1693: la calma después de la tormenta
     if (qc) { addEntropia(-3 * qc); this.calc(`Calma tras la tormenta (Newton): +${3 * qc} de Cordura`); }
     if (this.kind === 'elite') run.stats.elites++;

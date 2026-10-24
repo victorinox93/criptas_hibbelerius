@@ -334,6 +334,52 @@ export const BOONS: Record<string, BoonDef> = {
     text: ['Al llegar al Quiebre no aparece la Sombra: tu Locura baja a 50.', 'Al llegar al Quiebre no aparece la Sombra: tu Locura baja a 30.'],
     lore: 'Su fórmula S = k·log W está grabada en su tumba en Viena.',
   },
+  // v0.70 · tres Ecos Quebrados más
+  mj_desaparece: {
+    id: 'mj_desaparece', figure: 'majorana', name: 'Desaparecer', icon: 'i_fog',
+    text: ['El primer golpe que recibes en cada combate no te encuentra.', 'Los 2 primeros golpes que recibes en cada combate no te encuentran.'],
+    lore: 'En marzo de 1938 Majorana tomó un barco de Palermo a Nápoles… y nunca se le volvió a ver.',
+  },
+  mj_particula: {
+    id: 'mj_particula', figure: 'majorana', name: 'Su Propia Antipartícula', icon: 'i_reflect',
+    text: ['Cada Ataque que juegas te da 2 de Bloqueo.', 'Cada Ataque que juegas te da 3 de Bloqueo.'],
+    lore: 'Propuso partículas que son su propia antipartícula: atacar y defender a la vez.',
+  },
+  mj_silencio: {
+    id: 'mj_silencio', figure: 'majorana', name: 'Retiro en Silencio', icon: 'i_heart',
+    text: ['Al empezar cada combate recuperas 2 de Cordura.', 'Al empezar cada combate recuperas 4 de Cordura.'],
+    lore: 'Pasó años casi sin salir de casa. A veces el silencio es descanso, no derrota.',
+  },
+  go_incompleto: {
+    id: 'go_incompleto', figure: 'godel', name: 'Incompletitud', icon: 'i_book',
+    text: ['La primera vez en cada combate que tu vida baja de la mitad, robas 2 cartas y +1 J.', 'La primera vez en cada combate que tu vida baja de la mitad, robas 3 cartas y +2 J.'],
+    lore: 'Gödel demostró que en todo sistema lógico hay verdades que no se pueden probar dentro de él.',
+  },
+  go_indecidible: {
+    id: 'go_indecidible', figure: 'godel', name: 'Lo Indecidible', icon: 'i_angle',
+    text: ['Los enemigos (no jefes) empiezan con 10 % menos vida.', 'Los enemigos (no jefes) empiezan con 20 % menos vida.'],
+    lore: 'Hay preguntas que ni el enemigo puede responder: ¿está vivo o no? Dudan… y se debilitan.',
+  },
+  go_rigor: {
+    id: 'go_rigor', figure: 'godel', name: 'Rigor Formal', icon: 'i_rune',
+    text: ['Las preguntas falladas te quitan la mitad de Cordura.', 'Las preguntas falladas no te quitan Cordura.'],
+    lore: 'Revisaba cada paso dos, tres, diez veces. El rigor también protege.',
+  },
+  ga_grupo: {
+    id: 'ga_grupo', figure: 'galois', name: 'Teoría de Grupos', icon: 'i_rune',
+    text: ['La 3.ª carta del mismo tipo que juegas en un turno te da +1 J.', 'La 3.ª carta del mismo tipo que juegas en un turno te da +1 J y robas 1 carta.'],
+    lore: 'Galois estudió las simetrías de las ecuaciones agrupándolas: nació la teoría de grupos.',
+  },
+  ga_ultima: {
+    id: 'ga_ultima', figure: 'galois', name: 'La Última Noche', icon: 'i_fire',
+    text: ['Con menos de 30 % de vida, tus ataques hacen +4.', 'Con menos de 30 % de vida, tus ataques hacen +8.'],
+    lore: 'La noche antes de su duelo escribió todo lo que sabía. Tenía 20 años.',
+  },
+  ga_simetria: {
+    id: 'ga_simetria', figure: 'galois', name: 'Simetría de las Raíces', icon: 'i_heart',
+    text: ['Si ganas un combate sin perder vida, recuperas 5 de Cordura.', 'Si ganas un combate sin perder vida, recuperas 10 de Cordura.'],
+    lore: 'Una ecuación es simétrica cuando puedes intercambiar sus raíces sin que nada cambie.',
+  },
 };
 
 /** Dones con efecto secundario de radiación (se marcan en verde en el santuario) */
@@ -474,6 +520,28 @@ export const FIGURES: FigureDef[] = [
     farewell: '«Poco después de mi muerte, Einstein y Perrin demostraron que yo tenía razón. Habla con alguien cuando el peso sea mucho.»',
     concepts: ['Momento de inercia', 'Ejes paralelos'],
     boons: ['bo_entropia', 'bo_equiparticion', 'bo_lapida'],
+  },
+  // v0.70
+  {
+    id: 'majorana', name: 'Ettore Majorana', years: '1906–¿1938?', epithet: 'El Físico que Desapareció', sprite: 'fig_majorana', act: 5,
+    intro: '«Fermi decía que yo era de los genios como Galileo y Newton. Luego me fui… y nadie supo a dónde.\nResuelve esto antes de que me vuelva a ir.»',
+    farewell: '«No sé si desaparecer fue escapar o descansar. Tú no tienes que desaparecer para descansar: pide ayuda.»',
+    concepts: ['Momento de inercia', 'Radio de giro'],
+    boons: ['mj_desaparece', 'mj_particula', 'mj_silencio'],
+  },
+  {
+    id: 'godel', name: 'Kurt Gödel', years: '1906–1978', epithet: 'El Lógico Incompleto', sprite: 'fig_godel', act: 5,
+    intro: '«Demostré que ningún sistema puede probarlo todo de sí mismo. A veces mi mente tampoco podía: desconfiaba de todos.\nAyúdame con este problema; es más sencillo que la lógica.»',
+    farewell: '«Einstein caminaba conmigo a diario sólo para platicar. Una caminata con un amigo vale más que un teorema.»',
+    concepts: ['Centroide', 'Centro de masa'],
+    boons: ['go_incompleto', 'go_indecidible', 'go_rigor'],
+  },
+  {
+    id: 'galois', name: 'Évariste Galois', years: '1811–1832', epithet: 'El Joven de la Última Noche', sprite: 'fig_galois', act: 5,
+    intro: '«Me rechazaron mis trabajos tres veces. Estuve en prisión, solo, muy deprimido.\nTenía 20 años y prisa por que alguien me entendiera. ¿Me entiendes tú?»',
+    farewell: '«Mis ideas tardaron 14 años en publicarse, pero llegaron. Las tuyas también llegarán: no estás solo.»',
+    concepts: ['Ejes paralelos', 'Momento de inercia'],
+    boons: ['ga_grupo', 'ga_ultima', 'ga_simetria'],
   },
 ];
 
