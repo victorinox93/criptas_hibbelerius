@@ -18,6 +18,10 @@ interface IntentExtras {
   vertigo?: number; // El Abismo: robas N cartas menos en tu siguiente turno
   perfora?: boolean; // v0.51 · su golpe atraviesa tu Bloqueo (Sabueso de Tíndalos)
   inunda?: boolean; // v0.51 · antes del golpe pierdes todo tu Bloqueo (Bokrug)
+  healAll?: number; // v0.70 · cura a sus aliados (el Escudero)
+  shieldOthers?: number; // v0.70 · da Bloqueo a sus aliados, no a sí mismo
+  robaErgios?: number; // v0.70 · cada golpe te roba Ergios (el Ratero)
+  huye?: boolean; // v0.70 · se va del combate con lo que robó
   radianes?: boolean; // v0.57 · cambia tu calculadora a RAD: tus Ataques ×0.6 hasta que juegues una Habilidad
 
 }
@@ -48,6 +52,7 @@ export interface EnemyState {
   impulso: number; // daño de un Impulso Sostenido pendiente
   impulsoLeft: number; // turnos que le quedan a ese impulso
   imparableT?: number; // v0.49 · turnos que le quedan de IMPARABLE (tras ser detenido)
+  robado?: number; // v0.70 · Ergios que te robó (el Ratero los devuelve si lo vences)
   revivido?: boolean; // v0.69 · ya usó su segunda vida
   recibido?: number; // daño total que ha recibido (los autómatas integradores lo usan)
 }
@@ -281,6 +286,27 @@ export const ENEMIES: Record<string, EnemyDef> = {
       return { kind: 'block', block: 7, shieldAll: 4, label: 'Escudo de huesos' };
     },
   },
+  // ── v0.70 · enemigos con mecánicas nuevas ──
+  escudero: {
+    id: 'escudero', name: 'Escudero de Huesos', sprite: 'escudero', scale: 5, hp: [22, 26], mass: 45,
+    desc: 'No ataca: cura y protege a su guerrero. Si lo dejas para el final, el combate se alarga… pero si va primero, su guerrero queda solo.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'buff', healAll: 7, shieldOthers: 6, label: 'Vendar y cubrir' }
+      : { kind: 'buff', shieldOthers: 10, label: 'Alzar el escudo' }),
+  },
+  babosaTrilliza: {
+    id: 'babosaTrilliza', name: 'Babosa Trilliza', sprite: 'babosaTrilliza', scale: 4, hp: [15, 17], mass: 6,
+    desc: 'Son tres y se cuidan entre ellas: si al final de tu turno queda alguna viva, las que mataste REVIVEN con la mitad de su vida. Hay que acabar con las tres en el mismo turno.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 5 } : { kind: 'attack', dmg: 3, friccion: 1, label: 'Babear' }),
+  },
+  ratero: {
+    id: 'ratero', name: 'Ratero de Ergios', sprite: 'ratero', scale: 5, hp: [30, 34], mass: 50,
+    desc: 'Cada golpe suyo te roba Ergios. Al cuarto turno huye con todo lo que se llevó. Si lo vences antes, recuperas lo robado.',
+    next: (e) => {
+      if (e.turn >= 3) return { kind: 'buff', huye: true, label: '¡Huir!' };
+      return e.turn === 2 ? { kind: 'block', block: 12, label: 'Preparar la huida' } : { kind: 'attack', dmg: 6, robaErgios: 15, label: 'Arrebatar' };
+    },
+  },
   armaduraPuas: {
     id: 'armaduraPuas', name: 'Armadura de Púas', sprite: 'armaduraPuas', scale: 5, hp: [56, 60], mass: 10, umbral: 12, thorns: 3,
     desc: 'Cubierta de púas: cada golpe que le das te regresa 3 de daño (3ª ley: tú también recibes la fuerza). Mejor pocos golpes fuertes que muchos débiles.',
@@ -314,7 +340,28 @@ export const ENEMIES: Record<string, EnemyDef> = {
       return { kind: 'attack', dmg: 14 + 2 * e.inercia, label: 'Descarga' };
     },
   },
+  // v0.70 · Monterrey: el Horno Alto No. 3 de Fundidora
+  hornoAlto: {
+    id: 'hornoAlto', name: 'Horno Alto de Fundidora', sprite: 'hornoAlto', scale: 7, hp: [92, 98], mass: 9000, umbral: 18, act: 2,
+    desc: 'El viejo Horno Alto No. 3 despertó. Aviva el fuego (gana carga) y suelta una colada de arrabio: más carga, más daño y más Calor. DETENLO antes de la colada.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 8, calor: 3, label: 'Escoria ardiente' };
+        case 1: return { kind: 'block', block: 12, charge: true, calor: 1, label: 'Avivar el horno' };
+        default: return { kind: 'attack', dmg: 12 + 6 * e.carga + 2 * e.inercia, calor: 2 + e.carga, release: true, label: 'Colada de arrabio' };
+      }
+    },
+  },
   // ── Acto III ──
+  // v0.70 · Monterrey: el Cerro de la Silla
+  cerroSilla: {
+    id: 'cerroSilla', name: 'Espíritu del Cerro de la Silla', sprite: 'cerroSilla', scale: 7, hp: [128, 136], mass: 1e12, umbral: 26, act: 3,
+    desc: 'La montaña que vigila Monterrey. Masa enorme: necesitas MUCHA fuerza para detenerlo. Sentado en su silla se protege; a la mitad de su vida se levanta y pega con todo.',
+    next: (e) => {
+      if (e.phase2) return e.turn % 2 === 0 ? { kind: 'attack', dmg: 9, hits: 3, label: 'Derrumbe' } : { kind: 'attack', dmg: 24 + 3 * e.inercia, label: 'Peso de la montaña' };
+      return e.turn % 3 === 2 ? { kind: 'attack', dmg: 18 + 2 * e.inercia, label: 'Alud' } : { kind: 'block', block: 16, dmg: 6, label: 'Sentado en su silla' };
+    },
+  },
   bibliotecario: {
     id: 'bibliotecario', name: 'Bibliotecario Espectral', sprite: 'bibliotecario', scale: 5, hp: [36, 40], mass: 55, act: 3,
     desc: 'Invoca tomos voladores y encuaderna a sus aliados con Bloqueo. Silencio en la biblioteca.',
@@ -806,7 +853,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
 export const ENCOUNTERS = {
   easy: [['skeleton'], ['bat', 'bat'], ['slime'], ['pendulo']],
   normal: [['skeleton', 'bat'], ['slime', 'bat'], ['skeleton', 'skeleton'], ['slime', 'skeleton'], ['gargola'], ['pendulo', 'bat'], ['gargola', 'skeleton'], ['pendulo'],
-    ['babosaMadre'], ['nigromante', 'skeleton'], ['babosaMadre', 'bat']],
+    ['babosaMadre'], ['nigromante', 'skeleton'], ['babosaMadre', 'bat'],
+    ['skeleton', 'escudero'], ['gargola', 'escudero'], ['babosaTrilliza', 'babosaTrilliza', 'babosaTrilliza'], ['ratero'], ['ratero', 'bat']],
   elite: [['inertKnight'], ['armaduraPuas']],
   boss: [['colossus']],
 };
@@ -814,8 +862,8 @@ export const ENCOUNTERS = {
 export const ENCOUNTERS_2 = {
   easy: [['brea'], ['anima', 'anima'], ['muelle'], ['minero']],
   normal: [['brea', 'anima'], ['muelle', 'anima'], ['minero', 'brea'], ['minero', 'anima'], ['muelle', 'minero'], ['brea', 'brea'],
-    ['mercurio', 'anima'], ['colmena'], ['mercurio']],
-  elite: [['volante'], ['golem'], ['sifon']],
+    ['mercurio', 'anima'], ['colmena'], ['mercurio'], ['ratero', 'anima'], ['minero', 'escudero']],
+  elite: [['volante'], ['golem'], ['sifon'], ['hornoAlto']],
   boss: [['bruja']],
 };
 
@@ -823,7 +871,7 @@ export const ENCOUNTERS_3 = {
   easy: [['bala'], ['tomo', 'tomo'], ['cohete'], ['granada']],
   normal: [['bala', 'tomo'], ['cohete', 'tomo'], ['granada', 'bala'], ['granada', 'cohete'], ['tomo', 'tomo', 'tomo'], ['bala', 'bala'],
     ['bibliotecario', 'tomo'], ['atomo', 'bala'], ['atomo']],
-  elite: [['ariete'], ['centinela'], ['indice', 'tomo']],
+  elite: [['ariete'], ['centinela'], ['indice', 'tomo'], ['cerroSilla']],
   boss: [['hibbelerius']],
 };
 

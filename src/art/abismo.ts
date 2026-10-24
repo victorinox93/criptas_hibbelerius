@@ -40,6 +40,30 @@ const FIG_ABISMO: Record<string, { rows: string[]; ov: Record<string, string> }>
     ]),
     ov: { h: '#4a3a2e', w: '#6a5a48', s: '#e0bea0', g: '#1a1a1a', G: '#9ab8c8', c: '#22222a' },
   },
+  // v0.70 · Ettore Majorana: pelo negro peinado hacia atrás, cara delgada, traje oscuro (se desvanece por abajo)
+  fig_majorana: {
+    rows: mirror([
+      '........', '....hhhh', '...hhhhh', '..hhssss', '..hsssss', '..hskkss', '..hsssss', '...sssss',
+      '...sqqss', '....ssss', '.....sss', '..cccWWt', '.ccccWWt', 'ccccccWt', 'f.cfcc.t', '.f..f.c.', 'f...f...',
+    ]),
+    ov: { h: '#141210', s: '#d8b898', q: '#a88a70', k: '#1a1a20', c: '#24242c', W: '#e8e4dc', t: '#3a2a4a', f: '#24242c' },
+  },
+  // Kurt Gödel: entradas en la frente, lentes redondos, muy delgado, abrigo grueso
+  fig_godel: {
+    rows: mirror([
+      '........', '........', '.....hhh', '....ssss', '...hssss', '...hgGGg', '...ssggs', '...sssss',
+      '....ssss', '....sqss', '.....sss', '..ooooWW', '.oooooWt', 'ooooooWt', 'oooooott', 'oooooooo', 'oooooooo',
+    ]),
+    ov: { h: '#3a3028', s: '#e4ccb0', q: '#b8987e', g: '#1a1a1a', G: '#b8d0d8', o: '#4a4038', W: '#e8e4dc', t: '#2a2a3a' },
+  },
+  // Évariste Galois: muy joven, pelo rizado oscuro, cuello alto y corbatín de 1830
+  fig_galois: {
+    rows: mirror([
+      '..h.h...', '.hhhhhh.', '.hhhhhhh', 'hhhhssss', 'hhhsssss', '.hhskkss', '.hhsssss', '..hsssss',
+      '...sssss', '....ssss', '....WWWW', '..cWWrrr', '.ccWWrrr', 'cccccWWW', 'cccccccW', 'cccccccc', 'cccccccc',
+    ]),
+    ov: { h: '#2a1a12', s: '#ecd0b4', k: '#3a2a20', W: '#eeeae0', r: '#8a1a2a', c: '#2a3a5a' },
+  },
   // v0.43 · El Astrónomo Aficionado de Providence (H. P. Lovecraft): cara larga y pálida,
   // mandíbula grande, pelo corto con raya, cuello alto y corbata
   fig_lovecraft: {

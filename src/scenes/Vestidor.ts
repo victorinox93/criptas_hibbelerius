@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { comprasVisibles, probador, setProbador } from '../ui/probador';
+import { isAdmin } from '../state';
 import { enqueue } from '../api';
 import { ARMORS, CAPES, Cosmetico, CSS, UI, VISORS } from '../art/palette';
 import { audio } from '../audio';
@@ -45,13 +47,19 @@ export class VestidorScene extends Phaser.Scene {
     this.tabs = [...PARTES.map((p) => p.nombre), 'Accesorios', 'Abismo', 'Compañero'].map((_, i) => button(this, W / 2 + (i - 2.5) * 152, 98, 146, 32, '', () => { this.tab = i; this.pag = 0; this.draw(); }, { size: 15 }));
     this.events.once('shutdown', () => this.pararAnimaciones());
     button(this, W / 2, 516, 200, 36, 'Volver', () => fadeTo(this, 'Menu'), { size: 21 });
+    // v0.70 · Probador del profe: todo desbloqueado para ver cómo se ve (no se guarda)
+    if (isAdmin()) {
+      const pb = button(this, 104, 516, 190, 32, '', () => { setProbador(!probador()); pintaPb(); this.draw(); }, { size: 15, color: 0x9a4040 });
+      const pintaPb = () => pb.label.setText(probador() ? '🔓 Probador: ON' : '🔒 Probador: OFF');
+      pintaPb();
+    }
     this.draw();
   }
 
   /** v0.49 · Todo lo exclusivo del Abismo (capas, armaduras, ojos y accesorios ganados con logros) */
   private itemsAbismo() {
     const nivel = nivelActual();
-    const compras = Game.codex.compras ?? [];
+    const compras = comprasVisibles();
     type It = { nombre: string; tiene: boolean; como: string; parte: Parte | 'acc'; idx?: number; acc?: (typeof ACCESORIOS)[number] };
     const out: It[] = [];
     PARTES.forEach((p) => p.lista.forEach((c, i) => {
@@ -146,7 +154,7 @@ export class VestidorScene extends Phaser.Scene {
   private drawAcc() {
     const prof = Game.profile!;
     const av = prof.avatar!;
-    const compras = Game.codex.compras ?? [];
+    const compras = comprasVisibles();
     const porPag = COLS * FILAS;
     const pags = Math.ceil(ACCESORIOS.length / porPag);
     ACCESORIOS.slice(this.pag * porPag, (this.pag + 1) * porPag).forEach((a, k) => {
@@ -208,7 +216,7 @@ export class VestidorScene extends Phaser.Scene {
       const n = p.lista.filter((c) => !bloqueado(c, nivel)).length;
       this.tabs[i].label.setText(`${p.nombre} ${n}/${p.lista.length}`).setColor(i === this.tab ? CSS.gold : CSS.dim);
     });
-    const compras = Game.codex.compras ?? [];
+    const compras = comprasVisibles();
     this.tabs[3].label.setText(`Accesorios ${ACCESORIOS.filter((a) => compras.includes(a.id)).length}/${ACCESORIOS.length}`).setColor(this.tab === 3 ? CSS.gold : CSS.dim);
     const items = this.itemsAbismo();
     this.tabs[4].label.setText(`Abismo ◈ ${items.filter((x) => x.tiene).length}/${items.length}`).setColor(this.tab === 4 ? '#c8a8ff' : CSS.dim);

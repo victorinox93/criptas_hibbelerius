@@ -292,9 +292,10 @@ export class RuneScene extends Phaser.Scene {
     } else {
       run.ultimoFallo = p.concept; // se escribe en tu lápida si caes
       if (run.modo === 'abismo' && !this.amUsado) {
-        const mal = CORDURA.runaMal * (1 + nivelDiente(run.dientes, 'lombriz')); // ☣ Lombriz de Yuggoth: el doble
-        addEntropia(mal);
-        this.flash(`−${mal} de Cordura`, '#c88aff', 132);
+        const rg = boonLevel('go_rigor'); // v0.70 · Gödel: Rigor Formal
+        const mal = rg >= 2 ? 0 : Math.round(CORDURA.runaMal * (1 + nivelDiente(run.dientes, 'lombriz')) / (rg ? 2 : 1)); // ☣ Lombriz de Yuggoth: el doble
+        if (mal) addEntropia(mal);
+        this.flash(mal ? `−${mal} de Cordura${rg ? ' (Rigor Formal: la mitad)' : ''}` : 'Rigor Formal (Gödel): no pierdes Cordura', '#c88aff', 132);
       }
       // Actualización Bayesiana (Bayes): un error no borra la evidencia acumulada
       if (!this.amUsado && !boonLevel('by_actualiza')) run.stats.racha = 0;

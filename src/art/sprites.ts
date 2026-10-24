@@ -888,10 +888,11 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   const skin = SKINS[av.piel ?? 1] ?? SKINS[1];
   const mano = av.mano && ACC[av.mano] ? av.mano : undefined;
   // el Mecha reemplaza todo el cuerpo (conserva el color de capa y de visor del alumno)
-  const rows = armor.mecha ? MECHA_ROWS : heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.escudo && ACC[av.escudo] && (av.clase ?? 'caballero') === 'caballero' ? 0 : av.extra, figura: av.figura });
+  const rows0 = armor.mecha ? MECHA_ROWS : heroMatrix({ clase: av.clase, helm: av.helm, arma: mano ? -1 : av.arma, extra: av.escudo && ACC[av.escudo] && (av.clase ?? 'caballero') === 'caballero' ? 0 : av.extra, figura: av.figura });
+  const rows = armor.forma && !armor.mecha ? formaArmadura(rows0, armor.forma) : rows0;
   const ov: Record<string, string> = armor.mecha
     ? { ...MECHA_PAL, c: cape.c, C: cape.C, E: visor }
-    : { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q };
+    : { c: cape.c, C: cape.C, l: armor.l, g: armor.g, E: visor, B: visor, s: skin.s, q: skin.q, R: '#a81a1a', L: '#e8ecf4' };
   if ((av.figura ?? 0) > 0 && !armor.mecha) ov.h = CABELLOS[av.figura!] ?? CABELLOS[1];
   // cosméticos holográficos (premio de AM): el tono recorre el arcoíris por pixel y con el tiempo
   const holo: Record<string, [number, number, number]> = {}; // letra → [tono inicial, luminosidad, rango de tono]
@@ -908,11 +909,15 @@ export function makeHeroFromAvatar(scene: Phaser.Scene, av: HeroAvatar, key = 'h
   // v0.56 · «infrarrojo»: valores ≥ 10 (brillo = valor − 10)
   if (cape.infrarrojo) { cosmos.c = 11; cosmos.C = 10.6; }
   if (armor.infrarrojo && !armor.mecha) { cosmos.l = 11.1; cosmos.g = 10.65; }
+  // v0.70 · «fuego»: valores ≥ 20 (brillo = valor − 20) y llamas alrededor del héroe
+  if (cape.fuego) { cosmos.c = 21; cosmos.C = 20.6; }
+  if (armor.fuego && !armor.mecha) { cosmos.l = 21.1; cosmos.g = 20.65; }
+  const llamas = !!(cape.fuego || (armor.fuego && !armor.mecha));
   const prev = (scene as unknown as Record<string, Phaser.Time.TimerEvent | undefined>)[`__holo_${key}`];
   prev?.remove();
   if (!Object.keys(holo).length && !Object.keys(cosmos).length) { makeTexture(scene, key, rows, ov); return pintarAccesorios(scene, key, av); }
   const t0 = performance.now();
-  const draw = () => { makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8, cosmos); pintarAccesorios(scene, key, av); };
+  const draw = () => { makeTextureHolo(scene, key, rows, ov, holo, (performance.now() - t0) / 8, cosmos, llamas); pintarAccesorios(scene, key, av); };
   draw();
   (scene as unknown as Record<string, Phaser.Time.TimerEvent>)[`__holo_${key}`] = scene.time.addEvent({ delay: 90, loop: true, callback: draw });
 }
@@ -982,6 +987,74 @@ function colorInfrarrojo(x: number, y: number, t: number, brillo: number) {
   return `rgb(${c.map(Math.round).join(',')})`;
 }
 
+/** v0.70 · Color «fuego»: lenguas de fuego que suben (rojo oscuro → naranja → amarillo) */
+function colorFuego(x: number, y: number, t: number, brillo: number) {
+  const tt = t / 12;
+  const n = 0.5 + 0.3 * Math.sin(y * 0.55 + tt * 0.9 + Math.sin(x * 0.7 + tt * 0.3) * 1.5) + 0.2 * Math.sin(x * 1.3 - tt * 0.4);
+  const v = Math.max(0, Math.min(1, n * brillo));
+  const escala = [[70, 6, 0], [170, 30, 0], [240, 100, 10], [255, 170, 30], [255, 235, 110]];
+  const p = v * (escala.length - 1), i = Math.min(escala.length - 2, Math.floor(p)), f = p - i;
+  const c = escala[i].map((a, j) => a + (escala[i + 1][j] - a) * f);
+  return `rgb(${c.map(Math.round).join(',')})`;
+}
+
+/** v0.70 · Formas de armadura: cambian el dibujo (no sólo el color) */
+function formaArmadura(rows: string[], forma: 'malla' | 'gotica' | 'templario' | 'negro'): string[] {
+  const g = rows.map((r) => r.split(''));
+  const at = (x: number, y: number) => g[y]?.[x] ?? '.';
+  const out = g.map((r) => [...r]);
+  for (let y = 0; y < g.length; y++) for (let x = 0; x < g[y].length; x++) {
+    const ch = g[y][x];
+    if (ch !== 'l' && ch !== 'g') continue;
+    if (forma === 'malla') {
+      // anillos entrelazados: un patrón de damero en la parte clara y puntos en la sombra
+      if (ch === 'l' && (x + y) % 2 === 1) out[y][x] = 'g';
+      if (ch === 'g' && x % 2 === 0 && y % 2 === 0) out[y][x] = 'd';
+    } else if (forma === 'gotica') {
+      // placas acanaladas: estrías verticales brillantes
+      if (x % 3 === 0) out[y][x] = ch === 'l' ? 'L' : 'l';
+    } else if (forma === 'negro') {
+      // ribete rojo en los bordes de cada placa
+      if ([at(x + 1, y), at(x - 1, y), at(x, y + 1), at(x, y - 1)].includes('k')) out[y][x] = 'R';
+    } else if (forma === 'templario' && y >= 17 && y <= 34 && x >= 14 && x <= 25) {
+      // sobreveste blanca con la cruz roja
+      out[y][x] = x >= 24 ? 'w' : 'W';
+    }
+  }
+  if (forma === 'templario') {
+    for (let y = 18; y <= 30; y++) for (const x of [19, 20]) if ('Wwy'.includes(out[y]?.[x] ?? '.')) out[y][x] = 'R';
+    for (const y of [21, 22]) for (let x = 15; x <= 24; x++) if ('WwyE'.includes(out[y]?.[x] ?? '.')) out[y][x] = 'R';
+  }
+  return out.map((r) => r.join(''));
+}
+
+/** v0.70 · Llamas alrededor del héroe: lenguas de fuego que salen de los bordes y titilan */
+function pintarLlamas(ctx: CanvasRenderingContext2D, rows: string[], t: number) {
+  const tt = t / 10;
+  const lleno = (x: number, y: number) => (rows[y]?.[x] ?? '.') !== '.';
+  const H = rows.length, Wd = Math.max(...rows.map((r) => r.length));
+  for (let x = 0; x < Wd; x++) {
+    for (let y = 1; y < H; y++) {
+      // borde superior o lateral de la silueta
+      if (!lleno(x, y) || lleno(x, y - 1)) continue;
+      const alto = Math.max(0, Math.round(1.5 + 1.8 * Math.sin(x * 1.7 + tt * 1.1) + Math.sin(x * 0.5 - tt * 0.7)));
+      for (let k = 1; k <= alto; k++) {
+        const yy = y - k;
+        if (yy < 0 || lleno(x, yy)) break;
+        const f = k / (alto + 1);
+        ctx.fillStyle = f < 0.34 ? 'rgba(255,230,110,0.95)' : f < 0.67 ? 'rgba(255,140,20,0.85)' : 'rgba(200,40,0,0.7)';
+        ctx.fillRect(x, yy, 1, 1);
+      }
+    }
+  }
+  // chispas que suben
+  for (let i = 0; i < 6; i++) {
+    const sx = Math.floor(((i * 7919 + Math.floor(tt / 6) * 104729) % Wd));
+    const sy = Math.floor(H - ((tt * 1.5 + i * 13) % H));
+    if (!lleno(sx, sy)) { ctx.fillStyle = 'rgba(255,200,80,0.9)'; ctx.fillRect(sx, sy, 1, 1); }
+  }
+}
+
 /** v0.54 · Color «veterano»: oro incandescente, un destello blanco que barre en diagonal y brasas rojas que titilan */
 function colorVeterano(x: number, y: number, t: number, brillo: number) {
   const tt = t / 20;
@@ -997,14 +1070,14 @@ function colorVeterano(x: number, y: number, t: number, brillo: number) {
 }
 
 /** Como makeTexture, pero las letras de `holo` cambian de tono según su posición y el tiempo (efecto holograma) */
-export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number, number]>, t: number, cosmos: Record<string, number> = {}) {
+export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[], overrides: Record<string, string>, holo: Record<string, [number, number, number]>, t: number, cosmos: Record<string, number> = {}, llamas = false) {
   makeTexture(scene, key, rows, overrides);
   const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
   const ctx = tex.getContext();
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const k = cosmos[row[x]];
-      if (k !== undefined) { ctx.fillStyle = k < 0 ? colorVeterano(x, y, t, -k) : k >= 10 ? colorInfrarrojo(x, y, t, k - 10) : colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
+      if (k !== undefined) { ctx.fillStyle = k < 0 ? colorVeterano(x, y, t, -k) : k >= 20 ? colorFuego(x, y, t, k - 20) : k >= 10 ? colorInfrarrojo(x, y, t, k - 10) : colorCosmico(x, y, t, k); ctx.fillRect(x, y, 1, 1); continue; }
       const h = holo[row[x]];
       if (!h) continue;
       // el tono va y viene dentro de su rango (rango 360 = arcoíris completo)
@@ -1014,6 +1087,7 @@ export function makeTextureHolo(scene: Phaser.Scene, key: string, rows: string[]
       ctx.fillRect(x, y, 1, 1);
     }
   });
+  if (llamas) pintarLlamas(ctx, rows, t);
   tex.refresh();
 }
 export interface HeroAvatar { helm: string; cape: number; armor?: number; visor?: number; clase?: string; arma?: number; extra?: number; piel?: number; figura?: number; cabeza?: string; mano?: string; cara?: string; pies?: string; escudo?: string; mascota?: string }
@@ -1338,6 +1412,18 @@ export function generateAllTextures(scene: Phaser.Scene) {
   makeTexture(scene, 'sifon', SPRITES.anima, { y: '#3ac8c8', o: '#1a4a5a', w: '#b8f0f0', R: '#1a6a6a' });
   makeTexture(scene, 'bibliotecario', NPC, { c: '#3a2a4e', C: '#1e1430', E: '#7fd8ff', s: '#9a8aa8' });
   makeTexture(scene, 'indice', SPRITES.colossus, { g: '#3a2e4a', l: '#6a5a86', o: '#c8a050', y: '#e8c15a', E: '#7fd8ff', d: '#1a1424' });
+  // v0.70 · enemigos nuevos
+  makeTexture(scene, 'babosaTrilliza', SPRITES.slime, { L: '#b48ad0', G: '#6a4a8a', w: '#e8d0ff', F: '#ffe060' });
+  makeTexture(scene, 'escudero', knightMatrix('cresta'), { l: '#c8bca0', g: '#8a806a', c: '#4a3a2a', C: '#2a2018', E: '#9bf07a', y: '#6a8a5a' }, true);
+  makeTexture(scene, 'ratero', NPC, { c: '#3a3a20', C: '#1e1e10', E: '#ffd040', s: '#8a7a5a' });
+  makeTexture(scene, 'hornoAlto', mirrorHalf([
+    '......kk', '.....kgg', '.....kgg', '....kkgg', '...kkggg', '...kgggg', '...kglll', '..kgllll', '..kglkkk',
+    '..kglkFF', '..kglkFY', '..kglkFF', '.kgglkkk', '.kglllll', 'kgggllll', 'kglgllll', 'kkkkkkkk',
+  ]), { g: '#3a3230', l: '#5a4a42', F: '#ff7a1a', Y: '#ffe060' });
+  makeTexture(scene, 'cerroSilla', mirrorHalf([
+    '..kk........', '.kGGk.......', '.kGGGk......', 'kGGGGGk.....', 'kGGGGGGk....', 'kGGGGGGGkk..', 'kGGGGGGGGGkk',
+    'kGGEEGGGGGGG', 'kGGGGGGGGGGG', 'kgGGGGGGGGGG', 'kggGGGGGgGGG', 'kgggGGGggggG', 'kggggggggggg', 'kkkkkkkkkkkk',
+  ]), { G: '#4a6a44', g: '#2e4230', E: '#ffd040' });
   // El Abismo de los Ejes: criaturas de la capa 1 y retratos de los Ecos Quebrados
   generateAbismoTextures(scene);
   // pociones: el mismo frasco con el color de cada líquido

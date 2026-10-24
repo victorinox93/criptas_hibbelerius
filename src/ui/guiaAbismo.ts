@@ -263,11 +263,11 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     titulo: 'Ecos Quebrados y preguntas',
     texto: 'En los santuarios pueden aparecer científicos reales que vivieron crisis mentales graves. Sus dones ayudan con la Cordura. Las preguntas son de cuerpo rígido (60 %) y de repaso (40 %).',
     dibujo: (s, L) => {
-      const ecos: [string, string][] = [['fig_newton1693', 'Isaac Newton, 1693'], ['fig_cantor', 'Georg Cantor'], ['fig_boltzmann', 'Ludwig Boltzmann']];
+      const ecos: [string, string][] = [['fig_newton1693', 'Newton, 1693'], ['fig_cantor', 'Cantor'], ['fig_boltzmann', 'Boltzmann'], ['fig_majorana', 'Majorana'], ['fig_godel', 'Gödel'], ['fig_galois', 'Galois']];
       ecos.forEach(([sp, nom], i) => {
-        const x = 230 + i * 250;
-        L(s.add.image(x, 280, sp).setScale(4.4));
-        L(txt(s, x, 330, nom, 18, '#9ad8f0').setOrigin(0.5, 0));
+        const x = 130 + i * 140;
+        L(s.add.image(x, 280, sp).setScale(3.6));
+        L(txt(s, x, 326, nom, 17, '#9ad8f0').setOrigin(0.5, 0));
       });
       L(txt(s, W / 2, 380, 'Temas: centroide · centro de masa · momento de inercia · ejes paralelos · radio de giro', 18, CSS.gold, { align: 'center' }).setOrigin(0.5, 0));
       L(txt(s, W / 2, 414, 'La salud mental también es salud. Si algo te pesa, hablar con alguien de confianza ayuda.', 17, CSS.dim, { align: 'center' }).setOrigin(0.5, 0));
