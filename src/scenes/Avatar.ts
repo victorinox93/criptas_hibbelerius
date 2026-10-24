@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { comprasVisibles, probador } from '../ui/probador';
 import { LOGROS, logroHecho } from '../data/logros';
 import { ACC, ACCESORIOS, Slot, SLOTS } from '../data/tienda';
 import { api } from '../api';
@@ -16,7 +17,7 @@ const cyc = (n: number, d: number, len: number) => (n + d + len) % len;
 /** Avanza en una lista saltando lo que aún está bloqueado por nivel */
 /** ¿Está bloqueado? (por nivel de Conocimiento, o hasta vencer a AM) */
 export const bloqueado = (c: Cosmetico, nivel: number) =>
-  c.tienda !== undefined ? !(Game.codex.compras ?? []).includes(c.id!) : c.logro ? !logroHecho(c.logro) : (c.lock ?? 0) > nivel;
+  probador() ? false : c.tienda !== undefined ? !(Game.codex.compras ?? []).includes(c.id!) : c.logro ? !logroHecho(c.logro) : (c.lock ?? 0) > nivel;
 /** Cómo se desbloquea (texto corto) */
 export const comoDesbloquear = (c: Cosmetico) =>
   c.tienda !== undefined ? `Tienda de Layla (◈ ${c.tienda})` : c.logro ? LOGROS[c.logro]?.como ?? '' : `Conocimiento nivel ${c.lock}`;
@@ -99,7 +100,7 @@ export class AvatarScene extends Phaser.Scene {
     const grpA = this.children.list.slice(n0);
     // ── pestaña «Accesorios»: lo comprado en la Tienda de Layla ──
     const n1 = this.children.list.length;
-    const compras = Game.codex.compras ?? [];
+    const compras = comprasVisibles();
     SLOTS.forEach((sl, i) => {
       const opciones: (string | undefined)[] = [undefined, ...ACCESORIOS.filter((a) => !a.color && !a.set && a.slot === sl.id && compras.includes(a.id)).map((a) => a.id)];
       selector(290 + i * 28, () => `${sl.nombre} (${opciones.length - 1})`, () => (acc[sl.id] ? ACC[acc[sl.id]!]?.nombre ?? 'Nada' : 'Nada'), (d) => {

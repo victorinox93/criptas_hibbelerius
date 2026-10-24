@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { comprasVisibles, probador, setProbador } from '../ui/probador';
+import { isAdmin } from '../state';
 import { enqueue } from '../api';
 import { CAPES, CSS, UI } from '../art/palette';
 import { audio } from '../audio';
@@ -60,6 +62,12 @@ export class TiendaScene extends Phaser.Scene {
     this.tabs.forEach((b, i) => b.setData('cat', pest[i].id));
     this.layer = this.add.container(0, 0);
     button(this, X0 + (N * CW + (N - 1) * GAP) / 2, 516, 160, 34, 'Volver', () => fadeTo(this, 'Menu'), { size: 20 });
+    // v0.70 · Probador del profe: todo desbloqueado para ver cómo se ve (no se guarda)
+    if (isAdmin()) {
+      const pb = button(this, 104, 516, 190, 30, '', () => { setProbador(!probador()); pintaPb(); this.draw(); }, { size: 15, color: 0x9a4040 });
+      const pintaPb = () => pb.label.setText(probador() ? '🔓 Probador: ON' : '🔒 Probador: OFF');
+      pintaPb();
+    }
     this.filtroB = button(this, X0 + N * CW + (N - 1) * GAP - 70, 516, 140, 30, '', () => { this.soloNuevo = !this.soloNuevo; this.pag = 0; this.draw(); }, { size: 15 });
     this.draw();
   }
@@ -71,7 +79,7 @@ export class TiendaScene extends Phaser.Scene {
   private draw() {
     this.layer.removeAll(true);
     this.saldoT.setText(`◈ ${momentum()} Momentum`);
-    const compras = Game.codex.compras ?? [];
+    const compras = comprasVisibles();
     this.tabs.forEach((b) => b.label.setColor(b.getData('cat') === this.cat ? '#f0b070' : CSS.dim));
     let lista = catalogo(this.cat);
     if (this.soloNuevo) lista = lista.filter((a) => !loTiene(a, compras));
@@ -100,7 +108,7 @@ export class TiendaScene extends Phaser.Scene {
     const prof = Game.profile!;
     const av = prof.avatar!;
     const L = (o: Phaser.GameObjects.GameObject) => this.layer.add(o);
-    const compras = Game.codex.compras ?? [];
+    const compras = comprasVisibles();
     const tiene = loTiene(a, compras);
     const capaSet = a.set ? CAPES.findIndex((c) => c.id === a.set!.capa) : -1;
     const puesto = a.set ? av.cape === capaSet && a.set.piezas.every((id) => av[ACC[id].slot] === id) : a.color ? (av[a.color.parte] ?? 0) === a.color.idx : av[a.slot] === a.id;

@@ -1,13 +1,14 @@
 import Phaser from 'phaser';
 import { FAMILIARS } from '../data/familiars';
 import { Game } from '../state';
+import { probador } from './probador';
 
 /**
  * v0.55 · COMPAÑERO (cosmético): un familiar que ya conociste te acompaña a tu lado
  * en el menú, el mapa, el combate y tu ficha del ranking. No hace nada en combate:
  * es sólo de adorno. Se elige en el Vestidor (pestaña «Compañero»).
  */
-export const mascotaDesbloqueada = (id: string) => (Game.codex.npcs ?? []).includes(`fam_${id}`);
+export const mascotaDesbloqueada = (id: string) => probador() || (Game.codex.npcs ?? []).includes(`fam_${id}`);
 
 /** Id del compañero que lleva puesto el jugador (si lo tiene desbloqueado) */
 export function mascotaActual(av: { mascota?: string } | null | undefined = Game.profile?.avatar): string | null {
