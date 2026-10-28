@@ -155,7 +155,7 @@ export class MapScene extends Phaser.Scene {
           addEntropia(-6);
           const debil = run.diario === HOJAS_DEBILIDAD;
           this.time.delayedCall(500, () => hojaDiario(this, i, () => this.scene.restart(), true,
-            `Apunte de Montemayor: +1 pista gratis (tienes ${run.apuntes}) · +6 de Cordura${debil ? `\n${HOJAS_DEBILIDAD} hojas en esta expedición: conoces el punto débil del Primigenio (−15 % de vida).` : ''}`));
+            `Apunte de Montemayor: +1 pista gratis (tienes ${run.apuntes}) · +6 de Cordura${debil ? '\nCon la hoja de esta expedición conoces el punto débil del Primigenio (−15 % de vida).' : ''}`));
         }
       }
       saveLocal();

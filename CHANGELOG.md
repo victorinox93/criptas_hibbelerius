@@ -2,6 +2,12 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.74.0 · El Abismo se abre
+
+- **El portal del Abismo ya está abierto** en el menú para quien venció a AM (y para el profe). Antes decía «Próximamente». Las partidas del Abismo ahora cuentan: se registran en la hoja, dan logros y entran a su propio ranking. Si tenías una expedición en curso, se abandona al bajar.
+- Quien no ha vencido a AM ve en el portal «🔒 Vence a AM» y cómo abrirlo.
+- **Hojas del diario más raras:** a lo mucho **1 por expedición** (antes 3) y salen con la mitad de probabilidad, así que no siempre aparece una. Con esa hoja ya conoces el punto débil del Primigenio (antes hacían falta 2). La Bendición (3 hojas) y el Legado (5 hojas) ahora toman varias expediciones.
+
 ## v0.73.0 · El Legado (beta)
 
 - **Se desbloquean con las hojas del diario de Montemayor** (se guardan para siempre). La pantalla del Necronomicón muestra cuántas llevas y qué ya abriste.
