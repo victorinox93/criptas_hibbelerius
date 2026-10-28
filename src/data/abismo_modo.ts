@@ -65,10 +65,11 @@ export const PROLOGO: { fecha: string; texto: string; dibujo?: 'cerro' }[] = [
   { fecha: 'Sin fecha', texto: 'Si alguien encuentra este diario: no bajes sin entender la física.\nAllá abajo, lo único que te mantiene cuerdo es una respuesta correcta.\n\n— Último registro del erudito Ignacio Montemayor' },
 ];
 /** Probabilidad de encontrar una hoja después de cada tipo de nodo (son raras) */
-export const PROB_HOJA: Record<string, number> = { combate: 0.07, elite: 0.3, evento: 0.18, runa: 0.15, santuario: 0.1, mercader: 0.04, fogata: 0.1, boca: 0.05, observatorio: 0.12, sueno: 0.2, gabinete: 0.12, jefe: 0.5 };
+// v0.74 · la mitad que antes: no siempre sale una hoja por expedición
+export const PROB_HOJA: Record<string, number> = { combate: 0.035, elite: 0.15, evento: 0.09, runa: 0.08, santuario: 0.05, mercader: 0.02, fogata: 0.05, boca: 0.03, observatorio: 0.06, sueno: 0.1, gabinete: 0.06, jefe: 0.25 };
 /** Máximo de hojas por expedición, y con cuántas conoces el punto débil del Primigenio */
-export const HOJAS_POR_EXPEDICION = 3;
-export const HOJAS_DEBILIDAD = 2;
+export const HOJAS_POR_EXPEDICION = 1; // v0.74 · a lo mucho una hoja por expedición (antes 3)
+export const HOJAS_DEBILIDAD = 1;
 
 // ── Páginas del Necronomicón: un modificador para toda la expedición ──
 export interface PaginaDef {

@@ -161,10 +161,11 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /**
-   * v0.60 · El portal del Abismo (bloqueado por ahora, para todos): llama la atención con
-   * un remolino verde y morado; al pasar el cursor dice que pronto se abrirá para quien venza a AM.
+   * v0.60 · El portal del Abismo: un remolino verde y morado.
+   * v0.74 · ABIERTO para quien ya venció a AM (y para el profe); los demás ven cómo abrirlo.
    */
   private portalAbismo() {
+    const abierto = amVencido() || isAdmin();
     const x = 432, y = 330;
     const c = this.add.container(x, y).setDepth(5);
     const halo = this.add.ellipse(0, 0, 190, 140, 0x9a6ad0, 0.22).setBlendMode(Phaser.BlendModes.ADD);
@@ -182,12 +183,15 @@ export class MenuScene extends Phaser.Scene {
     const ojo = this.add.image(0, -12, 'i_ojo').setScale(2.2).setTint(0x9affc8);
     this.tweens.add({ targets: ojo, alpha: 0.35, duration: 800, yoyo: true, repeat: -1 });
     const t1 = txt(this, 0, 20, 'BAJAR AL ABISMO', 17, '#b8ffd8').setOrigin(0.5).setStroke('#000', 4);
-    const t2 = txt(this, 0, 40, '🔒 Próximamente', 14, '#ffb0ff').setOrigin(0.5).setStroke('#000', 3);
+    const t2 = txt(this, 0, 40, abierto ? '✦ Abierto' : '🔒 Vence a AM', 14, abierto ? '#9affc8' : '#ffb0ff').setOrigin(0.5).setStroke('#000', 3);
     this.tweens.add({ targets: t1, scale: 1.06, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     c.add([halo, g, remo, ojo, t1, t2]);
     // letrero al pasar el cursor
     const tip = this.add.container(x, y - 98).setDepth(60).setVisible(false);
-    const tt = txt(this, 0, 0, 'Próximamente\nSólo para quienes hayan vencido a AM.', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
+    const enCurso = !!(Game.run && !Game.run.done);
+    const tt = txt(this, 0, 0, abierto
+      ? `El Abismo de los Ejes: modo infinito de cuerpo rígido.${enCurso ? '\nTu expedición actual se abandonará.' : ''}`
+      : 'Sólo para quienes hayan vencido a AM\n(el jefe secreto del Acto IV).', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
     const tg = this.add.graphics();
     frame(tg, -tt.width / 2 - 14, -tt.height / 2 - 8, tt.width + 28, tt.height + 16, 0x1a0a2a, 0xc070ff, 0.97);
     tip.add([tg, tt]);
@@ -195,9 +199,16 @@ export class MenuScene extends Phaser.Scene {
     zona.on('pointerover', () => { tip.setVisible(true); halo.setFillStyle(0x7fe8d8, 0.3); });
     zona.on('pointerout', () => { tip.setVisible(false); halo.setFillStyle(0x9a6ad0, 0.22); });
     zona.on('pointerdown', () => {
-      audio.sfx('wrong');
-      tip.setVisible(true);
-      this.tweens.add({ targets: c, x: x + 6, duration: 50, yoyo: true, repeat: 3, onComplete: () => c.setX(x) });
+      if (!abierto) {
+        audio.sfx('wrong');
+        tip.setVisible(true);
+        this.tweens.add({ targets: c, x: x + 6, duration: 50, yoyo: true, repeat: 3, onComplete: () => c.setX(x) });
+        return;
+      }
+      audio.sfx('click');
+      if (Game.run && !Game.run.done) syncRun('abandonada', 'bajó al Abismo');
+      logEvent('abismo_portal', '', '', {});
+      fadeTo(this, 'Abismo', { clase: claseJugable(Game.profile?.avatar?.clase), gravedad: 1, debug: false });
     });
   }
 
