@@ -299,7 +299,7 @@ var ACTIONS = {
 
   saveCodex: function (r) {
     var u = auth_(r.token);
-    u.sh.getRange(u.row, 10).setValue(clean_(r.grimorio, 6000));
+    u.sh.getRange(u.row, 10).setValue(clean_(r.grimorio, 45000)); // v0.74 · antes 6000: un Grimorio grande se cortaba (una celda aguanta 50 000)
     // Momentum ganado y gastado, para verlo por alumno sin fórmulas
     try { var g = JSON.parse(r.grimorio || '{}'); u.sh.getRange(u.row, 11, 1, 2).setValues([[num_(g.mGanado), num_(g.mGastado)]]); } catch (e) {}
     return { ok: true };
