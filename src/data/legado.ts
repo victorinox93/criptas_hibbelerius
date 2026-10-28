@@ -57,7 +57,11 @@ export interface LegadoGuardado { cartas: { id: string; up: boolean; ed?: Edicio
 
 /** Al terminar una expedición del Abismo: guarda lo que llevabas para el Legado */
 export function guardarLegado(r: Run) {
-  const cartas = r.deck.filter((c) => CARDS[c.id] && CARDS[c.id].rarity !== 'estado' && !CARDS[c.id].pieza).map((c) => (c.ed ? { id: c.id, up: c.up, ed: c.ed } : { id: c.id, up: c.up }));
+  // v0.74 · compacto: sólo las 12 cartas más raras (el Grimorio se guarda en una celda de la hoja)
+  const peso = (id: string) => ({ legendaria: 4, rara: 3, común: 2, inicial: 0 } as Record<string, number>)[CARDS[id]?.rarity ?? 'inicial'] ?? 0;
+  const cartas = r.deck.filter((c) => CARDS[c.id] && CARDS[c.id].rarity !== 'estado' && !CARDS[c.id].pieza)
+    .sort((a, b) => peso(b.id) - peso(a.id)).slice(0, 12)
+    .map((c) => (c.ed ? { id: c.id, up: c.up, ed: c.ed } : { id: c.id, up: c.up }));
   const dientes = (r.dientes ?? []).filter((d): d is string => !!d).map(base);
   if (!cartas.length && !dientes.length) return;
   Game.codex.legado = { cartas, dientes, tramo: r.tramo ?? 1 };
