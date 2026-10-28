@@ -1,4 +1,8 @@
 import Phaser from 'phaser';
+import { BendicionDef, BENDICIONES, bendicionesOfrecidas, HOJAS_BENDICION, HOJAS_LEGADO, hojasDiario, LEGADO_LOCURA, ofertaLegado } from '../data/legado';
+import { darMaldicion, quitarDelMazo } from '../data/maldiciones';
+import { deckOverlay } from '../ui/hud';
+import { grantRelic, randomRelics } from './Reward';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -247,7 +251,10 @@ export class AbismoScene extends Phaser.Scene {
       });
       L(c);
     });
-    L(txt(this, W / 2, 476, 'Las páginas cambian en cada expedición.', 17, CSS.dim).setOrigin(0.5));
+    L(txt(this, W / 2, 470, 'Las páginas cambian en cada expedición.', 17, CSS.dim).setOrigin(0.5));
+    // v0.73 · lo que abren las hojas del diario
+    const h = hojasDiario();
+    L(txt(this, W / 2, 494, `Hojas del diario: ${h}/${PROLOGO.length} · Bendición de Montemayor ${h >= HOJAS_BENDICION ? '✓' : `(con ${HOJAS_BENDICION})`} · El Legado ${h >= HOJAS_LEGADO ? '✓' : `(con ${HOJAS_LEGADO})`}`, 15, '#c8b890').setOrigin(0.5));
     this.botonGuia();
   }
 
@@ -967,10 +974,12 @@ export class AbismoScene extends Phaser.Scene {
     while (r.dientes.length < HUECOS) r.dientes.push(null);
     aplicarSarro(r);
     if (!p) r.entropia = Math.max(0, r.entropia - PACTO_CIEGO_CORDURA);
+    if (p?.id === 'deuda') r.ergios += 150; // v0.73
     // efectos iniciales de la página del Necronomicón
     switch (r.necro) {
       case 'geometria': r.maxHp -= 10; r.hp = r.maxHp; break;
       case 'mercader': r.ergios += 100; r.entropia += 15; break;
+      case 'sangre': r.maxHp -= 15; r.hp = r.maxHp; break; // v0.73
       case 'confusion': editarAlAzar(r.deck, 'poli', 1); break;
       case 'cristal': editarAlAzar(r.deck, 'cristal', 3); break;
     }
@@ -980,7 +989,127 @@ export class AbismoScene extends Phaser.Scene {
     unlock('relics', 'necronomicon');
     Game.run = r;
     saveLocal();
-    this.cameras.main.flash(400, 20, 60, 50);
-    fadeTo(this, 'Map');
+    this.extrasInicio();
+  }
+
+  /** v0.73 · después de crear la expedición: el Legado y la Bendición de Montemayor (si ya los desbloqueaste) */
+  private extrasInicio() {
+    const seguir = () => { saveLocal(); this.cameras.main.flash(400, 20, 60, 50); fadeTo(this, 'Map'); };
+    const bend = () => (hojasDiario() >= HOJAS_BENDICION ? this.bendicion(seguir) : seguir());
+    const of = hojasDiario() >= HOJAS_LEGADO ? ofertaLegado() : null;
+    if (of) this.legado(of, bend);
+    else bend();
+  }
+
+  /** v0.73 · El Legado: una carta o un diente de tu expedición anterior */
+  private legado(of: NonNullable<ReturnType<typeof ofertaLegado>>, alTerminar: () => void) {
+    this.limpiar();
+    const r = Game.run!;
+    const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
+    L(title(this, W / 2, 46, 'El Legado', 40, '#e8d0a0'));
+    L(txt(this, W / 2, 82, `En la cueva quedó algo de tu expedición anterior (tramo ${Game.codex.legado?.tramo ?? 1}). Llévate UNA cosa: cuesta +${LEGADO_LOCURA} de Locura.`, 18, CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
+    const tomar = (msj: string) => {
+      r.entropia = Math.min(100, (r.entropia ?? 0) + LEGADO_LOCURA);
+      Game.codex.legado = undefined;
+      logEvent('legado', '', '', { lleva: msj });
+      audio.sfx('coin');
+      this.cameras.main.flash(300, 120, 100, 60);
+      alTerminar();
+    };
+    const K = 0.68;
+    of.cartas.forEach((c, i) => {
+      const x = W / 2 + (i - (of.cartas.length - 1) / 2) * 150, y = 236;
+      const v = L(cardView(this, x, y, { uid: -300 - i, id: c.id, up: c.up, ed: c.ed }).setScale(K));
+      v.setInteractive({ useHandCursor: true });
+      v.on('pointerover', () => v.setScale(K * 1.06));
+      v.on('pointerout', () => v.setScale(K));
+      v.on('pointerdown', () => { addCard(c.id, c.up, c.ed); tomar(c.id); });
+    });
+    of.dientes.forEach((id, i) => {
+      const d = defDiente(id);
+      const x = W / 2 + (i - (of.dientes.length - 1) / 2) * 280, y = 390;
+      const g = this.add.graphics();
+      frame(g, x - 125, y - 30, 250, 60, 0x14101a, NOMBRE_RAREZA[d?.rareza ?? 'comun'].borde, 0.97);
+      L(g);
+      L(txt(this, x, y - 20, `🦷 ${d?.nombre ?? id}`, 18, NOMBRE_RAREZA[d?.rareza ?? 'comun'].css).setOrigin(0.5, 0));
+      L(txt(this, x, y + 4, d?.texto ?? '', 13, CSS.dim, { align: 'center', wordWrap: { width: 236 } }).setOrigin(0.5, 0)).setMaxLines(2);
+      const z = L(this.add.zone(x - 125, y - 30, 250, 60).setOrigin(0).setInteractive({ useHandCursor: true }));
+      z.on('pointerdown', () => {
+        if (!ponerDiente(r.dientes ??= [], id)) { audio.sfx('wrong'); return; }
+        tomar(id);
+      });
+    });
+    if (!of.dientes.length) L(txt(this, W / 2, 390, 'No quedó ningún diente.', 16, CSS.dim).setOrigin(0.5));
+    L(button(this, W / 2, 486, 260, 38, 'No llevar nada', () => alTerminar(), { size: 19 }));
+  }
+
+  /** v0.73 · La Bendición de Montemayor (como la de Neow): eliges 1 de hasta 4 */
+  private bendicion(alTerminar: () => void) {
+    this.limpiar();
+    const r = Game.run!;
+    const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
+    L(title(this, W / 2, 46, 'La Bendición de Montemayor', 38, '#e8d0a0'));
+    const h = hojasDiario();
+    const sig = BENDICIONES.filter((b) => b.hoja > h).sort((a, b) => a.hoja - b.hoja)[0];
+    L(txt(this, W / 2, 82, `En el margen del diario, ${AUTOR} te dejó un consejo. Elige uno. (Hojas encontradas: ${h}${sig ? ` · con ${sig.hoja} se abre «${sig.nombre}»` : ' · ya abriste todas'})`, 17, CSS.bone, { align: 'center', wordWrap: { width: 880 } }).setOrigin(0.5, 0));
+    const ops = bendicionesOfrecidas();
+    const aplicar = (b: BendicionDef) => {
+      const fin = (msj: string) => { logEvent('bendicion', '', '', { id: b.id, msj }); audio.sfx('heal'); alTerminar(); };
+      switch (b.id) {
+        case 'ergios': r.ergios += 60; return fin('+60');
+        case 'vida': r.maxHp += 8; r.hp += 8; return fin('+8');
+        case 'cordura': r.entropia = Math.max(0, (r.entropia ?? 0) - 15); return fin('-15');
+        case 'apuntes': r.apuntes = (r.apuntes ?? 0) + 2; return fin('+2');
+        case 'mejora': {
+          const c = Phaser.Utils.Array.Shuffle(r.deck.filter((x) => !x.up && CARDS[x.id].rarity !== 'estado')).slice(0, 2);
+          c.forEach((x) => (x.up = true));
+          return fin(c.map((x) => x.id).join(','));
+        }
+        case 'quitar': {
+          r.maxHp = Math.max(10, r.maxHp - 6);
+          r.hp = Math.min(r.hp, r.maxHp);
+          const otra = (n: number) => (n < 2 && r.deck.length > 5 ? pedir(n + 1) : fin('quitar'));
+          const pedir = (n: number): void => void deckOverlay(this, `Olvido Selectivo: elige la carta que olvidas (${n} de 2)`, r.deck, (i) => { quitarDelMazo(i); otra(n); }, () => { quitarDelMazo(Math.floor(Math.random() * r.deck.length)); otra(n); });
+          return pedir(1);
+        }
+        case 'rara': addCard(Phaser.Utils.Array.GetRandom(RARAS_ABISMO), true); darMaldicion(); return fin('rara');
+        case 'diente': {
+          const [id] = sortearDientes(1, (r.dientes ?? []).filter((x): x is string => !!x), 1, { legendario: true });
+          if (id) ponerDiente(r.dientes ??= [], id);
+          r.entropia = Math.min(100, (r.entropia ?? 0) + 20);
+          return fin(id ?? '');
+        }
+        case 'reliquia': {
+          const [rid] = randomRelics(1);
+          if (rid) grantRelic(rid);
+          r.maxHp = Math.max(10, r.maxHp - 10);
+          r.hp = Math.min(r.hp, r.maxHp);
+          return fin(rid ?? '');
+        }
+      }
+      fin('');
+    };
+    const ancho = 210;
+    ops.forEach((b, i) => {
+      const x = W / 2 + (i - (ops.length - 1) / 2) * (ancho + 14), y = 140;
+      const c = this.add.container(x, y);
+      const g = this.add.graphics();
+      frame(g, -ancho / 2, 0, ancho, 290, b.grande ? 0x1a1010 : 0x14121a, b.grande ? 0xa8603a : 0x8a7a4a, 0.97);
+      c.add(g);
+      c.add(txt(this, 0, 14, b.grande ? 'Gran bendición' : 'Bendición', 14, b.grande ? '#e0a070' : CSS.dim).setOrigin(0.5, 0));
+      c.add(txt(this, 0, 36, b.nombre, 21, '#f0e0b0', { align: 'center', wordWrap: { width: ancho - 20 } }).setOrigin(0.5, 0));
+      c.add(txt(this, 0, 110, b.texto, 17, CSS.green, { align: 'center', wordWrap: { width: ancho - 24 } }).setOrigin(0.5, 0));
+      if (b.costo) {
+        c.add(txt(this, 0, 196, 'Costo', 14, CSS.dim).setOrigin(0.5, 0));
+        c.add(txt(this, 0, 216, b.costo, 17, '#e08a8a', { align: 'center', wordWrap: { width: ancho - 24 } }).setOrigin(0.5, 0));
+      }
+      c.setSize(ancho, 290).setInteractive(new Phaser.Geom.Rectangle(-ancho / 2, 0, ancho, 290), Phaser.Geom.Rectangle.Contains);
+      c.input!.cursor = 'pointer';
+      c.on('pointerover', () => this.tweens.add({ targets: c, y: y - 8, duration: 120 }));
+      c.on('pointerout', () => this.tweens.add({ targets: c, y, duration: 120 }));
+      c.on('pointerdown', () => { c.disableInteractive(); aplicar(b); });
+      L(c);
+    });
+    L(button(this, W / 2, 486, 260, 36, 'Seguir sin bendición', () => alTerminar(), { size: 18 }));
   }
 }

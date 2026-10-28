@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { HOJAS_BENDICION, HOJAS_LEGADO } from '../data/legado';
 import { PARASITO_VIDA, MAXWELL_PRECIO } from '../data/maldiciones';
 import { NYAR_ENTROPIA, NYAR_PACTO_RUNAS, RUNA_DANO_ABISMO, SACRIFICIO_SANGRE } from '../data/mythos_pactos';
 import { CSS, UI } from '../art/palette';
@@ -38,7 +39,7 @@ function muestra(s: Phaser.Scene, L: <T extends Phaser.GameObjects.GameObject>(o
 const PAGINAS_GUIA: PaginaGuia[] = [
   {
     titulo: 'El viaje',
-    texto: `Arrancas una página del Necronomicón, firmas un Pacto, eliges dientes y abres 3 sobres. Luego bajas ${TRAMOS} tramos de ${PISOS_TRAMO} pisos: el primero termina con un jefe al azar y el segundo con un Primigenio. Después puedes seguir bajando sin fin.`,
+    texto: `Arrancas una página del Necronomicón, firmas un Pacto, eliges dientes y abres 3 sobres. Luego bajas ${TRAMOS} tramos de ${PISOS_TRAMO} pisos: el primero termina con un jefe al azar y el segundo con un Primigenio. Después puedes seguir bajando sin fin. Con ${HOJAS_BENDICION} hojas del diario se abre la Bendición de Montemayor y con ${HOJAS_LEGADO}, el Legado (traer 1 carta o 1 diente de tu expedición anterior).`,
     dibujo: (s, L) => {
       const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', `Dentadura\n(${DIENTES_INICIO} de ${DIENTES_OFRECIDOS} dientes)`, `3 sobres\n(+${3 * ELIGES_POR_SOBRE} cartas)`, `${TRAMOS} tramos\n+ Primigenio`];
       const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 2 mazos\no el Pacto ciego', 'Reliquias: el orden\nimporta', `De cada sobre te\nquedas con ${ELIGES_POR_SOBRE} cartas`, 'Jefe al azar; luego,\n¿infinito?'];

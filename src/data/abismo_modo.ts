@@ -86,6 +86,13 @@ export const PAGINAS: PaginaDef[] = [
   { id: 'confusion', nombre: 'La Confusión', poder: 'Robas 1 carta extra al inicio de cada combate y una carta de tu mazo se vuelve Polícroma.', costo: 'Todos tus combates empiezan con Confusión (costos al azar).', lore: 'Los números de la página cambian cada vez que parpadeas.' },
   { id: 'cristal', nombre: 'El Cristal', poder: '3 cartas al azar de tu mazo se vuelven de Cristal (×2).', costo: 'Cada vez que juegas una, 1 de cada 4 veces se rompe y sale de tu mazo.', lore: 'Translúcidas, frías y perfectas. Hasta que las usas.' },
   { id: 'steiner', nombre: 'Página de Steiner', poder: 'Tu primer ataque de cada combate hace ×2 (I = I₀ + m·d²).', costo: 'Recibes +1 de daño de cada golpe.', lore: 'Lejos del eje todo pesa más. También lo que te golpea.' },
+  // v0.73 · más páginas
+  { id: 'vacio', nombre: 'El Vacío Perfecto', poder: 'Eres inmune al Calor y a la Fricción de los enemigos.', costo: 'Las fogatas te curan la mitad.', lore: 'Sin aire no hay fricción ni convección. Tampoco hay con qué respirar.' },
+  { id: 'eclipse', nombre: 'El Eclipse', poder: '+1 J en tus turnos pares.', costo: 'En tus turnos impares robas 1 carta menos.', lore: 'La Luna tapa al Sol cada tanto. Hay que saber contar los turnos.' },
+  { id: 'sangre', nombre: 'Tinta de Sangre', poder: 'Al ganar un combate te curas 6.', costo: '−15 de Vida máxima.', lore: 'La página está escrita con algo rojo. Se regenera. Tú también.' },
+  { id: 'abaco', nombre: 'El Ábaco de Hueso', poder: 'Cada 4 cartas que juegas en un turno: +1 J.', costo: 'Cada combate mete 1 «Error de Signo» a tu mazo.', lore: 'Cuentas rápido con las cuentas de hueso. A veces cuentas mal.' },
+  { id: 'marea', nombre: 'La Marea de Innsmouth', poder: 'Empiezas cada combate con 10 de Bloqueo.', costo: 'Cada golpe enemigo hace +1 de daño.', lore: 'El agua sube y te protege. Lo que viene con el agua, no.' },
+  { id: 'tiempo', nombre: 'El Tiempo Dilatado', poder: 'En tu primer turno de cada combate robas 2 cartas más y ganas +1 J.', costo: 'Los jefes tienen +20 % de vida.', lore: 'Cerca de algo muy masivo el tiempo corre más lento. Para ti, al principio.' },
   { id: 'lucido', nombre: 'El Horror Lúcido', poder: 'Ver jefes y élites no te quita Cordura.', costo: 'Las preguntas acertadas devuelven la mitad de Cordura.', lore: 'Ya nada te sorprende. Tampoco te alivia.' },
 ];
 export const PAGINA = (id?: string) => PAGINAS.find((p) => p.id === id);
@@ -118,6 +125,13 @@ export const PACTOS: PactoDef[] = [
   { id: 'sonrisa', nombre: 'Pacto de la Sonrisa', regla: 'Al empezar te quedas con 3 dientes en lugar de 2, pero −10 de Vida máxima.', mazo: (c) => [...starterDeck(c), 'dclTentaculos'], vidaMax: -10, dientes: 3 },
   { id: 'estelar', nombre: 'Pacto Estelar', regla: 'Empiezas con un Astro en tu dentadura y los Astros te salen el doble de seguido.', mazo: (c) => [...starterDeck(c), 'calamarTorque'] },
   { id: 'palanca', nombre: 'Pacto de la Palanca', regla: 'Brazo largo: tu primer Ataque de cada turno hace +4 de daño.', mazo: (c) => [...starterDeck(c), 'enLibras'] },
+  // v0.73 · más pactos
+  { id: 'gravitatorio', nombre: 'Pacto Gravitatorio', regla: 'Tus Ataques hacen +1 de daño por cada enemigo vivo.', mazo: (c) => [...starterDeck(c), 'rampaAbisal'] },
+  { id: 'calor', nombre: 'Pacto del Calor', regla: 'Cada Ataque que juegas le pone 1 de Calor a su objetivo.', mazo: (c) => [...starterDeck(c), 'friccionArd'] },
+  { id: 'resonante', nombre: 'Pacto Resonante', regla: 'La primera carta que juegas cada turno da +1 de Resonancia a todos los enemigos.', mazo: (c) => [...starterDeck(c), 'frecuencia'] },
+  { id: 'giroscopio', nombre: 'Pacto del Giróscopo', regla: 'Nada te aturde ni te marea (Vértigo), y empiezas cada combate con 4 de Bloqueo.', mazo: (c) => [...starterDeck(c), 'penduloFisico'] },
+  { id: 'minimalista', nombre: 'Pacto Minimalista', regla: 'Mazo de 7 cartas: robas 1 carta menos cada turno, pero ganas +1 J cada turno.', mazo: (c) => sinDefensas(c, 2).slice(1) },
+  { id: 'deuda', nombre: 'Pacto de la Deuda', regla: '+150 Ergios al empezar, pero cada combate que ganas te cobra 10 Ergios (si no tienes, 3 de vida).', mazo: (c) => [...starterDeck(c)] },
   { id: 'cafeina', nombre: 'Pacto de la Cafeína', regla: '+1 J en tu primer turno de cada combate. Tu mazo trae 2 Cafés del Abismo.', mazo: (c) => [...starterDeck(c), 'cafeAbismo', 'cafeAbismo'] },
 ];
 /** Cuántos Pactos te ofrece el libro (eliges 1) */

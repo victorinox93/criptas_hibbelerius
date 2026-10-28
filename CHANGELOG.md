@@ -2,6 +2,16 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.73.0 · El Legado (beta)
+
+- **Se desbloquean con las hojas del diario de Montemayor** (se guardan para siempre). La pantalla del Necronomicón muestra cuántas llevas y qué ya abriste.
+- **La Bendición de Montemayor** (desde 3 hojas): al empezar el Abismo eliges 1 de hasta 4 bendiciones (2 chicas y 2 grandes). Cada hoja nueva abre más:
+  - Chicas: +60 Ergios y +8 de Vida máxima (3 hojas), −15 de Locura (4), 2 Apuntes de Montemayor (5), mejorar 2 cartas al azar (6).
+  - Grandes, con costo: quitar 2 cartas (−6 de Vida máxima, 7 hojas), una carta rara del Abismo mejorada (una maldición, 8), un diente legendario (+20 de Locura, 10), una reliquia al azar (−10 de Vida máxima, 12).
+- **El Legado** (desde 5 hojas): al terminar una expedición del Abismo se guardan tu mazo y tu dentadura. En la siguiente puedes llevarte UNA carta (las más raras primero) o UN diente, por +10 de Locura.
+- **6 páginas nuevas del Necronomicón:** El Vacío Perfecto (inmune a Calor y Fricción; fogatas curan la mitad), El Eclipse (+1 J en turnos pares; −1 carta en impares), Tinta de Sangre (+6 de vida al ganar; −15 de Vida máxima), El Ábaco de Hueso (cada 4 cartas en un turno +1 J; un Error de Signo por combate), La Marea de Innsmouth (10 de Bloqueo al empezar; +1 de daño por golpe enemigo) y El Tiempo Dilatado (+2 cartas y +1 J en el primer turno; jefes con +20 % de vida).
+- **6 pactos nuevos:** Gravitatorio (+1 de daño por enemigo vivo), del Calor (cada Ataque pone 1 de Calor), Resonante (tu primera carta del turno da Resonancia a todos), del Giróscopo (no te aturden ni te marean; +4 de Bloqueo), Minimalista (mazo de 7; −1 carta y +1 J por turno) y de la Deuda (+150 Ergios; cada victoria cobra 10).
+
 ## v0.72.0 · Recetas (beta)
 
 - **14 recetas nuevas en el Taller de Newton** (ahora son 23 de cartas):
