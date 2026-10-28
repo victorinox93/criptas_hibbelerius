@@ -154,6 +154,24 @@ export class CodexScene extends Phaser.Scene {
             if (m) body(c, 430, `Visitas: ${m.visitas} · Pactos aceptados: ${m.pactos} · Rechazados: ${m.rechazos}`, '#ff8a7a', 17);
           },
         });
+        // v0.71
+        list.push({
+          kind: 'npcs', id: 'maxwell', tex: 'npc_maxwell', name: 'El Demonio de Maxwell',
+          detail: (c) => {
+            head(c, 'npc_maxwell', 'El Demonio de Maxwell', 'Quita maldiciones · luego te espera en las fogatas', 6);
+            body(c, 290, 'En 1867, James Clerk Maxwell imaginó un diablillo que abre una puertita sólo a las moléculas rápidas: así separaría lo caliente de lo frío y bajaría la entropía sin gastar energía. Aquí ordena tu mazo y saca tus maldiciones. La primera, gratis.', CSS.bone, 18);
+            body(c, 430, 'Spoiler de física: el demonio no rompe la 2ª ley. Para decidir qué molécula pasa, tiene que medir y borrar información, y eso cuesta energía.', '#9ad8f0', 16);
+          },
+        });
+        list.push({
+          kind: 'npcs', id: 'nyarlathotep_hombre', tex: 'npc_hombreNegro', name: 'El Hombre Negro',
+          detail: (c) => {
+            head(c, 'npc_hombreNegro', 'El Hombre Negro (Nyarlathotep)', 'El Abismo · recuerda cada visita', 6);
+            body(c, 290, 'El Caos que Repta usa mil máscaras; ésta es la más amable. Ofrece ayuda: pensar por ti, curarte o un regalo de Egipto. Todo tiene un costo, y él siempre cobra.', CSS.bone, 18);
+            const m = Game.codex.nyar;
+            if (m) body(c, 430, `Visitas: ${m.visitas} · Rechazos: ${m.rechazos}`, '#c8a0ff', 17);
+          },
+        });
         return list;
       }
       case 2:

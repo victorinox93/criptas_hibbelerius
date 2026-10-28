@@ -1,6 +1,6 @@
 import { G } from '../config';
 
-export type CardType = 'Ataque' | 'Defensa' | 'Habilidad' | 'Poder' | 'Estado';
+export type CardType = 'Ataque' | 'Defensa' | 'Habilidad' | 'Poder' | 'Estado' | 'Maldición';
 export type CardClass = 'caballero' | 'arcanista' | 'penitente' | 'neutral' | 'estado';
 
 export interface CardInst {
@@ -955,6 +955,49 @@ export const CARDS: Record<string, CardDef> = {
     stats: () => ({ cost: 1 }),
     text: () => `Si sigue en tu mano al\nterminar el turno:\n−3 de Cordura.\nJugarla la calla.`,
     lore: '«…los ejes están ahí, pero ellos no los ven…» — diario de Ignacio Montemayor',
+  },
+  // ════════ v0.71 · MALDICIONES (como en Slay the Spire): se quedan en tu mazo hasta que alguien te las quite ════════
+  m_arrepentimiento: {
+    id: 'm_arrepentimiento', name: 'Arrepentimiento', type: 'Maldición', icon: 'i_skull', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nAl terminar tu turno pierdes\n1 de vida por cada carta\nen tu mano.`,
+    lore: 'Cada problema que dejaste sin resolver pesa. Mientras más cargas, más duele.',
+  },
+  m_dolor: {
+    id: 'm_dolor', name: 'Dolor Fantasma', type: 'Maldición', icon: 'i_stun', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nMientras esté en tu mano,\ncada carta que juegues\nte quita 1 de vida.`,
+    lore: 'Toda acción tiene su reacción… y ésta te la cobra a ti.',
+  },
+  m_decaimiento: {
+    id: 'm_decaimiento', name: 'Decaimiento Radiactivo', type: 'Maldición', icon: 'i_rad', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nSi está en tu mano al\nterminar el turno,\npierdes 2 de vida.`,
+    lore: 'N(t) = N₀·e^(−λt): se va apagando, pero mientras tanto te quema.',
+  },
+  m_duda: {
+    id: 'm_duda', name: 'Duda', type: 'Maldición', icon: 'i_fog', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nSi está en tu mano al\nterminar el turno, el\nsiguiente tienes 1 J menos.`,
+    lore: '¿Era m·a o m·g? ¿El signo era positivo? Dudar también cuesta energía.',
+  },
+  m_normalidad: {
+    id: 'm_normalidad', name: 'Normalidad', type: 'Maldición', icon: 'i_book', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nMientras esté en tu mano\nno puedes jugar más de\n3 cartas por turno.`,
+    lore: 'La distribución normal: casi todo cae cerca del promedio. Nada extraordinario pasa aquí.',
+  },
+  m_torpeza: {
+    id: 'm_torpeza', name: 'Torpeza', type: 'Maldición', icon: 'i_mud', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nOcupa espacio en tu mano.\nAl terminar el turno se\nagota (vuelve el siguiente\ncombate).`,
+    lore: 'Manos de mantequilla: el coeficiente de fricción de tus dedos es casi cero.',
+  },
+  m_parasito: {
+    id: 'm_parasito', name: 'Parásito de Yuggoth', type: 'Maldición', icon: 'i_ojo', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
+    stats: () => ({ cost: 0 }),
+    text: () => `Injugable.\nSi te la quitan del mazo,\npierdes 3 de Vida máxima.`,
+    lore: 'Los Mi-Go dejan huéspedes. Sacarlos tiene su precio.',
   },
 };
 

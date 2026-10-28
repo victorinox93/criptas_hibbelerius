@@ -14,6 +14,7 @@ const TYPE_COLOR: Record<string, number> = {
   Habilidad: 0x4f8a3a,
   Poder: 0x8e5bb0,
   Estado: 0x4a4650,
+  Maldición: 0x6a1a3a,
 };
 
 export interface CardView extends Phaser.GameObjects.Container {

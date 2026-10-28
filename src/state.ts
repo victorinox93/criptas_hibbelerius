@@ -88,6 +88,9 @@ export interface Run {
   entropiaMax?: number; // la Locura más alta de la expedición (logros)
   prohibidos?: string[]; // Problemas Prohibidos leídos del Necronomicón
   amPacto?: number; // runas que AM puede resolver por ti
+  nyarPacto?: number; // v0.71 · runas que el Hombre Negro puede resolver por ti (El Abismo)
+  nyarTramo?: number; // v0.71 · tramo en el que ya se apareció el Hombre Negro
+  maxwell?: boolean; // v0.71 · ya conociste al Demonio de Maxwell: te espera en las fogatas
   aliado?: string; // alma en pena que te acompaña (src/data/almas.ts); sólo una por expedición
   /** v0.30 · huellas de compañeros del grupo para el acto actual (lápidas y signos) */
   huellas?: { acto: number; lapidas: import('./api').Huella[]; signos: import('./api').Huella[]; honradas: number[] };
@@ -180,6 +183,7 @@ export interface Codex {
   diag?: { pre?: number; post?: number; total?: number; version?: number }; // v0.32: diagnóstico inicial y final (aciertos)
   cartasProvidence?: number; // v0.46: cartas del Astrónomo de Providence cumplidas (logro)
   suenos?: string[]; // v0.51: sueños distintos que has soñado (src/data/relatos.ts → SUENOS)
+  nyar?: { visitas: number; rechazos: number }; // v0.71 · lo que el Hombre Negro recuerda de ti
   diario?: number; // v0.45: última hoja del diario de Montemayor encontrada (índice en PROLOGO; la 0 se lee al empezar)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';

@@ -6,6 +6,7 @@ export interface RelicDef {
   lore: string;
   jefe?: boolean; // reliquia de jefe: muy poderosa, con una desventaja
   especial?: boolean; // no sale en botines ni en la tienda
+  maldita?: boolean; // v0.71 · reliquia maldita: muy poderosa, pero trae maldiciones (sólo de pactos del mythos)
 }
 
 export const RELICS: Record<string, RelicDef> = {
@@ -29,6 +30,10 @@ export const RELICS: Record<string, RelicDef> = {
   tungsteno: { id: 'tungsteno', name: 'Barra de Tungsteno', icon: 'i_mass', text: 'Pierdes 1 de vida menos cada vez que te hacen daño.', lore: 'El metal con el punto de fusión más alto: 3422 °C. No cede fácil.' },
   hule: { id: 'hule', name: 'Amortiguador de Hule', icon: 'i_reflect', text: 'Si un golpe te iba a hacer entre 2 y 5 de daño, sólo te hace 1.', lore: 'Más tiempo de contacto, menos fuerza: F = Δp / Δt.' },
   termo: { id: 'termo', name: 'Termo de Caldo', icon: 'i_jarra', text: 'Al ganar un combate, si tienes 50 % de vida o menos, te curas 12.', lore: 'Un buen aislante térmico: la energía se queda donde la necesitas.' },
+  // ── v0.71 · Reliquias MALDITAS: sólo las dan los pactos del mythos (sacrificios y el Hombre Negro) ──
+  llaveRlyeh: { id: 'llaveRlyeh', maldita: true, name: "Llave de R'lyeh", icon: 'i_rune', text: '+1 J cada turno.\nMaldita: al tomarla entran 2 maldiciones al azar a tu mazo.', lore: 'Abre la ciudad hundida. Lo que sale por la puerta no pide permiso.' },
+  ojoYuggoth: { id: 'ojoYuggoth', maldita: true, name: 'Ojo de Yuggoth', icon: 'i_ojo', text: 'Robas 1 carta más cada turno.\nMaldito: al ganar un combate, 25 % de que entre una maldición a tu mazo.', lore: 'Los Mi-Go ven en longitudes de onda que tú no. A veces ves lo que ellos ven.' },
+  idoloDagon: { id: 'idoloDagon', maldita: true, name: 'Ídolo de Dagón', icon: 'i_mass', text: '+2 kg a tus ataques (Arcanista y Penitente: +2 m/s).\nMaldito: empiezas cada combate con 2 Susurros en tu mazo.', lore: 'Pesa más de lo que debería. La densidad del agua negra de Innsmouth.' },
   // especial: sólo la da el Profe Victorino (no sale en botines ni en la tienda)
   necronomicon: { id: 'necronomicon', especial: true, name: 'Necronomicón de Hibbeler', icon: 'i_necro', text: 'En cada fogata puedes leer un Problema Prohibido: un poder permanente con un costo. Cada lectura: +20 de Locura.', lore: 'Una edición que nunca se publicó. Los ejercicios impares no tienen respuesta al final del libro. Los pares, tampoco.' },
   // v0.68 · se compra con el Mercader (250 Ergios): otra vida extra
@@ -45,5 +50,6 @@ export const RELICS: Record<string, RelicDef> = {
 export const MAX_RELIQUIAS = 5;
 export const cuentaTope = (id: string) => !RELICS[id]?.especial;
 
-export const RELIC_POOL = Object.keys(RELICS).filter((id) => !RELICS[id].especial && !RELICS[id].jefe);
+export const RELIC_POOL = Object.keys(RELICS).filter((id) => !RELICS[id].especial && !RELICS[id].jefe && !RELICS[id].maldita);
+export const RELIQUIAS_MALDITAS = Object.keys(RELICS).filter((id) => RELICS[id].maldita);
 export const BOSS_RELICS = Object.keys(RELICS).filter((id) => RELICS[id].jefe);

@@ -26,7 +26,7 @@ export function explicar(r: Refs): string {
     else if (id === 'random') add('c:random', '◆ Carta al azar de tu clase.');
     else if (CARDS[id]) {
       const d = CARDS[id];
-      add(`c:${id}`, `◆ ${d.name} (${d.type === 'Estado' ? 'carta basura' : d.type}): ${una(d.text(d.stats(false), NO_CTX))}`);
+      add(`c:${id}`, `◆ ${d.name} (${d.type === 'Estado' ? 'carta basura' : d.type === 'Maldición' ? 'maldición: se queda en tu mazo' : d.type}): ${una(d.text(d.stats(false), NO_CTX))}`);
     }
   }
   for (const id of r.effects ?? []) {

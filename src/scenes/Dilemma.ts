@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { darMaldicion, quitarDelMazo } from '../data/maldiciones';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -93,7 +94,7 @@ export class DilemmaScene extends Phaser.Scene {
     syncRun('en curso');
     this.hud.refresh();
     logEvent('dilema', '', '', { id, opcion: ch.label, resultado: res.text });
-    const bad = (res.entropia ?? 0) > 0 || (res.hp ?? 0) < 0 || (res.maxHp ?? 0) < 0 || !!res.junk || res.effect === 'radiacion' || ((res.ergios ?? 0) < 0 && !res.familiar && !res.score);
+    const bad = (res.entropia ?? 0) > 0 || (res.hp ?? 0) < 0 || (res.maxHp ?? 0) < 0 || !!res.junk || !!res.maldicion || res.effect === 'radiacion' || ((res.ergios ?? 0) < 0 && !res.familiar && !res.score);
     audio.sfx(bad ? 'wrong' : 'correct');
 
     const g = this.add.graphics();
@@ -160,14 +161,14 @@ export function aplicarResultado(r: Result): string[] {
     for (let i = 0; i < r.junk.n; i++) addCard(r.junk.id);
     out.push(`${r.junk.n} «${CARDS[r.junk.id].name}» a tu mazo`);
   }
+  if (r.maldicion) out.push(`Maldición: ${darMaldicion(r.maldicion === 'random' ? undefined : r.maldicion)}`);
   if (r.upgradeRandom) {
     const c = run.deck.filter((x) => !x.up && CARDS[x.id].rarity !== 'estado' && !CARDS[x.id].pieza);
     if (c.length) { const x = Phaser.Utils.Array.GetRandom(c); x.up = true; out.push(`Mejorada: ${cardName(x)}`); }
   }
   if (r.removeRandom && run.deck.length > 5) {
     const i = Math.floor(Math.random() * run.deck.length);
-    const [c] = run.deck.splice(i, 1);
-    out.push(`Olvidaste: ${cardName(c)}`);
+    out.push(`Olvidaste: ${quitarDelMazo(i)}`);
   }
   if (r.familiar) {
     const fid = addFamiliar(r.familiar, r.famCombats);

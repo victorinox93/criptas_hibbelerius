@@ -34,7 +34,8 @@ export interface Result {
   familiar?: string;
   famCombats?: number;
   removeRandom?: boolean;
-  upgradeRandom?: boolean; // v0.69 · mejora una carta al azar de tu mazo
+  upgradeRandom?: boolean;
+  maldicion?: string; // v0.71 · una maldición ('random' o su id) entra a tu mazo // v0.69 · mejora una carta al azar de tu mazo
   score?: number;
   entropia?: number; // Entropía mental (src/data/abismo.ts)
 }

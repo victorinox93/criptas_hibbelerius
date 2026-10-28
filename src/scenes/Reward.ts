@@ -1,5 +1,6 @@
 import { EDICIONES, sortearEdicion } from '../data/abismo_modo';
 import Phaser from 'phaser';
+import { darMaldicion } from '../data/maldiciones';
 import { legendariasDisponibles } from '../data/cards';
 import { CSS, UI } from '../art/palette';
 import { W } from '../config';
@@ -27,6 +28,7 @@ export function grantRelic(id: string) {
     r.maxHp += 30;
     r.hp = Math.min(r.maxHp, r.hp + 30);
   }
+  if (id === 'llaveRlyeh') { darMaldicion(); darMaldicion(); } // v0.71 · reliquia maldita
   // ¿te pasaste del límite? La capa superior (Overlay) te pide descartar una
   if (r.relics.filter(cuentaTope).length > MAX_RELIQUIAS) r.reliquiaNueva = id;
 }
