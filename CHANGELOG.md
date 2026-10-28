@@ -2,6 +2,28 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.72.0 · Recetas (beta)
+
+- **14 recetas nuevas en el Taller de Newton** (ahora son 23 de cartas):
+  - Tajo Angulado + ΣF = 0 → **Suma de Vectores** (daño a todos y Bloqueo).
+  - Peso Muerto + Muro de Masa → **Caída Libre** (m·g·h → ½·m·v²; ignora el Bloqueo).
+  - Fricción Ardiente + Amortiguador → **Frenos de Disco** (Bloqueo y Calor a todos).
+  - Batería de Resorte + Energía Almacenada → **Muelle Cargado** (+1 J y Bloqueo cada turno).
+  - Impulso Sostenido + Perdigones → **Ráfaga de Impulsos** (5 golpes al azar).
+  - Retroceso + Conservación de p → **Ley de Conservación** (daño y el mismo Bloqueo).
+  - Acelerar + Ráfaga Cinética → **Haz Relativista** (Arcanista).
+  - Barrera Inercial + Escudo de Energía → **Campo de Fuerza** (Arcanista; el Bloqueo se conserva).
+  - Tobera Variable + Reabastecer → **Ecuación de Tsiolkovski** (Penitente).
+  - Retrocohete + Estela de Plasma → **Escudo Térmico** (Penitente).
+  - Frecuencia Natural + Fatiga del Material → **Puente de Tacoma** (Resonancia y Fatiga a todos).
+  - Límite + Integral → **Serie Geométrica** (4 golpes que se duplican).
+  - Palanca de Arquímedes + Torque Abisal → **Brazo de Palanca** (Abismo).
+  - Golpe al Centroide + Momento de Inercia → **I = I_cm + m·d²** (Abismo).
+- El Recetario ahora se ve por páginas (8 recetas por página).
+- **Abismo:** otra vez eliges **2 cartas por sobre** y **2 dientes de 4** al empezar (el Pacto de la Sonrisa da 3).
+- **Guía del Abismo actualizada:** daño al fallar preguntas, dientes y sobres del inicio, y dos páginas nuevas: «Pactos del mythos» (el Hombre Negro, los altares, el Demonio de Maxwell y las reliquias malditas) y «Maldiciones».
+- El Peregrino de Yuggoth ya no «zumba»: aletea.
+
 ## v0.71.0 · Pactos y Maldiciones (beta)
 
 - **Maldiciones** (como en Slay the Spire): un tipo de carta nuevo, injugable, que se queda en tu mazo hasta que alguien te la quita.

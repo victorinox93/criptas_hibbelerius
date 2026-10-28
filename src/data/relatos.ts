@@ -384,7 +384,7 @@ RELATOS.push(
   },
   {
     id: 'peregrino', titulo: 'El Peregrino de Yuggoth', obra: '', anio: 0, icono: 'i_astro', tinte: 0xe070a0, npc: 'fig_migo', pie: 'Personaje del Abismo\n(ayuda… a su manera)', peso: 2,
-    intro: 'Un ser rosado con cabeza de hongo y alas de membrana zumba frente a ti. Viene de Yuggoth, en el borde del sistema solar. «Tu cerebro sufre aquí abajo. Yo lo puedo llevar en un cilindro de metal. No sentirás miedo. Tampoco sentirás… mucho más.»',
+    intro: 'Un ser rosado con cabeza de hongo y alas de membrana aletea frente a ti. Viene de Yuggoth, en el borde del sistema solar. «Tu cerebro sufre aquí abajo. Yo lo puedo llevar en un cilindro de metal. No sentirás miedo. Tampoco sentirás… mucho más.»',
     opciones: [
       { label: 'Dejar que lleve tu cerebro en un cilindro', risk: 'Hasta el final del tramo tu Cordura NO BAJA. A cambio, −15 de Vida máxima (la recuperas al terminar el tramo).', salidas: [
         { p: 1, e: { texto: 'Un clic, un frío en la nuca… y de pronto nada te asusta. Tampoco te sientes del todo entero.', cilindro: true } },
@@ -393,7 +393,7 @@ RELATOS.push(
         label: 'Preguntarle por la órbita de Yuggoth', risk: 'Pregunta de movimiento circular. Si aciertas: un diente de planeta y +6 de Cordura. Si fallas: −10 de Cordura.',
         pregunta: {
           concepts: ['Movimiento circular'],
-          bien: { texto: 'El Mi-Go zumba contento: casi nadie entiende las órbitas. Te regala un diente que viene de muy lejos.', diente: 'astro', cordura: 6 },
+          bien: { texto: 'El Mi-Go chasquea sus pinzas, contento: casi nadie entiende las órbitas. Te regala un diente que viene de muy lejos.', diente: 'astro', cordura: 6 },
           mal: { texto: 'El Mi-Go te explica la respuesta con imágenes directo en tu cabeza. Ojalá no lo hubiera hecho.', cordura: -10 },
         },
       },
