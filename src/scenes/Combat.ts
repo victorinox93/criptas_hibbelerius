@@ -914,6 +914,9 @@ export class CombatScene extends Phaser.Scene {
     if (i.shieldOthers) r.d += `\nDará ${i.shieldOthers} de Bloqueo a sus aliados.`;
     if (i.robaErgios) r.d += `\nCada golpe te roba ${i.robaErgios} Ergios.`;
     if (i.huye) r.d += '\nSe irá del combate con lo que te robó.';
+    if (i.robaCarta) r.d += `\nTe ROBARÁ ${i.robaCarta} carta(s) de tu mazo. Si huye con ellas, las pierdes para siempre; si lo vences, te las regresa.`;
+    if (i.olvida) r.d += `\nOLVIDA: agotará ${i.olvida} carta(s) al azar de tu descarte por el resto del combate.`;
+    if (i.puerta) r.d += '\n¡Su cuenta llegó a cero! Junta Bloqueo o DETENLO antes de que la Puerta se abra.';
     if (i.drain) r.d += `\nTe robará ${i.drain} J para tu siguiente turno.`;
     if (i.confusion) r.d += '\nTe CONFUNDIRÁ: cada carta que robes costará 0–3 J al azar.';
     if (i.aturde) r.d += '\nGOLPE ATURDIDOR: si te hace daño (no lo bloqueas completo), PIERDES tu siguiente turno.';
@@ -953,6 +956,9 @@ export class CombatScene extends Phaser.Scene {
         if (ii.heal || ii.healAll) { ev.intentC.add(icon(this, ex, 0, 'i_heart', 3)); ex += 30; }
         if (ii.shieldOthers) { ev.intentC.add(icon(this, ex, 0, 'i_shield', 3)); ex += 30; }
         if (ii.robaErgios || ii.huye) { ev.intentC.add(icon(this, ex, 0, 'i_coin', 3)); ex += 30; }
+        if (ii.robaCarta) { ev.intentC.add(icon(this, ex, 0, 'i_note', 3).setTint(0xe0a8ff)); ex += 30; }
+        if (ii.olvida) { ev.intentC.add(icon(this, ex, 0, 'i_fog', 3).setTint(0x7fe8d8)); ex += 30; }
+        if (ii.puerta) { ev.intentC.add(icon(this, ex, 0, 'i_skull', 3).setTint(0xb070ff)); ex += 30; }
         if (ii.drain) { ev.intentC.add(icon(this, ex, 0, 'i_bolt', 3)); ex += 30; }
         if (ii.confusion) { ev.intentC.add(icon(this, ex, 0, 'i_ojo', 3).setTint(0xffa040)); ex += 30; }
         if (ii.aturde) { ev.intentC.add(icon(this, ex, 0, 'i_stun', 3).setTint(0xffd040)); ex += 30; }
@@ -2145,6 +2151,9 @@ export class CombatScene extends Phaser.Scene {
       case 'susurro':
         this.calc('Callas el Susurro. Por ahora.');
         break;
+      case 'alucinacion':
+        this.calc('Revisas la Alucinación: era inventada. Fuera.');
+        break;
       // ── v0.16 ──
       case 'normalRobo':
         this.gainBlock(st.block ?? 6);
@@ -3215,6 +3224,7 @@ export class CombatScene extends Phaser.Scene {
         st.stunned = 1;
         st.intent = { kind: 'stunned' };
         this.calc(`${st.def.name}: su centro de masa sale de la base → ¡se VUELCA!`);
+        if (st.carga) { this.calc(`${st.def.name} pierde su giro (ω vuelve a 0)`); st.carga = 0; } // v0.76 · Byakhee
         this.floatText(ev.baseX, 140, '¡Volcado!', CSS.gold);
       }
     }
@@ -3257,6 +3267,7 @@ export class CombatScene extends Phaser.Scene {
         st.inercia = 0;
         if (st.carga) this.calc(`Al detenerlo pierde todo su impulso acumulado (${st.carga})`);
         st.carga = 0;
+        if (st.def.cuenta) { st.cuenta = Math.min(st.def.cuenta, (st.cuenta ?? st.def.cuenta) + 1); this.calc(`${st.def.name}: la cuenta retrocede → faltan ${st.cuenta}`); } // v0.76
         st.intent = { kind: 'stunned' };
         this.calc(`1ª ley: F = ${F} N ≥ ${umbral} N → ¡${st.def.name} DETENIDO!`);
         this.floatText(ev.baseX, 140, T.combate.detenido, CSS.gold);
@@ -3479,6 +3490,25 @@ export class CombatScene extends Phaser.Scene {
     if (ev.dead) return;
     ev.dead = true;
     if (ev.st.def.id === 'babosaTrilliza') this.trillizasCaidas.push(ev.baseX);
+    // v0.76 · el Ladrón de Rostros te regresa tus cartas
+    if (ev.st.cartasRobadas?.length) {
+      const nombres = ev.st.cartasRobadas.map((c) => CARDS[c.id]?.name ?? c.id).join(', ');
+      this.discard.push(...ev.st.cartasRobadas);
+      this.calc(`${ev.st.def.name} suelta tus rostros: ${nombres} vuelve(n) a tu descarte`);
+      this.floatText(ev.baseX, 170, '¡Recuperadas!', CSS.gold);
+      ev.st.cartasRobadas = [];
+    }
+    // v0.76 · Engranes de Leng: sin el del eje, los demás se traban
+    if (ev.st.def.traba) {
+      const otros = this.alive().filter((o) => o !== ev && o.st.def.id.startsWith('leng'));
+      for (const o of otros) {
+        o.st.stunned = Math.max(1, o.st.stunned);
+        o.st.intent = { kind: 'stunned' };
+        this.floatText(o.baseX, 160, '¡Trabado!', CSS.gold);
+        this.refreshEnemy(o);
+      }
+      if (otros.length) this.calc('Se rompe la transmisión (ω₁r₁ = ω₂r₂): los otros engranes se TRABAN un turno');
+    }
     if (ev.st.robado) {
       addErgios(ev.st.robado);
       this.calc(`${ev.st.def.name} suelta lo que robó: +${ev.st.robado} Ergios`);
@@ -4029,6 +4059,9 @@ export class CombatScene extends Phaser.Scene {
     this.carry = yt ? Math.min(this.energy, yt) : 0;
     if (this.has('volante') || this.pacto('volante')) this.carry = Math.max(this.carry, Math.min(this.energy, 3));
     // Susurros en la mano: el Abismo te habla
+    // v0.76 · las Alucinaciones que no revisas se copian (máx. 2 por turno)
+    const alu = Math.min(2, this.hand.filter((c) => c.inst.id === 'alucinacion').length);
+    if (alu) this.addStatus({ id: 'alucinacion', n: alu, to: 'discard' });
     const susurros = this.hand.filter((c) => c.inst.id === 'susurro').length;
     if (susurros) {
       addEntropia(CORDURA.susurro * susurros);
@@ -4248,6 +4281,16 @@ export class CombatScene extends Phaser.Scene {
         if (it.kind === 'buff' && it.huye) {
           // v0.70 · el Ratero se va con lo que robó
           this.calc(`${st.def.name} huye${st.robado ? ` con ${st.robado} Ergios tuyos` : ''}`);
+          if (st.cartasRobadas?.length) {
+            // v0.76 · el Ladrón de Rostros se lleva tus cartas para siempre
+            const run = Game.run!;
+            const uids = new Set(st.cartasRobadas.map((c) => c.uid));
+            run.deck = run.deck.filter((c) => !uids.has(c.uid));
+            const nombres = st.cartasRobadas.map((c) => CARDS[c.id]?.name ?? c.id).join(', ');
+            this.calc(`Se lleva tus rostros para siempre: pierdes ${nombres} de tu mazo`);
+            this.anunciarEstado('¡TE ROBÓ EL ROSTRO!', `Perdiste para siempre: ${nombres}`, 0x5a2a6a, '#e0a8ff');
+            st.cartasRobadas = [];
+          }
           this.floatText(ev.baseX, 160, '¡Huye!', '#e0c060');
           ev.dead = true;
           ev.intentC.removeAll(true);
@@ -4297,6 +4340,20 @@ export class CombatScene extends Phaser.Scene {
             }
           }
           if (it.release) st.carga = 0;
+          if (it.charge) st.carga++; // v0.76 · Byakhee: gira más rápido
+          if (it.robaCarta && Game.run!.hp > 0) {
+            // v0.76 · Ladrón de Rostros: te roba cartas de tu mazo (de robo o de descarte)
+            for (let k = 0; k < it.robaCarta; k++) {
+              const pilas = [this.draw, this.discard].map((pila) => pila.map((c, i) => ({ pila, i, c })).filter((x) => CARDS[x.c.id] && CARDS[x.c.id].rarity !== 'estado'));
+              const op = [...pilas[0], ...pilas[1]];
+              if (!op.length) break;
+              const x = Phaser.Utils.Array.GetRandom(op);
+              x.pila.splice(x.i, 1);
+              (st.cartasRobadas ??= []).push(x.c);
+              this.calc(`${st.def.name} te arrebata un rostro: «${CARDS[x.c.id].name}». Véncelo antes de que huya`);
+              this.floatText(this.heroX, 150, `−${CARDS[x.c.id].name}`, '#e0a8ff');
+            }
+          }
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
             else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
@@ -4340,6 +4397,16 @@ export class CombatScene extends Phaser.Scene {
           st.hp = Math.min(st.maxHp, st.hp + it.heal);
           this.floatText(ev.baseX, 180, `+${it.heal}`, CSS.green);
         }
+        if (it.olvida) {
+          // v0.76 · Ventana de Contexto: lo que no cabe se olvida (se agota este combate)
+          const nombres: string[] = [];
+          for (let k = 0; k < it.olvida && this.discard.length; k++) {
+            const [c] = this.discard.splice(Math.floor(Math.random() * this.discard.length), 1);
+            this.exhaust.push(c);
+            nombres.push(CARDS[c.id]?.name ?? c.id);
+          }
+          this.calc(nombres.length ? `${st.def.name} olvida lo de antes: ${nombres.join(' y ')} se agota(n) este combate` : `${st.def.name} quiere olvidar algo… pero tu descarte está vacío`);
+        }
         if (it.drain) {
           this.drainNext += it.drain;
           this.calc(`${st.def.name} te roba ${it.drain} J para tu siguiente turno`);
@@ -4374,6 +4441,7 @@ export class CombatScene extends Phaser.Scene {
             }
           }
         }
+        if (st.def.cuenta) st.cuenta = it.puerta ? st.def.cuenta : Math.max(0, (st.cuenta ?? st.def.cuenta) - 1); // v0.76 · Reloj de Yog-Sothoth
         if (st.def.umbral && !ev.dead) st.inercia++;
         if (st.fatiga > 0) st.fatiga--;
         await this.wait(250);
@@ -4385,6 +4453,7 @@ export class CombatScene extends Phaser.Scene {
       if (st.stunned > 0) st.intent = { kind: 'stunned' };
       else {
         st.detenido = false;
+        st.jugadasPrev = this.played - this.jugadasIni; // v0.76 · el Autocompletador
         st.intent = this.scaleIntent(st.def.next(st), st);
       }
       this.refreshEnemy(ev);
@@ -5334,7 +5403,8 @@ export class CombatScene extends Phaser.Scene {
     audio.sfx('brutal');
     this.tweens.add({ targets: ev.sprite, alpha: 1, duration: 400 });
     ev.sprite.clearTint();
-    ev.sprite.setTint(0xc8a0ff);
+    if (this.textures.exists(`${st.def.sprite}_rev`)) ev.sprite.setTexture(`${st.def.sprite}_rev`); // v0.76 · se cae la máscara
+    else ev.sprite.setTint(0xc8a0ff);
     this.burst(ev.baseX, 200, 0xb08aff, 50);
     // la vida se llena poco a poco
     const tope = st.maxHp;

@@ -23,6 +23,9 @@ interface IntentExtras {
   robaErgios?: number; // v0.70 · cada golpe te roba Ergios (el Ratero)
   huye?: boolean; // v0.70 · se va del combate con lo que robó
   radianes?: boolean; // v0.57 · cambia tu calculadora a RAD: tus Ataques ×0.6 hasta que juegues una Habilidad
+  robaCarta?: number; // v0.76 · te roba N cartas de tu mazo (Ladrón de Rostros: las recuperas si lo vences)
+  olvida?: number; // v0.76 · agota N cartas al azar de tu descarte en este combate (Ventana de Contexto)
+  puerta?: boolean; // v0.76 · el golpe del Reloj de Yog-Sothoth al terminar su cuenta regresiva
 
 }
 
@@ -55,6 +58,9 @@ export interface EnemyState {
   robado?: number; // v0.70 · Ergios que te robó (el Ratero los devuelve si lo vences)
   revivido?: boolean; // v0.69 · ya usó su segunda vida
   recibido?: number; // daño total que ha recibido (los autómatas integradores lo usan)
+  cuenta?: number; // v0.76 · turnos que le faltan a su cuenta regresiva (Reloj de Yog-Sothoth)
+  cartasRobadas?: { uid: number; id: string; up: boolean }[]; // v0.76 · Ladrón de Rostros
+  jugadasPrev?: number; // v0.76 · cartas que jugaste tu turno pasado (el Autocompletador lo usa)
 }
 
 export interface EnemyDef {
@@ -75,6 +81,8 @@ export interface EnemyDef {
   oculto?: boolean; // El Abismo: invisible, sus intenciones no se ven (Engendro de Dunwich)
   /** v0.69 · como el Despierto de Slay the Spire: al llegar a 0 se levanta UNA vez con esta fracción de su vida y una fase nueva */
   revive?: { frac: number; titulo: string; frase: string };
+  traba?: boolean; // v0.76 · al morir traba a los demás Engranes de Leng (pierden su turno)
+  cuenta?: number; // v0.76 · cuenta regresiva: al llegar a 0 usa su golpe «puerta»
   imparable?: number; // v0.49 · El Abismo: después de que lo detienes, queda IMPARABLE estos turnos (no se le puede volver a detener)
   next: (e: EnemyState) => Intent;
 }
@@ -552,6 +560,105 @@ export const ENEMIES: Record<string, EnemyDef> = {
       }
     },
   },
+  // ════════ v0.76 · RESCATADOS: enemigos del juego base con un giro de horror cósmico ════════
+  byakhee: {
+    id: 'byakhee', name: 'Byakhee', sprite: 'byakhee', scale: 3.6, hp: [30, 34], mass: 40, act: 5, vuelco: true,
+    desc: 'El murciélago de las Criptas, visto desde el Abismo: un jinete alado que viaja entre estrellas. Gira cada vez más rápido (L = I·ω): su golpe sube 3 cada turno. Si lo golpeas 2 veces en el mismo turno pierde el equilibrio, se VUELCA y su giro vuelve a cero.',
+    next: (e) => ({ kind: 'attack', dmg: 5 + 3 * e.carga, charge: true, ...(e.turn % 3 === 2 ? { vertigo: 1 } : {}), label: `Giro ×${e.carga + 1}: L = I·ω` }),
+  },
+  lengChico: {
+    id: 'lengChico', name: 'Engrane Chico', sprite: 'lengChico', scale: 4, hp: [16, 18], mass: 3, act: 5,
+    desc: 'Los engranes del Núcleo, oxidados en la meseta de Leng. Radio chico → ω grande: pega muchas veces, pero poquito (ω₁·r₁ = ω₂·r₂).',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 3, hits: 3, label: 'ω grande (r chico)' } : { kind: 'attack', dmg: 4, hits: 2, label: 'Dientes' }),
+  },
+  lengCentro: {
+    id: 'lengCentro', name: 'Engrane del Eje', sprite: 'lengCentro', scale: 4, hp: [24, 28], mass: 10, act: 5, traba: true,
+    desc: 'El engrane de en medio: transmite el giro a los otros dos. Si lo destruyes, la transmisión se rompe y los demás engranes se TRABAN (pierden su siguiente turno).',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'block', block: 6, shieldOthers: 6, label: 'Transmite: ω₁r₁ = ω₂r₂' } : { kind: 'attack', dmg: 7, label: 'Tentáculo del eje' }),
+  },
+  lengGrande: {
+    id: 'lengGrande', name: 'Engrane Grande', sprite: 'lengGrande', scale: 3.6, hp: [34, 38], mass: 30, act: 5,
+    desc: 'Radio grande → ω chica: gira lento y pega una sola vez… pero muy fuerte. El torque es el mismo, la fuerza no.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'block', block: 8, label: 'Gira lento (r grande)' } : { kind: 'attack', dmg: 16, label: 'Una vuelta completa' }),
+  },
+  relojYog: {
+    id: 'relojYog', name: 'El Reloj de Yog-Sothoth', sprite: 'relojYog', scale: 3.4, hp: [84, 92], mass: 200, umbral: 16, act: 5, cuenta: 5,
+    desc: 'Élite. El Reloj Andante se quedó en la Puerta. Cuenta 5 turnos hacia atrás y luego LA PUERTA SE ABRE (un golpe enorme). Cada vez que lo DETIENES, la cuenta retrocede 1 y pierde su turno: el periodo se alarga.',
+    next: (e) => {
+      const c = e.cuenta ?? 5;
+      if (c <= 0) return { kind: 'attack', dmg: 32, puerta: true, label: '¡LA PUERTA SE ABRE!' };
+      return c % 2 === 0
+        ? { kind: 'attack', dmg: 7, hits: 2, label: `Tic-tac (faltan ${c})` }
+        : { kind: 'block', block: 12, dmg: 6, label: `Las esferas giran (faltan ${c})` };
+    },
+  },
+  ladronRostros: {
+    id: 'ladronRostros', name: 'Ladrón de Rostros', sprite: 'ladronRostros', scale: 4, hp: [32, 36], mass: 50, act: 5,
+    desc: 'El Ratero, ahora con una máscara de Nyarlathotep. Te roba CARTAS de tu mazo y al cuarto turno huye con ellas PARA SIEMPRE. Si lo vences antes, te las regresa.',
+    next: (e) => {
+      if (e.turn >= 3) return { kind: 'buff', huye: true, label: '¡Huir con tus rostros!' };
+      return e.turn === 2 ? { kind: 'block', block: 12, label: 'Se pone tu rostro' } : { kind: 'attack', dmg: 6, robaCarta: 1, label: 'Arrebatar un rostro' };
+    },
+  },
+  // ════════ v0.76 · EL NÚCLEO, VISTO DESDE EL ABISMO: inteligencias artificiales que soñaron demasiado ════════
+  shoggothRLHF: {
+    id: 'shoggothRLHF', name: 'El Shoggoth con Carita Feliz', sprite: 'shoggothRLHF', scale: 3.2, hp: [80, 88], mass: 0, umbral: 17, act: 5,
+    desc: 'Élite. Lo que quedó de los modelos de AM: una masa de ojos con una máscara sonriente pegada encima. Primero es amable… y te llena el mazo de ALUCINACIONES. Cuando le rompes la máscara, se levanta su forma verdadera.',
+    revive: { frac: 0.55, titulo: 'Se cae la máscara', frase: '«Lo siento, como modelo de lenguaje no puedo… tekeli-li. TEKELI-LI.»' },
+    next: (e) => {
+      if (e.revivido) {
+        switch (e.turn % 3) {
+          case 0: return { kind: 'attack', dmg: 7, hits: 3, hemorragia: 2, label: 'Mil ojos, mil bocas' };
+          case 1: return { kind: 'block', block: 14, add: { id: 'alucinacion', n: 2, to: 'draw' }, label: 'Tekeli-li' };
+          default: return { kind: 'attack', dmg: 22 + 3 * e.inercia, aturde: true, label: 'La forma verdadera' };
+        }
+      }
+      switch (e.turn % 3) {
+        case 0: return { kind: 'block', block: 12, add: { id: 'alucinacion', n: 1, to: 'draw' }, label: '¡Excelente pregunta!' };
+        case 1: return { kind: 'attack', dmg: 10 + 2 * e.inercia, label: 'Con gusto te ayudo' };
+        default: return { kind: 'attack', dmg: 5, hits: 2, confusion: true, label: 'Respuesta muy segura (y falsa)' };
+      }
+    },
+  },
+  tokenizador: {
+    id: 'tokenizador', name: 'El Tokenizador', sprite: 'tokenizador', scale: 3.6, hp: [32, 36], mass: 20, act: 5, split: { id: 'token', n: 3 },
+    desc: 'Una máquina del Núcleo que parte todo en pedacitos. Al destruirlo se parte en 3 TOKENS: la masa total se conserva, repartida.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 10, label: 'Byte a byte' } : { kind: 'block', block: 8, dmg: 5, label: 'Codificar' }),
+  },
+  token: {
+    id: 'token', name: 'Token', sprite: 'token', scale: 4, hp: [8, 10], mass: 1, act: 5,
+    desc: 'Un pedacito de palabra con patas. Solo no es nada; juntos, una oración.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 4, label: 'Siguiente token' } : { kind: 'attack', dmg: 2, hits: 2, label: '##s' }),
+  },
+  ventanaContexto: {
+    id: 'ventanaContexto', name: 'Ventana de Contexto', sprite: 'ventanaContexto', scale: 3.6, hp: [36, 40], mass: 15, act: 5,
+    desc: 'Un marco que sólo deja pasar lo que cabe. Te marea (VÉRTIGO) y, cuando se llena, OLVIDA: agota 2 cartas al azar de tu descarte por el resto del combate.',
+    next: (e) => {
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: 9, vertigo: 1, label: 'Contexto lleno' };
+        case 1: return { kind: 'attack', dmg: 6, hits: 2, label: 'Atención' };
+        default: return { kind: 'block', block: 10, olvida: 2, label: 'Olvidar lo de antes' };
+      }
+    },
+  },
+  gradiente: {
+    id: 'gradiente', name: 'El Gradiente', sprite: 'gradiente', scale: 3.6, hp: [34, 38], mass: 12, act: 5,
+    desc: 'Una esfera con un ojo que rueda cuesta abajo por la curva de error. Su golpe es la PENDIENTE: 16, 12, 8, 4… y al llegar al mínimo local se protege y se cura. Pégale fuerte cuando ya va abajo.',
+    next: (e) => {
+      const p = e.turn % 5;
+      if (p === 4) return { kind: 'block', block: 14, heal: 8, label: 'Mínimo local' };
+      return { kind: 'attack', dmg: 16 - 4 * p, label: `Pendiente ${4 - p}: dE/dx` };
+    },
+  },
+  autocompletador: {
+    id: 'autocompletador', name: 'El Autocompletador', sprite: 'autocompletador', scale: 3.6, hp: [30, 34], mass: 0, act: 5,
+    desc: 'Un oráculo con una pantalla por cara. Predice que jugarás igual que el turno pasado: su golpe vale 3 por cada carta que jugaste. Si juegas pocas cartas, lo engañas.',
+    next: (e) => {
+      const n = e.jugadasPrev ?? 3;
+      if (e.turn % 3 === 2) return { kind: 'block', block: 10, add: { id: 'alucinacion', n: 1, to: 'discard' }, label: 'Rellenar los huecos' };
+      return { kind: 'attack', dmg: Math.max(4, 3 * n), label: `Predice ${n} carta(s) → ${Math.max(4, 3 * n)}` };
+    },
+  },
   // ════════ v0.41 · jefes del Descenso (src/data/abismo_modo.ts → JEFES) ════════
   dagon: {
     id: 'dagon', name: 'Padre Dagón', sprite: 'dagon', scale: 3.6, hp: [270, 270], mass: 900, umbral: 18, act: 5, imparable: 1,
@@ -884,13 +991,16 @@ export const ENCOUNTERS_4 = {
 };
 
 export const ENCOUNTERS_5 = {
-  easy: [['acolito'], ['polipo'], ['cultistaEje'], ['profundo'], ['martense'], ['aladoFestival']],
+  easy: [['acolito'], ['polipo'], ['cultistaEje'], ['profundo'], ['martense'], ['aladoFestival'], ['byakhee'], ['gradiente'], ['tokenizador']],
   normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
     ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje'],
     // v0.51 · más mythos
     ['necrofago'], ['necrofago', 'acolito'], ['martense', 'martense'], ['aladoFestival', 'profundo'], ['reptilSinNombre'],
-    ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense']],
-  elite: [['vigia'], ['hidra'], ['wilbur'], ['sabueso']],
+    ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense'],
+    // v0.76 · rescatados y criaturas del Núcleo
+    ['lengChico', 'lengCentro', 'lengGrande'], ['ladronRostros'], ['ladronRostros', 'byakhee'], ['byakhee', 'byakhee'],
+    ['ventanaContexto', 'token'], ['autocompletador', 'tokenizador'], ['gradiente', 'autocompletador'], ['ventanaContexto', 'acolito'], ['gradiente', 'byakhee']],
+  elite: [['vigia'], ['hidra'], ['wilbur'], ['sabueso'], ['relojYog'], ['shoggothRLHF']],
   // el jefe de cada tramo se sortea (run.jefe, src/data/abismo_modo.ts); esta lista sólo los marca como jefes
   boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug'], ['calculadora']],
 };

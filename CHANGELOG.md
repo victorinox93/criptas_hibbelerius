@@ -2,6 +2,23 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.76.0 · Rescatados y el Núcleo
+
+12 criaturas nuevas en el Abismo, con dibujo propio (tools/arte/rescatados.py):
+- **Rescatados del juego base con giro de horror cósmico:**
+  - **Byakhee** (era el Murciélago): gira más rápido cada turno, +3 de daño (L = I·ω). Con 2 golpes en un turno se vuelca y su giro vuelve a 0.
+  - **Engranes de Leng** (eran los Engranes del Núcleo), un trío: el chico pega muchas veces poquito, el grande una vez muy fuerte (ω₁r₁ = ω₂r₂). Si destruyes el del eje, los otros se traban un turno.
+  - **El Reloj de Yog-Sothoth** (élite; era el Reloj Andante): cuenta 5 turnos y abre la Puerta (32 de daño). Cada vez que lo detienes, la cuenta retrocede 1.
+  - **Ladrón de Rostros** (era el Ratero): te roba cartas del mazo y al 4º turno huye con ellas para siempre. Si lo vences antes, te las regresa.
+- **El Núcleo visto desde el Abismo (IA):**
+  - **El Shoggoth con Carita Feliz** (élite): amable y lleno de Alucinaciones. Al romperle la máscara se levanta su forma verdadera (cambia de dibujo).
+  - **El Tokenizador**: al morir se parte en 3 **Tokens**.
+  - **Ventana de Contexto**: te da Vértigo y «olvida» 2 cartas de tu descarte (se agotan en ese combate).
+  - **El Gradiente**: su golpe es la pendiente (16, 12, 8, 4) y en el mínimo local se protege y se cura.
+  - **El Autocompletador**: predice que jugarás igual que el turno pasado y pega 3 por cada carta que jugaste.
+- **Carta de estado nueva: Alucinación.** Cuesta 1 y no hace nada. Si se queda en tu mano al terminar el turno, se copia a tu descarte.
+- La guía del Abismo tiene una página nueva: «Rescatados y el Núcleo».
+
 ## v0.75.0 · Abismo en pruebas
 
 - **El portal del Abismo vuelve a cerrarse** para los alumnos mientras el profe sigue probando: sólo se entra con el Modo profesor. Quien ya venció a AM ve «🔒 Próximamente».

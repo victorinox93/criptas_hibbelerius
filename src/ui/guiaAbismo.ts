@@ -305,6 +305,25 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     },
   },
   {
+    titulo: 'Rescatados y el Núcleo',
+    texto: 'Viejos conocidos de las Criptas que el Abismo cambió, y lo que quedó de las máquinas de AM: inteligencias que soñaron demasiado.',
+    dibujo: (s, L) => {
+      const bichos: [string, string, string][] = [
+        ['byakhee', 'Byakhee', 'Gira más rápido cada turno (L = I·ω). Dos golpes en un turno lo vuelcan y su giro vuelve a 0.'],
+        ['relojYog', 'Reloj de Yog-Sothoth', 'Cuenta 5 turnos y abre la Puerta. Detenerlo hace que la cuenta retroceda.'],
+        ['ladronRostros', 'Ladrón de Rostros', 'Te roba cartas y huye con ellas para siempre. Véncelo antes del 4º turno.'],
+        ['shoggothRLHF', 'Shoggoth con Carita Feliz', 'Amable… y lleno de Alucinaciones. Rómpele la máscara y verás lo que hay debajo.'],
+      ];
+      bichos.forEach(([sp, nom, txt0], i) => {
+        const x = 150 + i * 220;
+        L(s.add.image(x, 290, sp).setOrigin(0.5, 1).setScale(3));
+        L(txt(s, x, 306, nom, 18, CSS.gold).setOrigin(0.5, 0));
+        L(txt(s, x, 332, txt0, 15, CSS.bone, { align: 'center', wordWrap: { width: 200 } }).setOrigin(0.5, 0));
+      });
+      L(txt(s, W / 2, 404, 'También: los Engranes de Leng (ω₁r₁ = ω₂r₂), el Tokenizador, la Ventana de Contexto, el Gradiente (pega según la pendiente) y el Autocompletador.', 16, '#9ad8f0', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+    },
+  },
+  {
     titulo: 'Ecos Quebrados y preguntas',
     texto: 'En los santuarios pueden aparecer científicos reales que vivieron crisis mentales graves. Sus dones ayudan con la Cordura. Las preguntas son de cuerpo rígido (60 %) y de repaso (40 %).',
     dibujo: (s, L) => {
