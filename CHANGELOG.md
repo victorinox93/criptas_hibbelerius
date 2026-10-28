@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.75.0 · Abismo en pruebas
+
+- **El portal del Abismo vuelve a cerrarse** para los alumnos mientras el profe sigue probando: sólo se entra con el Modo profesor. Quien ya venció a AM ve «🔒 Próximamente».
+- **Enemigos del Abismo −20 % de vida y −20 % de daño** (ajuste de pruebas: `AJUSTE_ABISMO` en src/data/abismo_modo.ts). El modo normal no cambia.
+
 ## v0.74.0 · El Abismo se abre
 
 - **El portal del Abismo ya está abierto** en el menú para quien venció a AM (y para el profe). Antes decía «Próximamente». Las partidas del Abismo ahora cuentan: se registran en la hoja, dan logros y entran a su propio ranking. Si tenías una expedición en curso, se abandona al bajar.
