@@ -956,6 +956,13 @@ export const CARDS: Record<string, CardDef> = {
     text: () => `Si sigue en tu mano al\nterminar el turno:\n−3 de Cordura.\nJugarla la calla.`,
     lore: '«…los ejes están ahí, pero ellos no los ven…» — diario de Ignacio Montemayor',
   },
+  // v0.76 · la mete el Shoggoth con Carita Feliz (y el Autocompletador)
+  alucinacion: {
+    id: 'alucinacion', name: 'Alucinación', type: 'Estado', icon: 'i_ojo', concept: 'Estado', rarity: 'estado', target: 'self', cls: 'estado', exhaust: true,
+    stats: () => ({ cost: 1 }),
+    text: () => `Suena muy segura.\nNo hace nada.\nSi sigue en tu mano al\nterminar el turno, se copia\n(otra a tu descarte).`,
+    lore: 'Una respuesta inventada, dicha con total confianza. Si no la revisas, se repite… y se repite.',
+  },
   // ════════ v0.71 · MALDICIONES (como en Slay the Spire): se quedan en tu mazo hasta que alguien te las quite ════════
   m_arrepentimiento: {
     id: 'm_arrepentimiento', name: 'Arrepentimiento', type: 'Maldición', icon: 'i_skull', concept: 'Maldición', rarity: 'estado', target: 'self', cls: 'estado', unplayable: true,
