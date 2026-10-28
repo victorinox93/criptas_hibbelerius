@@ -165,7 +165,8 @@ export class MenuScene extends Phaser.Scene {
    * v0.74 · ABIERTO para quien ya venció a AM (y para el profe); los demás ven cómo abrirlo.
    */
   private portalAbismo() {
-    const abierto = amVencido() || isAdmin();
+    // v0.75 · cerrado otra vez mientras el profe sigue probando: sólo el Modo profesor lo abre (cambia a amVencido() || isAdmin() para abrirlo)
+    const abierto = isAdmin();
     const x = 432, y = 330;
     const c = this.add.container(x, y).setDepth(5);
     const halo = this.add.ellipse(0, 0, 190, 140, 0x9a6ad0, 0.22).setBlendMode(Phaser.BlendModes.ADD);
@@ -183,7 +184,7 @@ export class MenuScene extends Phaser.Scene {
     const ojo = this.add.image(0, -12, 'i_ojo').setScale(2.2).setTint(0x9affc8);
     this.tweens.add({ targets: ojo, alpha: 0.35, duration: 800, yoyo: true, repeat: -1 });
     const t1 = txt(this, 0, 20, 'BAJAR AL ABISMO', 17, '#b8ffd8').setOrigin(0.5).setStroke('#000', 4);
-    const t2 = txt(this, 0, 40, abierto ? '✦ Abierto' : '🔒 Vence a AM', 14, abierto ? '#9affc8' : '#ffb0ff').setOrigin(0.5).setStroke('#000', 3);
+    const t2 = txt(this, 0, 40, abierto ? '✦ Abierto' : amVencido() ? '🔒 Próximamente' : '🔒 Vence a AM', 14, abierto ? '#9affc8' : '#ffb0ff').setOrigin(0.5).setStroke('#000', 3);
     this.tweens.add({ targets: t1, scale: 1.06, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     c.add([halo, g, remo, ojo, t1, t2]);
     // letrero al pasar el cursor
@@ -191,7 +192,7 @@ export class MenuScene extends Phaser.Scene {
     const enCurso = !!(Game.run && !Game.run.done);
     const tt = txt(this, 0, 0, abierto
       ? `El Abismo de los Ejes: modo infinito de cuerpo rígido.${enCurso ? '\nTu expedición actual se abandonará.' : ''}`
-      : 'Sólo para quienes hayan vencido a AM\n(el jefe secreto del Acto IV).', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
+      : amVencido() ? 'Próximamente.\nEl profe todavía lo está preparando.' : 'Próximamente, sólo para quienes hayan vencido a AM\n(el jefe secreto del Acto IV).', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
     const tg = this.add.graphics();
     frame(tg, -tt.width / 2 - 14, -tt.height / 2 - 8, tt.width + 28, tt.height + 16, 0x1a0a2a, 0xc070ff, 0.97);
     tip.add([tg, tt]);
