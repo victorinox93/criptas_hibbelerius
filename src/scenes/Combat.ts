@@ -1158,6 +1158,15 @@ export class CombatScene extends Phaser.Scene {
       case 'f_impulso': return b({ dmg: F(), golpes: 3 });
       case 'f_conservacion': return b({ dmg: K(), nota: `Antes ganas +${st.extra} J.` });
       case 'f_cohete': return b({ dmg: 0, sinDano: `No hace daño directo: +${st.extra} de Calor a todos (y quemas 4 kg).` });
+      // v0.72 · más fusiones
+      case 'f_vectores': return b({ dmg: st.extra ?? 8, todos: true, nota: `Y ganas ${st.block} de Bloqueo.` });
+      case 'f_caida': return b({ dmg: st.extra ?? 24, ignora: true, nota: `Y ganas ${st.block} de Bloqueo.` });
+      case 'f_metralla': return b({ dmg: st.extra ?? 4, golpes: 5, azar: true });
+      case 'f_retro': return b({ dmg: st.extra ?? 14, nota: `Y ganas ${st.extra} de Bloqueo.` });
+      case 'f_haz': return b({ dmg: st.extra ?? 10, todos: true, nota: 'Antes ganas +2 m/s.' });
+      case 'f_tacoma': return b({ dmg: 0, sinDano: `No hace daño directo: +${st.extra} de Resonancia y Fatiga a todos.` });
+      case 'f_serie': { const a = st.extra ?? 2; return b({ dmg: a, nota: `Golpes: ${a}, ${2 * a}, ${4 * a}, ${8 * a} (total ${15 * a}, más bonos).` }); }
+      case 'f_brazo': return b({ dmg: st.extra ?? 10, golpes: 2, ignora: true });
       case 'embestida': return b({ dmg: F(), nota: `Retroceso: recibes ${Math.floor(F() / 4)} (¼ de F).` });
       case 'pendulo': return b({ dmg: F(), nota: 'Regresa al inicio de tu siguiente turno y golpea igual.' });
       case 'tajo': return b({ dmg: F(), nota: `Con θ = 60°: ${Math.round(F() * 0.5)} a TODOS (más bonos).` });
@@ -2410,6 +2419,90 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Ecuación del Cohete: +${st.extra} de Calor a todos`);
         break;
       }
+      // ── v0.72 · más fusiones del Taller de Newton ──
+      case 'f_vectores':
+        this.calc(`Suma de Vectores: R = √(Fx² + Fy²) → ${st.extra} a todos y +${st.block} de Bloqueo`);
+        await this.heroLunge();
+        for (const t of [...this.alive()]) await this.hitEnemy(t, st.extra ?? 8);
+        this.gainBlock(st.block ?? 8);
+        break;
+      case 'f_caida':
+        this.calc(`Caída Libre: V = m·g·h se vuelve K → ${st.extra}, ignora el Bloqueo`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.extra ?? 24, true);
+        this.gainBlock(st.block ?? 6);
+        break;
+      case 'f_frenos':
+        this.gainBlock(st.block ?? 12);
+        for (const e of this.alive()) { e.st.calor += st.extra ?? 4; this.refreshEnemy(e); }
+        this.calc(`Frenos de Disco: +${st.block} de Bloqueo y la fricción calienta a todos (+${st.extra} de Calor)`);
+        break;
+      case 'f_muelle':
+        this.jPerTurn += 1;
+        this.blockPerTurn += st.block ?? 4;
+        this.calc(`Muelle Cargado: +1 J y +${st.block} de Bloqueo cada turno`);
+        break;
+      case 'f_metralla':
+        this.calc(`Ráfaga de Impulsos: 5 golpes de ${st.extra} al azar (I = Σ F·Δt)`);
+        for (let i = 0; i < 5 && this.alive().length; i++) {
+          const t = Phaser.Utils.Array.GetRandom(this.alive());
+          await this.heroLunge();
+          await this.hitEnemy(t, st.extra ?? 4);
+        }
+        break;
+      case 'f_retro':
+        this.calc(`Ley de Conservación: m₁v₁ = m₂v₂ → ${st.extra} de daño y ${st.extra} de Bloqueo`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.extra ?? 14);
+        this.gainBlock(st.extra ?? 14);
+        break;
+      case 'f_haz':
+        this.vel = Math.min(this.vmax, this.vel + 2);
+        this.calc(`Haz Relativista: +2 m/s (v = ${this.vel}) y ${st.extra} a todos`);
+        await this.heroLunge();
+        for (const t of [...this.alive()]) await this.hitEnemy(t, st.extra ?? 10);
+        break;
+      case 'f_campo':
+        this.gainBlock(st.block ?? 14);
+        this.keepBlock = true;
+        this.calc(`Campo de Fuerza: +${st.block} de Bloqueo que se conserva al siguiente turno`);
+        break;
+      case 'f_tsiolkovski': {
+        const run = Game.run!;
+        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 3));
+        run.hp = Math.min(run.maxHp, run.hp + 6);
+        this.calc(`Ecuación de Tsiolkovski: +${st.extra} m/s y recuperas 6 kg`);
+        break;
+      }
+      case 'f_escudoTermico':
+        this.gainBlock(st.block ?? 12);
+        for (const e of this.alive()) { e.st.calor += st.extra ?? 5; this.refreshEnemy(e); }
+        this.calc(`Escudo Térmico: +${st.block} de Bloqueo y +${st.extra} de Calor a todos`);
+        break;
+      case 'f_tacoma':
+        this.calc(`Puente de Tacoma: ω = ωₙ → +${st.extra} de Resonancia y Fatiga a todos`);
+        for (const t of [...this.alive()]) {
+          t.st.fatiga = Math.max(t.st.fatiga, 2);
+          await this.addResonance(t, st.extra ?? 2);
+          if (!t.dead) this.refreshEnemy(t);
+        }
+        break;
+      case 'f_serie': {
+        const a = st.extra ?? 2;
+        this.calc(`Serie Geométrica: ${a} + ${2 * a} + ${4 * a} + ${8 * a}`);
+        for (let i = 0; i < 4 && target && !target.dead; i++) { await this.heroLunge(); await this.hitEnemy(target, a * 2 ** i); }
+        break;
+      }
+      case 'f_brazo':
+        this.calc(`Brazo de Palanca: τ = r × F → 2 golpes de ${st.extra} que ignoran el Bloqueo`);
+        for (let i = 0; i < 2 && target && !target.dead; i++) { await this.heroLunge(); await this.hitEnemy(target, st.extra ?? 10, true); }
+        break;
+      case 'f_ejesI':
+        this.gainBlock(st.block ?? 10);
+        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 2);
+        else this.masa += 2;
+        this.calc(`I = I_cm + m·d²: +${st.block} de Bloqueo y +2 ${this.usaVel ? 'm/s' : 'kg'} el resto del combate`);
+        break;
       // ── v0.66 · conjuntos (como Exodia) ──
       case 'p_ley1': case 'p_ley2': case 'p_ley3': case 'r_fx': case 'r_fy': case 'k_elipse': case 'k_areas': case 'k_periodo':
         await this.completarConjunto(def.pieza!, v, target);

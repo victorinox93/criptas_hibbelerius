@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
+import { PARASITO_VIDA, MAXWELL_PRECIO } from '../data/maldiciones';
+import { NYAR_ENTROPIA, NYAR_PACTO_RUNAS, RUNA_DANO_ABISMO, SACRIFICIO_SANGRE } from '../data/mythos_pactos';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
 import { Edicion } from '../data/cards';
-import { CONDICIONES_JEFE, CORDURA, EDICIONES, MUTADORES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
+import { CONDICIONES_JEFE, CORDURA, DIENTES_INICIO, DIENTES_OFRECIDOS, ELIGES_POR_SOBRE, EDICIONES, MUTADORES, PISOS_TRAMO, ROMPER_CRISTAL, SEMAFORO, TRAMOS } from '../data/abismo_modo';
 import { defDiente, HUECOS, MULT_DIENTES_MAX, NOMBRE_RAREZA } from '../data/dientes';
 import { dibujarDiente } from './dentadura';
 import { codexFlag } from '../state';
@@ -38,8 +40,8 @@ const PAGINAS_GUIA: PaginaGuia[] = [
     titulo: 'El viaje',
     texto: `Arrancas una página del Necronomicón, firmas un Pacto, eliges dientes y abres 3 sobres. Luego bajas ${TRAMOS} tramos de ${PISOS_TRAMO} pisos: el primero termina con un jefe al azar y el segundo con un Primigenio. Después puedes seguir bajando sin fin.`,
     dibujo: (s, L) => {
-      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', 'Dentadura\n(1 de 3 dientes)', '3 sobres\n(+3 cartas)', `${TRAMOS} tramos\n+ Primigenio`];
-      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 2 mazos\no el Pacto ciego', 'Reliquias: el orden\nimporta', 'De cada sobre te\nquedas con 1 carta', 'Jefe al azar; luego,\n¿infinito?'];
+      const pasos = ['Página del\nNecronomicón', 'Pacto\n(tu mazo base)', `Dentadura\n(${DIENTES_INICIO} de ${DIENTES_OFRECIDOS} dientes)`, `3 sobres\n(+${3 * ELIGES_POR_SOBRE} cartas)`, `${TRAMOS} tramos\n+ Primigenio`];
+      const notas = ['Un poder y un costo\npara toda la partida', 'Eliges 1 de 2 mazos\no el Pacto ciego', 'Reliquias: el orden\nimporta', `De cada sobre te\nquedas con ${ELIGES_POR_SOBRE} cartas`, 'Jefe al azar; luego,\n¿infinito?'];
       const u = pasos.length - 1;
       pasos.forEach((p, i) => {
         const x = 108 + i * 186, y = 300;
@@ -54,7 +56,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'La Cordura (el semáforo)',
-    texto: `A la izquierda de la pantalla siempre ves tu Cordura. Aciertas una pregunta: +${CORDURA.runaBien}. Fallas: −${CORDURA.runaMal}. Los jefes, las élites y los Susurros también te la bajan.`,
+    texto: `A la izquierda de la pantalla siempre ves tu Cordura. Aciertas una pregunta: +${CORDURA.runaBien}. Fallas: −${CORDURA.runaMal} de Cordura y −${RUNA_DANO_ABISMO} de vida (nunca te deja en menos de 1). Los jefes, las élites y los Susurros también te la bajan.`,
     dibujo: (s, L) => {
       const g = s.add.graphics();
       frame(g, 150, 190, 64, 250, 0x07090a, 0x2a3a34, 0.95);
@@ -107,7 +109,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
   },
   {
     titulo: 'La Dentadura (reliquias)',
-    texto: `Las reliquias del Abismo son dientes: Comunes, ★ Raros y ★★ Legendarios. Al empezar eliges 1 de 3; ganas más con el Sacamuelas Ciego, los Relatos y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
+    texto: `Las reliquias del Abismo son dientes: Comunes, ★ Raros y ★★ Legendarios. Al empezar eliges ${DIENTES_INICIO} de ${DIENTES_OFRECIDOS}; ganas más con el Sacamuelas Ciego, los Relatos y al vencer a un jefe. Tienes ${HUECOS} huecos y el ORDEN importa.`,
     dibujo: (s, L) => {
       const ej: [string, string][] = [['colmillo', 'Común\n+2 a ataques'], ['espejo', '★ Raro · Espejo:\ncopia al de su izq.'], ['marte~3', '✦ Marte de Cristal\n×2, dura 2 combates'], ['rlyeh', "★★ R'lyeh\n1er ataque ×2"], ['larva', '☣ Parásito: bueno\ny malo a la vez']];
       ej.forEach(([id, t], i) => {
@@ -211,6 +213,48 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(txt(s, 170, y, nom, 18, CSS.gold));
         L(txt(s, 170, y + 22, d, 14, CSS.bone, { wordWrap: { width: 720 } }));
       });
+    },
+  },
+  {
+    titulo: 'Pactos del mythos',
+    texto: 'Algunos nodos «?» esconden pactos: siempre te dan algo… y siempre cobran. Lo que cobran suele ser una maldición (la siguiente página).',
+    dibujo: (s, L) => {
+      const filas: [string, string, string, number][] = [
+        ['npc_hombreNegro', 'El Hombre Negro (Nyarlathotep)', `Aparece a lo más una vez por tramo y recuerda tus visitas. Piensa por ti (resuelve ${NYAR_PACTO_RUNAS} preguntas, +${NYAR_ENTROPIA} de Locura y sin puntos cada vez), te regala una reliquia maldita, te cura con una maldición… o, si lo rechazas, −8 de Locura.`, 3],
+        ['shubNiggurath', 'Altares de Shub-Niggurath, Dagón y Yig', `Piden un sacrificio: 2 cartas que tú eliges (reliquia), 2 al azar (reliquia y diente raro) o tu sangre, −${SACRIFICIO_SANGRE} de Vida máxima (reliquia maldita). Si te niegas, 50 % de maldición.`, 0.9],
+        ['npc_maxwell', 'El Demonio de Maxwell', `Ordena tu mazo: te quita maldiciones (la primera gratis). Después de conocerlo te espera en las fogatas: ${MAXWELL_PRECIO} Ergios por maldición, sin gastar la fogata.`, 3],
+        ['i_rune', 'Reliquias malditas', "Llave de R'lyeh (+1 J por turno; 2 maldiciones), Ojo de Yuggoth (+1 carta por turno; 25 % de maldición al ganar) e Ídolo de Dagón (+2 kg o +2 m/s; empiezas con 2 Susurros).", 3],
+      ];
+      filas.forEach(([k, nom, d, e], i) => {
+        const y = 182 + i * 66;
+        L(s.add.image(120, y + 22, k).setScale(e));
+        L(txt(s, 180, y, nom, 19, CSS.gold));
+        L(txt(s, 180, y + 24, d, 15, CSS.bone, { wordWrap: { width: 700 } }));
+      });
+    },
+  },
+  {
+    titulo: 'Maldiciones',
+    texto: 'Las maldiciones son cartas guindas que no se pueden jugar y se quedan en tu mazo hasta que alguien te las quita: el Demonio de Maxwell o el Mercader («Olvidar una carta»).',
+    dibujo: (s, L) => {
+      const filas: [string, string][] = [
+        ['Arrepentimiento', 'Al terminar el turno pierdes 1 de vida por cada carta en tu mano.'],
+        ['Dolor Fantasma', 'Mientras esté en tu mano, cada carta que juegas te quita 1 de vida.'],
+        ['Decaimiento Radiactivo', 'Si sigue en tu mano al terminar el turno, pierdes 2 de vida.'],
+        ['Duda', 'Si sigue en tu mano al terminar el turno, el siguiente tienes 1 J menos.'],
+        ['Normalidad', 'Mientras esté en tu mano, no puedes jugar más de 3 cartas por turno.'],
+        ['Torpeza', 'Sólo ocupa espacio; al terminar el turno se agota (vuelve el siguiente combate).'],
+        ['Parásito de Yuggoth', `Si te lo quitan del mazo, pierdes ${PARASITO_VIDA} de Vida máxima.`],
+      ];
+      filas.forEach(([nom, d], i) => {
+        const y = 184 + i * 38;
+        const g = s.add.graphics();
+        g.fillStyle(0x6a1a3a, 1).fillRoundedRect(96, y + 2, 22, 28, 4);
+        L(g);
+        L(txt(s, 136, y + 4, nom, 18, '#e070a8'));
+        L(txt(s, 380, y + 6, d, 16, CSS.bone, { wordWrap: { width: 500 } }));
+      });
+      L(txt(s, W / 2, 456, 'Aparecen con los pactos, las reliquias malditas, el Memorama de Fórmulas y otros encuentros.', 15, CSS.dim, { align: 'center' }).setOrigin(0.5, 0));
     },
   },
   {

@@ -115,7 +115,7 @@ export const PACTOS: PactoDef[] = [
   { id: 'inercia', nombre: 'Pacto de la Inercia', regla: 'Empiezas cada combate con 6 de Bloqueo y tu mazo trae Momento de Inercia.', mazo: (c) => [...starterDeck(c), 'momentoInercia'] },
   // v0.42
   { id: 'pendulo', nombre: 'Pacto del Péndulo', regla: 'Va y viene: en tus turnos impares +1 J; en los pares robas 1 carta más.', mazo: (c) => [...starterDeck(c), 'ejesParalelos'] },
-  { id: 'sonrisa', nombre: 'Pacto de la Sonrisa', regla: 'Al empezar te quedas con 2 dientes en lugar de 1, pero −10 de Vida máxima.', mazo: (c) => [...starterDeck(c), 'dclTentaculos'], vidaMax: -10, dientes: 2 },
+  { id: 'sonrisa', nombre: 'Pacto de la Sonrisa', regla: 'Al empezar te quedas con 3 dientes en lugar de 2, pero −10 de Vida máxima.', mazo: (c) => [...starterDeck(c), 'dclTentaculos'], vidaMax: -10, dientes: 3 },
   { id: 'estelar', nombre: 'Pacto Estelar', regla: 'Empiezas con un Astro en tu dentadura y los Astros te salen el doble de seguido.', mazo: (c) => [...starterDeck(c), 'calamarTorque'] },
   { id: 'palanca', nombre: 'Pacto de la Palanca', regla: 'Brazo largo: tu primer Ataque de cada turno hace +4 de daño.', mazo: (c) => [...starterDeck(c), 'enLibras'] },
   { id: 'cafeina', nombre: 'Pacto de la Cafeína', regla: '+1 J en tu primer turno de cada combate. Tu mazo trae 2 Cafés del Abismo.', mazo: (c) => [...starterDeck(c), 'cafeAbismo', 'cafeAbismo'] },
@@ -178,10 +178,10 @@ export const SOBRES: SobreDef[] = [
 ];
 /** Cartas por sobre y cuántas te quedas */
 export const CARTAS_POR_SOBRE = 5;
-export const ELIGES_POR_SOBRE = 1; // v0.53 · balance: antes 2
+export const ELIGES_POR_SOBRE = 2; // v0.72 · el Abismo ya es retador: otra vez 2 por sobre (v0.53 había bajado a 1)
 /** v0.53 · balance: al empezar salen DIENTES_OFRECIDOS dientes y te quedas con DIENTES_INICIO (antes 2 de 4) */
-export const DIENTES_OFRECIDOS = 3;
-export const DIENTES_INICIO = 1;
+export const DIENTES_OFRECIDOS = 4; // v0.72 · 2 de 4 (antes 1 de 3)
+export const DIENTES_INICIO = 2;
 /** Edición del espacio brillante de cada sobre (siempre trae una) */
 const BRILLANTE: [Edicion, number][] = [['lamina', 0.45], ['holo', 0.35], ['poli', 0.12], ['cristal', 0.08]];
 

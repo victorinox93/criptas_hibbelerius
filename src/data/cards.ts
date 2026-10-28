@@ -1102,6 +1102,91 @@ a TODOS.`,
 ganas +2 J. Se agota.`,
     lore: 'Fusión de Derivada e Integral. Derivar e integrar se deshacen una a la otra: ∫ f′(x) dx = f(x).',
   },
+  // ── v0.72 · más recetas del Taller de Newton ──
+  f_vectores: {
+    id: 'f_vectores', name: 'Suma de Vectores', type: 'Ataque', icon: 'i_angle', concept: 'Componentes', rarity: 'legendaria', target: 'all', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 10 : 8, block: up ? 10 : 8 }),
+    text: (s: CardStats) => `${s.extra} a TODOS y ganas\n${s.block} de Bloqueo.\nR = √(Fx² + Fy²)`,
+    lore: 'Fusión de Tajo Angulado y ΣF = 0. Descompones las fuerzas, las sumas y la resultante va a todos lados… menos a ti.',
+  },
+  f_caida: {
+    id: 'f_caida', name: 'Caída Libre', type: 'Ataque', icon: 'i_mass', concept: 'Energía potencial', rarity: 'legendaria', target: 'enemy', fusion: true,
+    stats: (up: boolean) => ({ cost: 2, extra: up ? 32 : 24, block: 6 }),
+    text: (s: CardStats) => `Inflige ${s.extra}: IGNORA\nel Bloqueo. +${s.block} de Bloqueo.\nV = m·g·h → K`,
+    lore: 'Fusión de Peso Muerto y Muro de Masa. Subes la masa, la sueltas: toda la energía potencial llega abajo como cinética.',
+  },
+  f_frenos: {
+    id: 'f_frenos', name: 'Frenos de Disco', type: 'Defensa', icon: 'i_fire', concept: 'Trabajo de la fricción', rarity: 'legendaria', target: 'self', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, block: up ? 15 : 12, extra: 4 }),
+    text: (s: CardStats) => `+${s.block} de Bloqueo.\nLa energía que frenas se\nvuelve calor: +${s.extra} de Calor\na TODOS.`,
+    lore: 'Fusión de Fricción Ardiente y Amortiguador. U = f·d: el trabajo de la fricción calienta el disco… y a tus enemigos.',
+  },
+  f_muelle: {
+    id: 'f_muelle', name: 'Muelle Cargado', type: 'Poder', icon: 'i_pend', concept: 'Energía elástica', rarity: 'legendaria', target: 'self', cls: 'neutral', exhaust: true, fusion: true,
+    stats: (up: boolean) => ({ cost: up ? 1 : 2, block: 4 }),
+    text: (s: CardStats) => `Cada turno: +1 J y\n+${s.block} de Bloqueo.\nSe agota.`,
+    lore: 'Fusión de Batería de Resorte y Energía Almacenada. U = ½·k·x²: un resorte bien comprimido rinde todo el combate.',
+  },
+  f_metralla: {
+    id: 'f_metralla', name: 'Ráfaga de Impulsos', type: 'Ataque', icon: 'i_bolt', concept: 'Impulso', rarity: 'legendaria', target: 'all', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 5 : 4 }),
+    text: (s: CardStats) => `5 golpes de ${s.extra} a\nenemigos al azar.\nI = Σ F·Δt`,
+    lore: 'Fusión de Impulso Sostenido y Perdigones. Muchos impulsos pequeños suman uno grande.',
+  },
+  f_retro: {
+    id: 'f_retro', name: 'Ley de Conservación', type: 'Ataque', icon: 'i_momentum', concept: 'Cantidad de movimiento', rarity: 'legendaria', target: 'enemy', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 17 : 14 }),
+    text: (s: CardStats) => `Inflige ${s.extra} y ganas\n${s.extra} de Bloqueo.\nm₁v₁ = m₂v₂`,
+    lore: 'Fusión de Retroceso y Conservación de p. Lo que empujas te empuja igual: la mitad del choque es tuya.',
+  },
+  f_haz: {
+    id: 'f_haz', name: 'Haz Relativista', type: 'Ataque', icon: 'i_bolt', concept: 'Energía cinética', rarity: 'legendaria', target: 'all', cls: 'arcanista', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 13 : 10 }),
+    text: (s: CardStats) => `+2 m/s y luego\n${s.extra} a TODOS.\nK crece con v².`,
+    lore: 'Fusión de Acelerar y Ráfaga Cinética. Aceleras las partículas hasta que la ráfaga se vuelve un haz.',
+  },
+  f_campo: {
+    id: 'f_campo', name: 'Campo de Fuerza', type: 'Defensa', icon: 'i_shield', concept: 'Inercia', rarity: 'legendaria', target: 'self', cls: 'arcanista', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, block: up ? 17 : 14 }),
+    text: (s: CardStats) => `+${s.block} de Bloqueo.\nTu Bloqueo se conserva\nal siguiente turno.`,
+    lore: 'Fusión de Barrera Inercial y Escudo de Energía. Una barrera que no se disipa: la inercia la mantiene.',
+  },
+  f_tsiolkovski: {
+    id: 'f_tsiolkovski', name: 'Ecuación de Tsiolkovski', type: 'Habilidad', icon: 'i_fire', concept: 'Masa variable', rarity: 'legendaria', target: 'self', cls: 'penitente', fusion: true,
+    stats: (up: boolean) => ({ cost: 0, extra: up ? 4 : 3 }),
+    text: (s: CardStats) => `+${s.extra} m/s y recuperas\n6 kg (vida).\nΔv = vₑ·ln(m₀/m)`,
+    lore: 'Fusión de Tobera Variable y Reabastecer. Cargas combustible y lo quemas mejor: más Δv por cada kilo.',
+  },
+  f_escudoTermico: {
+    id: 'f_escudoTermico', name: 'Escudo Térmico', type: 'Defensa', icon: 'i_shield', concept: 'Fricción y calor', rarity: 'legendaria', target: 'self', cls: 'penitente', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, block: up ? 15 : 12, extra: 5 }),
+    text: (s: CardStats) => `+${s.block} de Bloqueo y\n+${s.extra} de Calor a TODOS.`,
+    lore: 'Fusión de Retrocohete y Estela de Plasma. Al reentrar, el escudo se calienta… y el plasma quema a quien esté cerca.',
+  },
+  f_tacoma: {
+    id: 'f_tacoma', name: 'Puente de Tacoma', type: 'Ataque', icon: 'i_wind', concept: 'Resonancia', rarity: 'legendaria', target: 'all', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 3 : 2 }),
+    text: (s: CardStats) => `+${s.extra} de Resonancia a\nTODOS y quedan con Fatiga\n(+50 % de daño, 2 turnos).`,
+    lore: 'Fusión de Frecuencia Natural y Fatiga del Material. En 1940 el viento hizo vibrar un puente a su frecuencia natural hasta romperlo.',
+  },
+  f_serie: {
+    id: 'f_serie', name: 'Serie Geométrica', type: 'Ataque', icon: 'i_book', concept: 'Cálculo', rarity: 'legendaria', target: 'enemy', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 3 : 2 }),
+    text: (s: CardStats) => `4 golpes que se duplican:\n${s.extra}, ${2 * (s.extra ?? 2)}, ${4 * (s.extra ?? 2)}, ${8 * (s.extra ?? 2)}.\nΣ a·rⁿ`,
+    lore: 'Fusión de Límite e Integral. Una suma infinita puede tener un valor finito… pero ésta crece rápido.',
+  },
+  f_brazo: {
+    id: 'f_brazo', name: 'Brazo de Palanca', type: 'Ataque', icon: 'i_angle', concept: 'Momento de una fuerza', rarity: 'legendaria', target: 'enemy', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, extra: up ? 12 : 10 }),
+    text: (s: CardStats) => `2 golpes de ${s.extra} que\nIGNORAN el Bloqueo.\nτ = r × F`,
+    lore: 'Fusión de Palanca de Arquímedes y Torque Abisal. «Dadme un punto de apoyo y moveré el Abismo.»',
+  },
+  f_ejesI: {
+    id: 'f_ejesI', name: 'I = I_cm + m·d²', type: 'Defensa', icon: 'i_pend', concept: 'Ejes paralelos', rarity: 'legendaria', target: 'self', cls: 'neutral', fusion: true,
+    stats: (up: boolean) => ({ cost: 1, block: up ? 13 : 10 }),
+    text: (s: CardStats) => `+${s.block} de Bloqueo y\n+2 kg (o +2 m/s) el\nresto del combate.`,
+    lore: 'Fusión de Golpe al Centroide y Momento de Inercia. Mover el eje lejos del centroide siempre suma inercia: m·d².',
+  },
 } as Record<string, CardDef>);
 
 // v0.65 · MEZCLAS del Taller de Newton: cualquier pareja SIN receta se combina en una carta «intermedia»
