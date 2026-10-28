@@ -2,6 +2,23 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.71.0 · Pactos y Maldiciones (beta)
+
+- **Maldiciones** (como en Slay the Spire): un tipo de carta nuevo, injugable, que se queda en tu mazo hasta que alguien te la quita.
+  - Arrepentimiento (pierdes vida por cada carta en tu mano), Dolor Fantasma (cada carta que juegas te quita 1), Decaimiento Radiactivo (−2 de vida si sigue en tu mano), Duda (−1 J el siguiente turno), Normalidad (máximo 3 cartas por turno), Torpeza (estorba y se agota) y Parásito de Yuggoth (quitarlo cuesta 3 de Vida máxima).
+  - El Mercader no las compra; sí las puede «olvidar».
+- **Reliquias malditas** (sólo en pactos del mythos): Llave de R'lyeh (+1 J cada turno; trae 2 maldiciones), Ojo de Yuggoth (+1 carta cada turno; 25 % de maldición al ganar) e Ídolo de Dagón (+2 kg o +2 m/s; empiezas con 2 Susurros).
+- **El Demonio de Maxwell** (encuentro «?», en los dos modos): quita maldiciones (la primera gratis, luego 20 Ergios). Si no traes, ordena tus ideas (−10 Locura en el Abismo, +10 de vida en el modo normal). Después de conocerlo te espera en las fogatas: quita una maldición por 25 Ergios sin gastar la fogata. Es más probable que aparezca si cargas maldiciones.
+- **Altares del mythos** (Abismo): Shub-Niggurath, Padre Dagón y Yig piden un sacrificio.
+  - 2 cartas que tú eliges → una reliquia.
+  - 2 cartas al azar → una reliquia y un diente raro.
+  - Tu sangre (−8 Vida máxima) → una reliquia maldita.
+  - Negarte → 50 % de recibir una maldición.
+- **El Hombre Negro** (Nyarlathotep): personaje recurrente del Abismo, como AM en el modo normal. Aparece a lo más una vez por tramo y recuerda tus visitas y si lo rechazaste. Ofrece pensar por ti (resuelve 3 preguntas, +6 Locura y sin puntos cada vez), un regalo (reliquia maldita), curarte (con una maldición) o, si lo rechazas, −8 Locura.
+- **En el Abismo, fallar una pregunta también duele:** además de la Cordura, pierdes 5 de vida (nunca te deja en menos de 1).
+- **Resumen del descenso:** al terminar una expedición del Abismo ves tu mazo (con copias y maldiciones), reliquias, dientes, hasta dónde llegaste y tus números, con un botón para **guardar una captura** (PNG).
+- El Memorama de Fórmulas ahora da una maldición al azar en su par «malo».
+
 ## v0.70.0 · Regios y Ecos (beta)
 
 - **Probador del profe** (sólo administradores): botón «🔒 Probador» en el Vestidor y en la Tienda de Layla. Encendido, TODOS los cosméticos se ven desbloqueados para probarlos. No se guarda nada: al apagarlo o recargar, todo vuelve a como estaba.

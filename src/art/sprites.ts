@@ -1337,6 +1337,15 @@ const DIL: Record<string, { rows: string[]; ov: Record<string, string> }> = {
     rows: mirrorHalf(['...yyy', '..yyyy', '.yyyyy', '.ykkyy', '.ykkyy', '.yyyyk', '..yyyy', '..ywyw', '...yyy', '......', '..nnnn', '.nnnnn']),
     ov: { y: '#d8b048', k: '#0d0b10', w: '#f0e8c8', n: '#3a2a1e' },
   },
+  // v0.71 · el Demonio de Maxwell (mitad caliente, mitad fría) y el Hombre Negro (Nyarlathotep)
+  npc_maxwell: {
+    rows: ['..k......k..', '.kRk....kBk.', '..kRkkkkBk..', '..kRRRBBBk..', '.kRRwRBwBBk.', '.kRRkRBkBBk.', '.kRRRRBBBBk.', '..kRRwwBBk..', '...kRRBBk...', '..kRRRBBBk..', '.kRRkRBkBBk.', '.k.kRRBBk.k.', '...kRk.kBk..', '...kk...kk..'],
+    ov: { R: '#d0503a', B: '#3a7ad0', w: '#ffe080' },
+  },
+  npc_hombreNegro: {
+    rows: mirrorHalf(['....kkk', '...kccc', '..kcccc', '..kcCkk', '..kcCkE', '..kcCkk', '..kccCk', '.kcccCC', '.kccccy', 'kccccCy', 'kcccccC', 'kcccccC', 'kccccCC', 'kcccccC', 'kkkkkkk']),
+    ov: { c: '#16121c', C: '#0a080e', E: '#ffd040', y: '#c8a040' },
+  },
   // Myriam, la hechicera oscura: sombrero puntiagudo, cabello negro largo y ojos violeta
   npc_myriam: {
     rows: mirrorHalf([

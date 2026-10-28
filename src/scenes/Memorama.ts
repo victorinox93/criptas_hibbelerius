@@ -35,7 +35,7 @@ const PREMIOS: { nombre: string; r: Result; malo?: boolean }[] = [
   { nombre: '+35 Ergios', r: { text: '', ergios: 35 } },
   { nombre: '+12 de vida', r: { text: '', hp: 12 } },
   { nombre: '+4 Vida máx.', r: { text: '', maxHp: 4 } },
-  { nombre: 'Maldición: Error de Signo', r: { text: '', junk: { id: 'errorSigno', n: 1 } }, malo: true },
+  { nombre: 'Maldición al azar', r: { text: '', maldicion: 'random' }, malo: true }, // v0.71
 ];
 const INTENTOS = 5;
 const CW = 170, CH = 108, GAP = 14;

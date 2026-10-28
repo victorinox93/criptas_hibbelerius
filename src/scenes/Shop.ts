@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { esMaldicion, quitarDelMazo } from '../data/maldiciones';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -264,7 +265,7 @@ export class ShopScene extends Phaser.Scene {
       if (this.price(s.remove) > r.ergios) return this.buy(s.remove, '', () => undefined);
       deckOverlay(this, T.mercader.olvidarElige, r.deck, (i) => {
         const card = r.deck[i];
-        this.buy(s.remove, `olvidar ${cardName(card)}`, () => r.deck.splice(i, 1));
+        this.buy(s.remove, `olvidar ${cardName(card)}`, () => { const m = quitarDelMazo(i); if (card.id === 'm_parasito') this.say(`Arrancaste ${m}`, CSS.blood); });
       });
     }, r.deck.length > 5);
     svc(442, T.mercader.curar, s.heal, () => this.buy(s.heal, 'curar', () => {
@@ -276,6 +277,7 @@ export class ShopScene extends Phaser.Scene {
     svc(480, `Vender una carta (${2 - vend} más)`, null, () => {
       deckOverlay(this, 'Vender: común 14 · rara 25 · legendaria 45 (+8 si está mejorada)', r.deck, (i) => {
         const c = r.deck[i];
+        if (esMaldicion(c.id)) { this.say('«¿Una maldición? Eso no lo compro ni regalado.»', CSS.blood); return; } // v0.71
         const p = precioVenta(c);
         r.deck.splice(i, 1);
         addErgios(p);

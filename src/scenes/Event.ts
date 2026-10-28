@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { maldicionesEnMazo } from '../data/maldiciones';
+import { ALTARES, MAXWELL_CHANCE, MAXWELL_CHANCE_MALDITO, NYAR_CHANCE, SACRIFICIO_CHANCE } from '../data/mythos_pactos';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { W, H } from '../config';
@@ -29,6 +31,31 @@ export class EventScene extends Phaser.Scene {
     const seen = (run.seen ??= []);
     // ── ¿qué hay en la penumbra? (azar) ──
     let ev: EventDef | undefined = data.eventId ? EVENTS.find((e) => e.id === data.eventId) : undefined;
+    // v0.71 · el Demonio de Maxwell (quita maldiciones), el Hombre Negro y los altares del mythos
+    if (!ev) {
+      const hayMald = maldicionesEnMazo().length > 0;
+      if (!seen.includes('maxwell') && Math.random() < (hayMald ? MAXWELL_CHANCE_MALDITO : MAXWELL_CHANCE)) {
+        seen.push('maxwell');
+        saveLocal();
+        this.scene.start('Maxwell', { floor: data.floor });
+        return;
+      }
+      if (run.modo === 'abismo') {
+        if (run.nyarTramo !== (run.tramo ?? 1) && data.floor >= 2 && Math.random() < NYAR_CHANCE) {
+          saveLocal();
+          this.scene.start('Nyarlathotep', { floor: data.floor });
+          return;
+        }
+        const altares = ALTARES.filter((a) => !seen.includes(`altar_${a.id}`));
+        if (altares.length && Math.random() < SACRIFICIO_CHANCE) {
+          const a = Phaser.Utils.Array.GetRandom(altares);
+          seen.push(`altar_${a.id}`);
+          saveLocal();
+          this.scene.start('Sacrificio', { floor: data.floor, id: a.id });
+          return;
+        }
+      }
+    }
     // El Abismo: casi siempre, un Relato basado en un cuento de Lovecraft (src/data/relatos.ts)
     if (!ev && run.modo === 'abismo') {
       // v0.49 · a veces, un alma en pena del Abismo (te acompaña hasta el final del tramo)

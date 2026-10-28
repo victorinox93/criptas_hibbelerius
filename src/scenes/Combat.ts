@@ -20,6 +20,7 @@ function umbralDe(st: EnemyState) {
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
 import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
+import { darMaldicion } from '../data/maldiciones';
 import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
@@ -227,7 +228,7 @@ export class CombatScene extends Phaser.Scene {
     this.hand = [];
     this.discard = [];
     this.exhaust = [];
-    this.maxEnergy = 3 + (this.has('reactor') ? 1 : 0) + (this.has('tomo') ? 1 : 0) + (this.prohibido('p_energia') ? 1 : 0);
+    this.maxEnergy = 3 + (this.has('reactor') ? 1 : 0) + (this.has('tomo') ? 1 : 0) + (this.has('llaveRlyeh') ? 1 : 0) + (this.prohibido('p_energia') ? 1 : 0);
     this.energy = this.maxEnergy;
     this.block = 0;
     this.acel = 0;
@@ -438,6 +439,7 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`${fuente}: +${n} ${this.usaVel ? 'm/s' : 'kg'}`);
     };
     if (this.necro('geometria')) masaOVel(2, 'Geometría Imposible');
+    if (this.has('idoloDagon')) { masaOVel(2, 'Ídolo de Dagón'); this.addStatus({ id: 'susurro', n: 2, to: 'draw' }); } // v0.71 · reliquia maldita
     if (this.pacto('excentrico')) masaOVel(2, 'Pacto Excéntrico');
     if (this.pacto('inercia')) { this.block += 6; this.calc('Pacto de la Inercia: +6 de Bloqueo'); }
     if (this.pacto('cafeina')) { this.bonusJ1 += 1; this.calc('Pacto de la Cafeína: +1 J en tu primer turno'); }
@@ -1727,6 +1729,12 @@ export class CombatScene extends Phaser.Scene {
     const st = statsOf(inst);
     const costo = this.cost(v);
     if (costo > this.energy) return;
+    // v0.71 · Normalidad: con ella en la mano, máximo 3 cartas por turno
+    if (this.hand.some((c) => c.inst.id === 'm_normalidad') && this.played - this.jugadasIni >= 3) {
+      this.hint('Normalidad: no puedes jugar más de 3 cartas este turno');
+      audio.sfx('wrong');
+      return;
+    }
     costOverride.delete(inst.uid);
     costConfusion.delete(inst.uid);
     this.busy = true;
@@ -2944,6 +2952,12 @@ export class CombatScene extends Phaser.Scene {
       this.floatText(this.heroX, 200, '-1 🩸', '#e05050');
       if (Game.run!.hp <= 0 && (await this.dies('la Hemorragia'))) return;
     }
+    const dolor = this.hand.filter((c) => c.inst.id === 'm_dolor').length; // v0.71 · maldición
+    if (dolor && Game.run!.hp > 0) {
+      Game.run!.hp -= dolor;
+      this.floatText(this.heroX, 200, `-${dolor} ☠`, '#c86a9a');
+      if (Game.run!.hp <= 0 && (await this.dies('el Dolor Fantasma'))) return;
+    }
     // Noether · Simetría de Rotación
     const yr = boonLevel('y_rotacion');
     if (yr && this.played % (yr === 2 ? 2 : 3) === 0) {
@@ -3699,6 +3713,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.isoRobo) { draw += 1; this.isoRobo = false; }
     if (boonLevel('duo_simetria') === 2) draw += 1;
     if (this.has('agujero')) draw += 1;
+    if (this.has('ojoYuggoth')) draw += 1; // v0.71 · reliquia maldita
     if (this.prohibido('p_infinito')) draw += 1;
     if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
     if (this.turn === 1) {
@@ -3948,6 +3963,28 @@ export class CombatScene extends Phaser.Scene {
       this.cameras.main.flash(400, 160, 200, 255);
       await this.rayoTodos(52);
       if (await this.checkEnd()) return;
+    }
+    // v0.71 · maldiciones en la mano
+    {
+      const enMano = (id: string) => this.hand.filter((c) => c.inst.id === id).length;
+      const arr = enMano('m_arrepentimiento');
+      const dec = enMano('m_decaimiento');
+      const perd = arr * this.hand.length + 2 * dec;
+      if (perd) {
+        Game.run!.hp -= perd;
+        if (arr) this.calc(`Arrepentimiento: ${this.hand.length} cartas en tu mano → −${arr * this.hand.length} de vida`);
+        if (dec) this.calc(`Decaimiento Radiactivo: −${2 * dec} de vida`);
+        this.floatText(this.heroX, 200, `-${perd} ☠`, '#c86a9a');
+        if (Game.run!.hp <= 0 && (await this.dies('una maldición'))) return;
+      }
+      const du = enMano('m_duda');
+      if (du) { this.drainNext += du; this.calc(`Duda: el siguiente turno tienes ${du} J menos`); }
+      const torpes = this.hand.filter((c) => c.inst.id === 'm_torpeza');
+      for (const c of torpes) {
+        this.exhaust.push(c.inst);
+        this.tweens.add({ targets: c, y: 600, alpha: 0, duration: 260, onComplete: () => c.destroy() });
+      }
+      if (torpes.length) { this.hand = this.hand.filter((c) => c.inst.id !== 'm_torpeza'); this.calc('Torpeza: se te cae de las manos (se agota este combate)'); }
     }
     // descartar mano (la Honda de David se queda y gana rapidez)
     const hondas = this.hand.filter((c) => c.inst.id === 'honda' || c.inst.id === 'tareaOlvidada'); // v0.57 · la Tarea Olvidada también se queda
@@ -4308,6 +4345,7 @@ export class CombatScene extends Phaser.Scene {
       run.maxHp += da === 2 ? 5 : 3;
       this.calc(`El Más Apto (Darwin): sobreviviste → +${da === 2 ? 5 : 3} Vida máxima`);
     }
+    if (this.has('ojoYuggoth') && Math.random() < 0.25) { const m = darMaldicion(); this.calc(`Ojo de Yuggoth: algo te mira de vuelta… recibes la maldición «${m}»`); }
     if (this.has('termo') && run.hp > 0 && run.hp <= run.maxHp / 2) {
       run.hp = Math.min(run.maxHp, run.hp + 12);
       this.calc('Termo de Caldo: +12 de vida');

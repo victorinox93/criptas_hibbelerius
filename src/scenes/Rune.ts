@@ -16,6 +16,7 @@ import { multRacha, PUNTOS, sumar } from '../data/puntaje';
 import { ENTROPIA } from '../data/abismo';
 import { CORDURA } from '../data/abismo_modo';
 import { AM_ENTROPIA, PACTO_AM } from '../data/am';
+import { NYAR_ENTROPIA, RUNA_DANO_ABISMO } from '../data/mythos_pactos';
 import { completarEncargo } from '../data/encargos';
 import { addCard, addEffect, addEntropia, addErgios, boonLevel, Game, logEvent, saveLocal, syncRun, unlock } from '../state';
 import { marcarReceta, RECETAS_CARTAS } from '../data/fusiones';
@@ -95,6 +96,7 @@ export class RuneScene extends Phaser.Scene {
   private answerUi: Phaser.GameObjects.GameObject[] = [];
   private field: TextField | null = null;
   private amUsado = false; // la resolvió AM (src/data/am.ts)
+  private nyarUsado = false; // v0.71 · la resolvió el Hombre Negro (src/scenes/Nyarlathotep.ts)
 
   constructor() { super('Rune'); }
 
@@ -102,6 +104,7 @@ export class RuneScene extends Phaser.Scene {
     this.d = data;
     this.attempts = 0;
     this.amUsado = false;
+    this.nyarUsado = false;
     this.answerUi = [];
     this.field = null;
     this.cameras.main.fadeIn(300);
@@ -205,6 +208,17 @@ export class RuneScene extends Phaser.Scene {
       }, { size: 16, color: 0x9a2a1a, silent: true });
       this.answerUi.push(amb);
     }
+    // ── v0.71 · Pacto con el Hombre Negro (Nyarlathotep, El Abismo) ──
+    if (run && (run.nyarPacto ?? 0) > 0 && !(run.amPacto ?? 0)) {
+      const nb: Btn = button(this, W - 72, 420, 124, 52, `Que el Hombre\nNegro piense (${run.nyarPacto})`, () => {
+        run.nyarPacto = Math.max(0, (run.nyarPacto ?? 1) - 1);
+        this.amUsado = true;
+        this.nyarUsado = true;
+        nb.destroy();
+        this.answer(p.choices ? p.correct! : p.answer!);
+      }, { size: 15, color: 0x3a2050, silent: true });
+      this.answerUi.push(nb);
+    }
     // ── Pista a cambio de Ergios ──
     if (run) {
       // v0.44: los apuntes del diario de Montemayor dan pistas gratis en el Abismo
@@ -259,7 +273,12 @@ export class RuneScene extends Phaser.Scene {
     this.field?.blur();
     this.answerUi.forEach((o) => o.destroy());
     if (!this.amUsado) run.stats.runasTotal++;
-    if (this.amUsado) {
+    if (this.amUsado && this.nyarUsado) {
+      // v0.71 · el Hombre Negro pensó por ti: aciertas, pero sin puntos, racha ni Conocimiento… y la Locura sube
+      addEntropia(NYAR_ENTROPIA);
+      this.flash(`«Fácil, ¿verdad?» — el Hombre Negro (+${NYAR_ENTROPIA} de Locura)`, '#c8a0ff', 156);
+      logEvent('nyar_runa', p.concept, true, { titulo: p.title, fuente: this.d.source });
+    } else if (this.amUsado) {
       // AM pensó por ti: aciertas, pero sin puntos, racha, Conocimiento ni repaso
       addEntropia(AM_ENTROPIA);
       this.flash(PACTO_AM.usar, '#ff5a4a', 156);
@@ -296,6 +315,13 @@ export class RuneScene extends Phaser.Scene {
         const mal = rg >= 2 ? 0 : Math.round(CORDURA.runaMal * (1 + nivelDiente(run.dientes, 'lombriz')) / (rg ? 2 : 1)); // ☣ Lombriz de Yuggoth: el doble
         if (mal) addEntropia(mal);
         this.flash(mal ? `−${mal} de Cordura${rg ? ' (Rigor Formal: la mitad)' : ''}` : 'Rigor Formal (Gödel): no pierdes Cordura', '#c88aff', 132);
+        // v0.71 · en el Abismo, fallar también duele (nunca te deja en menos de 1)
+        const dano = Math.min(RUNA_DANO_ABISMO, Math.max(0, run.hp - 1));
+        if (dano > 0) {
+          run.hp -= dano;
+          this.cameras.main.shake(220, 0.006);
+          this.flash(`El Abismo te castiga: −${dano} de vida`, '#ff7a7a', 156);
+        }
       }
       // Actualización Bayesiana (Bayes): un error no borra la evidencia acumulada
       if (!this.amUsado && !boonLevel('by_actualiza')) run.stats.racha = 0;

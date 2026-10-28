@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { maldicionesEnMazo, MAXWELL_PRECIO, quitarDelMazo } from '../data/maldiciones';
+import { deckOverlay } from '../ui/hud';
 import { nivelDiente } from '../data/dientes';
 import { CSS, UI } from '../art/palette';
 import { W } from '../config';
@@ -24,7 +26,7 @@ export class CampfireScene extends Phaser.Scene {
     embers(this);
     vignette(this);
     const tip = new Tooltip(this);
-    topBar(this, tip);
+    const hud = topBar(this, tip);
     title(this, W / 2, 80, T.fogata.titulo, 50);
     txt(this, W / 2, 118, T.fogata.texto, 22, CSS.dim).setOrigin(0.5);
 
@@ -62,6 +64,26 @@ export class CampfireScene extends Phaser.Scene {
     }, { color: 0x8e5bb0, size: 22, enabled: canUp });
     const crisol = button(this, xs[2], 470, bw, 64, 'Taller de Newton\ncombinar 2 cartas', () => fadeTo(this, 'Crisol', { floor: data.floor }), { color: 0xc8701a, size: 19 });
     tip.attach(crisol, 'El Taller de Newton', 'Combinas 2 cartas en una nueva. Si su física encaja (p = m·v, J = F·Δt…) descubres una receta secreta; si no, sale una mezcla intermedia.');
+    // v0.71 · el Demonio de Maxwell (si ya lo conociste) quita una maldición por Ergios
+    const malds = maldicionesEnMazo();
+    if (run.maxwell && malds.length) {
+      const im = this.add.image(W - 250, 170, 'npc_maxwell').setScale(3);
+      this.tweens.add({ targets: im, y: 166, duration: 900, yoyo: true, repeat: -1 });
+      const mb = button(this, W - 120, 170, 210, 56, `Demonio de Maxwell\nquitar maldición (${MAXWELL_PRECIO} ${T.moneda})`, () => {
+        deckOverlay(this, 'El Demonio de Maxwell: «¿Cuál saco por la puertita?»', malds.map((i) => run.deck[i]), (k) => {
+          run.ergios -= MAXWELL_PRECIO;
+          const nom = quitarDelMazo(malds[k]);
+          audio.sfx('heal');
+          logEvent('maxwell', '', '', { fogata: true, quita: nom });
+          saveLocal();
+          hud.refresh();
+          mb.destroy();
+          im.destroy();
+          txt(this, W - 120, 210, `Fuera: ${nom}`, 15, CSS.green, { align: 'center', wordWrap: { width: 230 } }).setOrigin(0.5, 0);
+        });
+      }, { size: 14, color: 0x4a6a9a, enabled: run.ergios >= MAXWELL_PRECIO });
+      tip.attach(mb, 'El Demonio de Maxwell', `Ordena tu mazo: te quita una maldición por ${MAXWELL_PRECIO} ${T.moneda}. No gasta la fogata.`);
+    }
     if (libro) {
       const b = button(this, xs[3], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Locura`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });
       tip.attach(b, RELICS.necronomicon.name, 'Eliges un Problema Prohibido: poder permanente con un costo. Tu Locura sube.');
