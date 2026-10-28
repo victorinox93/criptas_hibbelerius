@@ -37,7 +37,7 @@ export class CampfireScene extends Phaser.Scene {
 
     const sinCura = run.relics.includes('agujero');
     const prohib = run.prohibidos ?? [];
-    const omega = prohib.includes('p_omega');
+    const omega = prohib.includes('p_omega') || run.necro === 'vacio'; // v0.73 · El Vacío Perfecto también cura la mitad
     const heal = sinCura ? 0 : Math.round(run.maxHp * gravityOf(run.gravity).heal * (omega ? 0.5 : 1) * (nivelDiente(run.dientes, 'branquia') ? 0.5 : 1)); // ☣ Branquia del Profundo: la mitad
     const calma = prohib.includes('p_abismo') ? 0 : ENTROPIA.fogata;
     const libro = run.relics.includes('necronomicon') && PROHIBIDO_IDS.some((id) => !prohib.includes(id));

@@ -183,7 +183,8 @@ export interface Codex {
   diag?: { pre?: number; post?: number; total?: number; version?: number }; // v0.32: diagnóstico inicial y final (aciertos)
   cartasProvidence?: number; // v0.46: cartas del Astrónomo de Providence cumplidas (logro)
   suenos?: string[]; // v0.51: sueños distintos que has soñado (src/data/relatos.ts → SUENOS)
-  nyar?: { visitas: number; rechazos: number }; // v0.71 · lo que el Hombre Negro recuerda de ti
+  nyar?: { visitas: number; rechazos: number };
+  legado?: import('./data/legado').LegadoGuardado; // v0.73 · lo que llevabas al terminar tu última expedición del Abismo // v0.71 · lo que el Hombre Negro recuerda de ti
   diario?: number; // v0.45: última hoja del diario de Montemayor encontrada (índice en PROLOGO; la 0 se lee al empezar)
 }
 export type CodexKind = 'enemies' | 'npcs' | 'figures' | 'cards' | 'relics' | 'boons' | 'effects';

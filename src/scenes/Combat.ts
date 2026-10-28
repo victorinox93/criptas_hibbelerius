@@ -443,6 +443,16 @@ export class CombatScene extends Phaser.Scene {
     if (this.pacto('excentrico')) masaOVel(2, 'Pacto Excéntrico');
     if (this.pacto('inercia')) { this.block += 6; this.calc('Pacto de la Inercia: +6 de Bloqueo'); }
     if (this.pacto('cafeina')) { this.bonusJ1 += 1; this.calc('Pacto de la Cafeína: +1 J en tu primer turno'); }
+    // v0.73 · páginas y pactos nuevos
+    if (this.pacto('giroscopio')) { this.block += 4; this.calc('Pacto del Giróscopo: +4 de Bloqueo'); }
+    if (this.pacto('minimalista')) this.jPerTurn += 1;
+    if (this.necro('marea')) { this.block += 10; this.calc('La Marea de Innsmouth: +10 de Bloqueo'); }
+    if (this.necro('abaco')) this.addStatus({ id: 'errorSigno', n: 1, to: 'draw' });
+    if (this.necro('tiempo')) {
+      this.robo1 += 2;
+      this.bonusJ1 += 1;
+      if (this.kind === 'boss') for (const e of this.alive()) { e.st.hp = e.st.maxHp = Math.round(e.st.maxHp * 1.2); this.refreshEnemy(e); }
+    }
     // mutador del tramo (v0.46)
     const mu = MUTADOR(run.mutador);
     if (mu) this.calc(`Mutador del tramo · ${mu.nombre}`);
@@ -1272,6 +1282,7 @@ export class CombatScene extends Phaser.Scene {
     if (tv && this.attacksTurn) add(tv * this.attacksTurn, 'Travail');
     if (this.has('ariete') && !this.arieteUsed) add(8, 'Ariete');
     if (boonLevel('ga_ultima') && Game.run!.hp < Game.run!.maxHp * 0.3) add(4 * boonLevel('ga_ultima'), 'Última Noche');
+    if (this.pacto('gravitatorio')) add(this.alive().length, 'Pacto Gravitatorio');
     if (this.has('contador') && ((Game.run!.revs ?? 0) + 1) % 10 === 0) por(2, 'Contador de Revoluciones');
     add(this.derivadaBono, 'Derivada');
     if (this.calcBolsillo !== 1) por(this.calcBolsillo, 'Calculadora de Bolsillo');
@@ -1823,6 +1834,8 @@ export class CombatScene extends Phaser.Scene {
       }
       this.attacksTurn++;
       if (this.attacksTurn >= 3) this.mostrarCombo(this.attacksTurn); // v0.68
+      if (this.pacto('gravitatorio') && this.alive().length) { this.polonio += this.alive().length; this.calc(`Pacto Gravitatorio: +${this.alive().length} (enemigos vivos)`); }
+      if (this.pacto('calor') && target && !target.dead) { target.st.calor += 1; this.refreshEnemy(target); }
       const gu = boonLevel('ga_ultima');
       if (gu && Game.run!.hp < Game.run!.maxHp * 0.3) { this.polonio += 4 * gu; this.calc(`La Última Noche (Galois): +${4 * gu}`); }
       // v0.69 · reliquias de ataque
@@ -3038,6 +3051,11 @@ export class CombatScene extends Phaser.Scene {
     this.acel -= plano;
     if (planoV) this.vel = Math.max(0, this.vel - planoV);
     this.played++;
+    if (this.necro('abaco') && (this.played - this.jugadasIni) % 4 === 0) { this.energy += 1; this.calc('El Ábaco de Hueso: 4 cartas → +1 J'); }
+    if (this.pacto('resonante') && this.played - this.jugadasIni === 1) {
+      this.calc('Pacto Resonante: +1 de Resonancia a todos');
+      for (const t of [...this.alive()]) await this.addResonance(t, 1);
+    }
     const can = this.diente('canino');
     if (can && (this.played - this.jugadasIni) % 3 === 0) { this.energy += can; this.calc(`Canino Giratorio: 3 cartas este turno → +${can} J`); }
     if (this.hemorragia > 0 && Game.run!.hp > 0) {
@@ -3531,6 +3549,7 @@ export class CombatScene extends Phaser.Scene {
     const run = Game.run!;
     if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
     if (from && dmg > 0 && this.necro('steiner')) dmg += 1; // Página de Steiner
+    if (from && dmg > 0 && this.necro('marea')) dmg += 1; // v0.73 · La Marea de Innsmouth
     // el Autor Eterno lanza hoces giratorias
     if (from && from.st.def.id === 'hibbelerius' && dmg > 0) await this.hoces(from);
     if (from && from.st.def.id === 'am' && dmg > 0) await this.amRayo(from);
@@ -3807,6 +3826,8 @@ export class CombatScene extends Phaser.Scene {
     if (boonLevel('duo_simetria') === 2) draw += 1;
     if (this.has('agujero')) draw += 1;
     if (this.has('ojoYuggoth')) draw += 1; // v0.71 · reliquia maldita
+    if (this.necro('eclipse') && this.turn % 2 === 1) draw -= 1; // v0.73
+    if (this.pacto('minimalista')) draw -= 1;
     if (this.prohibido('p_infinito')) draw += 1;
     if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
     if (this.turn === 1) {
@@ -3829,6 +3850,7 @@ export class CombatScene extends Phaser.Scene {
       if (this.has('mochila')) { draw += 2; this.calc('Mochila de Apuntes: +2 cartas en tu primer turno'); }
       if (this.has('lampara')) { this.energy += 1; this.calc('Lámpara de Carburo: +1 J en tu primer turno'); }
     }
+    if (this.necro('eclipse') && this.turn % 2 === 0) { this.energy += 1; this.calc('El Eclipse: turno par → +1 J'); }
     if (this.has('foucault') && this.turn % 3 === 0) { this.energy += 1; this.calc('Péndulo de Foucault: el plano ya giró → +1 J'); }
     const hr = boonLevel('h_reloj');
     if ((hr === 1 && this.turn % 2 === 0) || (hr === 2 && this.turn >= 2)) {
@@ -4278,12 +4300,13 @@ export class CombatScene extends Phaser.Scene {
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
             else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
-            else if (this.giroscopio) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
+            else if (this.giroscopio || this.pacto('giroscopio')) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
             else if (this.trasAturdir) this.calc('Sigues mareado del golpe anterior: este no te vuelve a aturdir');
             else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.anunciarEstado('¡ATURDIDO!', `${st.def.name} te alcanzó: pierdes tu siguiente turno`, 0xd8b020, '#ffe060'); this.refreshPlayer(); await this.wait(1200); }
           }
         }
-        if (it.calor && Game.run!.hp > 0) {
+        if (it.calor && Game.run!.hp > 0 && this.necro('vacio')) this.calc('El Vacío Perfecto: sin aire no hay calor que te alcance');
+        else if (it.calor && Game.run!.hp > 0) {
           this.pCalor += it.calor;
           this.calc(`${st.def.name} te transfiere ${it.calor} de Calor`);
         }
@@ -4329,7 +4352,8 @@ export class CombatScene extends Phaser.Scene {
           this.anunciarEstado('¡HEMORRAGIA!', `Durante ${n} turno(s), cada carta que juegues te quita 1 de vida`, 0xb02020, '#ff7070');
           await this.wait(900);
         }
-        if (it.vertigo && Game.run!.hp > 0) {
+        if (it.vertigo && Game.run!.hp > 0 && this.pacto('giroscopio')) this.calc('Pacto del Giróscopo: no te mareas');
+        else if (it.vertigo && Game.run!.hp > 0) {
           this.vertigo = Math.min(3, this.vertigo + it.vertigo);
           this.calc(`${st.def.name} te marea: VÉRTIGO, robas ${this.vertigo} carta(s) menos en tu siguiente turno`);
           this.anunciarEstado('¡VÉRTIGO!', `En tu siguiente turno robas ${this.vertigo} carta(s) menos`, 0x3a8ab8, '#9ad8f0');
@@ -4338,7 +4362,7 @@ export class CombatScene extends Phaser.Scene {
         }
         {
           if (it.friccion) {
-            if (this.has('botas')) this.calc('Botas de Agarre: el lodo no te afecta.');
+            if (this.has('botas') || this.necro('vacio')) this.calc(this.necro('vacio') ? 'El Vacío Perfecto: no hay fricción en el vacío.' : 'Botas de Agarre: el lodo no te afecta.');
             else {
               this.friccion += it.friccion;
               this.calc(`Lodo: +${it.friccion} Fricción → tus ataques pierden ${this.friccion} m/s²`);
@@ -4437,6 +4461,11 @@ export class CombatScene extends Phaser.Scene {
     if (da && run.hp < run.maxHp / 2) {
       run.maxHp += da === 2 ? 5 : 3;
       this.calc(`El Más Apto (Darwin): sobreviviste → +${da === 2 ? 5 : 3} Vida máxima`);
+    }
+    if (this.necro('sangre') && run.hp > 0) { run.hp = Math.min(run.maxHp, run.hp + 6); this.calc('Tinta de Sangre: +6 de vida'); }
+    if (this.pacto('deuda')) {
+      if (run.ergios >= 10) { run.ergios -= 10; this.calc('Pacto de la Deuda: te cobran 10 Ergios'); }
+      else { run.hp = Math.max(1, run.hp - 3); this.calc('Pacto de la Deuda: sin Ergios, te cobran 3 de vida'); }
     }
     if (this.has('ojoYuggoth') && Math.random() < 0.25) { const m = darMaldicion(); this.calc(`Ojo de Yuggoth: algo te mira de vuelta… recibes la maldición «${m}»`); }
     if (this.has('termo') && run.hp > 0 && run.hp <= run.maxHp / 2) {
