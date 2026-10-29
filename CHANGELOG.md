@@ -2,6 +2,30 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.82.0 · Cartas de cada personaje
+
+**16 cartas del Abismo propias de cada personaje** (4 cada uno: 2 comunes y 2 raras). Usan su mecánica con temas de cuerpo rígido. Sólo salen en el Abismo: en el Sobre de tu Clase, en el Sobre del Abismo y en las recompensas.
+- **Caballero (F = m·a):**
+  - Palanca de Arquímedes: ×1.5 si el enemigo tiene más de la mitad de su vida.
+  - Eje Fijo: Bloqueo + tu masa extra.
+  - Teorema de Steiner: F al objetivo y la mitad a los demás.
+  - Inercia del Coloso: +2 kg cada vez que detienes a un enemigo.
+- **Arcanista (K = ½mv²):**
+  - Rodadura sin Deslizar: K × 1.4 por la energía de rotación de una esfera.
+  - Radio de Giro: +2 m/s; si llegas a 6, robas 1.
+  - Brazos Recogidos: duplica tu rapidez (I₁ω₁ = I₂ω₂).
+  - Órbita Excéntrica: con v ≥ 6 golpea dos veces.
+- **Penitente (masa variable):**
+  - Soltar Lastre: quema 6 kg y da 6 de Bloqueo.
+  - Tobera Abisal: p = m·v a todos.
+  - Cohete de Dos Etapas: golpea, quema 3 kg y golpea más rápido.
+  - Combustible del Abismo: cada vez que quemas masa, +2 de Calor a todos.
+- **Espectro (formas de energía):**
+  - Inercia Rotacional: canaliza Cinética y Potencial.
+  - Resonancia de Formas: 3 a todos por cada forma.
+  - Ejes Paralelos: libera tu forma más reciente dos veces.
+  - Energía del Vacío: +1 ranura y +3 de Energía Absorbida cada turno.
+
 ## v0.81.0 · Cada tramo, sus criaturas
 
 - **Cada tramo del Abismo tiene sus propios enemigos y élites** (`ENCOUNTERS_5_TRAMO` en enemies.ts). Desde la profundidad 3 se mezclan.

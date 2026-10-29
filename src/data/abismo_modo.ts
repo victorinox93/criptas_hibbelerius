@@ -206,7 +206,7 @@ export interface CartaSobre { id: string; up: boolean; ed?: Edicion; brillante?:
 export function abrirSobre(tipo: string, clase: string): CartaSobre[] {
   const pool = rewardPool(clase, ACTO_ABISMO, 99, true);
   const propia = (id: string) => (CARDS[id].cls ?? 'caballero') === (clase || 'caballero');
-  const filtro = tipo === 'clase' ? (id: string) => propia(id) && !CARDS[id].abismo
+  const filtro = tipo === 'clase' ? (id: string) => propia(id) && (!CARDS[id].abismo || CARDS[id].cls !== 'neutral') // v0.82 · también las cartas del Abismo de tu personaje
     : tipo === 'abismo' ? (id: string) => !!CARDS[id].abismo
       : (id: string) => CARDS[id].cls === 'neutral' && !CARDS[id].abismo;
   const del = pool.filter(filtro);
