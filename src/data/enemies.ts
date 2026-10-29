@@ -659,6 +659,128 @@ export const ENEMIES: Record<string, EnemyDef> = {
       return { kind: 'attack', dmg: Math.max(4, 3 * n), label: `Predice ${n} carta(s) → ${Math.max(4, 3 * n)}` };
     },
   },
+  // ════════ v0.81 · MÁS RESCATADOS, repartidos por tramo ════════
+  // ── Tramo 1 · los Muelles Inclinados ──
+  osario: {
+    id: 'osario', name: 'Osario Excéntrico', sprite: 'osario', scale: 4, hp: [30, 34], mass: 35, act: 5, vuelco: true,
+    desc: 'El Esqueleto de las Criptas, rearmado por el Abismo con huesos de más… y en el lugar equivocado. Su centro de masa no está donde debería: con 2 golpes en un turno se VUELCA.',
+    next: (e) => (e.turn % 3 === 2 ? { kind: 'block', block: 8, dmg: 6, label: 'Se reacomoda los huesos' } : { kind: 'attack', dmg: 5, hits: 2, label: 'Golpe descentrado' }),
+  },
+  shoggothJoven: {
+    id: 'shoggothJoven', name: 'Shoggoth Joven', sprite: 'shoggothJoven', scale: 3.6, hp: [40, 44], mass: 60, act: 5, split: { id: 'shoggotito', n: 2 },
+    desc: 'La Babosa Madre, si los Antiguos la hubieran criado. «¡Tekeli-li!» Al morir se divide en 2 Shoggotitos: la masa total se conserva, repartida.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 9, friccion: 1, label: 'Baba protoplásmica' } : { kind: 'attack', dmg: 5, hits: 2, label: 'Mil seudópodos' }),
+  },
+  shoggotito: {
+    id: 'shoggotito', name: 'Shoggotito', sprite: 'shoggotito', scale: 4, hp: [12, 14], mass: 20, act: 5,
+    desc: 'Un pedazo de Shoggoth que sigue imitando la voz de su madre: «tekeli-li».',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 5 } : { kind: 'attack', dmg: 3, friccion: 1, label: 'Babear' }),
+  },
+  sacerdoteDagon: {
+    id: 'sacerdoteDagon', name: 'Sacerdote de Dagón', sprite: 'sacerdoteDagon', scale: 4, hp: [24, 28], mass: 50, act: 5,
+    desc: 'El Escudero de Huesos, ahora en la Orden Esotérica de Dagón de Innsmouth. No ataca: cura y protege a los demás. Si lo dejas solo, golpea desesperado.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'buff', healAll: 7, shieldOthers: 6, label: 'Bendición de Dagón' } : { kind: 'buff', shieldOthers: 10, label: 'Marea protectora' }),
+  },
+  animaAhogada: {
+    id: 'animaAhogada', name: 'Ánima Ahogada', sprite: 'animaAhogada', scale: 4, hp: [26, 30], mass: 0, act: 5, oculto: true,
+    desc: 'Un Ánima de las Criptas que se hundió en los muelles. Bajo el agua no se ve lo que hará: sólo su cabello flotando.',
+    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 7, vertigo: 1, label: 'Te jala hacia el fondo' } : { kind: 'attack', dmg: 10, hemorragia: 1, label: 'Abrazo frío' }),
+  },
+  penduloPnakotus: {
+    id: 'penduloPnakotus', name: 'El Péndulo de Pnakotus', sprite: 'penduloPnakotus', scale: 3.4, hp: [82, 90], mass: 160, umbral: 15, act: 5,
+    desc: 'Élite. El Péndulo de las Criptas, colgado ahora en la biblioteca de la Gran Raza. Alterna un golpe débil (el valle) y uno enorme (el extremo). DETENLO antes del golpe grande.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'block', block: 10, dmg: 6, label: 'Pasa por el valle (v máxima, poca altura)' }
+      : { kind: 'attack', dmg: 22 + 3 * e.inercia, label: 'Llega al extremo: mgh → golpe' }),
+  },
+  idoloWilcox: {
+    id: 'idoloWilcox', name: 'El Ídolo de Arcilla de Wilcox', sprite: 'idoloWilcox', scale: 3.2, hp: [88, 96], mass: 220, umbral: 17, act: 5, imparable: 1,
+    desc: 'Élite. El Gólem de las Criptas se volvió el bajorrelieve que esculpió dormido el joven Wilcox en «La llamada de Cthulhu» (1928). Te llena de Susurros, se endurece y golpea con el peso de la piedra.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 16, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Un sueño de piedra' };
+      if (p === 1) return { kind: 'attack', dmg: 9, hits: 2, label: 'Tentáculos de arcilla' };
+      return { kind: 'attack', dmg: 20 + 3 * e.inercia, aturde: true, label: 'Ph’nglui mglw’nafh' };
+    },
+  },
+  armaduraMarsh: {
+    id: 'armaduraMarsh', name: 'La Armadura del Capitán Marsh', sprite: 'armaduraMarsh', scale: 3.6, hp: [84, 92], mass: 120, umbral: 14, act: 5, thorns: 3,
+    desc: 'Élite. La Armadura de Púas, ahora con coral y agua del arrecife del Diablo. Cada golpe que le das te regresa 3 (3ª ley). Cada 3 turnos la marea sube: pierdes tu Bloqueo antes de su golpe.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'attack', dmg: 10 + 2 * e.inercia, label: 'Garfio' };
+      if (p === 1) return { kind: 'block', block: 12, dmg: 5, label: 'Se cubre de coral' };
+      return { kind: 'attack', dmg: 16 + 2 * e.inercia, inunda: true, label: 'La marea del arrecife del Diablo' };
+    },
+  },
+  // ── Tramo 2 · R'lyeh invertida ──
+  gargolaAngulos: {
+    id: 'gargolaAngulos', name: 'Gárgola de Ángulos Imposibles', sprite: 'gargolaAngulos', scale: 3.6, hp: [36, 40], mass: 90, act: 5,
+    desc: 'La Gárgola de las Criptas, tallada con la geometría de R’lyeh: sus ángulos no suman 180°. En un turno se vuelve piedra (mucho Bloqueo) y en el siguiente ataca.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'block', block: 18, label: 'Ángulo que no cierra (piedra)' } : { kind: 'attack', dmg: 13, label: 'Arista imposible' }),
+  },
+  bibliotecarioCelaeno: {
+    id: 'bibliotecarioCelaeno', name: 'El Bibliotecario de Celaeno', sprite: 'bibliotecarioCelaeno', scale: 3.6, hp: [38, 42], mass: 55, act: 5,
+    desc: 'El Bibliotecario de las Criptas, ahora custodio de la Gran Biblioteca de Celaeno. Saca Tomos Prohibidos que te llenan de Susurros.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'buff', summon: 'tomoProhibido', label: 'Saca un Tomo Prohibido' };
+      if (p === 1) return { kind: 'attack', dmg: 11, label: 'Golpe de lomo' };
+      return { kind: 'block', block: 10, add: { id: 'susurro', n: 1, to: 'draw' }, label: 'Lee en voz alta' };
+    },
+  },
+  tomoProhibido: {
+    id: 'tomoProhibido', name: 'Tomo Prohibido', sprite: 'tomoProhibido', scale: 4, hp: [12, 14], mass: 3, act: 5,
+    desc: 'Un libro de Celaeno que te mira. Cada vez que te muerde, te deja un Susurro.',
+    next: () => ({ kind: 'attack', dmg: 5, add: { id: 'susurro', n: 1, to: 'discard' }, label: 'Mordida de tinta' }),
+  },
+  atomoAzathoth: {
+    id: 'atomoAzathoth', name: 'El Átomo de Azathoth', sprite: 'atomoAzathoth', scale: 3.6, hp: [28, 32], mass: 0.001, act: 5, explode: 10,
+    desc: 'El Átomo Inestable, ahora un pedacito del Caos Nuclear donde Azathoth burbujea. Te confunde y, al morir, explota (fisión): 10 de daño.',
+    next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 6, confusion: true, label: 'La flauta del caos' } : { kind: 'attack', dmg: 9, label: 'Electrón que se escapa' }),
+  },
+  coloniaMiGo: {
+    id: 'coloniaMiGo', name: 'La Colonia de Mi-Go', sprite: 'coloniaMiGo', scale: 3.6, hp: [40, 44], mass: 80, act: 5,
+    desc: 'La Colmena de Ánimas, colonizada por los Mi-Go de Yuggoth («El que susurra en la oscuridad», 1931). Suelta Mi-Go voladores y los protege.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'buff', summon: 'miGo', shieldAll: 4, label: 'Sale un Mi-Go' };
+      if (p === 1) return { kind: 'attack', dmg: 10, label: 'Zumbido de Yuggoth' };
+      return { kind: 'block', block: 10, dmg: 5, label: 'Cilindro de cerebros' };
+    },
+  },
+  miGo: {
+    id: 'miGo', name: 'Mi-Go', sprite: 'miGo', scale: 4, hp: [12, 14], mass: 5, act: 5,
+    desc: 'Un hongo de Yuggoth con alas membranosas y cabeza en espiral. Sus pinzas te dejan con Hemorragia.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 6, hemorragia: 1, label: 'Pinzas' } : { kind: 'attack', dmg: 4, hits: 2 }),
+  },
+  turcoAmarillo: {
+    id: 'turcoAmarillo', name: 'El Ajedrecista del Rey de Amarillo', sprite: 'turcoAmarillo', scale: 3.2, hp: [90, 98], mass: 120, umbral: 18, act: 5,
+    desc: 'Élite. El Turco Mecánico, con la túnica del Rey de Amarillo. Abre la partida llenándote de Susurros, da jaque y luego jaque mate. DETENLO antes del mate.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 14, add: { id: 'susurro', n: 2, to: 'draw' }, label: 'Apertura de Carcosa' };
+      if (p === 1) return { kind: 'attack', dmg: 11 + 2 * e.inercia, label: 'Jaque' };
+      return { kind: 'attack', dmg: 24 + 2 * e.inercia, label: 'Jaque mate' };
+    },
+  },
+  hornoYuggoth: {
+    id: 'hornoYuggoth', name: 'El Horno de Yuggoth', sprite: 'hornoYuggoth', scale: 3.4, hp: [86, 94], mass: 600, umbral: 17, act: 5,
+    desc: 'Élite. El Horno Alto de la Fundidora, llevado a Yuggoth: arde con un fuego verde y frío. Te transfiere mucho Calor (Q = m·c·ΔT) y se protege con su coraza.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'attack', dmg: 8, calor: 4, label: 'Q = m·c·ΔT' };
+      if (p === 1) return { kind: 'block', block: 14, heal: 10, label: 'Aviva el fuego frío' };
+      return { kind: 'attack', dmg: 18 + 3 * e.inercia, calor: 2, label: 'Colada de Yuggoth' };
+    },
+  },
+  volanteAzathoth: {
+    id: 'volanteAzathoth', name: 'El Volante de Azathoth', sprite: 'volanteAzathoth', scale: 3.2, hp: [84, 92], mass: 400, umbral: 18, act: 5, imparable: 1,
+    desc: 'Élite. El Volante de Inercia, girando alrededor del dios ciego. Gana rapidez angular 2 turnos (½·I·ω²) y la suelta toda de golpe. DETENERLO le quita todo lo acumulado.',
+    next: (e) => (e.turn % 3 === 2
+      ? { kind: 'attack', dmg: 10 + 7 * e.carga, release: true, vertigo: 1, label: '½·I·ω² de golpe' }
+      : { kind: 'block', block: 9, dmg: 5, charge: true, label: 'ω aumenta' }),
+  },
   // ════════ v0.41 · jefes del Descenso (src/data/abismo_modo.ts → JEFES) ════════
   dagon: {
     id: 'dagon', name: 'Padre Dagón', sprite: 'dagon', scale: 3.6, hp: [270, 270], mass: 900, umbral: 18, act: 5, imparable: 1,
@@ -990,20 +1112,44 @@ export const ENCOUNTERS_4 = {
   boss: [['am']],
 };
 
+/** v0.81 · Encuentros del Abismo POR TRAMO. Desde la profundidad 3 se mezclan los de ambos tramos. */
+export const ENCOUNTERS_5_TRAMO: Record<1 | 2, { easy: string[][]; normal: string[][]; elite: string[][] }> = {
+  // Tramo 1 · los Muelles Inclinados: el mar de Innsmouth, Dagón y las Tierras del Sueño
+  1: {
+    easy: [['acolito'], ['polipo'], ['profundo'], ['martense'], ['osario'], ['animaAhogada'], ['shoggothJoven']],
+    normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
+      ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje'],
+      ['necrofago'], ['necrofago', 'acolito'], ['martense', 'martense'], ['aladoFestival', 'profundo'], ['reptilSinNombre'],
+      ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense'],
+      ['lengChico', 'lengCentro', 'lengGrande'],
+      ['osario', 'osario'], ['shoggothJoven', 'acolito'], ['profundo', 'sacerdoteDagon'], ['acolito', 'sacerdoteDagon'],
+      ['animaAhogada', 'animaAhogada'], ['animaAhogada', 'profundo'], ['osario', 'necrofago']],
+    elite: [['vigia'], ['hidra'], ['sabueso'], ['penduloPnakotus'], ['idoloWilcox'], ['armaduraMarsh']],
+  },
+  // Tramo 2 · R'lyeh invertida: el espacio, Yuggoth, Carcosa y las máquinas del Núcleo
+  2: {
+    easy: [['byakhee'], ['gradiente'], ['tokenizador'], ['gargolaAngulos'], ['atomoAzathoth'], ['cultistaEje']],
+    normal: [['ladronRostros'], ['ladronRostros', 'byakhee'], ['byakhee', 'byakhee'], ['ventanaContexto', 'token'], ['autocompletador', 'tokenizador'],
+      ['gradiente', 'autocompletador'], ['gradiente', 'byakhee'], ['ventanaContexto', 'cultistaEje'],
+      ['gargolaAngulos', 'gargolaAngulos'], ['gargolaAngulos', 'atomoAzathoth'], ['bibliotecarioCelaeno'], ['bibliotecarioCelaeno', 'tomoProhibido'],
+      ['atomoAzathoth', 'atomoAzathoth'], ['coloniaMiGo'], ['coloniaMiGo', 'miGo'], ['miGo', 'miGo', 'byakhee'], ['necrofago', 'atomoAzathoth'], ['cultistaEje', 'gargolaAngulos']],
+    elite: [['wilbur'], ['relojYog'], ['shoggothRLHF'], ['turcoAmarillo'], ['hornoYuggoth'], ['volanteAzathoth']],
+  },
+};
+
+/** Todos los del Abismo juntos (para saber quién es élite o jefe, y para la profundidad 3 en adelante) */
 export const ENCOUNTERS_5 = {
-  easy: [['acolito'], ['polipo'], ['cultistaEje'], ['profundo'], ['martense'], ['aladoFestival'], ['byakhee'], ['gradiente'], ['tokenizador']],
-  normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
-    ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje'],
-    // v0.51 · más mythos
-    ['necrofago'], ['necrofago', 'acolito'], ['martense', 'martense'], ['aladoFestival', 'profundo'], ['reptilSinNombre'],
-    ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense'],
-    // v0.76 · rescatados y criaturas del Núcleo
-    ['lengChico', 'lengCentro', 'lengGrande'], ['ladronRostros'], ['ladronRostros', 'byakhee'], ['byakhee', 'byakhee'],
-    ['ventanaContexto', 'token'], ['autocompletador', 'tokenizador'], ['gradiente', 'autocompletador'], ['ventanaContexto', 'acolito'], ['gradiente', 'byakhee']],
-  elite: [['vigia'], ['hidra'], ['wilbur'], ['sabueso'], ['relojYog'], ['shoggothRLHF']],
+  easy: [...ENCOUNTERS_5_TRAMO[1].easy, ...ENCOUNTERS_5_TRAMO[2].easy],
+  normal: [...ENCOUNTERS_5_TRAMO[1].normal, ...ENCOUNTERS_5_TRAMO[2].normal],
+  elite: [...ENCOUNTERS_5_TRAMO[1].elite, ...ENCOUNTERS_5_TRAMO[2].elite],
   // el jefe de cada tramo se sortea (run.jefe, src/data/abismo_modo.ts); esta lista sólo los marca como jefes
   boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug'], ['calculadora']],
 };
+
+/** v0.81 · Encuentros del Abismo según el tramo (desde el 3, todos) */
+export function encuentrosAbismo(tramo = 1) {
+  return tramo <= 2 ? { ...ENCOUNTERS_5_TRAMO[tramo as 1 | 2], boss: ENCOUNTERS_5.boss } : ENCOUNTERS_5;
+}
 
 /** v0.51 · pesadillas (src/scenes/Sueno.ts): el sueño decide contra quién peleas */
 export const ENCOUNTERS_SUENO: Record<string, string[]> = {

@@ -20,7 +20,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
-import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
+import { AddCards, danoDe, encounters, encuentrosAbismo, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
 import { darMaldicion } from '../data/maldiciones';
 import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
@@ -687,7 +687,7 @@ export class CombatScene extends Phaser.Scene {
 
     // ── Enemigos ──
     // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
-    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
+    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
     ditherLocura(this); // v0.67 · con mucha Locura el fondo se pixela (sólo el fondo)

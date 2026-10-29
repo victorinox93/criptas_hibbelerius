@@ -216,8 +216,182 @@ for y in (22, 27, 32): line(g, 9, y, 17, y, 'B')
 shade(g, 'b', 'p', frac=0.25)
 S['autocompletador'] = rows(outline(g))
 
+
+# ════════ v0.81 · MÁS RESCATADOS, ahora repartidos por tramo ════════
+# ── Tramo 1 · los Muelles Inclinados ──
+# Osario Excéntrico (Esqueleto): huesos mal ensamblados, inclinado
+g = canvas(24, 34)
+disc(g, 14, 5, 4, 'w', 4)                                    # cráneo ladeado
+P(g, 13, 5, 'E'); P(g, 16, 4, 'k'); line(g, 12, 8, 16, 8, 'k')
+line(g, 13, 9, 10, 24, 'w', 2)                               # columna torcida
+for y in (12, 15, 18): line(g, 8, y + 1, 15, y - 1, 'L')     # costillas chuecas
+line(g, 11, 12, 4, 18, 'w'); line(g, 12, 12, 20, 16, 'w')    # brazos
+disc(g, 20, 17, 1.5, 'L')                                    # un hueso de más en la mano
+rect(g, 6, 23, 14, 25, 'L')                                  # cadera
+line(g, 7, 25, 4, 33, 'w', 2); line(g, 12, 25, 15, 33, 'w', 2)
+disc(g, 17, 27, 1.2, 'E'); disc(g, 6, 9, 1, 'E')             # chispas del centro de masa
+S['osario'] = rows(outline(g))
+
+# Shoggoth Joven (Babosa Madre) y Shoggotito
+def gota(w, h, ojos):
+    g = canvas(w, h)
+    disc(g, w / 2, h * 0.62, w / 2 - 1, 'G', h * 0.38)
+    disc(g, w / 2, h * 0.45, w / 3, 'G', h / 3)
+    for (x, y) in ojos: disc(g, x, y, 1.4, 'W'); P(g, x, y, 'E')
+    for x in range(2, w - 2, 3): P(g, x, h - 2, 't')
+    shade(g, 'G', 'g', frac=0.3)
+    return rows(outline(g))
+S['shoggothJoven'] = gota(30, 24, [(8, 12), (14, 9), (20, 13), (24, 17), (11, 18), (17, 16)])
+S['shoggotito'] = gota(16, 14, [(6, 7), (10, 8)])
+
+# Sacerdote de Dagón (Escudero): túnica con escamas y báculo de coral
+g = canvas(24, 36)
+poly(g, [(6, 35), (18, 35), (16, 12), (8, 12)], 'b')
+disc(g, 12, 8, 4, 'u', 4.5); P(g, 10, 7, 'y'); P(g, 14, 7, 'y'); line(g, 10, 11, 14, 11, 'U')
+poly(g, [(8, 4), (12, 0), (16, 4)], 'y')                     # mitra
+for y in range(15, 34, 3):
+    for x in range(9 + (y % 2), 16, 3): P(g, x, y, 'B')       # escamas
+line(g, 19, 6, 20, 35, 'n'); poly(g, [(17, 6), (19, 1), (21, 5), (23, 2), (22, 7)], 'R')  # báculo de coral
+line(g, 15, 16, 19, 18, 'u')
+S['sacerdoteDagon'] = rows(outline(g))
+
+# Ánima Ahogada (Ánima): un fantasma con el cabello flotando como en el agua
+g = canvas(24, 30)
+disc(g, 12, 11, 7, 'L', 8)
+poly(g, [(5, 13), (19, 13), (21, 29), (17, 25), (14, 29), (11, 24), (8, 29), (3, 27)], 'L')
+for x0 in (6, 9, 15, 18): line(g, x0, 5, x0 - 3, -1, 'S')
+P(g, 9, 11, 'k'); P(g, 15, 11, 'k'); disc(g, 12, 16, 1.5, 'k')
+for x, y in ((4, 20), (20, 18), (12, 27)): P(g, x, y, 'c')   # burbujas
+S['animaAhogada'] = rows(outline(g))
+
+# Péndulo de Pnakotus (élite · Péndulo): una hoja enorme colgando de una cadena con ojos
+g = canvas(30, 44)
+line(g, 15, 0, 15, 24, 'l')
+for y in range(2, 24, 4): P(g, 15, y, 'L')
+disc(g, 15, 33, 11, 'L', 8); disc(g, 15, 30, 11, 'k', 4)     # media luna
+poly(g, [(4, 33), (26, 33), (15, 43)], 'L')
+for x, y in ((10, 34), (15, 36), (20, 34)): disc(g, x, y, 1.6, 'W'); P(g, x, y, 'F')
+line(g, 6, 34, 24, 34, 'R')
+shade(g, 'L', 'l', frac=0.3)
+S['penduloPnakotus'] = rows(outline(g))
+
+# El Ídolo de Arcilla de Wilcox (élite · Gólem): el bajorrelieve de «La llamada de Cthulhu»
+g = canvas(34, 40)
+rect(g, 4, 6, 29, 39, 'n')                                   # tableta de arcilla
+rect(g, 6, 8, 27, 37, 'Y')
+disc(g, 17, 18, 6, 'n', 5)                                   # cabeza de pulpo
+for x0 in (12, 15, 19, 22): line(g, x0, 22, x0 + (x0 - 17) // 2, 30, 'n', 2)  # tentáculos
+poly(g, [(7, 14), (11, 10), (12, 20)], 'n'); poly(g, [(27, 14), (23, 10), (22, 20)], 'n')  # alas
+P(g, 15, 17, 'E'); P(g, 19, 17, 'E')
+for x in range(8, 27, 3): P(g, x, 35, 'k')                   # jeroglíficos
+for x in range(9, 26, 4): P(g, x, 33, 'k')
+S['idoloWilcox'] = rows(outline(g))
+
+# La Armadura del Capitán Marsh (élite · Armadura de Púas): coral y púas, llena de agua
+g = canvas(28, 38)
+rect(g, 8, 12, 20, 30, 'l')
+disc(g, 14, 7, 5, 'l', 5); rect(g, 10, 6, 18, 8, 'k'); P(g, 12, 7, 'E'); P(g, 16, 7, 'E')
+for x, y in ((7, 13), (21, 13), (6, 20), (22, 21), (8, 27), (20, 28), (14, 1)):
+    line(g, x, y, x + (x - 14) // 3, y - 3, 'w')            # púas
+for x, y in ((10, 16), (17, 19), (12, 25), (18, 27)): disc(g, x, y, 1.6, 'R')  # coral
+rect(g, 9, 31, 12, 37, 'g'); rect(g, 16, 31, 19, 37, 'g')
+line(g, 21, 15, 26, 26, 'l', 2); disc(g, 26, 28, 2.5, 'y')   # garfio de capitán
+for x in range(9, 20, 3): P(g, x, 22, 'c')                   # agua por dentro
+shade(g, 'l', 'g', frac=0.3)
+S['armaduraMarsh'] = rows(outline(g))
+
+# ── Tramo 2 · R'lyeh invertida ──
+# Gárgola de Ángulos Imposibles (Gárgola): toda hecha de triángulos que no cierran
+g = canvas(32, 30)
+poly(g, [(16, 4), (26, 26), (6, 26)], 'l')
+poly(g, [(16, 4), (6, 26), (2, 10)], 'L'); poly(g, [(16, 4), (26, 26), (31, 9)], 'g')
+poly(g, [(12, 12), (20, 12), (16, 19)], 'k'); P(g, 14, 13, 'F'); P(g, 18, 13, 'F')
+line(g, 2, 10, 31, 9, 'v'); line(g, 6, 26, 31, 9, 'v')       # líneas que se cruzan donde no deben
+rect(g, 8, 26, 11, 29, 'g'); rect(g, 21, 26, 24, 29, 'g')
+S['gargolaAngulos'] = rows(outline(g))
+
+# El Bibliotecario de Celaeno (Bibliotecario) y el Tomo Prohibido
+g = canvas(26, 38)
+poly(g, [(5, 37), (19, 37), (17, 12), (8, 12)], 'p')
+disc(g, 12, 8, 4.5, 'i', 5); rect(g, 9, 7, 15, 8, 'k'); P(g, 10, 7, 'c'); P(g, 14, 7, 'c')  # lentes
+line(g, 12, 13, 12, 22, 'P')
+rect(g, 17, 18, 24, 26, 'r'); rect(g, 18, 19, 23, 25, 'y'); line(g, 20, 19, 20, 25, 'r')    # libro abierto
+for y in (4, 2): P(g, 9 + y, y, 'v'); P(g, 16 - y, y, 'v')
+line(g, 8, 16, 3, 24, 'p', 2)
+S['bibliotecarioCelaeno'] = rows(outline(g))
+
+g = canvas(18, 18)
+rect(g, 2, 3, 15, 14, 'r'); rect(g, 3, 4, 14, 13, 'R'); line(g, 8, 3, 8, 14, 'r')
+disc(g, 5.5, 8, 1.6, 'W'); P(g, 5, 8, 'E'); disc(g, 11.5, 8, 1.6, 'W'); P(g, 12, 8, 'E')
+line(g, 4, 11, 13, 11, 'k')
+for x in (4, 7, 10, 13): P(g, x, 15, 'm'); P(g, x, 16, 'm')   # tentáculos de tinta
+S['tomoProhibido'] = rows(outline(g))
+
+# El Átomo de Azathoth (Átomo Inestable): un núcleo que burbujea con órbitas que no cierran
+g = canvas(30, 30)
+for a0 in (0, 60, 120): 
+    for a in range(0, 360, 6):
+        t = math.radians(a); r0 = math.radians(a0)
+        x = 15 + 12 * math.cos(t) * math.cos(r0) - 5 * math.sin(t) * math.sin(r0)
+        y = 15 + 12 * math.cos(t) * math.sin(r0) + 5 * math.sin(t) * math.cos(r0)
+        P(g, x, y, 'v')
+disc(g, 15, 15, 5.5, 'm'); disc(g, 13, 13, 1.6, 'E'); disc(g, 17, 16, 1.3, 'E'); disc(g, 15, 18, 1, 'W')
+for x, y in ((27, 15), (6, 6), (9, 25)): disc(g, x, y, 1.6, 'c')
+S['atomoAzathoth'] = rows(outline(g))
+
+# La Colonia de Mi-Go (Colmena de Ánimas) y un Mi-Go
+g = canvas(30, 34)
+disc(g, 15, 18, 12, 'S', 14)
+for x, y in ((10, 12), (19, 10), (14, 20), (22, 22), (8, 25), (17, 28)): disc(g, x, y, 2, 'k'); P(g, x, y, 'm')  # celdas
+poly(g, [(15, 1), (12, 5), (18, 5)], 'S')
+for x0 in (6, 24): line(g, x0, 20, x0 + (2 if x0 < 15 else -2), 33, 'U', 2)
+shade(g, 'S', 'U', frac=0.3)
+S['coloniaMiGo'] = rows(outline(g))
+
+g = canvas(22, 20)
+disc(g, 11, 11, 4, 'm', 5)                                   # cuerpo rosado de crustáceo
+disc(g, 11, 5, 3, 'M', 2.5)                                  # cabeza en espiral
+for a in range(0, 330, 30): P(g, 11 + 2 * math.cos(math.radians(a)), 5 + 1.6 * math.sin(math.radians(a)), 'i')
+poly(g, [(7, 9), (0, 3), (2, 12)], 'v'); poly(g, [(15, 9), (22, 3), (20, 12)], 'v')   # alas membranosas
+for x0 in (8, 11, 14): line(g, x0, 15, x0 - 1, 19, 'M')
+S['miGo'] = rows(outline(g))
+
+# El Ajedrecista del Rey de Amarillo (élite · El Turco): un autómata con túnica amarilla y su tablero
+g = canvas(36, 40)
+rect(g, 2, 26, 21, 31, 'n')                                  # mesa
+for i in range(4):
+    for j in range(2): rect(g, 3 + i * 4 + (j % 2) * 2, 27 + j * 2, 4 + i * 4 + (j % 2) * 2, 27 + j * 2, 'W')
+poly(g, [(16, 38), (32, 38), (30, 12), (18, 12)], 'h')       # túnica amarilla
+poly(g, [(18, 14), (24, 2), (30, 14)], 'H')                  # capucha
+rect(g, 21, 8, 27, 12, 'k'); P(g, 22, 10, 'E'); P(g, 26, 10, 'E')
+line(g, 18, 18, 12, 25, 'h', 2); disc(g, 11, 26, 1.6, 'k')   # mano sobre una pieza
+for x in range(19, 30, 3): P(g, x, 22, 'H')
+disc(g, 33, 4, 1.6, 'h'); line(g, 33, 6, 33, 9, 'h')         # el Signo Amarillo flotando
+S['turcoAmarillo'] = rows(outline(g))
+
+# El Horno de Yuggoth (élite · Horno Alto): un horno de piedra negra con una boca de fuego verde
+g = canvas(32, 40)
+poly(g, [(6, 39), (26, 39), (23, 6), (9, 6)], 'd')
+rect(g, 12, 0, 20, 6, 'd')
+for y in range(10, 39, 4): line(g, 8, y, 24, y, 'k')
+disc(g, 16, 26, 6, 'E', 5); disc(g, 16, 27, 4, 'W', 3)       # la boca de fuego frío
+for x, y in ((12, 22), (20, 22)): P(g, x, y, 'k')
+for x, y in ((14, -1), (18, 1), (16, -3)): P(g, x, y, 'E')    # chispas
+for x, y in ((11, 14), (21, 14)): disc(g, x, y, 1.4, 'F')    # ojos de brasa
+S['hornoYuggoth'] = rows(outline(g))
+
+# El Volante de Azathoth (élite · Volante): un volante de inercia que gira alrededor de un ojo ciego
+g = canvas(36, 36)
+for r, ch in ((16, 'l'), (13, 'g')): arc(g, 18, 18, r, 0, 360, ch, paso=2)
+disc(g, 18, 18, 15, 'l'); disc(g, 18, 18, 12, 'g'); disc(g, 18, 18, 6, 'p')
+for a in range(0, 360, 45):
+    line(g, 18 + 6 * math.cos(math.radians(a)), 18 + 6 * math.sin(math.radians(a)), 18 + 12 * math.cos(math.radians(a)), 18 + 12 * math.sin(math.radians(a)), 'l')
+disc(g, 18, 18, 3.5, 'i'); disc(g, 18, 18, 1.6, 'v')         # ojo ciego
+for a in range(10, 360, 40): P(g, 18 + 17 * math.cos(math.radians(a)), 18 + 17 * math.sin(math.radians(a)), 'c')  # chispas de velocidad
+S['volanteAzathoth'] = rows(outline(g))
+
 # los enemigos miran hacia el héroe (izquierda)
-for k in ('byakhee', 'gradiente'):
+for k in ('byakhee', 'gradiente', 'osario', 'turcoAmarillo'):
     S[k] = [r[::-1] for r in S[k]]
 
 out = ['// ════════ v0.76 · RESCATADOS y CRIATURAS DEL NÚCLEO · generado con tools/arte/rescatados.py (python3) ════════',

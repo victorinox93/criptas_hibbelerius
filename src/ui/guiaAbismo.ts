@@ -320,7 +320,7 @@ const PAGINAS_GUIA: PaginaGuia[] = [
         L(txt(s, x, 306, nom, 18, CSS.gold).setOrigin(0.5, 0));
         L(txt(s, x, 332, txt0, 15, CSS.bone, { align: 'center', wordWrap: { width: 200 } }).setOrigin(0.5, 0));
       });
-      L(txt(s, W / 2, 404, 'También: los Engranes de Leng (ω₁r₁ = ω₂r₂), el Tokenizador, la Ventana de Contexto, el Gradiente (pega según la pendiente) y el Autocompletador.', 16, '#9ad8f0', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
+      L(txt(s, W / 2, 404, 'Cada tramo tiene sus propias criaturas y élites: el 1, el mar de Innsmouth y Dagón; el 2, Yuggoth, Carcosa y las máquinas del Núcleo. Desde la profundidad 3 se mezclan.', 16, '#9ad8f0', { align: 'center', wordWrap: { width: 820 } }).setOrigin(0.5, 0));
     },
   },
   {

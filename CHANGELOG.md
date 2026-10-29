@@ -2,6 +2,19 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.81.0 · Cada tramo, sus criaturas
+
+- **Cada tramo del Abismo tiene sus propios enemigos y élites** (`ENCOUNTERS_5_TRAMO` en enemies.ts). Desde la profundidad 3 se mezclan.
+  - **Tramo 1 · los Muelles Inclinados:** el mar de Innsmouth, Dagón y las Tierras del Sueño.
+  - **Tramo 2 · R'lyeh invertida:** Yuggoth, Carcosa, Azathoth y las máquinas del Núcleo.
+  - Cada tramo tiene unos 21 enemigos distintos y sólo comparten 2.
+- **16 criaturas nuevas rescatadas del juego base con giro de horror cósmico**, con dibujo propio:
+  - **Tramo 1:** Osario Excéntrico (era el Esqueleto), Shoggoth Joven (la Babosa Madre; se divide en 2 Shoggotitos), Sacerdote de Dagón (el Escudero) y Ánima Ahogada (el Ánima; no se ven sus intenciones).
+  - **Tramo 2:** Gárgola de Ángulos Imposibles, Bibliotecario de Celaeno (saca Tomos Prohibidos), Átomo de Azathoth (explota al morir) y Colonia de Mi-Go (suelta Mi-Go).
+- **6 élites nuevos, de 6 a 12:**
+  - **Tramo 1:** El Péndulo de Pnakotus, El Ídolo de Arcilla de Wilcox (el Gólem; «La llamada de Cthulhu») y La Armadura del Capitán Marsh (la Armadura de Púas).
+  - **Tramo 2:** El Ajedrecista del Rey de Amarillo (el Turco), El Horno de Yuggoth (el Horno Alto) y El Volante de Azathoth.
+
 ## v0.80.0 · El Abismo se abre (otra vez)
 
 - **El portal del Abismo vuelve a abrirse para quien venció a AM** (y para el Modo profesor). A quien no ha vencido a AM le dice «🔒 Vence a AM».
