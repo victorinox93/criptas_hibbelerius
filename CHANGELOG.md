@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.79.0 · Tramos más largos
+
+- **Cada tramo del Abismo tiene 14 pisos antes del jefe** (antes 10). Las expediciones que ya estaban en curso conservan su mapa.
+- **Enemigos del Abismo +5 % de vida y daño:** el ajuste de pruebas pasa de 0.8 a 0.84 (`AJUSTE_ABISMO`). Los jefes conservan su ×1.1 encima y quedan en ≈0.92. El modo normal no cambia.
+
 ## v0.78.0 · El Espectro de la Energía
 
 Dos ideas de alumnos del curso:
