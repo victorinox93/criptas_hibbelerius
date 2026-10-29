@@ -2,6 +2,18 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.84.0 · Altares filosóficos
+
+- **6 altares filosóficos en los «?» del Abismo**, cada uno a lo más una vez por expedición. Traen una historia corta del mythos, una pregunta y tres posturas. Ninguna es la «correcta»: cada una tiene su recompensa y su costo, y al final hay una reflexión.
+  - **El Trono del Sultán Ciego (Azathoth):** ¿vale la pena lo que haces si el universo no tiene propósito? (cosmicismo, Camus).
+  - **La Biblioteca de la Gran Raza (Yith):** ¿seguirías siendo tú en otro cuerpo con tus recuerdos? (identidad, Locke, el barco de Teseo).
+  - **El Carro de Nodens:** ¿una verdad que duele o una mentira que protege?
+  - **El Altar del Soñador («Hypnos»):** ¿y si esta vida fuera un sueño? (Zhuangzi y la mariposa).
+  - **La Llave de Plata (Randolph Carter, 1929):** ¿volverías a ser niño para siempre?
+  - **La Ventana del Sanatorio de Arkham:** ¿qué es la locura? Cierra con un mensaje sobre hablar con alguien de confianza.
+- 4 figuras nuevas dibujadas: un yithiano, Nodens, la Llave de Plata y la ventana de Arkham.
+- Arreglo: las cartas raras del Abismo que dan los relatos, el Pacto Hueco y los altares ya no pueden ser de otro personaje.
+
 ## v0.83.0 · Reliquias del Abismo
 
 **10 reliquias que sólo salen en el Abismo**, de cuerpo rígido y del mythos. En el Abismo salen con el doble de probabilidad que las normales (≈ la mitad de las que aparecen); en el modo normal nunca.

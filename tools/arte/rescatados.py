@@ -390,6 +390,47 @@ disc(g, 18, 18, 3.5, 'i'); disc(g, 18, 18, 1.6, 'v')         # ojo ciego
 for a in range(10, 360, 40): P(g, 18 + 17 * math.cos(math.radians(a)), 18 + 17 * math.sin(math.radians(a)), 'c')  # chispas de velocidad
 S['volanteAzathoth'] = rows(outline(g))
 
+
+# ════════ v0.84 · FIGURAS DE LOS ALTARES FILOSÓFICOS ════════
+# Un yithiano (la Gran Raza de Yith): un cono enorme con brazos que terminan en pinzas y una cabeza amarilla
+g = canvas(30, 42)
+poly(g, [(15, 12), (27, 41), (3, 41)], 'S')
+for y in range(18, 41, 5): line(g, 15 - (y - 12) * 0.4, y, 15 + (y - 12) * 0.4, y, 'U')
+line(g, 15, 12, 8, 4, 'S', 2); line(g, 15, 12, 22, 4, 'S', 2); line(g, 15, 12, 15, 3, 'S', 2)
+disc(g, 15, 2, 2.6, 'h'); P(g, 14, 2, 'k'); P(g, 16, 2, 'k')       # cabeza amarilla
+poly(g, [(6, 4), (4, 1), (7, 2)], 'L'); poly(g, [(24, 4), (26, 1), (23, 2)], 'L')   # pinzas
+for x, y in ((11, 30), (19, 26), (15, 35)): P(g, x, y, 'E')
+shade(g, 'S', 'U', frac=0.3)
+S['yithiano'] = rows(outline(g))
+
+# Nodens, Señor del Gran Abismo: un anciano de barba gris sobre una concha, con un tridente
+g = canvas(34, 40)
+disc(g, 17, 34, 15, 'i', 5); arc(g, 17, 34, 15, 180, 360, 'L', paso=3)    # la concha
+for x in range(5, 30, 4): line(g, 17, 37, x, 30, 'L')
+poly(g, [(11, 31), (23, 31), (21, 14), (13, 14)], 'B')                    # túnica
+disc(g, 17, 10, 4, 'w', 4.5); P(g, 15, 9, 'k'); P(g, 19, 9, 'k')
+poly(g, [(13, 11), (21, 11), (19, 22), (17, 24), (15, 22)], 'L')          # barba
+line(g, 26, 2, 26, 30, 'y'); line(g, 23, 3, 29, 3, 'y'); P(g, 23, 2, 'y'); P(g, 29, 2, 'y'); P(g, 26, 1, 'y')
+line(g, 21, 16, 26, 18, 'B', 2)
+S['nodens'] = rows(outline(g))
+
+# La Llave de Plata de Randolph Carter, flotando con un brillo suave
+g = canvas(36, 22)
+disc(g, 8, 11, 7, 'L'); disc(g, 8, 11, 4, '.'); arc(g, 8, 11, 6, 0, 360, 'W', paso=8)
+rect(g, 14, 9, 33, 12, 'L'); line(g, 14, 9, 33, 9, 'W')
+rect(g, 27, 13, 29, 18, 'L'); rect(g, 31, 13, 33, 16, 'L')
+for x, y in ((4, 2), (20, 4), (32, 4), (18, 18)): P(g, x, y, 'c')
+S['llavePlata'] = rows(outline(g))
+
+# La Ventana del Sanatorio de Arkham: barrotes, y un ojo que mira desde adentro
+g = canvas(28, 36)
+rect(g, 2, 2, 25, 33, 'l'); rect(g, 4, 4, 23, 31, 'k')
+disc(g, 13.5, 17, 5, 'W', 3.5); disc(g, 13.5, 17, 2.2, 'F'); P(g, 13, 17, 'k')
+for x in (7, 11, 16, 20): line(g, x, 4, x, 31, 'L')
+line(g, 4, 10, 23, 10, 'L'); line(g, 4, 25, 23, 25, 'L')
+for x, y in ((6, 28), (21, 7)): P(g, x, y, 'v')
+S['arkham'] = rows(outline(g))
+
 # los enemigos miran hacia el héroe (izquierda)
 for k in ('byakhee', 'gradiente', 'osario', 'turcoAmarillo'):
     S[k] = [r[::-1] for r in S[k]]

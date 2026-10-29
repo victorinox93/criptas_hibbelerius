@@ -149,7 +149,7 @@ export function mazoCiego(clase: string): string[] {
   return d;
 }
 /** Cartas raras del Abismo (premio del Pacto Hueco y de las élites) */
-export const RARAS_ABISMO = Object.values(CARDS).filter((c) => c.abismo && c.rarity === 'rara').map((c) => c.id);
+export const RARAS_ABISMO = Object.values(CARDS).filter((c) => c.abismo && c.rarity === 'rara' && c.cls === 'neutral').map((c) => c.id); // v0.84 · sólo neutrales (las de personaje salen por sus sobres)
 
 // ── Ediciones (como las de Balatro) ──
 export interface EdicionDef { nombre: string; texto: string; color: number; css: string; prob: number }

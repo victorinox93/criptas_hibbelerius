@@ -48,6 +48,7 @@ import { HermanosScene } from './scenes/Hermanos';
 import { MemoramaScene } from './scenes/Memorama';
 import { MaxwellScene } from './scenes/Maxwell';
 import { SacrificioScene } from './scenes/Sacrificio';
+import { AltarFiloScene } from './scenes/AltarFilo';
 import { NyarlathotepScene } from './scenes/Nyarlathotep';
 import { CrisolScene } from './scenes/Crisol';
 import { TitleScene } from './scenes/Title';
@@ -76,7 +77,7 @@ const game = new Phaser.Game({
   input: { mouse: { preventDefaultWheel: false } },
   disableContextMenu: true,
   scene: [BootScene, TitleScene, LoginScene, AvatarScene, MenuScene, MapScene, CombatScene, RewardScene, RuneScene,
-    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, VestidorScene, TiendaScene, MyriamScene, EstadisticasScene, DiagnosticoScene, MusicaScene, AMScene, TabernaScene, TiroBlancoScene, TiraAflojaScene, MasMenosScene, DebugScene, AbismoScene, RelatoScene, SuenoScene, GabineteScene, MeteoritosScene, HermanosScene, MemoramaScene, MaxwellScene, SacrificioScene, NyarlathotepScene, CrisolScene, OverlayScene],
+    CampfireScene, EndScene, HelpScene, EventScene, ShopScene, SanctuaryScene, CodexScene, RankingScene, CreditsScene, ActTransitionScene, DilemmaScene, AlmaScene, GlosarioScene, VestidorScene, TiendaScene, MyriamScene, EstadisticasScene, DiagnosticoScene, MusicaScene, AMScene, TabernaScene, TiroBlancoScene, TiraAflojaScene, MasMenosScene, DebugScene, AbismoScene, RelatoScene, SuenoScene, GabineteScene, MeteoritosScene, HermanosScene, MemoramaScene, MaxwellScene, SacrificioScene, AltarFiloScene, NyarlathotepScene, CrisolScene, OverlayScene],
 });
 
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda
