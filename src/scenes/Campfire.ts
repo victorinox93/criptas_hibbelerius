@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { maldicionesEnMazo, MAXWELL_PRECIO, quitarDelMazo } from '../data/maldiciones';
+import { maldicionesEnMazo, MAXWELL_IDEAS, MAXWELL_PRECIO, quitarDelMazo } from '../data/maldiciones';
 import { deckOverlay } from '../ui/hud';
 import { nivelDiente } from '../data/dientes';
 import { CSS, UI } from '../art/palette';
@@ -83,6 +83,25 @@ export class CampfireScene extends Phaser.Scene {
         });
       }, { size: 14, color: 0x4a6a9a, enabled: run.ergios >= MAXWELL_PRECIO });
       tip.attach(mb, 'El Demonio de Maxwell', `Ordena tu mazo: te quita una maldición por ${MAXWELL_PRECIO} ${T.moneda}. No gasta la fogata.`);
+    } else if (run.maxwell) {
+      // v0.77 · sin maldiciones también se aparece: ordena tus ideas (antes no salía y parecía que no estaba)
+      const abismo = run.modo === 'abismo';
+      const precio = MAXWELL_IDEAS;
+      const im = this.add.image(W - 250, 170, 'npc_maxwell').setScale(3);
+      this.tweens.add({ targets: im, y: 166, duration: 900, yoyo: true, repeat: -1 });
+      const mb = button(this, W - 120, 170, 210, 56, `Demonio de Maxwell
+${abismo ? '−10 Locura' : '+8 de vida'} (${precio} ${T.moneda})`, () => {
+        run.ergios -= precio;
+        if (abismo) addEntropia(-10);
+        else run.hp = Math.min(run.maxHp, run.hp + 8);
+        audio.sfx('heal');
+        logEvent('maxwell', '', '', { fogata: true, opcion: 'ordenar' });
+        saveLocal();
+        hud.refresh();
+        mb.destroy();
+        txt(this, W - 120, 210, '«Menos desorden, menos entropía.»', 15, CSS.green, { align: 'center', wordWrap: { width: 230 } }).setOrigin(0.5, 0);
+      }, { size: 14, color: 0x4a6a9a, enabled: run.ergios >= precio });
+      tip.attach(mb, 'El Demonio de Maxwell', `No traes maldiciones, así que ordena tus ideas: ${abismo ? '−10 de Locura' : '+8 de vida'} por ${precio} ${T.moneda}. No gasta la fogata. Si te cae una maldición, aquí te la quita.`);
     }
     if (libro) {
       const b = button(this, xs[3], 470, bw, 64, `Leer el Necronomicón\n+${ENTROPIA.leer} Locura`, () => this.leer(salir), { color: 0x3d6a22, size: 20 });

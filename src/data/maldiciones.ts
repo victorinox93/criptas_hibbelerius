@@ -16,6 +16,8 @@ export const esMaldicion = (id: string) => CARDS[id]?.type === 'Maldición';
 export const PARASITO_VIDA = 3;
 /** Ergios que cobra el Demonio de Maxwell en la fogata */
 export const MAXWELL_PRECIO = 25;
+/** v0.77 · Ergios que cobra por «ordenar tus ideas» cuando no traes maldiciones */
+export const MAXWELL_IDEAS = 15;
 
 /** Índices de las maldiciones del mazo */
 export function maldicionesEnMazo(): number[] {

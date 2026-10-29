@@ -813,7 +813,7 @@ export class CombatScene extends Phaser.Scene {
   // ───────────────────────── ENEMIGOS ─────────────────────────
   /** Ajusta el daño de una intención según el nivel de gravedad */
   private scaleIntent(i: Intent, st?: EnemyState): Intent {
-    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1) * (this.acto === 5 ? escalaDano(Game.run!.tramo ?? 1) * (Game.run!.mutador === 'gravedad' ? 1.2 : 1) * AJUSTE_ABISMO.dano : 1);
+    const m = this.grav.dmgMul * (st ? danoDe(st.def) : 1) * (this.acto === 5 ? escalaDano(Game.run!.tramo ?? 1) * (Game.run!.mutador === 'gravedad' ? 1.2 : 1) * AJUSTE_ABISMO.dano * (st && this.kind === 'boss' && JEFES_ABISMO[st.def.id] ? AJUSTE_ABISMO.jefe : 1) : 1);
     if (m === 1) return i;
     if (i.kind === 'attack') return { ...i, dmg: Math.round(i.dmg * m) };
     if (i.kind === 'block' && i.dmg) return { ...i, dmg: Math.round(i.dmg * m) };
@@ -832,7 +832,7 @@ export class CombatScene extends Phaser.Scene {
       // la última hoja del diario de Montemayor anota el punto débil del Primigenio: −15 % de vida
       const debil = JEFES_ABISMO[st.def.id]?.primigenio && (Game.run!.diario ?? 0) >= HOJAS_DEBILIDAD ? 0.85 : 1;
       const mut = Game.run!.mutador === 'masa' ? 1.25 : Game.run!.mutador === 'tormenta' ? 1.15 : 1;
-      st.maxHp = st.hp = Math.round(st.hp * base * debil * mut * escalaTramo(Game.run!.tramo ?? 1) * AJUSTE_ABISMO.vida);
+      st.maxHp = st.hp = Math.round(st.hp * base * debil * mut * escalaTramo(Game.run!.tramo ?? 1) * AJUSTE_ABISMO.vida * (this.kind === 'boss' && JEFES_ABISMO[st.def.id] ? AJUSTE_ABISMO.jefe : 1));
       if (debil < 1) this.time.delayedCall(900, () => this.calc(`Diario de Montemayor: conoces el punto débil de ${st.def.name} (−15 % de vida)`));
     }
     st.intent = this.scaleIntent(st.intent, st);

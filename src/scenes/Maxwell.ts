@@ -101,7 +101,7 @@ export class MaxwellScene extends Phaser.Scene {
     };
     dibujar();
 
-    txt(this, W / 2, 468, 'Después de hoy, el Demonio de Maxwell te espera en las fogatas (cobra por cada maldición).', 16, '#9ad8f0').setOrigin(0.5);
+    txt(this, W / 2, 468, 'En lo que queda de esta expedición, el Demonio de Maxwell te espera en las fogatas.', 16, '#9ad8f0').setOrigin(0.5);
     button(this, W / 2, 508, 220, 40, 'Volver al mapa', () => {
       run.maxwell = true;
       run.floor = data.floor + 1;
