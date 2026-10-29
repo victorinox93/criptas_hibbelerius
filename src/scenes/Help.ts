@@ -9,7 +9,7 @@ import { Game } from '../state';
 
 const ARC_ROW: [string, string, string] = ['i_momentum', 'K = ½ · m · v²', 'Tus hechizos dañan con energía cinética. Sube tu rapidez v con Acelerar; cada Proyectil te frena 1 m/s y la fricción también.'];
 
-const ESP_ROW: [string, string, string] = ['i_bolt', 'W = ΔK', 'Canaliza formas de energía (máx. 3): actúan al final de tu turno y se LIBERAN con más fuerza. La mitad de cada golpe que recibes se guarda; suéltala con Liberación.'];
+const ESP_ROW: [string, string, string] = ['i_bolt', 'W = ΔK', 'Canaliza formas de energía (máx. 3): actúan al final de tu turno y se LIBERAN con más fuerza. La mitad de cada golpe que recibes se guarda; suéltala con Liberación. Tu masa extra potencia la Potencial y tu aceleración extra la Cinética.'];
 const PEN_ROW: [string, string, string] = ['i_fire', 'Δv = vₑ·ln(m₀/m)', 'Tu vida es tu masa: Empuje quema kilos y te acelera. Golpeas con p = m·v; con v ≥ 6 m/s esquivas.'];
 
 export class HelpScene extends Phaser.Scene {

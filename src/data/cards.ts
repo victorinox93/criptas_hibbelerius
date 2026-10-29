@@ -611,13 +611,13 @@ export const CARDS: Record<string, CardDef> = {
   e_cinetica: {
     id: 'e_cinetica', name: 'Canalizar Cinética', type: 'Habilidad', icon: 'i_momentum', concept: 'Energía cinética', rarity: 'inicial', target: 'self', cls: 'espectro',
     stats: (up) => ({ cost: up ? 0 : 1 }),
-    text: () => `Canaliza CINÉTICA:\ncada turno 3 de daño\na un enemigo al azar.\nAl liberarla: 8.`,
+    text: () => `Canaliza CINÉTICA:\ncada turno 3 de daño\na un enemigo al azar.\nAl liberarla: 8.\n+ tu aceleración extra.`,
     lore: 'K = ½·m·v²: la energía de lo que se mueve. Mientras gira a tu alrededor, golpea sola.',
   },
   e_potencial: {
     id: 'e_potencial', name: 'Canalizar Potencial', type: 'Habilidad', icon: 'i_pend', concept: 'Energía potencial', rarity: 'inicial', target: 'self', cls: 'espectro',
     stats: (up) => ({ cost: up ? 0 : 1 }),
-    text: () => `Canaliza POTENCIAL:\ncada turno +3 Bloqueo.\nAl liberarla: +8 Bloqueo.`,
+    text: () => `Canaliza POTENCIAL:\ncada turno +3 Bloqueo.\nAl liberarla: +8 Bloqueo.\n+ tu masa extra.`,
     lore: 'U = m·g·h: energía guardada por estar arriba. Quieta, te protege; al caer, te protege más.',
   },
   e_liberacion: {

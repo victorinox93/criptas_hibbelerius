@@ -17,6 +17,8 @@ Dos ideas de alumnos del curso:
   - **18 cartas propias:** 5 iniciales, 8 comunes y 5 raras. Entre ellas W = ΔK, Potencia, Eficiencia, Conservación de la Energía, Capacitor, Ciclo de Carnot, Energía Mecánica y Absorción Total.
   - **Dibujo nuevo en el creador de héroes** (yelmo hueco, ojos de energía, estela en vez de piernas). Le quedan todas las capas, armaduras, ojos y accesorios. Tiene 5 tocados, 4 cosas en la mano y 3 estelas.
 - **Alma en pena nueva: Angelus, el Aprendiz de Fuego** (idea de AngelF). Al final de tu turno le pone 5 de Calor a un enemigo; no se acumula, así que si ya tiene 5 elige a otro. Su pregunta es sobre equivocarse mientras aprendes. Sale en el modo normal. El Códice da el crédito al alumno.
+- **Masa y aceleración también le sirven al Espectro.** La masa extra potencia la forma Potencial (U = m·g·h): +1 de Bloqueo por kg cada turno y +2 por kg al liberarla. La aceleración extra, menos la fricción, potencia la Cinética (más a → más v → más K): +1 de daño por m/s² cada turno y +2 al liberarla. Así le sirven el Pacto Excéntrico, las reliquias de masa y las cartas que aceleran.
+- **Créditos:** nueva fila «Ideas de alumnos» con NullThinker y AngelF.
 - Arreglo: en «Forja tu héroe» faltaban las miniaturas de las clases cuando la capa guardada estaba bloqueada.
 
 ## v0.77.0 · Maxwell en la fogata
