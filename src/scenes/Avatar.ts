@@ -6,10 +6,10 @@ import { api } from '../api';
 import { ARMORS, CAPES, CSS, UI, VISORS, Cosmetico } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
-import { EXTRAS_K, EXTRAS_M, EXTRAS_P, HELM_IDS, HELMS_K, HELMS_M, HELMS_P, SKINS, WEAPONS_K, WEAPONS_M, WEAPONS_P, FIGURAS } from '../art/heroes';
+import { EXTRAS_E, EXTRAS_K, EXTRAS_M, EXTRAS_P, HELM_IDS, HELMS_E, HELMS_K, HELMS_M, HELMS_P, SKINS, WEAPONS_E, WEAPONS_K, WEAPONS_M, WEAPONS_P, FIGURAS } from '../art/heroes';
 import { W } from '../config';
 import { CLASSES } from '../data/classes';
-import { amVencido, arcanistaUnlocked, penitenteUnlocked, Avatar, Game, nivelActual, saveLocal, rememberSession } from '../state';
+import { amVencido, arcanistaUnlocked, espectroUnlocked, penitenteUnlocked, Avatar, Game, nivelActual, saveLocal, rememberSession } from '../state';
 import { T } from '../textos';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, TextField, title, txt } from '../ui/widgets';
 
@@ -67,14 +67,16 @@ export class AvatarScene extends Phaser.Scene {
       makeHeroFromAvatar(this, { ...look(), clase: 'caballero' }, 'cls_caballero');
       makeHeroFromAvatar(this, { ...look(), clase: 'arcanista' }, 'cls_arcanista');
       makeHeroFromAvatar(this, { ...look(), clase: 'penitente' }, 'cls_penitente');
+      makeHeroFromAvatar(this, { ...look(), clase: 'espectro' }, 'cls_espectro');
       hero.setTexture('hero');
       refreshers.forEach((f) => f());
     };
 
     const mage = () => clase === 'arcanista';
     const pen = () => clase === 'penitente';
-    /** Etiqueta y opciones según la clase: [caballero, arcanista, penitente] */
-    const por = <T,>(k: T, m: T, p: T) => (pen() ? p : mage() ? m : k);
+    const esp = () => clase === 'espectro';
+    /** Etiqueta y opciones según la clase: [caballero, arcanista, penitente, espectro] */
+    const por = <T,>(k: T, m: T, p: T, e?: T) => (esp() && e !== undefined ? e : pen() ? p : mage() ? m : k);
     const selector = (y: number, label: () => string, get: () => string, step: (d: number) => void) => {
       const lt = txt(this, 44, y - 11, '', 19, CSS.dim);
       const v = txt(this, 262, y, '', 19, CSS.bone).setOrigin(0.5);
@@ -90,12 +92,12 @@ export class AvatarScene extends Phaser.Scene {
     };
     const n0 = this.children.list.length;
     selector(282, () => 'Figura', () => FIGURAS[st.figura], (d) => (st.figura = cyc(st.figura, d, FIGURAS.length)));
-    selector(310, () => por(T.avatar.yelmo, 'Sombrero', 'Tocado'), () => por(HELMS_K, HELMS_M, HELMS_P)[st.helm], (d) => (st.helm = cyc(st.helm, d, HELM_IDS.length)));
+    selector(310, () => por(T.avatar.yelmo, 'Sombrero', 'Tocado'), () => por(HELMS_K, HELMS_M, HELMS_P, HELMS_E)[st.helm], (d) => (st.helm = cyc(st.helm, d, HELM_IDS.length)));
     const nivel = nivelActual();
     selector(338, () => por(T.avatar.armadura, 'Ribete', 'Tanque'), () => ARMORS[st.armor].name, (d) => (st.armor = cycOk(ARMORS, st.armor, d, nivel)));
-    selector(366, () => por(T.avatar.visor, 'Ojos', 'Ojos'), () => VISORS[st.visor].name, (d) => (st.visor = cycOk(VISORS, st.visor, d, nivel)));
-    selector(394, () => por('Arma', 'Bastón', 'En la mano'), () => por(WEAPONS_K, WEAPONS_M, WEAPONS_P)[st.arma], (d) => (st.arma = cyc(st.arma, d, 4)));
-    selector(422, () => por('Escudo', 'Barba', 'Espalda'), () => por(EXTRAS_K, EXTRAS_M, EXTRAS_P)[st.extra], (d) => (st.extra = cyc(st.extra, d, 3)));
+    selector(366, () => por(T.avatar.visor, 'Ojos', 'Ojos', 'Ojos'), () => VISORS[st.visor].name, (d) => (st.visor = cycOk(VISORS, st.visor, d, nivel)));
+    selector(394, () => por('Arma', 'Bastón', 'En la mano', 'En la mano'), () => por(WEAPONS_K, WEAPONS_M, WEAPONS_P, WEAPONS_E)[st.arma], (d) => (st.arma = cyc(st.arma, d, 4)));
+    selector(422, () => por('Escudo', 'Barba', 'Espalda', 'Estela'), () => por(EXTRAS_K, EXTRAS_M, EXTRAS_P, EXTRAS_E)[st.extra], (d) => (st.extra = cyc(st.extra, d, 3)));
     selector(450, () => por('Piel (arcanista)', 'Piel', 'Piel'), () => SKINS[st.piel].name, (d) => (st.piel = cyc(st.piel, d, SKINS.length)));
     const grpA = this.children.list.slice(n0);
     // ── pestaña «Accesorios»: lo comprado en la Tienda de Layla ──
@@ -153,13 +155,14 @@ export class AvatarScene extends Phaser.Scene {
       sw.push(r);
     });
     sw[Math.min(st.cape, CAPES.length - 1)].emit('pointerdown');
+    redraw(); // v0.78 · si la capa guardada está bloqueada, el clic no redibuja: sin esto faltaban las miniaturas de las clases
 
     // ── Clases ──
     txt(this, 372, 78, T.avatar.clase, 26, CSS.gold);
     const cards: Phaser.GameObjects.Graphics[] = [];
     CLASSES.forEach((c, i) => {
-      const ok = c.id === 'caballero' || (c.id === 'arcanista' && arcanistaUnlocked()) || (c.id === 'penitente' && penitenteUnlocked());
-      const lockText = c.id === 'arcanista' ? 'Vence al Coloso Inerte' : c.id === 'penitente' ? 'Vence a Hibbelerius' : T.avatar.proximamente;
+      const ok = c.id === 'caballero' || (c.id === 'arcanista' && arcanistaUnlocked()) || (c.id === 'penitente' && penitenteUnlocked()) || (c.id === 'espectro' && espectroUnlocked());
+      const lockText = c.id === 'arcanista' ? 'Vence al Coloso Inerte' : c.id === 'penitente' ? 'Vence a Hibbelerius' : c.id === 'espectro' ? 'Termina el Abismo' : T.avatar.proximamente;
       const x = 370 + (i % 2) * 284, y = 112 + Math.floor(i / 2) * 182;
       const g = this.add.graphics();
       const draw = () => {
@@ -168,7 +171,7 @@ export class AvatarScene extends Phaser.Scene {
       };
       draw();
       cards.push(g);
-      const real = ['caballero', 'arcanista', 'penitente'].includes(c.id);
+      const real = ['caballero', 'arcanista', 'penitente', 'espectro'].includes(c.id);
       const img = this.add.image(x + 46, y + 74, real ? `cls_${c.id}` : 'inertKnight').setScale(real ? 1.7 : 3.4);
       if (!ok) img.setTint(0x000000).setAlpha(0.7);
       const nm = txt(this, x + 92, y + 14, c.name, 23, ok ? CSS.bone : CSS.dim);

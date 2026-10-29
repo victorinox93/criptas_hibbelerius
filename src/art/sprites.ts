@@ -927,6 +927,7 @@ const ANCLAS: Record<string, { cabeza: [number, number]; cara: [number, number];
   caballero: { cabeza: [19.5, 8], cara: [20.5, 11], mano: [27, 28], escudo: [12, 25], pies: [[16, 43], [22.5, 43]] },
   arcanista: { cabeza: [19.5, 8], cara: [19.5, 12], mano: [31, 25], escudo: [11, 27], pies: [[15, 44], [23, 44]] },
   penitente: { cabeza: [19.5, 9], cara: [19.5, 11], mano: [31, 24], escudo: [11, 27], pies: [[16, 44], [22.5, 44]] },
+  espectro: { cabeza: [19.5, 8], cara: [19.5, 12], mano: [28, 28], escudo: [11, 25], pies: [[17, 41], [22, 41]] }, // v0.78
   mecha: { cabeza: [20, 5], cara: [21, 7], mano: [30, 28], escudo: [10, 28], pies: [[15.5, 44], [25.5, 44]] },
 };
 

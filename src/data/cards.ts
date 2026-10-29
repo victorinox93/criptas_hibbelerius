@@ -1,7 +1,7 @@
 import { G } from '../config';
 
 export type CardType = 'Ataque' | 'Defensa' | 'Habilidad' | 'Poder' | 'Estado' | 'Maldición';
-export type CardClass = 'caballero' | 'arcanista' | 'penitente' | 'neutral' | 'estado';
+export type CardClass = 'caballero' | 'arcanista' | 'penitente' | 'espectro' | 'neutral' | 'estado';
 
 export interface CardInst {
   uid: number;
@@ -26,6 +26,8 @@ export interface CalcCtx {
   masa?: number; // masa actual del Penitente (= su vida, kg)
   ve?: number; // velocidad de escape de sus gases (m/s)
   cordura?: number; // El Abismo de los Ejes: 100 − Locura
+  eAbs?: number; // v0.78 · Energía Absorbida del Espectro
+  formas?: number; // v0.78 · formas de energía canalizadas por el Espectro
 }
 
 export interface CardStats {
@@ -591,6 +593,117 @@ export const CARDS: Record<string, CardDef> = {
     text: (s) => `Inflige ${s.extra}.\nSi lo derrotas, recuperas 2 J.`,
     lore: 'La energía no se pierde: la que le quitas al enemigo vuelve a ti.',
   },
+  // ════════ v0.78 · ESPECTRO DE LA ENERGÍA (idea de NullThinker): trabajo y energía ════════
+  // Canaliza FORMAS DE ENERGÍA (máx. 3 ranuras) que actúan cada turno y se LIBERAN con más fuerza.
+  // Absorbe la mitad de cada golpe que recibe como Energía Absorbida. Lógica en Combat.ts (busca «Espectro»).
+  e_golpe: {
+    id: 'e_golpe', name: 'Golpe Espectral', type: 'Ataque', icon: 'i_combat', concept: 'Trabajo', rarity: 'inicial', target: 'enemy', cls: 'espectro',
+    stats: (up) => ({ cost: 1, extra: up ? 9 : 6 }),
+    text: (s) => `W = F·d.\nInflige ${s.extra}.`,
+    lore: 'Hacer trabajo es aplicar una fuerza a lo largo de una distancia. El guantelete vacío empuja… y el trabajo se nota.',
+  },
+  e_escudo: {
+    id: 'e_escudo', name: 'Escudo Espectral', type: 'Defensa', icon: 'i_shield', concept: 'Trabajo', rarity: 'inicial', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 1, block: up ? 8 : 5 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.`,
+    lore: 'Si la fuerza no logra desplazarte, no hace trabajo sobre ti: W = F·d con d = 0.',
+  },
+  e_cinetica: {
+    id: 'e_cinetica', name: 'Canalizar Cinética', type: 'Habilidad', icon: 'i_momentum', concept: 'Energía cinética', rarity: 'inicial', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Canaliza CINÉTICA:\ncada turno 3 de daño\na un enemigo al azar.\nAl liberarla: 8.`,
+    lore: 'K = ½·m·v²: la energía de lo que se mueve. Mientras gira a tu alrededor, golpea sola.',
+  },
+  e_potencial: {
+    id: 'e_potencial', name: 'Canalizar Potencial', type: 'Habilidad', icon: 'i_pend', concept: 'Energía potencial', rarity: 'inicial', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Canaliza POTENCIAL:\ncada turno +3 Bloqueo.\nAl liberarla: +8 Bloqueo.`,
+    lore: 'U = m·g·h: energía guardada por estar arriba. Quieta, te protege; al caer, te protege más.',
+  },
+  e_liberacion: {
+    id: 'e_liberacion', name: 'Liberación', type: 'Ataque', icon: 'i_bolt', concept: 'Conservación de la energía', rarity: 'inicial', target: 'enemy', cls: 'espectro',
+    stats: (up) => ({ cost: 1, extra: up ? 5 : 0 }),
+    text: (s, c) => `Inflige tu Energía\nAbsorbida${s.extra ? ` + ${s.extra}` : ''} (${(c.eAbs ?? 0) + (s.extra ?? 0)})\ny la vacía.`,
+    lore: '«¡La energía no se crea ni se destruye… solo se transforma en tu sufrimiento!» — NullThinker',
+  },
+  e_friccion: {
+    id: 'e_friccion', name: 'Calor por Fricción', type: 'Ataque', icon: 'i_fire', concept: 'Energía térmica', rarity: 'común', target: 'enemy', cls: 'espectro',
+    stats: (up) => ({ cost: 1, extra: up ? 9 : 6 }),
+    text: (s) => `Inflige ${s.extra}.\nCanaliza TÉRMICA.`,
+    lore: 'La fricción convierte energía mecánica en calor. Ese calor no desaparece: se queda contigo… y quema a los demás.',
+  },
+  e_resorte: {
+    id: 'e_resorte', name: 'Resorte Tenso', type: 'Habilidad', icon: 'i_pend', concept: 'Energía elástica', rarity: 'común', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 1, block: up ? 7 : 4 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nCanaliza ELÁSTICA:\nse estira cada turno;\nal liberarla, 2·x² de daño.`,
+    lore: 'U = ½·k·x²: estirar el doble guarda el cuádruple. Por eso conviene esperar antes de soltarlo.',
+  },
+  e_altura: {
+    id: 'e_altura', name: 'Ganar Altura', type: 'Defensa', icon: 'i_shield', concept: 'Energía potencial', rarity: 'común', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 1, block: up ? 9 : 6 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nCanaliza POTENCIAL.`,
+    lore: 'Subir cuesta trabajo; ese trabajo se guarda como m·g·h.',
+  },
+  e_choque: {
+    id: 'e_choque', name: 'Choque Elástico', type: 'Ataque', icon: 'i_combat', concept: 'Choques', rarity: 'común', target: 'enemy', cls: 'espectro',
+    stats: (up) => ({ cost: 1, extra: up ? 6 : 4 }),
+    text: (s) => `Inflige ${s.extra} dos veces.`,
+    lore: 'En un choque elástico se conservan la cantidad de movimiento y la energía cinética: rebota con todo.',
+  },
+  e_wdk: {
+    id: 'e_wdk', name: 'W = ΔK', type: 'Habilidad', icon: 'i_bolt', concept: 'Teorema trabajo-energía', rarity: 'común', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 0, extra: up ? 1 : 0 }),
+    text: (s) => `LIBERA tu forma de\nenergía más antigua.${s.extra ? '\nRoba 1 carta.' : ''}`,
+    lore: 'Teorema trabajo-energía: el trabajo neto sobre un cuerpo es igual a su cambio de energía cinética.',
+  },
+  e_potencia: {
+    id: 'e_potencia', name: 'Potencia', type: 'Habilidad', icon: 'i_bolt', concept: 'Potencia', rarity: 'común', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `LIBERA tu forma más\nantigua y canaliza otra\ndel mismo tipo.`,
+    lore: 'P = W/t: no sólo importa cuánto trabajo haces, sino qué tan rápido.',
+  },
+  e_eficiencia: {
+    id: 'e_eficiencia', name: 'Eficiencia', type: 'Defensa', icon: 'i_shield', concept: 'Eficiencia', rarity: 'común', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 1, block: up ? 6 : 4, extra: up ? 3 : 2 }),
+    text: (s, c) => `Gana ${s.block} de Bloqueo\n+${s.extra} por cada forma\ncanalizada (${(s.block ?? 4) + (s.extra ?? 2) * (c.formas ?? 0)}).`,
+    lore: 'η = energía útil / energía total. Ninguna máquina llega al 100 %… pero puedes acercarte.',
+  },
+  e_transformar: {
+    id: 'e_transformar', name: 'Transformación', type: 'Habilidad', icon: 'i_shield', concept: 'Conservación de la energía', rarity: 'común', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: (s, c) => `Tu Energía Absorbida\nse vuelve Bloqueo\n(${c.eAbs ?? 0}) y se vacía.`,
+    lore: 'La energía cambia de forma: de golpe recibido a escudo. La suma total no cambia.',
+  },
+  e_conservacion: {
+    id: 'e_conservacion', name: 'Conservación de la Energía', type: 'Poder', icon: 'i_rune', concept: 'Conservación de la energía', rarity: 'rara', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `Al inicio de cada\nturno, canaliza una\nforma de energía\nal azar.`,
+    lore: 'En un sistema aislado la energía total se conserva: sólo pasa de una forma a otra.',
+  },
+  e_capacitor: {
+    id: 'e_capacitor', name: 'Capacitor', type: 'Poder', icon: 'i_bolt', concept: 'Energía almacenada', rarity: 'rara', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 1, extra: up ? 2 : 1 }),
+    text: (s) => `+${s.extra} ranura${(s.extra ?? 1) > 1 ? 's' : ''} para formas\nde energía (máx. 5).`,
+    lore: 'Un capacitor guarda energía en un campo eléctrico y la suelta de golpe cuando la necesitas.',
+  },
+  e_carnot: {
+    id: 'e_carnot', name: 'Ciclo de Carnot', type: 'Habilidad', icon: 'i_fire', concept: 'Máquinas térmicas', rarity: 'rara', target: 'self', cls: 'espectro', exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `LIBERA TODAS tus formas.\n+1 J por cada una\n(máx. 3). Se agota.`,
+    lore: 'El ciclo ideal de una máquina térmica: toma calor, hace trabajo y lo devuelve. Nada real lo supera.',
+  },
+  e_mecanica: {
+    id: 'e_mecanica', name: 'Energía Mecánica', type: 'Ataque', icon: 'i_combat', concept: 'Energía mecánica', rarity: 'rara', target: 'all', cls: 'espectro',
+    stats: (up) => ({ cost: 2, block: up ? 6 : 4, extra: up ? 5 : 4 }),
+    text: (s) => `E = K + U.\nA TODOS: ${s.block} + ${s.extra}\npor cada Cinética o\nPotencial canalizada.`,
+    lore: 'La energía mecánica es la suma de la cinética y la potencial. Si no hay fricción, se conserva.',
+  },
+  e_absorber: {
+    id: 'e_absorber', name: 'Absorción Total', type: 'Defensa', icon: 'i_shield', concept: 'Conservación de la energía', rarity: 'rara', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 2, block: up ? 16 : 12 }),
+    text: (s) => `Gana ${s.block} de Bloqueo.\nHasta tu siguiente turno\nabsorbes el 100 % de\ncada golpe (no el 50 %).`,
+    lore: 'Un cuerpo perfectamente inelástico se queda con toda la energía del choque.',
+  },
   // ════════ PENITENTE DEL EMPUJE (masa variable: su vida es su combustible) ════════
   embestidaArd: {
     id: 'embestidaArd', name: 'Embestida Ardiente', type: 'Ataque', icon: 'i_fire', concept: 'Cantidad de movimiento', rarity: 'inicial', target: 'enemy', cls: 'penitente',
@@ -1014,8 +1127,11 @@ export const STARTER_ARCANISTA = ['proyectil', 'proyectil', 'proyectil', 'proyec
 
 export const STARTER_PENITENTE = ['embestidaArd', 'embestidaArd', 'embestidaArd', 'embestidaArd', 'empuje', 'empuje', 'empuje', 'llamarada', 'reabastecer', 'reabastecer'];
 
+/** v0.78 · Espectro de la Energía */
+export const STARTER_ESPECTRO = ['e_golpe', 'e_golpe', 'e_golpe', 'e_golpe', 'e_escudo', 'e_escudo', 'e_escudo', 'e_cinetica', 'e_potencial', 'e_liberacion'];
+
 export function starterDeck(clase: string) {
-  return clase === 'arcanista' ? STARTER_ARCANISTA : clase === 'penitente' ? STARTER_PENITENTE : STARTER_DECK;
+  return clase === 'arcanista' ? STARTER_ARCANISTA : clase === 'penitente' ? STARTER_PENITENTE : clase === 'espectro' ? STARTER_ESPECTRO : STARTER_DECK;
 }
 
 /** Cartas que pueden salir de recompensa o en la tienda para cada clase */

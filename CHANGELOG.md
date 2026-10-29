@@ -2,6 +2,23 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.78.0 · El Espectro de la Energía
+
+Dos ideas de alumnos del curso:
+
+- **Cuarto personaje: el Espectro de la Energía** (idea de NullThinker; tema: trabajo y energía). Es una armadura vacía habitada por energía.
+  - **Se desbloquea al terminar los 2 tramos del Abismo** (vencer al Primigenio). El Modo profesor lo tiene abierto.
+  - **Formas de energía**, como los orbes del Defect de Slay the Spire. Tiene 3 ranuras (hasta 5 con Capacitor). Cada forma actúa al final de tu turno y da un golpe fuerte al LIBERARLA. Si canalizas con las ranuras llenas, la más antigua se libera sola.
+    - **Cinética** (K = ½mv²): 3 de daño cada turno; 8 al liberarla.
+    - **Potencial** (U = mgh): +3 de Bloqueo cada turno; +8 al liberarla.
+    - **Térmica** (Q): +2 de Calor a todos cada turno; +5 al liberarla.
+    - **Elástica** (½kx²): se estira cada turno; al liberarla hace 2·x² de daño (2, 8, 18, 32, 50).
+  - **Energía Absorbida:** la mitad de cada golpe que recibes, aunque lo bloquees, se guarda (máx. 40). Liberación la suelta como daño y Transformación la vuelve Bloqueo.
+  - **18 cartas propias:** 5 iniciales, 8 comunes y 5 raras. Entre ellas W = ΔK, Potencia, Eficiencia, Conservación de la Energía, Capacitor, Ciclo de Carnot, Energía Mecánica y Absorción Total.
+  - **Dibujo nuevo en el creador de héroes** (yelmo hueco, ojos de energía, estela en vez de piernas). Le quedan todas las capas, armaduras, ojos y accesorios. Tiene 5 tocados, 4 cosas en la mano y 3 estelas.
+- **Alma en pena nueva: Angelus, el Aprendiz de Fuego** (idea de AngelF). Al final de tu turno le pone 5 de Calor a un enemigo; no se acumula, así que si ya tiene 5 elige a otro. Su pregunta es sobre equivocarse mientras aprendes. Sale en el modo normal. El Códice da el crédito al alumno.
+- Arreglo: en «Forja tu héroe» faltaban las miniaturas de las clases cuando la capa guardada estaba bloqueada.
+
 ## v0.77.0 · Maxwell en la fogata
 
 - **El Demonio de Maxwell ahora sí aparece en las fogatas** después de conocerlo. Antes sólo salía si traías maldiciones, y como en el primer encuentro te quita una gratis, casi nunca se veía. Sin maldiciones te ofrece «ordenar tus ideas»: −10 de Locura en el Abismo, o +8 de vida en el modo normal, por 15 Ergios. No gasta la fogata.

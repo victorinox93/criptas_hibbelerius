@@ -75,8 +75,8 @@ export class DebugScene extends Phaser.Scene {
 
     // ── ajustes de la partida de prueba ──
     label(50, 104, 'Partida de prueba');
-    const CLS = ['caballero', 'arcanista', 'penitente'];
-    btn(150, 148, 180, `Clase: ${{ caballero: 'Caballero', arcanista: 'Arcanista', penitente: 'Penitente' }[OPTS.clase]}`, () => { OPTS.clase = CLS[(CLS.indexOf(OPTS.clase) + 1) % CLS.length]; this.draw(); });
+    const CLS = ['caballero', 'arcanista', 'penitente', 'espectro'];
+    btn(150, 148, 180, `Clase: ${{ caballero: 'Caballero', arcanista: 'Arcanista', penitente: 'Penitente', espectro: 'Espectro' }[OPTS.clase]}`, () => { OPTS.clase = CLS[(CLS.indexOf(OPTS.clase) + 1) % CLS.length]; this.draw(); });
     btn(340, 148, 180, `Gravedad: ${['Tierra', 'Neptuno', 'Júpiter'][OPTS.gravedad - 1]}`, () => { OPTS.gravedad = (OPTS.gravedad % 3) + 1; this.draw(); });
     btn(530, 148, 180, `Mazo: ${OPTS.mazo}`, () => { OPTS.mazo = OPTS.mazo === 'inicial' ? 'fuerte' : 'inicial'; this.draw(); }, OPTS.mazo === 'fuerte');
     btn(720, 148, 180, `Vida: ${OPTS.vida === 'normal' ? 'normal' : '×10'}`, () => { OPTS.vida = OPTS.vida === 'normal' ? 'tanque' : 'normal'; this.draw(); }, OPTS.vida === 'tanque');
