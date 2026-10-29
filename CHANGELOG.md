@@ -2,6 +2,69 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.84.0 · Altares filosóficos
+
+- **6 altares filosóficos en los «?» del Abismo**, cada uno a lo más una vez por expedición. Traen una historia corta del mythos, una pregunta y tres posturas. Ninguna es la «correcta»: cada una tiene su recompensa y su costo, y al final hay una reflexión.
+  - **El Trono del Sultán Ciego (Azathoth):** ¿vale la pena lo que haces si el universo no tiene propósito? (cosmicismo, Camus).
+  - **La Biblioteca de la Gran Raza (Yith):** ¿seguirías siendo tú en otro cuerpo con tus recuerdos? (identidad, Locke, el barco de Teseo).
+  - **El Carro de Nodens:** ¿una verdad que duele o una mentira que protege?
+  - **El Altar del Soñador («Hypnos»):** ¿y si esta vida fuera un sueño? (Zhuangzi y la mariposa).
+  - **La Llave de Plata (Randolph Carter, 1929):** ¿volverías a ser niño para siempre?
+  - **La Ventana del Sanatorio de Arkham:** ¿qué es la locura? Cierra con un mensaje sobre hablar con alguien de confianza.
+- 4 figuras nuevas dibujadas: un yithiano, Nodens, la Llave de Plata y la ventana de Arkham.
+- Arreglo: las cartas raras del Abismo que dan los relatos, el Pacto Hueco y los altares ya no pueden ser de otro personaje.
+
+## v0.83.0 · Reliquias del Abismo
+
+**10 reliquias que sólo salen en el Abismo**, de cuerpo rígido y del mythos. En el Abismo salen con el doble de probabilidad que las normales (≈ la mitad de las que aparecen); en el modo normal nunca.
+- **Plomada de Montemayor:** +5 de Bloqueo y −3 de Locura al empezar cada combate.
+- **Girocompás:** nada te aturde ni te da Vértigo (L = I·ω).
+- **Llave de los Ejes Paralelos:** +4 a tus Ataques contra enemigos que no son el primero de la fila (I = I₀ + m·d²).
+- **Volante de Hueso:** +5 de Bloqueo cada vez que juegas un Poder.
+- **Estatuilla del Profesor Angell:** +1 J por turno si tu Locura es 50 o más.
+- **Tiara de Innsmouth:** +15 Ergios y +2 de Locura al ganar un combate.
+- **Regla de Pappus:** tus Defensas dan +2 de Bloqueo.
+- **Lente del Geómetra:** ves las intenciones de los enemigos invisibles.
+- **Corazón de Shoggoth:** te curas 4 al empezar cada combate.
+- **Esfera de Yog-Sothoth:** robas 1 carta más en tus turnos pares.
+
+## v0.82.0 · Cartas de cada personaje
+
+**16 cartas del Abismo propias de cada personaje** (4 cada uno: 2 comunes y 2 raras). Usan su mecánica con temas de cuerpo rígido. Sólo salen en el Abismo: en el Sobre de tu Clase, en el Sobre del Abismo y en las recompensas.
+- **Caballero (F = m·a):**
+  - Palanca de Arquímedes: ×1.5 si el enemigo tiene más de la mitad de su vida.
+  - Eje Fijo: Bloqueo + tu masa extra.
+  - Teorema de Steiner: F al objetivo y la mitad a los demás.
+  - Inercia del Coloso: +2 kg cada vez que detienes a un enemigo.
+- **Arcanista (K = ½mv²):**
+  - Rodadura sin Deslizar: K × 1.4 por la energía de rotación de una esfera.
+  - Radio de Giro: +2 m/s; si llegas a 6, robas 1.
+  - Brazos Recogidos: duplica tu rapidez (I₁ω₁ = I₂ω₂).
+  - Órbita Excéntrica: con v ≥ 6 golpea dos veces.
+- **Penitente (masa variable):**
+  - Soltar Lastre: quema 6 kg y da 6 de Bloqueo.
+  - Tobera Abisal: p = m·v a todos.
+  - Cohete de Dos Etapas: golpea, quema 3 kg y golpea más rápido.
+  - Combustible del Abismo: cada vez que quemas masa, +2 de Calor a todos.
+- **Espectro (formas de energía):**
+  - Inercia Rotacional: canaliza Cinética y Potencial.
+  - Resonancia de Formas: 3 a todos por cada forma.
+  - Ejes Paralelos: libera tu forma más reciente dos veces.
+  - Energía del Vacío: +1 ranura y +3 de Energía Absorbida cada turno.
+
+## v0.81.0 · Cada tramo, sus criaturas
+
+- **Cada tramo del Abismo tiene sus propios enemigos y élites** (`ENCOUNTERS_5_TRAMO` en enemies.ts). Desde la profundidad 3 se mezclan.
+  - **Tramo 1 · los Muelles Inclinados:** el mar de Innsmouth, Dagón y las Tierras del Sueño.
+  - **Tramo 2 · R'lyeh invertida:** Yuggoth, Carcosa, Azathoth y las máquinas del Núcleo.
+  - Cada tramo tiene unos 21 enemigos distintos y sólo comparten 2.
+- **16 criaturas nuevas rescatadas del juego base con giro de horror cósmico**, con dibujo propio:
+  - **Tramo 1:** Osario Excéntrico (era el Esqueleto), Shoggoth Joven (la Babosa Madre; se divide en 2 Shoggotitos), Sacerdote de Dagón (el Escudero) y Ánima Ahogada (el Ánima; no se ven sus intenciones).
+  - **Tramo 2:** Gárgola de Ángulos Imposibles, Bibliotecario de Celaeno (saca Tomos Prohibidos), Átomo de Azathoth (explota al morir) y Colonia de Mi-Go (suelta Mi-Go).
+- **6 élites nuevos, de 6 a 12:**
+  - **Tramo 1:** El Péndulo de Pnakotus, El Ídolo de Arcilla de Wilcox (el Gólem; «La llamada de Cthulhu») y La Armadura del Capitán Marsh (la Armadura de Púas).
+  - **Tramo 2:** El Ajedrecista del Rey de Amarillo (el Turco), El Horno de Yuggoth (el Horno Alto) y El Volante de Azathoth.
+
 ## v0.80.0 · El Abismo se abre (otra vez)
 
 - **El portal del Abismo vuelve a abrirse para quien venció a AM** (y para el Modo profesor). A quien no ha vencido a AM le dice «🔒 Vence a AM».

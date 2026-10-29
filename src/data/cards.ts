@@ -593,6 +593,107 @@ export const CARDS: Record<string, CardDef> = {
     text: (s) => `Inflige ${s.extra}.\nSi lo derrotas, recuperas 2 J.`,
     lore: 'La energía no se pierde: la que le quitas al enemigo vuelve a ti.',
   },
+  // ════════ v0.82 · CARTAS DE CADA PERSONAJE PARA EL ABISMO (cuerpo rígido con su propia mecánica) ════════
+  // Caballero: F = m·a, masa e inercia
+  ab_palanca: {
+    id: 'ab_palanca', name: 'Palanca de Arquímedes', type: 'Ataque', icon: 'i_sword', concept: 'Momento de una fuerza', rarity: 'común', target: 'enemy', cls: 'caballero', abismo: true,
+    stats: (up) => ({ cost: 2, m: up ? 8 : 6, a: 3 }),
+    text: (s, c) => `${fText(s, c)}\nSi tiene más de la mitad\nde su vida: ×1.5\n(brazo largo: τ = r·F).`,
+    lore: '«Dadme un punto de apoyo y moveré el mundo». Con el mismo F, un brazo más largo da más torque.',
+  },
+  ab_ejeFijo: {
+    id: 'ab_ejeFijo', name: 'Eje Fijo', type: 'Defensa', icon: 'i_shield', concept: 'Momento de inercia', rarity: 'común', target: 'self', cls: 'caballero', abismo: true,
+    stats: (up) => ({ cost: 1, block: up ? 9 : 6 }),
+    text: (s, c) => `Gana ${s.block} de Bloqueo\n+ tu masa extra\n(${(s.block ?? 6) + Math.max(0, c.masaBonus)}).`,
+    lore: 'Un cuerpo con mucha masa lejos del eje cuesta mucho hacerlo girar: I = Σm·r².',
+  },
+  ab_steiner: {
+    id: 'ab_steiner', name: 'Teorema de Steiner', type: 'Ataque', icon: 'i_sword', concept: 'Ejes paralelos', rarity: 'rara', target: 'enemy', cls: 'caballero', abismo: true,
+    stats: (up) => ({ cost: 1, m: up ? 4 : 3, a: 3 }),
+    text: (s, c) => `${fText(s, c)}\nal objetivo y la mitad\na los demás\n(I = I₀ + m·d²).`,
+    lore: 'Girar alrededor de un eje lejano cuesta más: el teorema de los ejes paralelos suma m·d².',
+  },
+  ab_coloso: {
+    id: 'ab_coloso', name: 'Inercia del Coloso', type: 'Poder', icon: 'i_mass', concept: '1ª ley', rarity: 'rara', target: 'self', cls: 'caballero', abismo: true,
+    stats: (up) => ({ cost: up ? 0 : 1, extra: 2 }),
+    text: (s) => `Cada vez que DETIENES\na un enemigo: +${s.extra} kg\nde masa este combate.`,
+    lore: 'Lo que detienes no desaparece: su cantidad de movimiento se vuelve tuya.',
+  },
+  // Arcanista: K = ½·m·v² y rapidez
+  ab_rodadura: {
+    id: 'ab_rodadura', name: 'Rodadura sin Deslizar', type: 'Ataque', icon: 'i_momentum', concept: 'Energía de rotación', rarity: 'común', target: 'enemy', cls: 'arcanista', abismo: true,
+    stats: (up) => ({ cost: 1, m: up ? 1.5 : 1 }),
+    text: (s, c) => { const k = kinetic(s, c); return `Una esfera que rueda:\nK = ½mv² + ½Iω²\n= 1.4 × ${k.K} = ${Math.round(k.K * 1.4)}.`; },
+    lore: 'Una esfera que rueda sin deslizar lleva además energía de rotación: ½Iω² con I = ⅖mr² suma el 40 %.',
+  },
+  ab_radioGiro: {
+    id: 'ab_radioGiro', name: 'Radio de Giro', type: 'Habilidad', icon: 'i_wind', concept: 'Radio de giro', rarity: 'común', target: 'self', cls: 'arcanista', abismo: true,
+    stats: (up) => ({ cost: 0, extra: up ? 3 : 2 }),
+    text: (s) => `+${s.extra} m/s.\nSi llegas a 6 m/s\no más, roba 1.`,
+    lore: 'k = √(I/m): toda la masa de un cuerpo, puesta a esa distancia del eje, tendría el mismo momento de inercia.',
+  },
+  ab_brazos: {
+    id: 'ab_brazos', name: 'Brazos Recogidos', type: 'Habilidad', icon: 'i_pend', concept: 'Impulso angular', rarity: 'rara', target: 'self', cls: 'arcanista', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `I₁·ω₁ = I₂·ω₂:\ntu rapidez se DUPLICA\n(máx. 8 m/s). Se agota.`,
+    lore: 'La patinadora recoge los brazos: su momento de inercia baja y gira mucho más rápido.',
+  },
+  ab_orbita: {
+    id: 'ab_orbita', name: 'Órbita Excéntrica', type: 'Ataque', icon: 'i_momentum', concept: 'Energía cinética', rarity: 'rara', target: 'enemy', cls: 'arcanista', abismo: true,
+    stats: (up) => ({ cost: 2, m: up ? 2 : 1.5 }),
+    text: (s, c) => `K = ${kinetic(s, c).K}.\nCon v ≥ 6 m/s pasa por\nel perihelio y golpea\notra vez.`,
+    lore: 'En una órbita elíptica el cuerpo va más rápido cerca del Sol (perihelio): segunda ley de Kepler.',
+  },
+  // Penitente: masa variable, p = m·v
+  ab_lastre: {
+    id: 'ab_lastre', name: 'Soltar Lastre', type: 'Habilidad', icon: 'i_fire', concept: 'Masa variable', rarity: 'común', target: 'self', cls: 'penitente', abismo: true,
+    stats: (up) => ({ cost: up ? 0 : 1, extra: 6, block: 6 }),
+    text: (s, c) => `${rText(s.extra ?? 6, c)}\nGana ${s.block} de Bloqueo.`,
+    lore: 'Los globos sueltan sacos de arena para subir: menos masa, más fácil acelerar.',
+  },
+  ab_tobera: {
+    id: 'ab_tobera', name: 'Tobera Abisal', type: 'Ataque', icon: 'i_fire', concept: 'Cantidad de movimiento', rarity: 'común', target: 'all', cls: 'penitente', abismo: true,
+    stats: (up) => ({ cost: 2, m: up ? 4 : 3 }),
+    text: (s, c) => { const r = pmv(s, c); return `p = m·v = ${r.m}·${r.v}\n= ${r.p} a TODOS.`; },
+    lore: 'La tobera dirige los gases para que el empuje salga hacia un solo lado.',
+  },
+  ab_dosEtapas: {
+    id: 'ab_dosEtapas', name: 'Cohete de Dos Etapas', type: 'Ataque', icon: 'i_fire', concept: 'Masa variable', rarity: 'rara', target: 'enemy', cls: 'penitente', abismo: true,
+    stats: (up) => ({ cost: 2, m: up ? 4 : 3, extra: 3 }),
+    text: (s, c) => `Golpea con p = m·v,\nquema ${s.extra} kg y vuelve\na golpear (más rápido).`,
+    lore: 'Cada etapa que se suelta deja menos masa muerta: la segunda acelera más que la primera.',
+  },
+  ab_combustible: {
+    id: 'ab_combustible', name: 'Combustible del Abismo', type: 'Poder', icon: 'i_fire', concept: 'Calor', rarity: 'rara', target: 'self', cls: 'penitente', abismo: true,
+    stats: (up) => ({ cost: up ? 0 : 1, extra: 2 }),
+    text: (s) => `Cada vez que quemas\nmasa: +${s.extra} de Calor\na todos los enemigos.`,
+    lore: 'Lo que expulsas sale a miles de grados. En el Abismo, el escape quema más.',
+  },
+  // Espectro: formas de energía
+  ab_inercia: {
+    id: 'ab_inercia', name: 'Inercia Rotacional', type: 'Habilidad', icon: 'i_pend', concept: 'Energía de rotación', rarity: 'común', target: 'self', cls: 'espectro', abismo: true,
+    stats: (up) => ({ cost: up ? 0 : 1 }),
+    text: () => `Canaliza CINÉTICA\ny POTENCIAL.`,
+    lore: 'Un volante guarda energía girando (½Iω²) y la suelta cuando la necesitas.',
+  },
+  ab_resonancia: {
+    id: 'ab_resonancia', name: 'Resonancia de Formas', type: 'Ataque', icon: 'i_bolt', concept: 'Energía', rarity: 'común', target: 'all', cls: 'espectro', abismo: true,
+    stats: (up) => ({ cost: 1, extra: up ? 4 : 3 }),
+    text: (s, c) => `A TODOS: ${s.extra} por\ncada forma canalizada\n(${(s.extra ?? 3) * (c.formas ?? 0)}).`,
+    lore: 'Cuando varias formas de energía vibran juntas, la amplitud se suma.',
+  },
+  ab_ejesParalelos: {
+    id: 'ab_ejesParalelos', name: 'Ejes Paralelos', type: 'Habilidad', icon: 'i_rune', concept: 'Ejes paralelos', rarity: 'rara', target: 'self', cls: 'espectro', abismo: true, exhaust: true,
+    stats: (up) => ({ cost: up ? 1 : 2 }),
+    text: () => `LIBERA tu forma más\nreciente DOS veces.\nSe agota.`,
+    lore: 'I = I₀ + m·d²: la misma masa, girando en otro eje, cuenta otra vez.',
+  },
+  ab_vacio: {
+    id: 'ab_vacio', name: 'Energía del Vacío', type: 'Poder', icon: 'i_ojo', concept: 'Energía', rarity: 'rara', target: 'self', cls: 'espectro', abismo: true,
+    stats: (up) => ({ cost: up ? 1 : 2, extra: 3 }),
+    text: (s) => `+1 ranura de forma.\nAl inicio de cada turno:\n+${s.extra} de Energía Absorbida.`,
+    lore: 'Hasta el vacío vibra. El Espectro aprendió a beber de esa vibración.',
+  },
   // ════════ v0.78 · ESPECTRO DE LA ENERGÍA (idea de NullThinker): trabajo y energía ════════
   // Canaliza FORMAS DE ENERGÍA (máx. 3 ranuras) que actúan cada turno y se LIBERAN con más fuerza.
   // Absorbe la mitad de cada golpe que recibe como Energía Absorbida. Lógica en Combat.ts (busca «Espectro»).

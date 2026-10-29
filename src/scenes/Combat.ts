@@ -20,7 +20,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
-import { AddCards, danoDe, encounters, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
+import { AddCards, danoDe, encounters, encuentrosAbismo, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
 import { darMaldicion } from '../data/maldiciones';
 import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
@@ -109,6 +109,10 @@ export class CombatScene extends Phaser.Scene {
   private absTotal = false; // Absorción Total: absorbe el 100 % hasta tu siguiente turno
   private conservacion = 0; // Conservación de la Energía: formas al azar al inicio del turno
   private formasC?: Phaser.GameObjects.Container;
+  // v0.82 · Poderes de las cartas de personaje del Abismo
+  private colosoKg = 0; // Inercia del Coloso: kg por cada enemigo detenido
+  private combustibleAb = 0; // Combustible del Abismo: Calor a todos al quemar masa
+  private vacioAb = 0; // Energía del Vacío: Energía Absorbida al inicio del turno
   private vmax = VMAX; // rapidez máxima según la clase
   private ve = VE_BASE; // Penitente: velocidad de escape de sus gases (m/s)
   private critica = false; // Masa Crítica: ataques ×1.5 con poca masa
@@ -625,6 +629,9 @@ export class CombatScene extends Phaser.Scene {
     this.absTotal = false;
     this.conservacion = 0;
     this.formasC = undefined;
+    this.colosoKg = 0;
+    this.combustibleAb = 0;
+    this.vacioAb = 0;
     this.vmax = this.isPen ? VMAX_PEN : VMAX;
     this.ve = VE_BASE;
     this.critica = false;
@@ -687,7 +694,7 @@ export class CombatScene extends Phaser.Scene {
 
     // ── Enemigos ──
     // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
-    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick(encounters(this.acto)[this.kind]);
+    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
     ditherLocura(this); // v0.67 · con mucha Locura el fondo se pixela (sólo el fondo)
@@ -747,6 +754,9 @@ export class CombatScene extends Phaser.Scene {
     this.draw = Phaser.Utils.Array.Shuffle([...run.deck]);
     if (this.has('yunque')) this.masa += 1;
     if (this.has('coraza')) this.block = 6;
+    // v0.83 · reliquias del Abismo al empezar el combate
+    if (this.has('plomada')) { this.block += 5; addEntropia(-3); this.calc('Plomada de Montemayor: sabes dónde es «abajo» (+5 de Bloqueo, −3 de Locura)'); }
+    if (this.has('corazonShoggoth')) { const rr = Game.run!; const n = Math.min(4, rr.maxHp - rr.hp); if (n > 0) { rr.hp += n; this.calc(`Corazón de Shoggoth: tekeli-li… +${n} de vida`); } }
     if (this.hasFx('yunque')) this.masa += 1;
     if (this.hasFx('hueca')) this.masa -= 1;
     if (this.hasFx('manto')) this.block += 8;
@@ -1236,6 +1246,14 @@ export class CombatScene extends Phaser.Scene {
       case 'doppler': return b({ dmg: K(), todos: this.vel >= 6 });
       case 'honda': { const vv = this.hondaV.get(v.inst.uid) ?? (st.extra ?? 4); return b({ dmg: Math.round(0.5 * (st.m ?? 2) * vv * vv) }); }
       case 'embestidaArd': return b({ dmg: crit(pmv(st, c).p + (st.extra ?? 2)) });
+      // v0.82 · cartas de personaje del Abismo
+      case 'ab_palanca': return b({ dmg: F(), nota: 'Si el objetivo tiene más de la mitad de su vida: ×1.5.' });
+      case 'ab_steiner': return b({ dmg: F(), nota: `Y la mitad (${Math.round(F() / 2)}) a los demás.` });
+      case 'ab_rodadura': return b({ dmg: Math.round(K() * 1.4) });
+      case 'ab_orbita': return b({ dmg: K(), golpes: (c.vel ?? 0) >= 6 ? 2 : 1 });
+      case 'ab_tobera': return b({ dmg: P(), todos: true });
+      case 'ab_dosEtapas': return b({ dmg: P(), nota: `Luego quema ${st.extra} kg y golpea otra vez, más rápido.` });
+      case 'ab_resonancia': return b({ dmg: (st.extra ?? 3) * this.formas.length, todos: true });
       // v0.78 · Espectro
       case 'e_golpe': return b({ dmg: st.extra ?? 6 });
       case 'e_friccion': return b({ dmg: st.extra ?? 6, nota: 'Y canaliza Térmica.' });
@@ -1537,7 +1555,7 @@ export class CombatScene extends Phaser.Scene {
     const st = ev.st;
     const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
     const bateria = st.def.id === 'calculadora' && st.hp < st.maxHp * 0.3; // v0.57 · batería baja
-    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && !this.telescopio && Game.run?.familiar?.id !== 'pezLinterna');
+    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && !this.telescopio && !this.has('lenteGeometra') && Game.run?.familiar?.id !== 'pezLinterna');
   }
 
   /** v0.57 · Globo de diálogo de una carta que habla (como en Inscryption) */
@@ -1827,6 +1845,8 @@ export class CombatScene extends Phaser.Scene {
     }
     if (def.type === 'Ataque') this.firstAttack = true;
     if (def.type === 'Poder') this.poderes++;
+    if (def.type === 'Poder' && this.has('volanteHueso')) { this.gainBlock(5); this.calc('Volante de Hueso: +5 de Bloqueo'); }
+    if (def.type === 'Defensa' && this.has('reglaPappus')) { this.gainBlock(2); this.calc('Regla de Pappus: +2 de Bloqueo'); }
     // v0.70 · Galois: Teoría de Grupos
     const nt = (this.tiposTurno.get(def.type) ?? 0) + 1;
     this.tiposTurno.set(def.type, nt);
@@ -1871,6 +1891,7 @@ export class CombatScene extends Phaser.Scene {
       }
       this.attacksTurn++;
       if (this.attacksTurn >= 3) this.mostrarCombo(this.attacksTurn); // v0.68
+      if (this.has('llaveEjes') && target && this.alive().indexOf(target) > 0) { this.polonio += 4; this.calc('Llave de los Ejes Paralelos: lejos del eje, +4'); }
       if (this.pacto('gravitatorio') && this.alive().length) { this.polonio += this.alive().length; this.calc(`Pacto Gravitatorio: +${this.alive().length} (enemigos vivos)`); }
       if (this.pacto('calor') && target && !target.dead) { target.st.calor += 1; this.refreshEnemy(target); }
       const gu = boonLevel('ga_ultima');
@@ -2234,6 +2255,116 @@ export class CombatScene extends Phaser.Scene {
             this.calc('Golpe de Gracia: la energía vuelve a ti (+2 J)');
           }
         }
+        break;
+      // ── v0.82 · cartas de personaje del Abismo ──
+      case 'ab_palanca': {
+        const f = force(st, c);
+        const largo = !!target && target.st.hp > target.st.maxHp / 2;
+        const d = largo ? Math.round(f.F * 1.5) : f.F;
+        this.calc(`Palanca: F = ${f.F} N${largo ? ' × 1.5 (brazo largo: τ = r·F)' : ''} → ${d}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, d);
+        break;
+      }
+      case 'ab_ejeFijo': {
+        const n = (st.block ?? 6) + Math.max(0, this.masa);
+        this.gainBlock(n);
+        this.calc(`Eje Fijo: ${st.block} + ${Math.max(0, this.masa)} kg de masa extra = ${n} de Bloqueo`);
+        break;
+      }
+      case 'ab_steiner': {
+        const f = force(st, c);
+        this.calc(`Teorema de Steiner: F = ${f.F} N al objetivo, ${Math.round(f.F / 2)} a los demás`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, f.F);
+        for (const e of [...this.alive()].filter((x) => x !== target)) await this.hitEnemy(e, Math.round(f.F / 2));
+        break;
+      }
+      case 'ab_coloso':
+        this.colosoKg += st.extra ?? 2;
+        this.calc(`Inercia del Coloso: cada enemigo que detengas te da +${st.extra} kg`);
+        break;
+      case 'ab_rodadura': {
+        const k = kinetic(st, c);
+        const d = Math.round(k.K * 1.4);
+        this.calc(`Rodadura: ½mv² + ½Iω² = 1.4 × ${k.K} = ${d}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, d);
+        break;
+      }
+      case 'ab_radioGiro': {
+        const v0 = this.vel;
+        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 2));
+        this.calc(`Radio de Giro: v ${v0} → ${this.vel} m/s`);
+        if (this.vel >= 6) this.drawCards(1);
+        break;
+      }
+      case 'ab_brazos': {
+        const v0 = this.vel;
+        this.vel = Math.min(this.vmax, this.vel * 2);
+        this.calc(`Brazos Recogidos: I₁ω₁ = I₂ω₂ → v ${v0} → ${this.vel} m/s`);
+        break;
+      }
+      case 'ab_orbita': {
+        const k = kinetic(st, c);
+        const dos = this.vel >= 6;
+        this.calc(`Órbita Excéntrica: K = ${k.K}${dos ? ' · perihelio: golpea otra vez' : ''}`);
+        await this.heroLunge();
+        for (let i = 0; i < (dos ? 2 : 1) && target && !target.dead; i++) await this.hitEnemy(target, k.K);
+        break;
+      }
+      case 'ab_lastre':
+        this.quemar(st.extra ?? 6, def.name);
+        this.gainBlock(st.block ?? 6);
+        break;
+      case 'ab_tobera': {
+        const r = pmv(st, this.ctx());
+        const d = this.critico(r.p);
+        this.calc(`Tobera Abisal: p = ${r.m} kg × ${r.v} m/s = ${r.p} → ${d} a todos`);
+        await this.heroLunge();
+        for (const e of [...this.alive()]) await this.hitEnemy(e, d);
+        break;
+      }
+      case 'ab_dosEtapas': {
+        await this.heroLunge();
+        const r1_ = pmv(st, this.ctx());
+        this.calc(`Primera etapa: p = ${r1_.m}·${r1_.v} = ${r1_.p}`);
+        if (target) await this.hitEnemy(target, this.critico(r1_.p));
+        this.quemar(st.extra ?? 3, 'Se suelta la primera etapa');
+        const r2 = pmv(st, this.ctx());
+        this.calc(`Segunda etapa: p = ${r2.m}·${r2.v} = ${r2.p}`);
+        if (target && !target.dead) await this.hitEnemy(target, this.critico(r2.p));
+        break;
+      }
+      case 'ab_combustible':
+        this.combustibleAb += st.extra ?? 2;
+        this.calc(`Combustible del Abismo: cada vez que quemes masa, +${st.extra} de Calor a todos`);
+        break;
+      case 'ab_inercia':
+        await this.canalizar('cinetica', def.name);
+        await this.canalizar('potencial', def.name);
+        break;
+      case 'ab_resonancia': {
+        const d = (st.extra ?? 3) * this.formas.length;
+        this.calc(`Resonancia de Formas: ${st.extra} × ${this.formas.length} formas = ${d} a todos`);
+        await this.heroLunge();
+        if (d > 0) for (const e of [...this.alive()]) await this.hitEnemy(e, d);
+        break;
+      }
+      case 'ab_ejesParalelos': {
+        const f = this.formas[this.formas.length - 1];
+        if (!f) { this.calc('Ejes Paralelos: no tienes formas de energía'); break; }
+        this.formas.push({ ...f });
+        this.calc('Ejes Paralelos: la misma forma, en otro eje, cuenta dos veces');
+        await this.liberar(this.formas.length - 1);
+        await this.liberar(this.formas.length - 1);
+        break;
+      }
+      case 'ab_vacio':
+        this.maxFormas = Math.min(FORMAS_TOPE, this.maxFormas + 1);
+        this.vacioAb += st.extra ?? 3;
+        this.dibujarFormas();
+        this.calc(`Energía del Vacío: +1 ranura (${this.maxFormas}) y +${st.extra} de Energía Absorbida cada turno`);
         break;
       // ── v0.78 · Espectro de la Energía ──
       case 'e_golpe':
@@ -3390,6 +3521,7 @@ export class CombatScene extends Phaser.Scene {
         audio.sfx('stop');
         logEvent('detener', '1a ley', true, { enemigo: st.def.id, F, umbral });
         if (this.hibbelerM) { this.block += this.hibbelerM; this.calc(`El Hibbeler Maldito: «¡Así se aplica la 1ª ley!» +${this.hibbelerM} de Bloqueo`); this.time.delayedCall(80, () => this.hablar('Hibbeler', Phaser.Utils.Array.GetRandom(['¡Así se aplica la 1ª ley!', 'Página 47. Te lo dije.', 'Eso sí viene en el examen.']), this.heroX + 40, 170)); }
+        if (this.colosoKg) { this.masa += this.colosoKg; this.calc(`Inercia del Coloso: su cantidad de movimiento se vuelve tuya (+${this.colosoKg} kg)`); }
         if (this.necroDin) { this.energy += 1; this.time.delayedCall(50, () => this.drawCards(1)); this.calc('Necronomicón de Dinámica: +1 J y robas 1'); }
         this.encargo(completarEncargo('detener'));
         // los jefes aprenden: la próxima vez necesitarás más fuerza para detenerlos
@@ -3889,6 +4021,8 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Máquina de Turing: jugaste ${this.played - this.jugadasIni} cartas → +1 J`);
     }
     this.jugadasIni = this.played;
+    if (this.has('estatuillaAngell') && (Game.run!.entropia ?? 0) >= 50) { this.energy += 1; this.calc('Estatuilla del Profesor Angell: tu Locura se vuelve poder (+1 J)'); }
+    if (this.vacioAb) { this.eAbs = Math.min(EABS_MAX, this.eAbs + this.vacioAb); this.calc(`Energía del Vacío: +${this.vacioAb} de Energía Absorbida`); }
     if (this.isEsp) {
       this.absTotal = false;
       for (let k = 0; k < this.conservacion; k++) await this.canalizar(Phaser.Utils.Array.GetRandom(FORMAS_TIPOS), 'Conservación de la Energía');
@@ -3985,6 +4119,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.pacto('minimalista')) draw -= 1;
     if (this.prohibido('p_infinito')) draw += 1;
     if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
+    if (this.has('esferaYog') && this.turn % 2 === 0) { draw += 1; this.calc('Esfera de Yog-Sothoth: ves otro tiempo (+1 carta)'); }
     if (this.turn === 1) {
       const fdr = boonLevel('duo_roosevelt'); // Oppenheimer + Einstein
     if (fdr && this.alive().length) {
@@ -4484,7 +4619,7 @@ export class CombatScene extends Phaser.Scene {
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
             else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
-            else if (this.giroscopio || this.pacto('giroscopio')) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
+            else if (this.giroscopio || this.pacto('giroscopio') || this.has('girocompas')) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
             else if (this.trasAturdir) this.calc('Sigues mareado del golpe anterior: este no te vuelve a aturdir');
             else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.anunciarEstado('¡ATURDIDO!', `${st.def.name} te alcanzó: pierdes tu siguiente turno`, 0xd8b020, '#ffe060'); this.refreshPlayer(); await this.wait(1200); }
           }
@@ -4546,7 +4681,7 @@ export class CombatScene extends Phaser.Scene {
           this.anunciarEstado('¡HEMORRAGIA!', `Durante ${n} turno(s), cada carta que juegues te quita 1 de vida`, 0xb02020, '#ff7070');
           await this.wait(900);
         }
-        if (it.vertigo && Game.run!.hp > 0 && this.pacto('giroscopio')) this.calc('Pacto del Giróscopo: no te mareas');
+        if (it.vertigo && Game.run!.hp > 0 && (this.pacto('giroscopio') || this.has('girocompas'))) this.calc('Giroscopio: no te mareas');
         else if (it.vertigo && Game.run!.hp > 0) {
           this.vertigo = Math.min(3, this.vertigo + it.vertigo);
           this.calc(`${st.def.name} te marea: VÉRTIGO, robas ${this.vertigo} carta(s) menos en tu siguiente turno`);
@@ -4664,6 +4799,7 @@ export class CombatScene extends Phaser.Scene {
       else { run.hp = Math.max(1, run.hp - 3); this.calc('Pacto de la Deuda: sin Ergios, te cobran 3 de vida'); }
     }
     if (this.has('ojoYuggoth') && Math.random() < 0.25) { const m = darMaldicion(); this.calc(`Ojo de Yuggoth: algo te mira de vuelta… recibes la maldición «${m}»`); }
+    if (this.has('tiaraInnsmouth')) { addErgios(15); addEntropia(2); this.calc('Tiara de Innsmouth: +15 Ergios y +2 de Locura'); }
     if (this.has('termo') && run.hp > 0 && run.hp <= run.maxHp / 2) {
       run.hp = Math.min(run.maxHp, run.hp + 12);
       this.calc('Termo de Caldo: +12 de vida');
@@ -5031,6 +5167,11 @@ export class CombatScene extends Phaser.Scene {
     this.floatText(this.heroX - 30, 210, `−${kg} kg`, '#e8a060');
     this.burst(this.heroX - 50, 300, 0xff9a3a, 18);
     this.hud.refresh();
+    if (this.combustibleAb) {
+      // v0.82 · Combustible del Abismo
+      for (const e of this.alive()) { e.st.calor += this.combustibleAb; this.refreshEnemy(e); }
+      this.calc(`Combustible del Abismo: el escape quema → +${this.combustibleAb} de Calor a todos`);
+    }
   }
 
   /** Masa Crítica: ×1.5 si la masa es menor que la mitad de la máxima */

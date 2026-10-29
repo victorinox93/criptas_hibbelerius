@@ -149,7 +149,7 @@ export function mazoCiego(clase: string): string[] {
   return d;
 }
 /** Cartas raras del Abismo (premio del Pacto Hueco y de las élites) */
-export const RARAS_ABISMO = Object.values(CARDS).filter((c) => c.abismo && c.rarity === 'rara').map((c) => c.id);
+export const RARAS_ABISMO = Object.values(CARDS).filter((c) => c.abismo && c.rarity === 'rara' && c.cls === 'neutral').map((c) => c.id); // v0.84 · sólo neutrales (las de personaje salen por sus sobres)
 
 // ── Ediciones (como las de Balatro) ──
 export interface EdicionDef { nombre: string; texto: string; color: number; css: string; prob: number }
@@ -206,7 +206,7 @@ export interface CartaSobre { id: string; up: boolean; ed?: Edicion; brillante?:
 export function abrirSobre(tipo: string, clase: string): CartaSobre[] {
   const pool = rewardPool(clase, ACTO_ABISMO, 99, true);
   const propia = (id: string) => (CARDS[id].cls ?? 'caballero') === (clase || 'caballero');
-  const filtro = tipo === 'clase' ? (id: string) => propia(id) && !CARDS[id].abismo
+  const filtro = tipo === 'clase' ? (id: string) => propia(id) && (!CARDS[id].abismo || CARDS[id].cls !== 'neutral') // v0.82 · también las cartas del Abismo de tu personaje
     : tipo === 'abismo' ? (id: string) => !!CARDS[id].abismo
       : (id: string) => CARDS[id].cls === 'neutral' && !CARDS[id].abismo;
   const del = pool.filter(filtro);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ALTAR_FILO_CHANCE, ALTARES_FILO } from '../data/altares_filo';
 import { maldicionesEnMazo } from '../data/maldiciones';
 import { ALTARES, MAXWELL_CHANCE, MAXWELL_CHANCE_MALDITO, NYAR_CHANCE, SACRIFICIO_CHANCE } from '../data/mythos_pactos';
 import { CSS, UI } from '../art/palette';
@@ -44,6 +45,13 @@ export class EventScene extends Phaser.Scene {
         if (run.nyarTramo !== (run.tramo ?? 1) && data.floor >= 2 && Math.random() < NYAR_CHANCE) {
           saveLocal();
           this.scene.start('Nyarlathotep', { floor: data.floor });
+          return;
+        }
+        // v0.84 · altares filosóficos: una historia y una pregunta sobre la locura, el conocimiento o los sueños
+        const filos = ALTARES_FILO.filter((a) => !seen.includes(`filo_${a.id}`));
+        if (filos.length && Math.random() < ALTAR_FILO_CHANCE) {
+          saveLocal();
+          this.scene.start('AltarFilo', { floor: data.floor, id: Phaser.Utils.Array.GetRandom(filos).id });
           return;
         }
         const altares = ALTARES.filter((a) => !seen.includes(`altar_${a.id}`));
