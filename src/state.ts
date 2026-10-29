@@ -293,7 +293,7 @@ export function pisosDe(acto = 1) {
   return acto === 5 ? PISOS_TRAMO_ABISMO : acto >= 4 ? PISOS_NUCLEO : FLOORS;
 }
 /** Pisos de cada tramo del Abismo (= PISOS_TRAMO de src/data/abismo_modo.ts) */
-export const PISOS_TRAMO_ABISMO = 10;
+export const PISOS_TRAMO_ABISMO = 14; // v0.79
 /** Expediciones terminadas. Para cuentas anteriores a v0.29 (sin contador) se estima con lo que ya hay. */
 export function expediciones() {
   const c = Game.codex;

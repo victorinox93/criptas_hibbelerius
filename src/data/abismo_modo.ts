@@ -245,7 +245,7 @@ export function rarezaDe(id: string) {
 // ════════════════════════════════════════════════════════════════
 export const TRAMOS = 2;
 /** Pisos de cada tramo (sin contar al jefe). También en src/state.ts → PISOS_TRAMO_ABISMO */
-export const PISOS_TRAMO = 10; // v0.45: +2 pisos por tramo
+export const PISOS_TRAMO = 14; // v0.45: +2 pisos por tramo · v0.79: +4 (el profe pidió tramos más largos)
 export const NOMBRE_TRAMO = ['Los Muelles Inclinados', "R'lyeh Invertida · el Trono de los Primigenios"];
 export const nombreTramo = (t: number) => (t <= TRAMOS ? NOMBRE_TRAMO[t - 1] : `El Abismo sin Fondo · profundidad ${t}`);
 
@@ -292,7 +292,7 @@ export function elegirJefe(tramo: number, vistos: string[] = []): string {
  */
 export const VIDA_ABISMO = { normal: 1.5, elite: 1.45, jefe: 1.3 };
 /** v0.75 · ajuste de pruebas del profe: vida y daño de TODOS los enemigos del Abismo (1 = sin ajuste) */
-export const AJUSTE_ABISMO = { vida: 0.8, dano: 0.8, jefe: 1.1 }; // v0.77 · los jefes ×1.1 encima (quedan en 0.88)
+export const AJUSTE_ABISMO = { vida: 0.84, dano: 0.84, jefe: 1.1 }; // v0.79 · 0.8 × 1.05 (+5 %); los jefes ×1.1 encima (quedan en ≈0.92)
 /** Vida enemiga por tramo: tramo 2 ×1.3; en el infinito, ×1.25 más por cada profundidad extra */
 export function escalaTramo(t = 1) {
   return t <= TRAMOS ? 1 + 0.3 * (t - 1) : 1.3 * Math.pow(1.25, t - TRAMOS);
