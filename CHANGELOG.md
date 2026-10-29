@@ -2,6 +2,13 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.80.0 · El Abismo se abre (otra vez)
+
+- **El portal del Abismo vuelve a abrirse para quien venció a AM** (y para el Modo profesor). A quien no ha vencido a AM le dice «🔒 Vence a AM».
+- **Momentum del Abismo corregido:**
+  - **Antes:** caer en cualquier punto daba 15, porque contaba como «acto 5», y retirarse daba 10.
+  - **Ahora paga por los jefes de tramo que venciste:** 5 por el tramo 1, +10 por el Primigenio (15 en total) y +5 por cada tramo sin fondo. Si caes antes del primer jefe, 0.
+
 ## v0.79.0 · Tramos más largos
 
 - **Cada tramo del Abismo tiene 14 pisos antes del jefe** (antes 10). Las expediciones que ya estaban en curso conservan su mapa.

@@ -479,6 +479,12 @@ export const ACC = Object.fromEntries(ACCESORIOS.map((a) => [a.id, a])) as Recor
 
 /** Momentum por jefes vencidos en una expedición (acumulado): Coloso 2, Bruja 3, Hibbelerius 5, AM 5 */
 export const MOMENTUM_JEFES = [0, 2, 5, 10, 15];
+/** v0.80 · Momentum del Abismo según cuántos jefes de tramo venciste: tramo 1 → 5, Primigenio (tramo 2) → +10, cada tramo sin fondo → +5 */
+export function momentumAbismo(tramosVencidos: number) {
+  let m = 0;
+  for (let t = 1; t <= tramosVencidos; t++) m += t === 1 ? 5 : t === 2 ? 10 : 5;
+  return m;
+}
 /** Regalo diario de Layla por entrar al juego */
 export const REGALO_DIARIO = 1;
 /** Descuento de la oferta del día */

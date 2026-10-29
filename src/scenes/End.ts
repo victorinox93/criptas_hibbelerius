@@ -8,7 +8,7 @@ import { CSS, UI } from '../art/palette';
 import { FORM_URL, W, H } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
-import { MOMENTUM_JEFES } from '../data/tienda';
+import { momentumAbismo, MOMENTUM_JEFES } from '../data/tienda';
 import { dejarLapida } from '../huellas';
 import { addConocimiento, codexFlag, contarExpedicion, expediciones, ganarMomentum, FLOORS, Game, logEvent, nivelActual, PISOS_NUCLEO, saveLocal, TOTAL_PISOS } from '../state';
 import { conocimientoGanado, DESBLOQUEOS, nivelDe, siguienteNivel } from '../data/progreso';
@@ -112,7 +112,8 @@ export class EndScene extends Phaser.Scene {
     }
     // ── Momentum (Tienda de Layla): por jefes vencidos en esta expedición ──
     const jefes = data.victory ? (data.nucleo === 'am' ? 4 : 3) : Math.max(0, (run.acto ?? 1) - 1);
-    const mom = run.debug ? 0 : MOMENTUM_JEFES[Math.min(4, jefes)] ?? 0;
+    // v0.80 · en el Abismo se paga por los jefes de tramo que venciste (antes caer en el Abismo contaba como «acto 5» y daba 15)
+    const mom = run.debug ? 0 : run.modo === 'abismo' ? momentumAbismo(data.victory ? (run.tramo ?? 1) : (run.tramo ?? 1) - 1) : MOMENTUM_JEFES[Math.min(4, jefes)] ?? 0;
     if (mom) {
       ganarMomentum(mom);
       const mt = txt(this, 340, 446, `+${mom} ◈ Momentum para la Tienda de Layla`, 18, '#f0b070').setOrigin(0.5).setAlpha(0);

@@ -165,8 +165,8 @@ export class MenuScene extends Phaser.Scene {
    * v0.74 · ABIERTO para quien ya venció a AM (y para el profe); los demás ven cómo abrirlo.
    */
   private portalAbismo() {
-    // v0.75 · cerrado otra vez mientras el profe sigue probando: sólo el Modo profesor lo abre (cambia a amVencido() || isAdmin() para abrirlo)
-    const abierto = isAdmin();
+    // v0.80 · abierto para quien venció a AM (y para el Modo profesor). Para cerrarlo otra vez: const abierto = isAdmin();
+    const abierto = amVencido() || isAdmin();
     const x = 432, y = 330;
     const c = this.add.container(x, y).setDepth(5);
     const halo = this.add.ellipse(0, 0, 190, 140, 0x9a6ad0, 0.22).setBlendMode(Phaser.BlendModes.ADD);
@@ -192,7 +192,7 @@ export class MenuScene extends Phaser.Scene {
     const enCurso = !!(Game.run && !Game.run.done);
     const tt = txt(this, 0, 0, abierto
       ? `El Abismo de los Ejes: modo infinito de cuerpo rígido.${enCurso ? '\nTu expedición actual se abandonará.' : ''}`
-      : amVencido() ? 'Próximamente.\nEl profe todavía lo está preparando.' : 'Próximamente, sólo para quienes hayan vencido a AM\n(el jefe secreto del Acto IV).', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
+      : amVencido() ? 'Próximamente.\nEl profe todavía lo está preparando.' : 'Sólo para quienes hayan vencido a AM\n(el jefe secreto del Acto IV).', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
     const tg = this.add.graphics();
     frame(tg, -tt.width / 2 - 14, -tt.height / 2 - 8, tt.width + 28, tt.height + 16, 0x1a0a2a, 0xc070ff, 0.97);
     tip.add([tg, tt]);
