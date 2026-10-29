@@ -7,7 +7,7 @@ import { W } from '../config';
 import { audio } from '../audio';
 import { T } from '../textos';
 import { CARDS, CONJUNTOS, rewardPool } from '../data/cards';
-import { RELIC_POOL, RELICS, cuentaTope, MAX_RELIQUIAS } from '../data/relics';
+import { RELIC_POOL, RELICS, RELIQUIAS_ABISMO, cuentaTope, MAX_RELIQUIAS } from '../data/relics';
 import { addCard, addFamiliar, Game, saveLocal, unlock, nivelActual, amVencido } from '../state';
 import { FAMILIARS } from '../data/familiars';
 import { MAX_POCIONES, POCIONES, pocionesDisponibles } from '../data/pociones';
@@ -45,7 +45,9 @@ export function descartarRelic(id: string) {
 
 export function randomRelics(n: number) {
   const owned = Game.run!.relics;
-  return Phaser.Utils.Array.Shuffle(RELIC_POOL.filter((x) => !owned.includes(x))).slice(0, n);
+  // v0.83 · en el Abismo también salen sus reliquias propias (con el doble de probabilidad)
+  const pool = Game.run!.modo === 'abismo' ? [...RELIC_POOL, ...RELIQUIAS_ABISMO, ...RELIQUIAS_ABISMO] : RELIC_POOL;
+  return [...new Set(Phaser.Utils.Array.Shuffle(pool.filter((x) => !owned.includes(x))))].slice(0, n);
 }
 
 export class RewardScene extends Phaser.Scene {

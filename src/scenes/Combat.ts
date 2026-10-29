@@ -754,6 +754,9 @@ export class CombatScene extends Phaser.Scene {
     this.draw = Phaser.Utils.Array.Shuffle([...run.deck]);
     if (this.has('yunque')) this.masa += 1;
     if (this.has('coraza')) this.block = 6;
+    // v0.83 · reliquias del Abismo al empezar el combate
+    if (this.has('plomada')) { this.block += 5; addEntropia(-3); this.calc('Plomada de Montemayor: sabes dónde es «abajo» (+5 de Bloqueo, −3 de Locura)'); }
+    if (this.has('corazonShoggoth')) { const rr = Game.run!; const n = Math.min(4, rr.maxHp - rr.hp); if (n > 0) { rr.hp += n; this.calc(`Corazón de Shoggoth: tekeli-li… +${n} de vida`); } }
     if (this.hasFx('yunque')) this.masa += 1;
     if (this.hasFx('hueca')) this.masa -= 1;
     if (this.hasFx('manto')) this.block += 8;
@@ -1552,7 +1555,7 @@ export class CombatScene extends Phaser.Scene {
     const st = ev.st;
     const noche = this.acto === 5 && Game.run?.mutador === 'noche' && this.turn <= 1;
     const bateria = st.def.id === 'calculadora' && st.hp < st.maxHp * 0.3; // v0.57 · batería baja
-    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && !this.telescopio && Game.run?.familiar?.id !== 'pezLinterna');
+    return !((st.def.oculto || noche || bateria) && st.intent.kind !== 'stunned' && !this.diente('ojo') && !this.telescopio && !this.has('lenteGeometra') && Game.run?.familiar?.id !== 'pezLinterna');
   }
 
   /** v0.57 · Globo de diálogo de una carta que habla (como en Inscryption) */
@@ -1842,6 +1845,8 @@ export class CombatScene extends Phaser.Scene {
     }
     if (def.type === 'Ataque') this.firstAttack = true;
     if (def.type === 'Poder') this.poderes++;
+    if (def.type === 'Poder' && this.has('volanteHueso')) { this.gainBlock(5); this.calc('Volante de Hueso: +5 de Bloqueo'); }
+    if (def.type === 'Defensa' && this.has('reglaPappus')) { this.gainBlock(2); this.calc('Regla de Pappus: +2 de Bloqueo'); }
     // v0.70 · Galois: Teoría de Grupos
     const nt = (this.tiposTurno.get(def.type) ?? 0) + 1;
     this.tiposTurno.set(def.type, nt);
@@ -1886,6 +1891,7 @@ export class CombatScene extends Phaser.Scene {
       }
       this.attacksTurn++;
       if (this.attacksTurn >= 3) this.mostrarCombo(this.attacksTurn); // v0.68
+      if (this.has('llaveEjes') && target && this.alive().indexOf(target) > 0) { this.polonio += 4; this.calc('Llave de los Ejes Paralelos: lejos del eje, +4'); }
       if (this.pacto('gravitatorio') && this.alive().length) { this.polonio += this.alive().length; this.calc(`Pacto Gravitatorio: +${this.alive().length} (enemigos vivos)`); }
       if (this.pacto('calor') && target && !target.dead) { target.st.calor += 1; this.refreshEnemy(target); }
       const gu = boonLevel('ga_ultima');
@@ -4015,6 +4021,7 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Máquina de Turing: jugaste ${this.played - this.jugadasIni} cartas → +1 J`);
     }
     this.jugadasIni = this.played;
+    if (this.has('estatuillaAngell') && (Game.run!.entropia ?? 0) >= 50) { this.energy += 1; this.calc('Estatuilla del Profesor Angell: tu Locura se vuelve poder (+1 J)'); }
     if (this.vacioAb) { this.eAbs = Math.min(EABS_MAX, this.eAbs + this.vacioAb); this.calc(`Energía del Vacío: +${this.vacioAb} de Energía Absorbida`); }
     if (this.isEsp) {
       this.absTotal = false;
@@ -4112,6 +4119,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.pacto('minimalista')) draw -= 1;
     if (this.prohibido('p_infinito')) draw += 1;
     if (this.aliadoImg && Game.run!.aliado === 'duda') draw += 1; // el Encadenado de la Duda
+    if (this.has('esferaYog') && this.turn % 2 === 0) { draw += 1; this.calc('Esfera de Yog-Sothoth: ves otro tiempo (+1 carta)'); }
     if (this.turn === 1) {
       const fdr = boonLevel('duo_roosevelt'); // Oppenheimer + Einstein
     if (fdr && this.alive().length) {
@@ -4611,7 +4619,7 @@ export class CombatScene extends Phaser.Scene {
           if (it.aturde && Game.run!.hp > 0) {
             if (Game.run!.hp >= hpAntes) this.calc(`Bloqueaste el golpe de ${st.def.name}: no te aturde`);
             else if (this.diente('protector')) this.calc('Protector Bucal: el golpe no te aturde');
-            else if (this.giroscopio || this.pacto('giroscopio')) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
+            else if (this.giroscopio || this.pacto('giroscopio') || this.has('girocompas')) this.calc('Giroscopio: tu eje no se mueve, el golpe no te aturde');
             else if (this.trasAturdir) this.calc('Sigues mareado del golpe anterior: este no te vuelve a aturdir');
             else { this.aturdido = true; this.calc(`${st.def.name} te ATURDE: pierdes tu siguiente turno`); this.anunciarEstado('¡ATURDIDO!', `${st.def.name} te alcanzó: pierdes tu siguiente turno`, 0xd8b020, '#ffe060'); this.refreshPlayer(); await this.wait(1200); }
           }
@@ -4673,7 +4681,7 @@ export class CombatScene extends Phaser.Scene {
           this.anunciarEstado('¡HEMORRAGIA!', `Durante ${n} turno(s), cada carta que juegues te quita 1 de vida`, 0xb02020, '#ff7070');
           await this.wait(900);
         }
-        if (it.vertigo && Game.run!.hp > 0 && this.pacto('giroscopio')) this.calc('Pacto del Giróscopo: no te mareas');
+        if (it.vertigo && Game.run!.hp > 0 && (this.pacto('giroscopio') || this.has('girocompas'))) this.calc('Giroscopio: no te mareas');
         else if (it.vertigo && Game.run!.hp > 0) {
           this.vertigo = Math.min(3, this.vertigo + it.vertigo);
           this.calc(`${st.def.name} te marea: VÉRTIGO, robas ${this.vertigo} carta(s) menos en tu siguiente turno`);
@@ -4791,6 +4799,7 @@ export class CombatScene extends Phaser.Scene {
       else { run.hp = Math.max(1, run.hp - 3); this.calc('Pacto de la Deuda: sin Ergios, te cobran 3 de vida'); }
     }
     if (this.has('ojoYuggoth') && Math.random() < 0.25) { const m = darMaldicion(); this.calc(`Ojo de Yuggoth: algo te mira de vuelta… recibes la maldición «${m}»`); }
+    if (this.has('tiaraInnsmouth')) { addErgios(15); addEntropia(2); this.calc('Tiara de Innsmouth: +15 Ergios y +2 de Locura'); }
     if (this.has('termo') && run.hp > 0 && run.hp <= run.maxHp / 2) {
       run.hp = Math.min(run.maxHp, run.hp + 12);
       this.calc('Termo de Caldo: +12 de vida');

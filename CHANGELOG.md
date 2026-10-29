@@ -2,6 +2,20 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.83.0 · Reliquias del Abismo
+
+**10 reliquias que sólo salen en el Abismo**, de cuerpo rígido y del mythos. En el Abismo salen con el doble de probabilidad que las normales (≈ la mitad de las que aparecen); en el modo normal nunca.
+- **Plomada de Montemayor:** +5 de Bloqueo y −3 de Locura al empezar cada combate.
+- **Girocompás:** nada te aturde ni te da Vértigo (L = I·ω).
+- **Llave de los Ejes Paralelos:** +4 a tus Ataques contra enemigos que no son el primero de la fila (I = I₀ + m·d²).
+- **Volante de Hueso:** +5 de Bloqueo cada vez que juegas un Poder.
+- **Estatuilla del Profesor Angell:** +1 J por turno si tu Locura es 50 o más.
+- **Tiara de Innsmouth:** +15 Ergios y +2 de Locura al ganar un combate.
+- **Regla de Pappus:** tus Defensas dan +2 de Bloqueo.
+- **Lente del Geómetra:** ves las intenciones de los enemigos invisibles.
+- **Corazón de Shoggoth:** te curas 4 al empezar cada combate.
+- **Esfera de Yog-Sothoth:** robas 1 carta más en tus turnos pares.
+
 ## v0.82.0 · Cartas de cada personaje
 
 **16 cartas del Abismo propias de cada personaje** (4 cada uno: 2 comunes y 2 raras). Usan su mecánica con temas de cuerpo rígido. Sólo salen en el Abismo: en el Sobre de tu Clase, en el Sobre del Abismo y en las recompensas.
