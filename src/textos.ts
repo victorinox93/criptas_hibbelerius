@@ -104,6 +104,7 @@ export const T = {
       ['Música', '«Cold Soul» (partes 1–3) de Lost in The Forest · lostintheforest.bandcamp.com (clic para visitar). Combates y jefes: dungeon synth generado en vivo con Web Audio'],
       ['Música del Abismo', 'Cryo Chamber (con permiso): Tineidae & Sole Massif, Void Stasis, Sabled Sun, Caldon Glover, Atrium Carceri & Kammarheit · cryochamber.bandcamp.com/album/dark-ambient-of-2024'],
       ['Música de Layla', '«Kitty Paw» de Shook (álbum «Synth Funk», 2024) · shook.bandcamp.com/album/synth-funk (clic para visitar)'],
+      ['Ideas de alumnos', 'NullThinker (el Espectro de la Energía) · AngelF (Angelus, el Aprendiz de Fuego)'],
       ['Tecnología', 'Phaser 3 · Vite · Google Apps Script'],
       ['Tipografías', 'VT323 (Peter Hull) y Pirata One (Rodrigo Fuenzalida y Nicolás Massi), licencia SIL OFL'],
     ] as [string, string][],
