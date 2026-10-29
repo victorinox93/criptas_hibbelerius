@@ -133,7 +133,7 @@ export class CodexScene extends Phaser.Scene {
             detail: (c) => {
               head(c, `alma_${a.id}`, a.name, 'Alma en pena · posible aliado', 2);
               body(c, 290, a.intro, CSS.bone, 17);
-              body(c, 430, `Como aliado: ${a.habilidad}`, CSS.gold, 17);
+              body(c, 430, `Como aliado: ${a.habilidad}${a.autor ? `\n\nIdea de ${a.autor}, alumno del curso.` : ''}`, CSS.gold, 17);
             },
           });
         }

@@ -68,7 +68,7 @@ export interface Run {
   score: number;
   stats: { combates: number; elites: number; runasOk: number; runasTotal: number; ergiosTotal?: number; kills?: number; racha?: number; rachaMax?: number; perfectos?: number };
   gravity: number; // nivel de gravedad (1 = Tierra)
-  clase: string; // 'caballero' | 'arcanista' | 'penitente'
+  clase: string; // 'caballero' | 'arcanista' | 'penitente' | 'espectro'
   ergios: number;
   effects: Effect[];
   shop?: ShopState;
@@ -417,8 +417,15 @@ export function penitenteUnlocked() {
   return Game.codex.victorias > 0;
 }
 
+/** v0.78 · ¿El Espectro de la Energía está desbloqueado? (al terminar los 2 tramos del Abismo: vencer al Primigenio) */
+export function espectroUnlocked() {
+  const f = Game.codex.flags ?? [];
+  return f.includes('abismo_t2') || f.includes('abismo_primigenio') || isAdmin();
+}
+
 /** Clase con la que se puede jugar (si la elegida aún está bloqueada, Caballero) */
 export function claseJugable(clase?: string) {
+  if (clase === 'espectro' && espectroUnlocked()) return 'espectro';
   if (clase === 'arcanista' && arcanistaUnlocked()) return 'arcanista';
   if (clase === 'penitente' && penitenteUnlocked()) return 'penitente';
   return 'caballero';

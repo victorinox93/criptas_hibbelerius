@@ -15,7 +15,7 @@ export const CLASSES: ClassDef[] = [
     desc: 'Acumula rapidez (máx. 8 m/s) y la libera: K = ½mv². Doble rapidez, cuádruple daño… pero es frágil.' },
   { id: 'penitente', name: 'Penitente del Empuje', available: true, concept: 'Masa variable', hp: 80, energy: 3,
     desc: 'Quema su propia masa (su vida) para acelerar: Δv = vₑ·ln(m₀/m). Esquiva en vez de bloquear.' },
-  // Cuarto personaje: lo propondrán los alumnos (formulario de retroalimentación)
-  { id: 'misterio', name: '¿?', available: false, concept: 'Tú lo diseñas', hp: 0, energy: 3,
-    desc: '¿Qué física debería dominar el próximo héroe? Déjanos tu idea en el formulario.' },
+  // v0.78 · Cuarto personaje, propuesto por un alumno (NullThinker). Se desbloquea al terminar los 2 tramos del Abismo.
+  { id: 'espectro', name: 'Espectro de la Energía', available: true, concept: 'Trabajo y energía', hp: 62, energy: 3,
+    desc: 'Una armadura vacía. Canaliza formas de energía y absorbe la mitad de cada golpe para liberarla después.' },
 ];

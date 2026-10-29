@@ -22,6 +22,10 @@ export const EXTRAS_M = ['Sin barba', 'Barba corta', 'Barba larga'];
 export const HELMS_P = ['Capirote', 'Capucha rota', 'Corona de espinas', 'Velo de hierro', 'Yelmo de bronce'];
 export const WEAPONS_P = ['Incensario', 'Lanza ígnea', 'Cadenas', 'Antorcha'];
 export const EXTRAS_P = ['Tanque de cobre', 'Tanque doble', 'Alas de hierro'];
+// v0.78 · Espectro de la Energía (idea de NullThinker): una armadura vacía habitada por energía
+export const HELMS_E = ['Yelmo hueco', 'Capucha espectral', 'Corona rota', 'Cuernos de humo', 'Halo'];
+export const WEAPONS_E = ['Linterna', 'Guadaña', 'Orbe', 'Cadena'];
+export const EXTRAS_E = ['Estela de humo', 'Cadenas rotas', 'Alas espectrales'];
 export const SKINS: { name: string; s: string; q: string }[] = [
   { name: 'Clara', s: '#f0d0b0', q: '#c8a088' },
   { name: 'Media', s: '#e0b48a', q: '#a8806a' },
@@ -416,9 +420,113 @@ function penitent(look: HeroLook): Grid {
   return g;
 }
 
+
+// ───────────────────────── ESPECTRO (v0.78) ─────────────────────────
+// Armadura vacía: no tiene cara, sólo dos ojos de energía (E), y en lugar de piernas
+// se deshace en una estela (capa C con chispas E). Usa las mismas letras que los demás:
+// capa c/C, armadura l/g, ojos E; así le quedan los cosméticos.
+function spectre(look: HeroLook): Grid {
+  const g = grid();
+  const arma = look.arma ?? 0, extra = look.extra ?? 0;
+  // guadaña: el mango va detrás del cuerpo
+  if (arma === 1) {
+    line(g, 30, 41, 33, 4, 'n');
+    poly(g, [[33, 4], [26, 1], [21, 3], [28, 4], [32, 7]], 'L');
+    line(g, 22, 3, 31, 5, 'l');
+  }
+  // alas espectrales
+  if (extra === 2) {
+    poly(g, [[14, 18], [4, 8], [2, 14], [6, 15], [3, 20], [8, 21], [6, 26], [13, 23]], 'C');
+    for (const [x, y] of [[5, 11], [4, 17], [7, 23]] as [number, number][]) line(g, 13, 20, x, y, 'E');
+  }
+  // capa raída
+  poly(g, [[12, 15], [18, 15], [17, 34], [13, 37], [9, 36], [7, 33], [10, 24]], 'c');
+  poly(g, [[10, 24], [12, 18], [12, 36], [9, 36], [7, 33]], 'C');
+  for (let x = 8; x <= 16; x += 3) put(g, x, 37 - (x % 2), 'C');
+  // la estela: en vez de piernas, humo que se adelgaza hacia abajo
+  poly(g, [[14, 30], [25, 30], [24, 35], [22, 39], [20, 43], [18, 39], [15, 35]], 'C');
+  poly(g, [[16, 30], [23, 30], [22, 34], [20, 38], [17, 34]], 'c');
+  for (const [x, y] of [[17, 36], [21, 35], [19, 40], [23, 38], [15, 39], [25, 41]] as [number, number][]) put(g, x, y, 'E');
+  if (extra === 0) {
+    // estela de humo larga
+    poly(g, [[20, 40], [26, 42], [33, 41], [27, 43], [19, 43]], 'C');
+    put(g, 29, 42, 'E'); put(g, 24, 41, 'E');
+  }
+  // faldar roto
+  rect(g, 14, 28, 25, 30, 'g');
+  for (let x = 15; x <= 24; x += 3) { rect(g, x, 29, x + 1, 31, 'l'); put(g, x, 32, 'l'); }
+  // peto con una grieta por donde se escapa la energía
+  oval(g, 19.5, 22, 6.5, 7, 'l');
+  rect(g, 14, 22, 25, 28, 'l');
+  for (let y = 17; y <= 28; y++) { put(g, 24, y, 'g'); put(g, 25, y, 'g'); }
+  rect(g, 15, 27, 24, 27, 'g');
+  line(g, 18, 18, 20, 21, 'E'); line(g, 20, 21, 19, 24, 'E'); line(g, 19, 24, 21, 26, 'E');
+  rect(g, 14, 28, 25, 28, 'n');
+  // hombreras
+  oval(g, 13.5, 18, 3.5, 2.6, 'l'); rect(g, 11, 19, 16, 20, 'g');
+  oval(g, 25.5, 18, 3.5, 2.6, 'l'); rect(g, 23, 19, 28, 20, 'g');
+  if (extra === 1) {
+    // cadenas rotas colgando de los hombros
+    for (let i = 0; i < 9; i++) put(g, 11 - (i > 5 ? 1 : 0), 21 + i, i % 2 ? 'l' : 'g');
+    for (let i = 0; i < 6; i++) put(g, 28 + (i > 3 ? 1 : 0), 21 + i, i % 2 ? 'l' : 'g');
+  }
+  // brazos de armadura (sin piel: guanteletes vacíos)
+  rect(g, 11, 21, 13, 27, 'g');
+  rect(g, 25, 21, 28, 26, 'l'); rect(g, 27, 21, 28, 26, 'g');
+  rect(g, 26, 27, 29, 29, 'g'); rect(g, 26, 27, 28, 27, 'l');
+  // yelmo hueco: adentro sólo oscuridad y dos ojos
+  oval(g, 19.5, 9, 5, 4, 'l');
+  rect(g, 15, 9, 24, 15, 'l');
+  rect(g, 23, 8, 24, 15, 'g');
+  rect(g, 15, 15, 24, 16, 'g');
+  rect(g, 16, 10, 23, 14, 'd');
+  rect(g, 17, 11, 22, 13, 'k');
+  put(g, 18, 12, 'E'); put(g, 21, 12, 'E'); put(g, 18, 11, 'E'); put(g, 21, 11, 'E');
+  const helm = look.helm;
+  if (helm === 'penacho') {
+    // (Yelmo hueco) una pluma deshilachada
+    poly(g, [[18, 5], [21, 3], [17, 1], [12, 3], [14, 5]], 'C');
+    put(g, 13, 2, 'E');
+  } else if (helm === 'cuernos') {
+    // capucha espectral sobre el yelmo
+    poly(g, [[13, 15], [14, 7], [19.5, 3], [25, 7], [26, 15], [24, 15], [24, 8], [19.5, 5], [15, 8], [15, 15]], 'c');
+    poly(g, [[19.5, 3], [17, 1], [16, 4]], 'c');
+  } else if (helm === 'corona') {
+    // corona rota
+    rect(g, 15, 5, 24, 6, 'y');
+    for (const x of [15, 21, 24]) { put(g, x, 4, 'y'); put(g, x, 3, 'y'); }
+    put(g, 18, 4, 'y'); put(g, 19, 6, '.'); put(g, 19, 5, '.');
+  } else if (helm === 'alado') {
+    // cuernos de humo
+    line(g, 15, 8, 12, 5, 'C', 2); line(g, 12, 5, 12, 1, 'C', 2); put(g, 12, 0, 'E');
+    line(g, 24, 8, 27, 5, 'C', 2); line(g, 27, 5, 27, 1, 'C', 2); put(g, 27, 0, 'E');
+  } else {
+    // halo de energía
+    for (let a = 0; a < 360; a += 15) put(g, 19.5 + 6 * Math.cos((a * Math.PI) / 180), 3 + 1.5 * Math.sin((a * Math.PI) / 180), 'E');
+  }
+  // lo que lleva en la mano (−1 = un accesorio de la tienda)
+  if (arma < 0 || arma === 1) {
+    // nada más (la guadaña ya está dibujada)
+  } else if (arma === 0) {
+    // linterna con una llama de energía
+    for (let y = 29; y < 33; y++) put(g, 28, y, 'g');
+    rect(g, 26, 33, 30, 38, 'n'); rect(g, 27, 34, 29, 37, 'E'); put(g, 28, 35, 'W');
+    rect(g, 26, 33, 30, 33, 'y'); rect(g, 26, 38, 30, 38, 'y');
+  } else if (arma === 2) {
+    // orbe de energía flotando sobre la mano
+    oval(g, 30, 24, 3.2, 3.2, 'E'); put(g, 29, 23, 'W'); put(g, 31, 25, 'B');
+    for (const [x, y] of [[34, 21], [26, 20], [33, 28]] as [number, number][]) put(g, x, y, 'E');
+  } else {
+    // cadena con grillete
+    for (let i = 0; i < 10; i++) put(g, 29 + Math.round(Math.sin(i / 1.6) * 1.5), 29 + i, i % 2 ? 'l' : 'g');
+    oval(g, 29, 40, 2, 1.6, 'g'); put(g, 29, 40, '.');
+  }
+  return g;
+}
+
 /** Matriz del héroe según su clase y apariencia */
 export function heroMatrix(look: HeroLook): string[] {
-  const g = look.clase === 'arcanista' ? mage(look) : look.clase === 'penitente' ? penitent(look) : knight(look);
+  const g = look.clase === 'arcanista' ? mage(look) : look.clase === 'penitente' ? penitent(look) : look.clase === 'espectro' ? spectre(look) : knight(look);
   outline(g);
   return g.map((r) => r.join(''));
 }

@@ -12,7 +12,7 @@ export interface AlmaDef {
   id: string;
   name: string;
   /** apariencia de su fantasma (usa el generador de héroes) */
-  look: { clase: 'caballero' | 'arcanista' | 'penitente'; helm: string; arma: number; extra: number };
+  look: { clase: 'caballero' | 'arcanista' | 'penitente' | 'espectro'; helm: string; arma: number; extra: number };
   /** el fantasma no tiene mano derecha (se le dibuja un muñón vendado) */
   sinMano?: boolean;
   pal: Record<string, string>; // colores apagados del sprite
@@ -28,6 +28,7 @@ export interface AlmaDef {
   final: string; // lo que dice si vencen juntos a Hibbelerius
   abismo?: boolean; // v0.49 · alma del Abismo: te acompaña sólo hasta el final del tramo
   traidor?: boolean; // v0.57 · a veces ayuda… y a veces te traiciona (Remiendos)
+  autor?: string; // v0.78 · alumno que propuso el alma (se muestra en el Códice)
 }
 
 export const ALMAS: Record<string, AlmaDef> = {
@@ -360,6 +361,28 @@ export const ALMAS: Record<string, AlmaDef> = {
     yaTienes: '«Ya tienes quien te cubra. Toma, pequeño.»',
     habilidad: 'Al final de tu turno dispara con un ángulo al azar: el daño es 16·sen(2θ). A 45° es máximo; a 15° o 75°, la mitad.',
     final: 'Gough dispara a 45° sin ver… y da en el blanco del otro lado del valle.',
+  },
+  // v0.78 · propuesta de un alumno (AngelF)
+  angelus: {
+    id: 'angelus',
+    name: 'Angelus, el Aprendiz de Fuego',
+    autor: 'AngelF',
+    look: { clase: 'arcanista', helm: 'penacho', arma: 0, extra: 0 },
+    pal: { c: '#8b1e2b', C: '#4a1420', l: '#c87533', g: '#7a4a20', E: '#ff8a3a', B: '#ffb040', s: '#e0b48a', q: '#a8806a' },
+    intro: 'Un aprendiz con la túnica chamuscada practica el mismo hechizo frente a una pared negra de hollín.\n«¡Q = m·c·ΔT! …Nada. Mi maestro calentaba un caldero con una palabra. Yo ya quemé tres cejas, dos libros y una mesa. Creo que el fuego no es lo mío.»',
+    pregunta: '«Si cada vez que practico algo sale mal… ¿de verdad estoy aprendiendo?»',
+    opciones: [
+      'No: si no te sale a la primera, no tienes talento.',
+      'Sí: cada intento fallido te dice qué cambiar. Así se aprende.',
+      'Mejor deja de intentarlo antes de quemar algo más.',
+    ],
+    correcta: 1,
+    ayuda: { label: 'Practicar con él (−8 de vida)', hp: 8 },
+    gracias: '«Qué cambiar… ¡la masa! ¡Estaba calentando demasiada masa!» Una llama perfecta se enciende en su mano. «¿Me dejas acompañarte? Ahora sí sé lo que hago. Más o menos.»',
+    triste: '«Sí… eso me dicen todos.» Angelus apaga su varita y se sienta frente a la pared negra.',
+    yaTienes: '«Ya traes quien te cuide. Toma, para que te compres unas cejas nuevas si las necesitas.» Te da unos Ergios.',
+    habilidad: 'Al final de tu turno le pone 5 de Calor a un enemigo (no se acumula: si ya tiene 5 o más, elige a otro). El Calor quema cada turno.',
+    final: 'Angelus enciende una llama tranquila y pareja: «Q = m·c·ΔT. Sin quemar ni una ceja.»',
   },
 };
 

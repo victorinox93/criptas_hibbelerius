@@ -6,6 +6,7 @@ import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
 import { CalcCtx, CardDef, CARDS, CardInst, CardStats, CONJUNTOS, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+import { EABS_MAX, FORMAS, FORMAS_MAX, FORMAS_TIPOS, FORMAS_TOPE, FormaTipo } from '../data/espectro';
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
 const VMAX_PEN = 14;
@@ -100,6 +101,14 @@ export class CombatScene extends Phaser.Scene {
   // Acto II / nuevas mecánicas
   private isArc = false; // jugando con el Arcanista
   private isPen = false; // jugando con el Penitente del Empuje (masa variable)
+  // v0.78 · Espectro de la Energía: formas de energía canalizadas y Energía Absorbida
+  private isEsp = false;
+  private formas: { tipo: FormaTipo; x: number }[] = [];
+  private maxFormas = FORMAS_MAX;
+  private eAbs = 0;
+  private absTotal = false; // Absorción Total: absorbe el 100 % hasta tu siguiente turno
+  private conservacion = 0; // Conservación de la Energía: formas al azar al inicio del turno
+  private formasC?: Phaser.GameObjects.Container;
   private vmax = VMAX; // rapidez máxima según la clase
   private ve = VE_BASE; // Penitente: velocidad de escape de sus gases (m/s)
   private critica = false; // Masa Crítica: ataques ×1.5 con poca masa
@@ -542,6 +551,14 @@ export class CombatScene extends Phaser.Scene {
         this.tweens.add({ targets: t, alpha: 0, delay: 7000, duration: 600, onComplete: () => t.destroy() });
       });
     }
+    // v0.78 · primera vez con el Espectro
+    if (this.isEsp && !(Game.codex.flags ?? []).includes('esp_tuto')) {
+      codexFlag('esp_tuto');
+      this.time.delayedCall(2200, () => {
+        const t = txt(this, W / 2, 150, 'Espectro: CANALIZA formas de energía (actúan al final de tu turno) y LIBÉRALAS para un golpe fuerte.\nLa mitad de cada golpe que recibes se guarda como Energía Absorbida: suéltala con Liberación.', 18, CSS.gold, { align: 'center' }).setOrigin(0.5).setDepth(700).setStroke('#000', 4);
+        this.tweens.add({ targets: t, alpha: 0, delay: 8000, duration: 600, onComplete: () => t.destroy() });
+      });
+    }
     if (this.prohibido('p_masaneg')) {
       if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 3);
       else this.masa += 3;
@@ -589,7 +606,7 @@ export class CombatScene extends Phaser.Scene {
     return Game.run!.effects.some((e) => e.id === id && e.left > 0);
   }
   private ctx(): CalcCtx {
-    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy, masa: Game.run!.hp, ve: this.ve, cordura: corduraDe(Game.run!.entropia) };
+    return { masaBonus: this.masa, acelBonus: this.acel, friccion: this.friccion, g: this.grav.g, vel: this.vel, block: this.block, energy: this.energy, masa: Game.run!.hp, ve: this.ve, cordura: corduraDe(Game.run!.entropia), eAbs: this.eAbs, formas: this.formas.length };
   }
   private wait(ms: number) {
     return new Promise<void>((r) => this.time.delayedCall(ms, () => r()));
@@ -601,6 +618,13 @@ export class CombatScene extends Phaser.Scene {
     this.acto = run.acto ?? 1;
     this.isArc = run.clase === 'arcanista';
     this.isPen = run.clase === 'penitente';
+    this.isEsp = run.clase === 'espectro';
+    this.formas = [];
+    this.maxFormas = FORMAS_MAX;
+    this.eAbs = 0;
+    this.absTotal = false;
+    this.conservacion = 0;
+    this.formasC = undefined;
     this.vmax = this.isPen ? VMAX_PEN : VMAX;
     this.ve = VE_BASE;
     this.critica = false;
@@ -1046,6 +1070,7 @@ export class CombatScene extends Phaser.Scene {
       items.push(['i_fire', `${this.ve}`, `vₑ = ${this.ve} m/s`, `Velocidad de escape de tus gases. Al quemar masa: Δv = vₑ·ln(m₀/m₁). Mientras MENOS masa tengas, más rápido aceleras.`]);
       if (this.critica) items.push(['i_mass', '×1.5', 'Masa Crítica', 'Con menos de la mitad de tu masa máxima, tus ataques hacen ×1.5.']);
     }
+    if (this.isEsp) items.unshift(['i_bolt', `${this.eAbs}`, `Energía Absorbida: ${this.eAbs}`, `La ${this.absTotal ? 'TOTALIDAD (Absorción Total)' : 'mitad'} de cada golpe que recibes (aunque lo bloquees) se guarda aquí (máx. ${EABS_MAX}). Suéltala con Liberación o vuélvela Bloqueo con Transformación. Formas canalizadas: ${this.formas.length}/${this.maxFormas}.`]);
     if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
     if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema naranja con «?»).']);
     if (this.hemorragia) items.push(['i_heart', `${this.hemorragia}`, 'Hemorragia', `Cada carta que juegues te quita 1 de vida. Quedan ${this.hemorragia} turno(s).`]);
@@ -1211,6 +1236,12 @@ export class CombatScene extends Phaser.Scene {
       case 'doppler': return b({ dmg: K(), todos: this.vel >= 6 });
       case 'honda': { const vv = this.hondaV.get(v.inst.uid) ?? (st.extra ?? 4); return b({ dmg: Math.round(0.5 * (st.m ?? 2) * vv * vv) }); }
       case 'embestidaArd': return b({ dmg: crit(pmv(st, c).p + (st.extra ?? 2)) });
+      // v0.78 · Espectro
+      case 'e_golpe': return b({ dmg: st.extra ?? 6 });
+      case 'e_friccion': return b({ dmg: st.extra ?? 6, nota: 'Y canaliza Térmica.' });
+      case 'e_choque': return b({ dmg: st.extra ?? 4, golpes: 2 });
+      case 'e_liberacion': return this.eAbs + (st.extra ?? 0) > 0 ? b({ dmg: this.eAbs + (st.extra ?? 0), nota: 'Vacía tu Energía Absorbida.' }) : b({ dmg: 0, sinDano: 'No tienes Energía Absorbida: deja que te peguen primero.' });
+      case 'e_mecanica': return b({ dmg: (st.block ?? 4) + (st.extra ?? 4) * this.formas.filter((f) => f.tipo === 'cinetica' || f.tipo === 'potencial').length, todos: true });
       case 'absorcion': case 'reentrada': return b({ dmg: P() });
       case 'ignicion': {
         const dv = rocket(st.extra ?? 6, c).dv;
@@ -2203,6 +2234,91 @@ export class CombatScene extends Phaser.Scene {
             this.calc('Golpe de Gracia: la energía vuelve a ti (+2 J)');
           }
         }
+        break;
+      // ── v0.78 · Espectro de la Energía ──
+      case 'e_golpe':
+      case 'e_friccion':
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, st.extra ?? 6);
+        if (def.id === 'e_friccion') await this.canalizar('termica', def.name);
+        break;
+      case 'e_choque':
+        await this.heroLunge();
+        for (let k = 0; k < 2 && target && !target.dead; k++) await this.hitEnemy(target, st.extra ?? 4);
+        break;
+      case 'e_liberacion': {
+        const d = this.eAbs + (st.extra ?? 0);
+        this.calc(`Liberación: la energía absorbida (${this.eAbs}) vuelve${st.extra ? ` + ${st.extra}` : ''} → ${d}. No se creó ni se destruyó.`);
+        this.eAbs = 0;
+        await this.heroLunge();
+        if (target && d > 0) { this.beam(target, 0x9ad8f0); await this.hitEnemy(target, d); }
+        break;
+      }
+      case 'e_escudo':
+      case 'e_altura':
+        this.gainBlock(st.block ?? 5);
+        if (def.id === 'e_altura') await this.canalizar('potencial', def.name);
+        break;
+      case 'e_resorte':
+        this.gainBlock(st.block ?? 4);
+        await this.canalizar('elastica', def.name);
+        break;
+      case 'e_cinetica': await this.canalizar('cinetica', def.name); break;
+      case 'e_potencial': await this.canalizar('potencial', def.name); break;
+      case 'e_wdk':
+        if (this.formas.length) await this.liberar(0);
+        else this.calc('W = ΔK: no tienes formas de energía que liberar');
+        if (st.extra) this.drawCards(1);
+        break;
+      case 'e_potencia': {
+        const f = this.formas[0];
+        if (!f) { this.calc('Potencia: no tienes formas de energía'); break; }
+        await this.liberar(0);
+        await this.canalizar(f.tipo, def.name);
+        break;
+      }
+      case 'e_eficiencia': {
+        const n = (st.block ?? 4) + (st.extra ?? 2) * this.formas.length;
+        this.gainBlock(n);
+        this.calc(`Eficiencia: ${st.block} + ${st.extra}·${this.formas.length} formas = ${n} de Bloqueo`);
+        break;
+      }
+      case 'e_transformar':
+        if (this.eAbs) { this.gainBlock(this.eAbs); this.calc(`Transformación: ${this.eAbs} de Energía Absorbida → ${this.eAbs} de Bloqueo`); this.eAbs = 0; }
+        else this.calc('Transformación: no tienes Energía Absorbida');
+        break;
+      case 'e_conservacion':
+        this.conservacion++;
+        this.calc('Conservación de la Energía: al inicio de cada turno canalizas una forma al azar');
+        break;
+      case 'e_capacitor': {
+        const antes = this.maxFormas;
+        this.maxFormas = Math.min(FORMAS_TOPE, this.maxFormas + (st.extra ?? 1));
+        this.calc(`Capacitor: ranuras de energía ${antes} → ${this.maxFormas}`);
+        this.dibujarFormas();
+        break;
+      }
+      case 'e_carnot': {
+        const n = this.formas.length;
+        while (this.formas.length && this.alive().length) await this.liberar(0);
+        const j = Math.min(3, n);
+        this.energy += j;
+        this.calc(`Ciclo de Carnot: liberas ${n} forma(s) → +${j} J`);
+        break;
+      }
+      case 'e_mecanica': {
+        const n = this.formas.filter((f) => f.tipo === 'cinetica' || f.tipo === 'potencial').length;
+        const d = (st.block ?? 4) + (st.extra ?? 4) * n;
+        this.calc(`Energía Mecánica: E = K + U → ${st.block} + ${st.extra}·${n} = ${d} a todos`);
+        await this.heroLunge();
+        this.cameras.main.flash(200, 150, 220, 255);
+        for (const t of [...this.alive()]) await this.hitEnemy(t, d);
+        break;
+      }
+      case 'e_absorber':
+        this.gainBlock(st.block ?? 12);
+        this.absTotal = true;
+        this.calc('Absorción Total: hasta tu siguiente turno absorbes el 100 % de cada golpe');
         break;
       // ── Penitente del Empuje ──
       case 'empuje':
@@ -3619,6 +3735,11 @@ export class CombatScene extends Phaser.Scene {
       audio.sfx('block');
       return;
     }
+    // v0.78 · Espectro: la energía del golpe no se destruye, se absorbe
+    if (from && dmg > 0 && this.isEsp) {
+      const a = Math.min(EABS_MAX - this.eAbs, this.absTotal ? dmg : Math.ceil(dmg / 2));
+      if (a > 0) { this.eAbs += a; this.floatText(this.heroX - 40, 170, `+${a} ⚡`, '#9ad8f0'); }
+    }
     // Coriolis · Efecto Coriolis: el primer golpe de cada turno enemigo se desvía
     const cd = boonLevel('co_desvio');
     if (from && cd && !this.desvioUsed && dmg > 0) {
@@ -3768,6 +3889,10 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Máquina de Turing: jugaste ${this.played - this.jugadasIni} cartas → +1 J`);
     }
     this.jugadasIni = this.played;
+    if (this.isEsp) {
+      this.absTotal = false;
+      for (let k = 0; k < this.conservacion; k++) await this.canalizar(Phaser.Utils.Array.GetRandom(FORMAS_TIPOS), 'Conservación de la Energía');
+    }
     if (boonLevel('duo_simetria')) this.palanca = true; // Noether + Einstein: primer ataque ×2
     const iso = boonLevel('duo_isocrono'); // Huygens + Galileo
     if (iso && this.turn % (iso === 2 ? 2 : 3) === 0) {
@@ -4059,6 +4184,8 @@ export class CombatScene extends Phaser.Scene {
     this.carry = yt ? Math.min(this.energy, yt) : 0;
     if (this.has('volante') || this.pacto('volante')) this.carry = Math.max(this.carry, Math.min(this.energy, 3));
     // Susurros en la mano: el Abismo te habla
+    // v0.78 · las formas de energía del Espectro actúan al final de tu turno
+    if (this.isEsp && this.formas.length) await this.pasivaFormas();
     // v0.76 · las Alucinaciones que no revisas se copian (máx. 2 por turno)
     const alu = Math.min(2, this.hand.filter((c) => c.inst.id === 'alucinacion').length);
     if (alu) this.addStatus({ id: 'alucinacion', n: alu, to: 'discard' });
@@ -5046,6 +5173,19 @@ export class CombatScene extends Phaser.Scene {
       }
       this.refreshPlayer();
       await this.wait(300);
+    } else if (a.id === 'angelus') {
+      // v0.78 · Angelus (idea de AngelF): 5 de Calor que no se acumula
+      const sin = this.alive().filter((e) => e.st.calor < 5);
+      const t = sin.length ? Phaser.Utils.Array.GetRandom(sin) : undefined;
+      if (t) {
+        rayo(t);
+        t.st.calor = 5;
+        this.burst(t.baseX, 260, 0xff8a3a, 16);
+        this.floatText(t.baseX, 190, '¡Q = m·c·ΔT!', '#ffb040');
+        this.calc(`${a.name}: «¡Q = m·c·ΔT!» → ${t.st.def.name} queda con 5 de Calor`);
+        this.refreshEnemy(t);
+      } else this.calc(`${a.name}: todos ya están ardiendo. «¡Así se hace!»`);
+      await this.wait(300);
     } else if (a.id === 'buzo') {
       const t = this.alive().reduce((x, y) => (y.st.hp > x.st.hp ? y : x));
       rayo(t);
@@ -5379,6 +5519,85 @@ export class CombatScene extends Phaser.Scene {
   }
 
   /** v0.69 · el jefe muere… y se levanta con una fase nueva */
+  // ───────────────────── v0.78 · ESPECTRO: formas de energía ─────────────────────
+  /** Canaliza una forma; si no hay ranura, primero se libera la más antigua */
+  private async canalizar(tipo: FormaTipo, fuente: string) {
+    if (this.formas.length >= this.maxFormas) await this.liberar(0);
+    this.formas.push({ tipo, x: 1 });
+    this.calc(`${fuente}: canalizas energía ${FORMAS[tipo].nombre.toUpperCase()}`);
+    this.dibujarFormas();
+    const o = this.formasC?.list[this.formas.length - 1] as Phaser.GameObjects.Container | undefined;
+    if (o) { o.setScale(0.2); this.tweens.add({ targets: o, scale: 1, duration: 260, ease: 'Back.out' }); }
+    audio.sfx('poder');
+    this.refreshPlayer();
+  }
+
+  /** Libera la forma i (por omisión la más antigua) con su efecto fuerte */
+  private async liberar(i = 0) {
+    const f = this.formas[i];
+    if (!f) return;
+    this.formas.splice(i, 1);
+    this.dibujarFormas();
+    const D = FORMAS[f.tipo];
+    this.burst(this.heroX, 180, D.color, 22);
+    if (f.tipo === 'potencial') { this.gainBlock(8); this.calc('Liberas POTENCIAL: m·g·h → +8 de Bloqueo'); }
+    else if (f.tipo === 'termica') {
+      for (const e of this.alive()) { e.st.calor += 5; this.burst(e.baseX, 260, 0xc87533, 10); this.refreshEnemy(e); }
+      this.calc('Liberas TÉRMICA: +5 de Calor a todos');
+    } else {
+      const d = f.tipo === 'cinetica' ? 8 : 2 * f.x * f.x;
+      const t = this.alive().length ? Phaser.Utils.Array.GetRandom(this.alive()) : undefined;
+      this.calc(f.tipo === 'cinetica' ? `Liberas CINÉTICA: ½·m·v² → ${d}` : `Liberas ELÁSTICA: ½·k·x² con x = ${f.x} → 2·${f.x}² = ${d}`);
+      if (t) { this.beam(t, D.color); await this.hitEnemy(t, d, false, 'res'); }
+    }
+    this.refreshPlayer();
+  }
+
+  /** Al final de tu turno cada forma hace su efecto chico */
+  private async pasivaFormas() {
+    const res = this.formas.map((f) => FORMAS[f.tipo].pasivo(f.x)).join(' · ');
+    for (const f of [...this.formas]) {
+      if (!this.alive().length) break;
+      if (f.tipo === 'potencial') this.gainBlock(3);
+      else if (f.tipo === 'termica') for (const e of this.alive()) { e.st.calor += 2; this.refreshEnemy(e); }
+      else if (f.tipo === 'elastica') f.x = Math.min(5, f.x + 1);
+      else {
+        const t = Phaser.Utils.Array.GetRandom(this.alive());
+        this.beam(t, FORMAS.cinetica.color);
+        await this.hitEnemy(t, 3, false, 'res');
+      }
+    }
+    if (res) this.calc(`Formas de energía: ${res}`);
+    this.dibujarFormas();
+    this.refreshPlayer();
+    await this.wait(300);
+  }
+
+  /** Dibuja las formas canalizadas en arco sobre el héroe (con tooltip) */
+  private dibujarFormas() {
+    if (!this.isEsp) return;
+    if (!this.formasC) this.formasC = this.add.container(0, 0).setDepth(320);
+    this.formasC.removeAll(true);
+    const n = this.maxFormas;
+    for (let i = 0; i < n; i++) {
+      const x = this.heroX - ((n - 1) * 38) / 2 + i * 38, y = 176 - Math.round(Math.sin(((i + 0.5) / n) * Math.PI) * 12);
+      const c = this.add.container(x, y);
+      const f = this.formas[i];
+      if (!f) {
+        c.add(this.add.circle(0, 0, 14, 0x000000, 0.25).setStrokeStyle(2, 0x5a6a7a, 0.6));
+      } else {
+        const D = FORMAS[f.tipo];
+        const glow = this.add.circle(0, 0, 18, D.color, 0.25).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: glow, scale: 1.25, alpha: 0.1, duration: 700 + i * 90, yoyo: true, repeat: -1 });
+        const orb = this.add.circle(0, 0, 14, D.color, 0.95).setStrokeStyle(2, 0x0d0b10);
+        c.add([glow, orb, txt(this, 0, -1, f.tipo === 'elastica' ? `x${f.x}` : D.letra, 15, '#0d0b10').setOrigin(0.5)]);
+        orb.setInteractive();
+        this.tip.attach(orb, `${D.nombre} (${D.formula})`, `Al final de tu turno: ${D.pasivo(f.x)}.\nAl liberarla: ${D.libera(f.x)}.\nSi canalizas con las ranuras llenas, se libera la más antigua.`);
+      }
+      this.formasC.add(c);
+    }
+  }
+
   private async revivir(ev: EnemyView) {
     const st = ev.st;
     const rv = st.def.revive!;
