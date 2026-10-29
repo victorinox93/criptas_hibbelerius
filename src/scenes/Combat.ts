@@ -5520,6 +5520,13 @@ export class CombatScene extends Phaser.Scene {
 
   /** v0.69 · el jefe muere… y se levanta con una fase nueva */
   // ───────────────────── v0.78 · ESPECTRO: formas de energía ─────────────────────
+  /** Bono de las formas: la masa extra alimenta la Potencial; la aceleración extra (menos la fricción), la Cinética */
+  private bonoForma(tipo: FormaTipo) {
+    if (tipo === 'potencial') return Math.max(0, Math.round(this.masa));
+    if (tipo === 'cinetica') return Math.max(0, Math.round(this.acel - this.friccion));
+    return 0;
+  }
+
   /** Canaliza una forma; si no hay ranura, primero se libera la más antigua */
   private async canalizar(tipo: FormaTipo, fuente: string) {
     if (this.formas.length >= this.maxFormas) await this.liberar(0);
@@ -5540,14 +5547,15 @@ export class CombatScene extends Phaser.Scene {
     this.dibujarFormas();
     const D = FORMAS[f.tipo];
     this.burst(this.heroX, 180, D.color, 22);
-    if (f.tipo === 'potencial') { this.gainBlock(8); this.calc('Liberas POTENCIAL: m·g·h → +8 de Bloqueo'); }
+    const bo = this.bonoForma(f.tipo);
+    if (f.tipo === 'potencial') { this.gainBlock(8 + 2 * bo); this.calc(`Liberas POTENCIAL: m·g·h → +${8 + 2 * bo} de Bloqueo${bo ? ` (8 + 2·${bo} kg de masa extra)` : ''}`); }
     else if (f.tipo === 'termica') {
       for (const e of this.alive()) { e.st.calor += 5; this.burst(e.baseX, 260, 0xc87533, 10); this.refreshEnemy(e); }
       this.calc('Liberas TÉRMICA: +5 de Calor a todos');
     } else {
-      const d = f.tipo === 'cinetica' ? 8 : 2 * f.x * f.x;
+      const d = f.tipo === 'cinetica' ? 8 + 2 * bo : 2 * f.x * f.x;
       const t = this.alive().length ? Phaser.Utils.Array.GetRandom(this.alive()) : undefined;
-      this.calc(f.tipo === 'cinetica' ? `Liberas CINÉTICA: ½·m·v² → ${d}` : `Liberas ELÁSTICA: ½·k·x² con x = ${f.x} → 2·${f.x}² = ${d}`);
+      this.calc(f.tipo === 'cinetica' ? `Liberas CINÉTICA: ½·m·v² → ${d}${bo ? ` (8 + 2·${bo} m/s² de aceleración extra)` : ''}` : `Liberas ELÁSTICA: ½·k·x² con x = ${f.x} → 2·${f.x}² = ${d}`);
       if (t) { this.beam(t, D.color); await this.hitEnemy(t, d, false, 'res'); }
     }
     this.refreshPlayer();
@@ -5555,16 +5563,16 @@ export class CombatScene extends Phaser.Scene {
 
   /** Al final de tu turno cada forma hace su efecto chico */
   private async pasivaFormas() {
-    const res = this.formas.map((f) => FORMAS[f.tipo].pasivo(f.x)).join(' · ');
+    const res = this.formas.map((f) => FORMAS[f.tipo].pasivo(f.x, this.bonoForma(f.tipo))).join(' · ');
     for (const f of [...this.formas]) {
       if (!this.alive().length) break;
-      if (f.tipo === 'potencial') this.gainBlock(3);
+      if (f.tipo === 'potencial') this.gainBlock(3 + this.bonoForma('potencial'));
       else if (f.tipo === 'termica') for (const e of this.alive()) { e.st.calor += 2; this.refreshEnemy(e); }
       else if (f.tipo === 'elastica') f.x = Math.min(5, f.x + 1);
       else {
         const t = Phaser.Utils.Array.GetRandom(this.alive());
         this.beam(t, FORMAS.cinetica.color);
-        await this.hitEnemy(t, 3, false, 'res');
+        await this.hitEnemy(t, 3 + this.bonoForma('cinetica'), false, 'res');
       }
     }
     if (res) this.calc(`Formas de energía: ${res}`);
@@ -5592,7 +5600,7 @@ export class CombatScene extends Phaser.Scene {
         const orb = this.add.circle(0, 0, 14, D.color, 0.95).setStrokeStyle(2, 0x0d0b10);
         c.add([glow, orb, txt(this, 0, -1, f.tipo === 'elastica' ? `x${f.x}` : D.letra, 15, '#0d0b10').setOrigin(0.5)]);
         orb.setInteractive();
-        this.tip.attach(orb, `${D.nombre} (${D.formula})`, `Al final de tu turno: ${D.pasivo(f.x)}.\nAl liberarla: ${D.libera(f.x)}.\nSi canalizas con las ranuras llenas, se libera la más antigua.`);
+        this.tip.attach(orb, `${D.nombre} (${D.formula})`, `Al final de tu turno: ${D.pasivo(f.x, this.bonoForma(f.tipo))}.\nAl liberarla: ${D.libera(f.x, this.bonoForma(f.tipo))}.\nSi canalizas con las ranuras llenas, se libera la más antigua.`);
       }
       this.formasC.add(c);
     }
