@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.77.0 · Maxwell en la fogata
+
+- **El Demonio de Maxwell ahora sí aparece en las fogatas** después de conocerlo. Antes sólo salía si traías maldiciones, y como en el primer encuentro te quita una gratis, casi nunca se veía. Sin maldiciones te ofrece «ordenar tus ideas»: −10 de Locura en el Abismo, o +8 de vida en el modo normal, por 15 Ergios. No gasta la fogata.
+- **Jefes del Abismo +10 % de vida y de daño** (`AJUSTE_ABISMO.jefe = 1.1`). Encima del −20 % de pruebas quedan en 0.88. Los élites, los enemigos normales y el modo normal no cambian.
+
 ## v0.76.0 · Rescatados y el Núcleo
 
 12 criaturas nuevas en el Abismo, con dibujo propio (tools/arte/rescatados.py):

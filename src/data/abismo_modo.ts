@@ -292,7 +292,7 @@ export function elegirJefe(tramo: number, vistos: string[] = []): string {
  */
 export const VIDA_ABISMO = { normal: 1.5, elite: 1.45, jefe: 1.3 };
 /** v0.75 · ajuste de pruebas del profe: vida y daño de TODOS los enemigos del Abismo (1 = sin ajuste) */
-export const AJUSTE_ABISMO = { vida: 0.8, dano: 0.8 };
+export const AJUSTE_ABISMO = { vida: 0.8, dano: 0.8, jefe: 1.1 }; // v0.77 · los jefes ×1.1 encima (quedan en 0.88)
 /** Vida enemiga por tramo: tramo 2 ×1.3; en el infinito, ×1.25 más por cada profundidad extra */
 export function escalaTramo(t = 1) {
   return t <= TRAMOS ? 1 + 0.3 * (t - 1) : 1.3 * Math.pow(1.25, t - TRAMOS);
