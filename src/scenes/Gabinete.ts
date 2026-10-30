@@ -20,11 +20,14 @@ const CORDURA_PERFECTO = 8;
 const r1 = (x: number) => Math.round(x * 10) / 10;
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
-type Juego = 'rampa' | 'centroide' | 'inercia';
+type Juego = 'rampa' | 'centroide' | 'inercia' | 'carrera' | 'balanza';
 const JUEGOS: { id: Juego; nombre: string; desc: string; icono: string }[] = [
   { id: 'rampa', nombre: "La Rampa de R'lyeh", desc: 'Una criatura sobre una pendiente: ¿qué ángulo tiene?, ¿con qué ejes conviene trabajar? y ¿cuánto peso la jala hacia abajo?', icono: 'i_angle' },
   { id: 'centroide', nombre: 'El Centroide del Ídolo', desc: 'Figuras compuestas: haz clic justo donde está su centroide (x̄ = ΣxA/ΣA).', icono: 'i_rune' },
   { id: 'inercia', nombre: '¿Cuál gira más fácil?', desc: 'Aros, discos, esferas y varillas de la misma masa: ¿cuál tiene más momento de inercia?', icono: 'i_pend' },
+  // v0.85
+  { id: 'carrera', nombre: "La Carrera de R'lyeh", desc: 'Aros, discos y esferas ruedan cuesta abajo. Apuesta quién llega primero… y mira la carrera: a = g·senθ / (1 + I/mr²).', icono: 'i_momentum' },
+  { id: 'balanza', nombre: 'La Balanza del Ídolo', desc: 'Una balanza con un ídolo de un lado. ¿Dónde pones el contrapeso para que quede en equilibrio? ΣM = 0.', icono: 'i_anvil' },
 ];
 
 export class GabineteScene extends Phaser.Scene {
@@ -96,6 +99,8 @@ export class GabineteScene extends Phaser.Scene {
     this.ronda++;
     if (j === 'rampa') this.rampa();
     else if (j === 'centroide') this.centroide();
+    else if (j === 'carrera') this.carrera();
+    else if (j === 'balanza') this.balanza();
     else this.inercia();
   }
 
@@ -316,6 +321,151 @@ export class GabineteScene extends Phaser.Scene {
       const expl = `${a.nombre.split(' (')[0]}: ${a.formula}\n${b.nombre.split(' (')[0]}: ${b.formula}\n${masDificil ? 'Más masa lejos del eje = más I = cuesta más girarlo.' : 'Menos I: menos energía se va en girar y más en avanzar.'}`;
       this.resolver('inercia', ok, 'Momento de inercia', expl, 374);
     }, { size: 16 })));
+  }
+
+
+  // ───────────── 4. La Carrera de R'lyeh (v0.85) ─────────────
+  private carrera() {
+    type Rodante = { id: string; nombre: string; k: number; formula: string; color: number };
+    const C: Rodante[] = [
+      { id: 'aro', nombre: 'Aro', k: 1, formula: 'I = m·r²', color: 0xd0ae4a },
+      { id: 'disco', nombre: 'Disco', k: 0.5, formula: 'I = ½·m·r²', color: 0x4a8a74 },
+      { id: 'esfera', nombre: 'Esfera maciza', k: 0.4, formula: 'I = ⅖·m·r²', color: 0x9a6ad0 },
+      { id: 'hueca', nombre: 'Esfera hueca', k: 2 / 3, formula: 'I = ⅔·m·r²', color: 0x7fe8d8 },
+    ];
+    const fase = this.ronda; // 1: ¿quién gana? · 2: ¿quién llega al último? · 3: misma forma, distinta masa
+    let corredores: (Rodante & { etiqueta: string })[];
+    let pregunta: string, ops: string[], correcta: number;
+    if (fase < 3) {
+      corredores = Phaser.Utils.Array.Shuffle([...C]).slice(0, 3).map((c) => ({ ...c, etiqueta: c.nombre }));
+      const orden = [...corredores].sort((a, b) => a.k - b.k);
+      const buscado = fase === 1 ? orden[0] : orden[2];
+      pregunta = fase === 1 ? 'Misma masa y mismo radio. Ruedan sin deslizar desde arriba. ¿Quién llega PRIMERO?' : 'Ahora, ¿quién llega AL ÚLTIMO?';
+      ops = corredores.map((c) => c.nombre);
+      correcta = corredores.indexOf(buscado);
+    } else {
+      const tipo = Phaser.Utils.Array.GetRandom(C);
+      const m1 = Phaser.Math.Between(1, 3), m2 = Phaser.Math.Between(15, 40);
+      corredores = [{ ...tipo, etiqueta: `${tipo.nombre} de ${m1} kg` }, { ...tipo, etiqueta: `${tipo.nombre} de ${m2} kg (y más grande)` }];
+      pregunta = `Dos ${tipo.nombre.toLowerCase()}s de la misma forma: uno de ${m1} kg y otro de ${m2} kg, más grande. ¿Quién gana?`;
+      ops = [`El de ${m2} kg`, `El de ${m1} kg`, 'Llegan al mismo tiempo'];
+      correcta = 2;
+    }
+    this.encabezado("La Carrera de R'lyeh", pregunta);
+    // rampas (una por carril) y meta
+    const x0 = 70, x1 = 520, y0 = 160, caida = 130, sep = 74;
+    const g = this.add.graphics();
+    corredores.forEach((_, i) => {
+      const yy = y0 + i * sep;
+      g.fillStyle(0x1c3632, 1).fillTriangle(x0, yy + 30, x1, yy + caida + 30, x0, yy + caida + 30);
+      g.lineStyle(3, 0x4a8a74, 1).lineBetween(x0, yy + 30, x1, yy + caida + 30);
+    });
+    g.lineStyle(3, 0xff6a7a, 1).lineBetween(x1 - 4, y0 + 10, x1 - 4, y0 + (corredores.length - 1) * sep + caida + 40);
+    this.L(g);
+    this.L(txt(this, x1 - 8, y0 - 8, 'META', 15, '#ff9aa8').setOrigin(1, 1));
+    const R = 18;
+    const th = Math.atan2(caida, x1 - x0);
+    const piezas = corredores.map((c, i) => {
+      const yy = y0 + i * sep;
+      const nx = Math.sin(th), ny = -Math.cos(th);
+      const cont = this.add.container(x0 + 10 + nx * R, yy + 30 + ny * R + 10 * Math.tan(th));
+      const gg = this.add.graphics();
+      if (c.id === 'aro') gg.lineStyle(6, c.color, 1).strokeCircle(0, 0, R);
+      else if (c.id === 'hueca') { gg.lineStyle(5, c.color, 1).strokeCircle(0, 0, R); gg.lineStyle(2, c.color, 0.6).strokeEllipse(0, 0, 2 * R, R * 0.7); }
+      else { gg.fillStyle(c.color, 1).fillCircle(0, 0, R); if (c.id === 'esfera') gg.fillStyle(0xd8c0ff, 1).fillCircle(-6, -6, 5); }
+      gg.lineStyle(2, 0x05090a, 1).lineBetween(0, 0, R - 2, 0); // una marca para ver que gira
+      cont.add(gg);
+      this.L(cont);
+      this.L(txt(this, x0 - 4, yy + 40, c.etiqueta, 13, '#e8dcff').setOrigin(0, 0).setDepth(2));
+      return cont;
+    });
+    this.opciones(760, 180, ops, correcta, (ok) => {
+      // la carrera: tiempo t = √(2L/a) con a = g·senθ/(1 + k)
+      const ts = corredores.map((c) => Math.sqrt(1 + c.k));
+      const tMin = Math.min(...ts);
+      const dist = (x1 - x0 - 30) / Math.cos(th);
+      piezas.forEach((p, i) => {
+        const dur = 2400 * (ts[i] / tMin);
+        this.tweens.add({ targets: p, x: p.x + dist * Math.cos(th), y: p.y + dist * Math.sin(th), duration: dur, ease: 'Quad.in' });
+        this.tweens.add({ targets: p, rotation: dist / R, duration: dur, ease: 'Quad.in' });
+      });
+      audio.sfx('card');
+      const expl = fase < 3
+        ? `${corredores.map((c) => `${c.nombre}: ${c.formula}`).join('\n')}\nMenos I (por cada kg) → menos energía se va en girar → más rápido: a = g·senθ/(1 + I/mr²).`
+        : 'La masa y el radio se cancelan: a = g·senθ/(1 + I/mr²) sólo depende de la FORMA (I/mr²). Por eso llegan juntos.';
+      this.time.delayedCall(2400 * (Math.max(...ts) / tMin) + 200, () => this.resolver('carrera', ok, 'Momento de inercia', expl, 330));
+    });
+  }
+
+  // ───────────── 5. La Balanza del Ídolo (v0.85) ─────────────
+  private balanza() {
+    const PX = 46; // píxeles por metro
+    const cx = 330, cy = 320;
+    // contrapeso y su posición correcta (números enteros)
+    let m2 = 0, d2 = 0, izq: { m: number; d: number }[] = [];
+    for (let i = 0; i < 200; i++) {
+      m2 = Phaser.Math.Between(2, 8); d2 = Phaser.Math.Between(1, 6);
+      const M = m2 * d2;
+      if (this.ronda < 3) {
+        const d1 = Phaser.Math.Between(1, 5);
+        if (M % d1 === 0 && M / d1 <= 30 && M / d1 !== m2) { izq = [{ m: M / d1, d: d1 }]; break; }
+      } else {
+        const d1 = Phaser.Math.Between(1, 3), d3 = Phaser.Math.Between(4, 6);
+        const m1 = Phaser.Math.Between(1, 6);
+        const resto = M - m1 * d1;
+        if (resto > 0 && resto % d3 === 0 && resto / d3 <= 20) { izq = [{ m: m1, d: d1 }, { m: resto / d3, d: d3 }]; break; }
+      }
+    }
+    const Mizq = izq.reduce((a, o) => a + o.m * o.d, 0);
+    this.encabezado('La Balanza del Ídolo', `${izq.map((o, i) => `${i ? 'otro' : 'Un'} ídolo de ${o.m} kg a ${o.d} m`).join(' y ')} del lado izquierdo. Tienes un contrapeso de ${m2} kg: haz clic en el punto de la derecha donde la balanza queda en equilibrio.`);
+    // soporte (fijo) y viga (gira)
+    const base = this.add.graphics();
+    base.fillStyle(0x2c5a4e, 1).fillTriangle(cx, cy, cx - 26, cy + 60, cx + 26, cy + 60);
+    base.fillStyle(0x1c3632, 1).fillRect(cx - 120, cy + 60, 240, 10);
+    this.L(base);
+    const viga = this.add.container(cx, cy);
+    const vg = this.add.graphics();
+    vg.fillStyle(0x7a6424, 1).fillRect(-6.5 * PX, -6, 13 * PX, 12);
+    for (let m = -6; m <= 6; m++) { vg.fillStyle(m === 0 ? 0xff6a7a : 0xd0ae4a, 1).fillRect(m * PX - 1, -10, 2, 20); }
+    viga.add(vg);
+    for (let m = 1; m <= 6; m++) { viga.add(txt(this, -m * PX, 14, `${m}`, 13, CSS.dim).setOrigin(0.5, 0)); viga.add(txt(this, m * PX, 14, `${m}`, 13, CSS.dim).setOrigin(0.5, 0)); }
+    izq.forEach((o, i) => {
+      const img = this.add.image(-o.d * PX, -8, i === 0 ? 'idoloWilcox' : 'tomoProhibido').setOrigin(0.5, 1).setScale(i === 0 ? 1.1 : 2);
+      viga.add([img, txt(this, -o.d * PX, -8 - img.displayHeight - 4, `${o.m} kg`, 15, '#ffd060').setOrigin(0.5, 1)]);
+    });
+    this.L(viga);
+    this.L(txt(this, cx, cy + 76, 'metros desde el eje', 13, CSS.dim).setOrigin(0.5, 0));
+    // el contrapeso se pone con un clic sobre la viga (lado derecho)
+    const peso = this.add.container(0, 0).setVisible(false);
+    const pg = this.add.graphics();
+    pg.fillStyle(0x5e6e6c, 1).fillRect(-14, -30, 28, 30);
+    pg.fillStyle(0xa4b4ac, 1).fillRect(-10, -36, 20, 6);
+    peso.add([pg, txt(this, 0, -44, `${m2} kg`, 15, '#c8e0d8').setOrigin(0.5, 1)]);
+    viga.add(peso);
+    let jugado = false;
+    const marcas: Phaser.GameObjects.Arc[] = [];
+    for (let d = 1; d <= 6; d++) {
+      const z = this.add.zone(cx + d * PX, cy, PX - 6, 70).setInteractive({ useHandCursor: true });
+      const marca = this.add.circle(cx + d * PX, cy - 22, 7, 0x7fe8d8, 0.35);
+      this.L(z); this.L(marca);
+      marcas.push(marca);
+      z.on('pointerover', () => !jugado && marca.setFillStyle(0x7fe8d8, 0.9));
+      z.on('pointerout', () => marca.setFillStyle(0x7fe8d8, 0.35));
+      z.on('pointerdown', () => {
+        if (jugado) return;
+        jugado = true;
+        marcas.forEach((mk) => mk.setVisible(false));
+        peso.setPosition(d * PX, -6).setVisible(true);
+        const Mder = m2 * d;
+        const dif = Mder - Mizq;
+        const ang = Phaser.Math.Clamp(dif * 0.9, -14, 14);
+        audio.sfx(dif === 0 ? 'victory' : 'card');
+        this.tweens.add({ targets: viga, angle: ang, duration: 900, ease: 'Back.out' });
+        const ok = dif === 0;
+        const expl = `ΣM = 0 respecto al eje:\n${izq.map((o) => `${o.m}·${o.d}`).join(' + ')} = ${Mizq} N·m (×g) a la izquierda\n${m2}·${d} = ${Mder} a la derecha.${ok ? '' : `\nEl punto correcto era ${d2} m: ${m2}·${d2} = ${Mizq}.`}`;
+        this.time.delayedCall(1000, () => this.resolver('balanza', ok, 'Centro de masa', expl, 360));
+      });
+    }
   }
 
   // ───────────── resultado ─────────────

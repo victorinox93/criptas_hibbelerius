@@ -2,6 +2,21 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.85.0 · Más preguntas y la Carrera de R'lyeh
+
+- **24 preguntas nuevas de opción múltiple de cuerpo rígido, de 6 a 30.** Cubren centroide, centro de masa, momento de inercia, ejes paralelos y radio de giro, con los errores comunes como distractores.
+- **6 problemas abiertos nuevos** donde escribes el número; los números cambian cada vez:
+  - placa con un agujero (área negativa);
+  - centro de masa de tres cuerpos;
+  - momento de inercia de una esfera maciza o un aro;
+  - ejes paralelos en una varilla;
+  - radio de giro de un disco o una varilla;
+  - ángulo al que se vuelca un monolito.
+- En total, el Abismo pasa de 12 a 45 preguntas distintas.
+- **2 minijuegos nuevos en el Gabinete de Montemayor:**
+  - **La Carrera de R'lyeh:** apuestas quién llega primero (o al último) entre aros, discos y esferas que ruedan por una rampa, y la carrera se anima con a = g·senθ/(1 + I/mr²). En la 3.ª ronda, dos cuerpos de la misma forma pero distinta masa llegan juntos.
+  - **La Balanza del Ídolo:** eliges dónde poner el contrapeso para que ΣM = 0, y la balanza se inclina según tu respuesta. En la 3.ª ronda hay dos ídolos.
+
 ## v0.84.0 · Altares filosóficos
 
 - **6 altares filosóficos en los «?» del Abismo**, cada uno a lo más una vez por expedición. Traen una historia corta del mythos, una pregunta y tres posturas. Ninguna es la «correcta»: cada una tiene su recompensa y su costo, y al final hay una reflexión.
