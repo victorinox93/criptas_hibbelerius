@@ -600,6 +600,91 @@ const ABISMO_GEN: (() => Problem)[] = [
       solution: ['k = √(I / m)', `k = √(${I} / ${m})`, `k = ${f2(Math.sqrt(I / m))} m`],
     };
   },
+  // ── v0.85 · más problemas abiertos de cuerpo rígido ──
+  // placa con un agujero circular (área negativa)
+  () => {
+    const a = ri(6, 10), b = ri(3, 6), r = f2(ri(5, 10) / 10), c = ri(Math.ceil(a / 2) + 1, a - 2);
+    const A1 = a * b, A2 = Math.PI * r * r;
+    const xb = (A1 * (a / 2) - A2 * c) / (A1 - A2);
+    return {
+      concept: 'Centroide', title: 'Runa de la Placa Perforada',
+      prompt: `Una placa rectangular de ${a} m × ${b} m va de x = 0 a x = ${a} m. Le hacen un agujero circular de radio ${r} m con centro en x = ${c} m.\n¿Cuánto vale x̄ del centroide de la placa con el agujero?`,
+      unit: 'm', answer: xb, tol: 0.02,
+      solution: ['El agujero cuenta como área NEGATIVA.', `A₁ = ${A1} m² (x₁ = ${f2(a / 2)} m);  A₂ = π·${r}² = ${f2(A2)} m² (x₂ = ${c} m)`, `x̄ = (${A1}·${f2(a / 2)} − ${f2(A2)}·${c}) / (${A1} − ${f2(A2)}) = ${f2(xb)} m`],
+    };
+  },
+  // centro de masa de tres cuerpos en una línea
+  () => {
+    const m1 = ri(1, 6), m2 = ri(1, 6), m3 = ri(1, 6), x2 = ri(1, 4), x3 = x2 + ri(1, 4);
+    const xc = (m2 * x2 + m3 * x3) / (m1 + m2 + m3);
+    return {
+      concept: 'Centro de masa', title: 'Runa de los Tres Ídolos',
+      prompt: `Tres ídolos están sobre una repisa: ${m1} kg en x = 0, ${m2} kg en x = ${x2} m y ${m3} kg en x = ${x3} m.\n¿En qué x está su centro de masa?`,
+      unit: 'm', answer: xc, tol: 0.02,
+      solution: ['x_cm = Σmᵢxᵢ / Σmᵢ', `x_cm = (${m1}·0 + ${m2}·${x2} + ${m3}·${x3}) / (${m1} + ${m2} + ${m3})`, `x_cm = ${f2(xc)} m`],
+    };
+  },
+  // esfera maciza o aro
+  () => {
+    const m = ri(2, 15), r = f2(ri(2, 9) / 10);
+    if (Math.random() < 0.5) {
+      const I = 0.4 * m * r * r;
+      return {
+        concept: 'Momento de inercia', title: 'Runa de la Esfera de Yog-Sothoth',
+        prompt: `Una esfera maciza de ${m} kg y radio ${r} m gira alrededor de un eje que pasa por su centro.\n¿Cuál es su momento de inercia?`,
+        unit: 'kg·m²', answer: I, tol: 0.02,
+        solution: ['Esfera maciza: I = ⅖·m·r²', `I = 0.4·(${m})(${r})²`, `I = ${f2(I)} kg·m²`],
+      };
+    }
+    const I = m * r * r;
+    return {
+      concept: 'Momento de inercia', title: 'Runa del Anillo de Saturno',
+      prompt: `Un aro delgado de ${m} kg y radio ${r} m gira alrededor de su centro.\n¿Cuál es su momento de inercia?`,
+      unit: 'kg·m²', answer: I, tol: 0.02,
+      solution: ['Aro delgado: I = m·r² (toda la masa está a la distancia r)', `I = (${m})(${r})²`, `I = ${f2(I)} kg·m²`],
+    };
+  },
+  // ejes paralelos con una varilla
+  () => {
+    const m = ri(2, 10), L = ri(2, 6), d = f2(ri(2, Math.max(3, L * 5)) / 10);
+    const I0 = (m * L * L) / 12, I = I0 + m * d * d;
+    return {
+      concept: 'Ejes paralelos', title: 'Runa del Báculo Torcido',
+      prompt: `Un báculo (varilla delgada) de ${m} kg y ${L} m gira alrededor de un eje perpendicular que está a ${d} m de su centro.\n¿Cuál es su momento de inercia respecto a ese eje?`,
+      unit: 'kg·m²', answer: I, tol: 0.02,
+      solution: ['Varilla por su centro: I₀ = (1/12)·m·L²', `I₀ = ${m}·${L}²/12 = ${f2(I0)} kg·m²`, `I = I₀ + m·d² = ${f2(I0)} + ${m}·${d}² = ${f2(I)} kg·m²`],
+    };
+  },
+  // radio de giro de un disco o de una varilla
+  () => {
+    if (Math.random() < 0.5) {
+      const r = f2(ri(2, 12) / 10);
+      return {
+        concept: 'Radio de giro', title: 'Runa del Disco Lunar',
+        prompt: `Un disco macizo tiene radio ${r} m. ¿Cuál es su radio de giro k respecto a su centro?\n(No necesitas la masa.)`,
+        unit: 'm', answer: r / Math.SQRT2, tol: 0.02,
+        solution: ['Disco: I = ½·m·r²', 'k = √(I/m) = √(½·r²) = r/√2', `k = ${r}/√2 = ${f2(r / Math.SQRT2)} m`],
+      };
+    }
+    const L = ri(1, 5);
+    return {
+      concept: 'Radio de giro', title: 'Runa de la Lanza Sola',
+      prompt: `Una varilla delgada de ${L} m gira alrededor de uno de sus extremos. ¿Cuál es su radio de giro k?\n(No necesitas la masa.)`,
+      unit: 'm', answer: L / Math.sqrt(3), tol: 0.02,
+      solution: ['Varilla por un extremo: I = ⅓·m·L²', 'k = √(I/m) = L/√3', `k = ${L}/√3 = ${f2(L / Math.sqrt(3))} m`],
+    };
+  },
+  // ángulo de volcamiento de un bloque
+  () => {
+    const b = ri(1, 4), h = b + ri(1, 5);
+    const th = (Math.atan(b / h) * 180) / Math.PI;
+    return {
+      concept: 'Centro de masa', title: 'Runa del Monolito Inclinado',
+      prompt: `Un monolito uniforme de ${b} m de ancho y ${h} m de alto se va inclinando sobre una de sus esquinas.\n¿A partir de qué ángulo (en grados, desde la vertical) se vuelca?`,
+      unit: '°', answer: th, tol: 0.02,
+      solution: ['Se vuelca cuando la vertical por su centro de masa pasa por la esquina de apoyo.', `tan θ = (b/2)/(h/2) = ${b}/${h}`, `θ = arctan(${f2(b / h)}) = ${f2(th)}°`],
+    };
+  },
 ];
 GENERATORS.push(...ABISMO_GEN);
 
