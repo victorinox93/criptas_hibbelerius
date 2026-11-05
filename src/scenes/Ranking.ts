@@ -21,7 +21,9 @@ function tiempoJugado(min: number) {
   const h = Math.floor(min / 60), m = Math.round(min % 60);
   return h ? `${h} h ${m} min` : `${m} min`;
 }
-const COLS = [56, 100, 150, 420, 560, 680, 800];
+const COLS = [56, 100, 150, 372, 590, 722, 824, 480]; // el último: Aciertos (v0.86)
+/** v0.86 · Proporción de preguntas correctas; sin datos (servidor viejo o 0 preguntas) no hay % */
+const pctAciertos = (p: RankRow) => (p.runasTotal ? `${Math.round(((p.runasOk ?? 0) / p.runasTotal) * 100)} %` : '—');
 
 export class RankingScene extends Phaser.Scene {
   private list: RankRow[] = [];
@@ -53,7 +55,7 @@ export class RankingScene extends Phaser.Scene {
     }, { size: 19, color: 0x6a3a9a });
     const g = this.add.graphics();
     frame(g, 30, 112, W - 60, 366, 0x0e0b12, UI.border, 0.92);
-    const HX = [56, 150, 420, 560, 680, 800];
+    const HX = [56, 150, 372, 480, 590, 722, 824];
     T.ranking.cols.forEach((c, i) => txt(this, HX[i], 124, c, 19, CSS.dim));
     g.fillStyle(UI.border, 1).fillRect(44, 148, W - 88, 2);
     this.rows = this.add.container(0, 0);
@@ -126,7 +128,7 @@ export class RankingScene extends Phaser.Scene {
       R(this.add.image(COLS[1] + 20, y + 21, key).setScale(1.12));
       zona.on('pointerup', () => this.ficha(p, av, key));
       const name = txt(this, COLS[2], y + 2, p.alias + (p.yo ? ` (${T.ranking.tu})` : ''), 26, p.yo ? CSS.gold : CSS.bone);
-      if (name.width > 250) name.setScale(250 / name.width, 1);
+      if (name.width > 170) name.setScale(170 / name.width, 1); // deja lugar a las insignias y a la columna de Aciertos
       R(name);
       // insignias: ojo rojo (venció a AM) y ojo morado (venció a un Primigenio del Abismo)
       let ox = COLS[2] + name.displayWidth + 18;
@@ -145,6 +147,8 @@ export class RankingScene extends Phaser.Scene {
       R(txt(this, COLS[2], y + 32, p.grupo, 14, CSS.dim));
       R(txt(this, COLS[3], y + 4, `${p.partidas} partida${p.partidas === 1 ? '' : 's'}`, 19, CSS.bone));
       R(txt(this, COLS[3], y + 26, p.minutos === undefined ? '—' : tiempoJugado(p.minutos), 16, '#9ad8c8'));
+      R(txt(this, COLS[7], y + 2, pctAciertos(p), 24, p.runasTotal ? CSS.green : CSS.dim));
+      if (p.runasTotal) R(txt(this, COLS[7], y + 28, `${p.runasOk ?? 0}/${p.runasTotal}`, 15, CSS.dim));
       R(txt(this, COLS[4], y + 8, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
       if (this.modo === 'abismo') {
         // profundidad: tramo alcanzado (5+ = modo infinito)
@@ -196,6 +200,7 @@ export class RankingScene extends Phaser.Scene {
     y += 30;
     const piso2 = p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} + Acto IV` : `${p.piso}/${TOTAL_PISOS}`;
     L.add(txt(this, x, y, `Piso máx. ${piso2}`, 21, CSS.bone));
+    L.add(txt(this, x + 168, y + 2, p.runasTotal ? `Aciertos ${p.runasOk ?? 0}/${p.runasTotal} (${pctAciertos(p)})` : 'Aciertos —', 18, p.runasTotal ? CSS.green : CSS.dim));
     y += 26;
     const vic = p.victorias ? `${p.victorias} victoria${p.victorias === 1 ? '' : 's'} · gravedad máx. ${gravityOf(p.gravedad || 1).name}` : 'Aún sin victorias';
     L.add(txt(this, x, y, vic, 21, p.victorias ? CSS.green : CSS.dim, { wordWrap: { width: pw - 370 } }));

@@ -86,7 +86,7 @@ export const T = {
     cargando: 'Consultando el salón…',
     sinConexion: 'El ranking necesita conexión con el servidor del profesor.\nEntra con tu matrícula y contraseña para aparecer aquí.',
     vacio: 'Aún no hay expediciones registradas.',
-    cols: ['#', 'Héroe', 'Partidas · tiempo', 'Puntaje', 'Piso máx.', 'Victorias'],
+    cols: ['#', 'Héroe', 'Partidas', 'Aciertos', 'Puntaje', 'Piso máx.', 'Victorias'],
     tu: 'tú',
     pagina: 'Página',
   },

@@ -2,6 +2,16 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.86.0 · Sin topes en el Abismo y aciertos en el ranking
+
+- **Personajes sin tope en el Abismo** (el Caballero ya escalaba sin límite con sus kg). En la expedición normal no cambia nada.
+  - **Arcanista:** la rapidez ya no se detiene en 8 m/s. Arriba de 8, cada m/s suma la energía de un m/s ganado en 8: v = √(v² + 16·n). Así K = ½mv² crece parejo con la masa del Caballero y no se dispara.
+  - **Penitente:** la rapidez ya no se detiene en 14 m/s. El aire lo sigue frenando 2 m/s por turno.
+  - **Espectro:** la Energía Absorbida ya no se detiene en 40. Las ranuras de formas siguen en 5.
+- Arreglo: el Problema Prohibido de la masa negativa daba +3 m/s que se borraban al empezar el combate.
+- **Aviso antes de abandonar:** si tienes una partida corriendo, el portal del Abismo y «Nueva expedición» preguntan primero. La opción principal es seguir con tu partida.
+- **Aciertos en el ranking:** nueva columna con el porcentaje y las preguntas correctas/contestadas del modo, también en la ficha del héroe. No cambia el orden del ranking. **Necesita actualizar `apps-script/Code.gs`** y publicar una nueva versión; mientras tanto se ve «—».
+
 ## v0.85.0 · Más preguntas y la Carrera de R'lyeh
 
 - **24 preguntas nuevas de opción múltiple de cuerpo rígido, de 6 a 30.** Cubren centroide, centro de masa, momento de inercia, ejes paralelos y radio de giro, con los errores comunes como distractores.

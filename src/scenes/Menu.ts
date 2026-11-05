@@ -112,10 +112,12 @@ export class MenuScene extends Phaser.Scene {
       y += 58;
     }
     button(this, x, y, 330, 48, run ? T.menu.nueva : T.menu.comenzar, () => {
-      // v0.32: diagnóstico inicial antes de la primera expedición y final al cumplir DIAG_POST_EXPEDICIONES
-      const fase = diagPendiente();
-      if (fase) return fadeTo(this, 'Diagnostico', { fase, luego: 'expedicion' });
-      this.pickGravity();
+      this.confirmarAbandono('Abandonar y empezar otra', () => {
+        // v0.32: diagnóstico inicial antes de la primera expedición y final al cumplir DIAG_POST_EXPEDICIONES
+        const fase = diagPendiente();
+        if (fase) return fadeTo(this, 'Diagnostico', { fase, luego: 'expedicion' });
+        this.pickGravity();
+      });
     }, { color: run ? UI.border : UI.blood, size: 26 });
     if (diagPendiente() === 'post') {
       const t = txt(this, x, y + 30, `📝 Toca tu diagnóstico final (${DIAGNOSTICO.length} preguntas, ~4 min)`, 15, CSS.gold).setOrigin(0.5, 0);
@@ -207,10 +209,29 @@ export class MenuScene extends Phaser.Scene {
         return;
       }
       audio.sfx('click');
-      if (Game.run && !Game.run.done) syncRun('abandonada', 'bajó al Abismo');
-      logEvent('abismo_portal', '', '', {});
-      fadeTo(this, 'Abismo', { clase: claseJugable(Game.profile?.avatar?.clase), gravedad: 1, debug: false });
+      tip.setVisible(false);
+      this.confirmarAbandono('Abandonar y bajar al Abismo', () => {
+        if (Game.run && !Game.run.done) syncRun('abandonada', 'bajó al Abismo');
+        logEvent('abismo_portal', '', '', {});
+        fadeTo(this, 'Abismo', { clase: claseJugable(Game.profile?.avatar?.clase), gravedad: 1, debug: false });
+      });
     });
+  }
+
+  /** v0.86 · Si hay una partida en curso, pregunta antes de abandonarla. Sin partida, sigue directo. */
+  private confirmarAbandono(accion: string, seguir: () => void) {
+    const run = Game.run && !Game.run.done ? Game.run : null;
+    if (!run) return seguir();
+    const c = this.add.container(0, 0).setDepth(1000);
+    c.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.8).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, W / 2 - 260, 150, 520, 250, UI.panel, UI.gold, 0.98);
+    c.add(g);
+    const donde = run.modo === 'abismo' ? `en El Abismo, tramo ${run.tramo ?? 1}` : `en el piso ${run.floor + 1}`;
+    c.add(txt(this, W / 2, 174, '¿Abandonar tu partida?', 30, CSS.gold).setOrigin(0.5, 0));
+    c.add(txt(this, W / 2, 218, `Ya tienes una partida corriendo ${donde}.\nSi la abandonas, la pierdes y no se puede recuperar.`, 19, CSS.bone, { align: 'center', wordWrap: { width: 480 } }).setOrigin(0.5, 0));
+    c.add(button(this, W / 2, 306, 400, 44, 'Seguir con mi partida', () => { c.destroy(); fadeTo(this, 'Map'); }, { color: UI.gold, size: 24 }));
+    c.add(button(this, W / 2, 358, 400, 36, accion, () => { c.destroy(); seguir(); }, { color: UI.blood, size: 19 }));
   }
 
   /** v0.30: ¿tus signos ayudaron a alguien? ¿honraron tu lápida? (una vez por sesión) */
