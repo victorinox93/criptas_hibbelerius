@@ -58,6 +58,8 @@ export interface RankRow {
   victorias: number;
   gravedad: number;
   partidas: number;
+  runasOk?: number; // v0.86 · preguntas correctas en este modo (servidor nuevo)
+  runasTotal?: number;
   minutos?: number; // v0.54 · tiempo jugado (en el modo del ranking); falta si el servidor es viejo
   yo: boolean;
   lugar: number;

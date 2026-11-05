@@ -295,7 +295,7 @@ export const CARDS: Record<string, CardDef> = {
   acelerar: {
     id: 'acelerar', name: 'Acelerar', type: 'Habilidad', icon: 'i_wind', concept: 'Cinemática', rarity: 'inicial', target: 'self', cls: 'arcanista',
     stats: (up) => ({ cost: 1, extra: up ? 3 : 2 }),
-    text: (s) => `+${s.extra} m/s de rapidez\n(máx. ${VMAX}). Roba 1 carta.`,
+    text: (s) => `+${s.extra} m/s de rapidez\n(máx. ${VMAX}; sin tope en\nel Abismo). Roba 1 carta.`,
     lore: 'Más rapidez, mucha más energía: duplicar v cuadruplica K.',
   },
   frenado: {
@@ -334,7 +334,7 @@ export const CARDS: Record<string, CardDef> = {
   visVivaA: {
     id: 'visVivaA', name: 'Vis Viva', type: 'Habilidad', icon: 'i_bolt', concept: 'Energía cinética', rarity: 'rara', target: 'self', cls: 'arcanista', exhaust: true,
     stats: (up) => ({ cost: up ? 1 : 2 }),
-    text: () => `Duplica tu rapidez\n(máx. ${VMAX} m/s).\nSe agota.`,
+    text: () => `Duplica tu rapidez\n(máx. ${VMAX} m/s; sin tope\nen el Abismo). Se agota.`,
     lore: 'Émilie du Châtelet defendió que la "fuerza viva" va con v²: duplicar v cuadruplica la energía.',
   },
   barrera: {
@@ -635,7 +635,7 @@ export const CARDS: Record<string, CardDef> = {
   ab_brazos: {
     id: 'ab_brazos', name: 'Brazos Recogidos', type: 'Habilidad', icon: 'i_pend', concept: 'Impulso angular', rarity: 'rara', target: 'self', cls: 'arcanista', abismo: true, exhaust: true,
     stats: (up) => ({ cost: up ? 0 : 1 }),
-    text: () => `I₁·ω₁ = I₂·ω₂:\ntu rapidez se DUPLICA\n(máx. 8 m/s). Se agota.`,
+    text: () => `I₁·ω₁ = I₂·ω₂:\ntu rapidez se DUPLICA\n(arriba de 8 m/s suma por\nenergía). Se agota.`,
     lore: 'La patinadora recoge los brazos: su momento de inercia baja y gira mucho más rápido.',
   },
   ab_orbita: {

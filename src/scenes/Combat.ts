@@ -118,6 +118,24 @@ export class CombatScene extends Phaser.Scene {
   private critica = false; // Masa Crítica: ataques ×1.5 con poca masa
   /** Clases que usan rapidez v en vez de aceleración */
   private get usaVel() { return this.isArc || this.isPen; }
+
+  /**
+   * v0.86 · Rapidez después de ganar n m/s. En el Abismo ya no hay tope de rapidez:
+   *  · Penitente: suma directa (p = m·v crece igual que la masa del Caballero).
+   *  · Arcanista: hasta VMAX suma directa; arriba, cada m/s aporta la ENERGÍA de un m/s
+   *    ganado en VMAX: v = √(v² + 2·VMAX·n). Así K = ½·m·v² crece parejo y no se dispara.
+   */
+  private velTras(v: number, n: number) {
+    const r = (x: number) => Math.round(x * 10) / 10;
+    if (Game.run?.modo !== 'abismo') return r(Math.min(this.vmax, v + n));
+    if (!this.isArc) return r(v + n);
+    const lineal = Math.min(n, Math.max(0, VMAX - v));
+    const v1 = v + lineal;
+    return r(Math.sqrt(v1 * v1 + 2 * VMAX * (n - lineal)));
+  }
+  private subirVel(n: number) { this.vel = this.velTras(this.vel, n); }
+  /** v0.86 · En el Abismo la Energía Absorbida del Espectro no tiene tope */
+  private get eAbsMax() { return Game.run?.modo === 'abismo' ? Infinity : EABS_MAX; }
   private vel = 0; // rapidez del Arcanista (m/s)
   private jPerTurn = 0; // Batería de Resorte
   // v0.53 · cartas nuevas del Abismo
@@ -447,7 +465,7 @@ export class CombatScene extends Phaser.Scene {
     const run = Game.run!;
     if (run.modo !== 'abismo') return;
     const masaOVel = (n: number, fuente: string) => {
-      if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + n);
+      if (this.usaVel) this.subirVel(n);
       else this.masa += n;
       this.calc(`${fuente}: +${n} ${this.usaVel ? 'm/s' : 'kg'}`);
     };
@@ -564,7 +582,7 @@ export class CombatScene extends Phaser.Scene {
       });
     }
     if (this.prohibido('p_masaneg')) {
-      if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 3);
+      if (this.usaVel) this.subirVel(3);
       else this.masa += 3;
     }
     const gi = boonLevel('go_indecidible'); // v0.70 · Gödel
@@ -780,13 +798,13 @@ export class CombatScene extends Phaser.Scene {
     if (this.usaVel) {
       // el Arcanista convierte sus bonos de aceleración en rapidez inicial
       // (la mitad de los bonos, para que no se dispare K = ½mv²)
-      this.vel = Math.min(this.vmax, (this.isPen ? 0 : 4) + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0));
+      this.subirVel((this.isPen ? 0 : 4) + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0)); // suma: no borra lo que ya dieron los bonos de inicio
       this.baseAcel = 0;
     }
     // Coriolis · El ½ de ½mv²
     const cm = boonLevel('co_medio');
     if (cm) {
-      if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + cm);
+      if (this.usaVel) this.subirVel(cm);
       else this.masa += cm;
     }
     this.abismoModoInicio();
@@ -1076,12 +1094,12 @@ export class CombatScene extends Phaser.Scene {
     if (this.reflect) items.push(['i_reflect', '', 'Acción-Reacción', 'Este turno, cada golpe que recibas regresa con la misma fuerza al atacante (3ª ley).']);
     if (this.keepBlock) items.push(['i_crystal', '', 'Inercia Defensiva', 'Tu Bloqueo no se perderá al iniciar tu siguiente turno (1ª ley).']);
     if (this.isPen) {
-      items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus golpes hacen p = m·v. Si v ≥ ${ESQUIVA} m/s ESQUIVAS el siguiente golpe (y pierdes 3 m/s). El aire te frena 2 m/s cada turno.`]);
+      items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus golpes hacen p = m·v. Si v ≥ ${ESQUIVA} m/s ESQUIVAS el siguiente golpe (y pierdes 3 m/s). El aire te frena 2 m/s cada turno.${Game.run?.modo === 'abismo' ? ' En el Abismo no hay tope de rapidez.' : ''}`]);
       items.push(['i_fire', `${this.ve}`, `vₑ = ${this.ve} m/s`, `Velocidad de escape de tus gases. Al quemar masa: Δv = vₑ·ln(m₀/m₁). Mientras MENOS masa tengas, más rápido aceleras.`]);
       if (this.critica) items.push(['i_mass', '×1.5', 'Masa Crítica', 'Con menos de la mitad de tu masa máxima, tus ataques hacen ×1.5.']);
     }
-    if (this.isEsp) items.unshift(['i_bolt', `${this.eAbs}`, `Energía Absorbida: ${this.eAbs}`, `La ${this.absTotal ? 'TOTALIDAD (Absorción Total)' : 'mitad'} de cada golpe que recibes (aunque lo bloquees) se guarda aquí (máx. ${EABS_MAX}). Suéltala con Liberación o vuélvela Bloqueo con Transformación. Formas canalizadas: ${this.formas.length}/${this.maxFormas}.`]);
-    if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.`]);
+    if (this.isEsp) items.unshift(['i_bolt', `${this.eAbs}`, `Energía Absorbida: ${this.eAbs}`, `La ${this.absTotal ? 'TOTALIDAD (Absorción Total)' : 'mitad'} de cada golpe que recibes (aunque lo bloquees) se guarda aquí${Game.run?.modo === 'abismo' ? ' (sin tope en el Abismo)' : ` (máx. ${EABS_MAX})`}. Suéltala con Liberación o vuélvela Bloqueo con Transformación. Formas canalizadas: ${this.formas.length}/${this.maxFormas}.`]);
+    if (this.isArc) items.unshift(['i_momentum', `${this.vel}`, `Rapidez v = ${this.vel} m/s`, `Tus hechizos hacen K = ½·m·v². Primera ley: tu rapidez se conserva entre turnos salvo que la fricción te frene.${Game.run?.modo === 'abismo' ? ` En el Abismo no hay tope: arriba de ${VMAX} m/s, cada m/s suma energía (v crece como √).` : ''}`]);
     if (this.confusa) items.push(['i_ojo', '?', 'Confundido', 'Cada carta que robes en este combate cuesta 0–3 J al azar (gema naranja con «?»).']);
     if (this.hemorragia) items.push(['i_heart', `${this.hemorragia}`, 'Hemorragia', `Cada carta que juegues te quita 1 de vida. Quedan ${this.hemorragia} turno(s).`]);
     if (this.aturdido) items.push(['i_stun', '!', 'Aturdido', 'Pierdes tu siguiente turno.']);
@@ -1263,7 +1281,7 @@ export class CombatScene extends Phaser.Scene {
       case 'absorcion': case 'reentrada': return b({ dmg: P() });
       case 'ignicion': {
         const dv = rocket(st.extra ?? 6, c).dv;
-        return b({ dmg: P({ ...c, vel: Math.min(this.vmax, Math.round(((c.vel ?? 0) + dv) * 10) / 10) }), nota: `Antes quemas ${st.extra} kg (+${dv} m/s).` });
+        return b({ dmg: P({ ...c, vel: this.velTras(c.vel ?? 0, dv) }), nota: `Antes quemas ${st.extra} kg (+${dv} m/s).` });
       }
       case 'estelaPlasma': return b({ dmg: P(), todos: true });
       case 'rebote': return b({ dmg: this.block });
@@ -1914,7 +1932,7 @@ export class CombatScene extends Phaser.Scene {
       if (this.attacksTurn % 3 === 0) {
         if (this.has('abanico')) { this.block += 4; this.floatText(this.heroX, 220, '+4 🛡', CSS.block); this.calc('Abanico de Bernoulli: 3 ataques → +4 de Bloqueo'); }
         if (this.has('estrella')) {
-          if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 1);
+          if (this.usaVel) this.subirVel(1);
           else this.masa += 1;
           this.calc(`Estrella de Momento: 3 ataques → +1 ${this.usaVel ? 'm/s' : 'kg'} el resto del combate`);
         }
@@ -2026,7 +2044,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       }
       case 'rampaAbisal':
-        if (this.usaVel) { this.vel = Math.min(this.vmax, this.vel + 2); this.calc(`Rampa del Abismo: a = g·senθ → +2 m/s (v = ${this.vel})`); }
+        if (this.usaVel) { this.subirVel(2); this.calc(`Rampa del Abismo: a = g·senθ → +2 m/s (v = ${this.vel})`); }
         else { this.acel += st.extra ?? 3; this.calc(`Rampa del Abismo: a = g·sen18° ≈ 3 → +${st.extra} m/s² este turno`); }
         this.drawCards(1);
         break;
@@ -2120,7 +2138,7 @@ export class CombatScene extends Phaser.Scene {
         this.hud.refresh();
         break;
       case 'steiner':
-        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 1);
+        if (this.usaVel) this.subirVel(1);
         else { this.baseAcel += 1; this.acel += 1; }
         this.masa += st.extra ?? 3;
         this.calc(`Teorema de Steiner: +${st.extra} kg y +1 ${this.usaVel ? 'm/s' : 'm/s²'} el resto del combate`);
@@ -2294,14 +2312,14 @@ export class CombatScene extends Phaser.Scene {
       }
       case 'ab_radioGiro': {
         const v0 = this.vel;
-        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 2));
+        this.subirVel((st.extra ?? 2));
         this.calc(`Radio de Giro: v ${v0} → ${this.vel} m/s`);
         if (this.vel >= 6) this.drawCards(1);
         break;
       }
       case 'ab_brazos': {
         const v0 = this.vel;
-        this.vel = Math.min(this.vmax, this.vel * 2);
+        this.subirVel(this.vel);
         this.calc(`Brazos Recogidos: I₁ω₁ = I₂ω₂ → v ${v0} → ${this.vel} m/s`);
         break;
       }
@@ -2508,7 +2526,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       }
       case 'asistencia':
-        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 3));
+        this.subirVel((st.extra ?? 3));
         this.calc(`Asistencia Gravitatoria: +${st.extra} m/s sin gastar masa (v = ${this.vel})`);
         this.drawCards(1);
         break;
@@ -2726,7 +2744,7 @@ export class CombatScene extends Phaser.Scene {
         this.gainBlock(st.extra ?? 14);
         break;
       case 'f_haz':
-        this.vel = Math.min(this.vmax, this.vel + 2);
+        this.subirVel(2);
         this.calc(`Haz Relativista: +2 m/s (v = ${this.vel}) y ${st.extra} a todos`);
         await this.heroLunge();
         for (const t of [...this.alive()]) await this.hitEnemy(t, st.extra ?? 10);
@@ -2738,7 +2756,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       case 'f_tsiolkovski': {
         const run = Game.run!;
-        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 3));
+        this.subirVel((st.extra ?? 3));
         run.hp = Math.min(run.maxHp, run.hp + 6);
         this.calc(`Ecuación de Tsiolkovski: +${st.extra} m/s y recuperas 6 kg`);
         break;
@@ -2768,7 +2786,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       case 'f_ejesI':
         this.gainBlock(st.block ?? 10);
-        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 2);
+        if (this.usaVel) this.subirVel(2);
         else this.masa += 2;
         this.calc(`I = I_cm + m·d²: +${st.block} de Bloqueo y +2 ${this.usaVel ? 'm/s' : 'kg'} el resto del combate`);
         break;
@@ -3040,7 +3058,7 @@ export class CombatScene extends Phaser.Scene {
       case 'acelerar': {
         const vv = boonLevel('c_visviva');
         const before = this.vel;
-        this.vel = Math.min(this.vmax, this.vel + st.extra! + vv);
+        this.subirVel(st.extra! + vv);
         this.calc(`Acelerar: v ${before} → ${this.vel} m/s (K crece ×${before ? r1((this.vel * this.vel) / (before * before)) : '∞'})`);
         this.drawCards(1);
         break;
@@ -3066,8 +3084,9 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Onda de Calor: +${st.extra} de Calor a todos`);
         break;
       case 'visVivaA':
-        this.vel = Math.min(this.vmax, this.vel * 2);
-        this.calc(`Vis Viva: duplicas v → ${this.vel} m/s, ¡K se cuadruplica!`);
+        const vAntes = this.vel;
+        this.subirVel(this.vel);
+        this.calc(this.vel >= vAntes * 2 ? `Vis Viva: duplicas v → ${this.vel} m/s, ¡K se cuadruplica!` : `Vis Viva: v ${vAntes} → ${this.vel} m/s; arriba de ${VMAX} m/s sumas energía, no rapidez directa`);
         break;
       case 'barrera': {
         const b = Math.round(st.extra! * this.vel);
@@ -3081,14 +3100,14 @@ export class CombatScene extends Phaser.Scene {
         this.calc(`Chispa: K = ½·${r1(k.m)}·${k.v}² = ${k.K} J, luego +1 m/s`);
         await this.heroLunge();
         if (target) await this.hitEnemy(target, k.K);
-        this.vel = Math.min(this.vmax, this.vel + 1);
+        this.subirVel(1);
         break;
       }
       case 'picada': {
         const h = st.extra ?? 0.5;
         const dv = Math.floor(Math.sqrt(2 * this.grav.g * h));
         const before = this.vel;
-        this.vel = Math.min(this.vmax, this.vel + dv);
+        this.subirVel(dv);
         this.calc(`Picada: v = √(2·${this.grav.g}·${h}) ≈ ${dv} m/s → v ${before} → ${this.vel}`);
         break;
       }
@@ -3116,7 +3135,7 @@ export class CombatScene extends Phaser.Scene {
       case 'sinFriccion':
         this.noFric = true;
         this.friccion = 0;
-        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 1));
+        this.subirVel((st.extra ?? 1));
         this.calc(`Superficie Sin Fricción: μ = 0, +${st.extra} m/s`);
         break;
 
@@ -3245,7 +3264,7 @@ export class CombatScene extends Phaser.Scene {
         break;
       case 'sobreimpulso':
         Game.run!.hp -= 3;
-        this.vel = Math.min(this.vmax, this.vel + (st.extra ?? 3));
+        this.subirVel((st.extra ?? 3));
         this.floatText(this.heroX, 200, '-3', '#d08080');
         this.calc(`Postcombustión: −3 de vida → v = ${this.vel} m/s`);
         break;
@@ -3332,7 +3351,7 @@ export class CombatScene extends Phaser.Scene {
       this.drawCards(1);
     }
     if (this.estela && def.type === 'Ataque') {
-      this.vel = Math.min(this.vmax, this.vel + 1);
+      this.subirVel(1);
       this.calc(`Estela Cinética: +1 m/s (v = ${this.vel})`);
     }
     this.polonio = 0;
@@ -3869,7 +3888,7 @@ export class CombatScene extends Phaser.Scene {
     }
     // v0.78 · Espectro: la energía del golpe no se destruye, se absorbe
     if (from && dmg > 0 && this.isEsp) {
-      const a = Math.min(EABS_MAX - this.eAbs, this.absTotal ? dmg : Math.ceil(dmg / 2));
+      const a = Math.min(this.eAbsMax - this.eAbs, this.absTotal ? dmg : Math.ceil(dmg / 2));
       if (a > 0) { this.eAbs += a; this.floatText(this.heroX - 40, 170, `+${a} ⚡`, '#9ad8f0'); }
     }
     // Coriolis · Efecto Coriolis: el primer golpe de cada turno enemigo se desvía
@@ -4022,7 +4041,7 @@ export class CombatScene extends Phaser.Scene {
     }
     this.jugadasIni = this.played;
     if (this.has('estatuillaAngell') && (Game.run!.entropia ?? 0) >= 50) { this.energy += 1; this.calc('Estatuilla del Profesor Angell: tu Locura se vuelve poder (+1 J)'); }
-    if (this.vacioAb) { this.eAbs = Math.min(EABS_MAX, this.eAbs + this.vacioAb); this.calc(`Energía del Vacío: +${this.vacioAb} de Energía Absorbida`); }
+    if (this.vacioAb) { this.eAbs = Math.min(this.eAbsMax, this.eAbs + this.vacioAb); this.calc(`Energía del Vacío: +${this.vacioAb} de Energía Absorbida`); }
     if (this.isEsp) {
       this.absTotal = false;
       for (let k = 0; k < this.conservacion; k++) await this.canalizar(Phaser.Utils.Array.GetRandom(FORMAS_TIPOS), 'Conservación de la Energía');
@@ -4176,7 +4195,7 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Resistencia del aire: v ${v0} → ${this.vel} m/s`);
     }
     if (this.usaVel) {
-      if (this.velPerTurn) this.vel = Math.min(this.vmax, this.vel + this.velPerTurn);
+      if (this.velPerTurn) this.subirVel(this.velPerTurn);
       if (this.friccion && !this.noFric) {
         this.vel = Math.max(0, this.vel - this.friccion);
         this.calc(`Fricción: la rapidez baja ${this.friccion} m/s (v = ${this.vel})`);
@@ -5162,7 +5181,7 @@ export class CombatScene extends Phaser.Scene {
     const r = rocket(kg, this.ctx());
     run.hp = r.m1;
     const v0 = this.vel;
-    this.vel = Math.min(this.vmax, Math.round((this.vel + r.dv) * 10) / 10);
+    this.subirVel(r.dv);
     this.calc(`${fuente}: Δv = ${r.ve}·ln(${r.m0}/${r.m1}) = ${r.dv} m/s → v ${v0} → ${this.vel}`);
     this.floatText(this.heroX - 30, 210, `−${kg} kg`, '#e8a060');
     this.burst(this.heroX - 50, 300, 0xff9a3a, 18);
@@ -5572,12 +5591,12 @@ export class CombatScene extends Phaser.Scene {
       case 'energia': this.energy += 2; break;
       case 'bloqueo': this.gainBlock(12); break;
       case 'masa':
-        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 2);
+        if (this.usaVel) this.subirVel(2);
         else this.masa += 2;
         break;
       case 'aceite':
         this.friccion = 0;
-        if (this.usaVel) this.vel = Math.min(this.vmax, this.vel + 2);
+        if (this.usaVel) this.subirVel(2);
         else this.acel += 3;
         break;
       case 'tinta': this.drawCards(3); break;
