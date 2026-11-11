@@ -5,6 +5,7 @@ import { W, H } from '../config';
 import { PISOS_TRAMO, TRAMOS } from '../data/abismo_modo';
 import { CARDS } from '../data/cards';
 import { CLASSES } from '../data/classes';
+import { fmtPuntos } from '../data/puntaje';
 import { defDiente } from '../data/dientes';
 import { RELICS } from '../data/relics';
 import { Game, Run } from '../state';
@@ -33,7 +34,7 @@ export function resumenAbismo(s: Phaser.Scene, run: Run, victoria: boolean, by?:
   capa.add(g);
   if (s.textures.exists('hero')) capa.add(s.add.image(135, 190, 'hero').setScale(2.6));
   const datos: [string, string | number][] = [
-    ['Puntaje', run.score.toLocaleString('es-MX')],
+    ['Puntaje', fmtPuntos(run.score)],
     ['Combates', run.stats.combates],
     ['Élites', run.stats.elites],
     ['Preguntas', `${run.stats.runasOk}/${run.stats.runasTotal}`],

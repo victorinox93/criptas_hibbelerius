@@ -19,6 +19,7 @@ import { DIAG_POST_EXPEDICIONES, DIAGNOSTICO } from '../data/diagnostico';
 import { MOMENTUM_POR_AYUDA, TOPE_AYUDAS } from '../huellas';
 import { amVencido, claseJugable, codexFlag, expediciones, ganarMomentum, momentum, tiendaAbierta, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
+import { avisoDeNovedades, novedades } from '../ui/novedades';
 
 /** ¿Qué diagnóstico toca? (el profesor no lo hace) */
 function diagPendiente(): 'pre' | 'post' | null {
@@ -146,6 +147,7 @@ export class MenuScene extends Phaser.Scene {
         const t = txt(this, 690, 112, 'Vence a Hibbelerius para desbloquear el soundtrack.', 18, CSS.dim).setOrigin(0.5);
         this.tweens.add({ targets: t, alpha: 0, delay: 1800, duration: 500, onComplete: () => t.destroy() });
       }],
+      ['★ Novedades', () => novedades(this)], // v0.87 · historial de cambios
       ...(FORM_URL ? [['✎ Tu opinión', () => window.open(FORM_URL, '_blank')] as [string, () => void]] : []),
       [T.menu.salir, () => {
         clearSession();
@@ -160,6 +162,10 @@ export class MenuScene extends Phaser.Scene {
     if (isAdmin()) button(this, x, y + Math.ceil(grid.length / 2) * 46, 330, 38, 'Modo profesor (depuración)', () => fadeTo(this, 'Debug'), { color: 0x9a4040, size: 21 });
     // al volver del diagnóstico inicial: directo a elegir la gravedad
     if (iniciar) this.time.delayedCall(400, () => this.pickGravity());
+    // v0.87 · si hay actualización, el aviso de novedades sale solo (una vez).
+    // Se llama directo, sin temporizador: el pergamino tapa la pantalla y se
+    // desvanece junto con el menú, y así no depende del reloj de la escena.
+    else avisoDeNovedades(this, this.esNuevo());
   }
 
   /**
@@ -287,6 +293,14 @@ export class MenuScene extends Phaser.Scene {
       g.lineStyle(1, 0x3a3444, 1).strokeRect(x0, y - 4, w, 9);
       txt(this, 428, y - 9, etiqueta || `${k}/${t}`, 16, frac >= 1 ? CSS.gold : CSS.bone).setOrigin(1, 0);
     });
+  }
+
+  /**
+   * v0.87 · ¿es su primera vez? Entonces no tiene sentido mostrarle novedades:
+   * para él todo el juego es nuevo. Basta con que no tenga ningún avance.
+   */
+  private esNuevo() {
+    return expediciones() === 0 && Game.codex.victorias === 0 && !(Game.codex.flags ?? []).includes('primera');
   }
 
   /**

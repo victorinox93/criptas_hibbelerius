@@ -4,6 +4,7 @@ import { CardInst, starterDeck } from './data/cards';
 import { CLASSES } from './data/classes';
 import { enqueue, isOnline } from './api';
 import { gravityOf } from './data/gravity';
+import { comparaVersion } from './data/novedades';
 import { FAMILIAR_POOL, FAMILIARS } from './data/familiars';
 import { ADMINS } from './config';
 import { nivelDe, nivelDeV1 } from './data/progreso';
@@ -179,6 +180,7 @@ export interface Codex {
   compras?: string[]; // accesorios y cosméticos comprados a Layla
   regalo?: string; // último día (AAAA-MM-DD) en que Layla dio su regalo diario
   expediciones?: number; // expediciones terminadas (muerte o victoria); abre la Tienda de Layla
+  novedades?: string; // v0.87 · última versión cuyas novedades ya vio (VERSION_NUM)
   bajas?: Record<string, number>; // v0.31.2: enemigos vencidos por id (pantalla de Estadísticas)
   diag?: { pre?: number; post?: number; total?: number; version?: number }; // v0.32: diagnóstico inicial y final (aciertos)
   cartasProvidence?: number; // v0.46: cartas del Astrónomo de Providence cumplidas (logro)
@@ -218,6 +220,9 @@ export function mergeCodex(a: Partial<Codex> | null | undefined, b: Partial<Code
   c.compras = [...new Set([...(a?.compras ?? []), ...(b?.compras ?? [])])];
   const rg = [a?.regalo ?? '', b?.regalo ?? ''].sort().pop();
   if (rg) c.regalo = rg;
+  // v0.87 · novedades vistas: gana la versión más alta (por número, no por texto)
+  const nv = [a?.novedades, b?.novedades].filter(Boolean) as string[];
+  if (nv.length) c.novedades = nv.sort(comparaVersion).pop();
   // curva de niveles v0.22: quien ya tenía un nivel con la curva vieja lo conserva
   const piso = (x: Partial<Codex> | null | undefined) => (!x ? 0 : Math.max(x.nivelPiso ?? 0, (x.curva ?? 1) < 2 ? nivelDeV1(x.xp ?? 0) : 0));
   const np = Math.max(piso(a), piso(b));
