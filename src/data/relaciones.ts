@@ -73,7 +73,7 @@ export const DUOS: Duo[] = [
 /** Dones dúo (se agregan a BOONS en figures.ts) */
 export const DUO_BOONS: Record<string, BoonDef> = {
   duo_gigantes: { id: 'duo_gigantes', figure: 'duo', duo: ['galileo', 'newton'], name: 'Hombros de Gigantes', icon: 'i_gaunt',
-    text: ['+1 kg y +1 m/s² a todos tus ataques.', '+2 kg y +1 m/s² a todos tus ataques.'],
+    text: ['+1 kg y +1 m/s² a todos tus ataques (Arcanista y Penitente: los kg se vuelven m/s).', '+2 kg y +1 m/s² a todos tus ataques (Arcanista y Penitente: los kg se vuelven m/s).'],
     lore: '«Si he visto más lejos es porque estoy subido en hombros de gigantes.» Newton, 1675 (en una carta… a Hooke).' },
   duo_visviva: { id: 'duo_visviva', figure: 'duo', duo: ['chatelet', 'coriolis'], name: 'Teorema Trabajo-Energía', icon: 'i_bolt',
     text: ['Cada enemigo que derrotas te devuelve 1 J.', 'Cada enemigo que derrotas te devuelve 2 J.'],

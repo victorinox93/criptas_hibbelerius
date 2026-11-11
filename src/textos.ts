@@ -60,6 +60,7 @@ export const T = {
     gravedad: 'Elige la gravedad',
     gravedadInfo: 'Más gravedad: enemigos más duros y más puntaje. Peso Muerto usa la g del astro.',
     gravedadBloqueada: 'Vence al Coloso en el nivel anterior para desbloquear.',
+    gravedadAbismo: 'En el Abismo la gravedad se suma a la dificultad del tramo: multiplica la vida y el daño de todo lo que baja… y también tu puntaje en el ranking.',
     cancelar: 'Cancelar',
     mejorGravedad: 'Gravedad vencida',
     ninguna: 'ninguna aún',

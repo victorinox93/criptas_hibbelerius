@@ -5,7 +5,7 @@ import { mascotaActual, mascotaJunto } from '../ui/mascota';
 import { CSS, UI } from '../art/palette';
 import { W, H } from '../config';
 import { gravityOf, GravityLevel } from '../data/gravity';
-import { CalcCtx, CardDef, CARDS, CardInst, CardStats, CONJUNTOS, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
+import { CalcCtx, CardDef, CARDS, CardInst, CardStats, CONJUNTOS, DV_ESCUDO, dvEscudo, force, kinetic, limiteDano, pmv, rocket, statsOf, VE_BASE, VMAX } from '../data/cards';
 import { EABS_MAX, FORMAS, FORMAS_MAX, FORMAS_TIPOS, FORMAS_TOPE, FormaTipo } from '../data/espectro';
 
 /** Penitente: rapidez máxima y rapidez mínima para esquivar */
@@ -113,11 +113,28 @@ export class CombatScene extends Phaser.Scene {
   private colosoKg = 0; // Inercia del Coloso: kg por cada enemigo detenido
   private combustibleAb = 0; // Combustible del Abismo: Calor a todos al quemar masa
   private vacioAb = 0; // Energía del Vacío: Energía Absorbida al inicio del turno
+  // v0.87 · reliquias de clase que sólo actúan una vez por combate
+  private cascoUsado = false; // Casco del Túnel de Viento (Arcanista)
+  private lavalUsado = false; // Tobera de Laval (Penitente)
+  private esquivaExtra = 0; // Maniobra Evasiva: esquivas garantizadas que te quedan
   private vmax = VMAX; // rapidez máxima según la clase
   private ve = VE_BASE; // Penitente: velocidad de escape de sus gases (m/s)
   private critica = false; // Masa Crítica: ataques ×1.5 con poca masa
   /** Clases que usan rapidez v en vez de aceleración */
   private get usaVel() { return this.isArc || this.isPen; }
+
+  /**
+   * v0.87 · Bono «de masa» traducido a lo que cada clase sí aprovecha:
+   *  · Caballero: +kg, que entran directo en F = m·a.
+   *  · Arcanista y Penitente: +m/s, porque su daño vive en ½mv² y en p = m·v.
+   *  · Espectro: +kg, que alimentan su energía Potencial (U = m·g·h).
+   * Lo usan las reliquias, los dones, las páginas del Necronomicón y los pactos.
+   */
+  private masaOVel(n: number, fuente: string) {
+    if (this.usaVel) this.subirVel(n);
+    else this.masa += n;
+    this.calc(`${fuente}: +${n} ${this.usaVel ? 'm/s' : 'kg'}`);
+  }
 
   /**
    * v0.86 · Rapidez después de ganar n m/s. En el Abismo ya no hay tope de rapidez:
@@ -464,14 +481,9 @@ export class CombatScene extends Phaser.Scene {
   private abismoModoInicio() {
     const run = Game.run!;
     if (run.modo !== 'abismo') return;
-    const masaOVel = (n: number, fuente: string) => {
-      if (this.usaVel) this.subirVel(n);
-      else this.masa += n;
-      this.calc(`${fuente}: +${n} ${this.usaVel ? 'm/s' : 'kg'}`);
-    };
-    if (this.necro('geometria')) masaOVel(2, 'Geometría Imposible');
-    if (this.has('idoloDagon')) { masaOVel(2, 'Ídolo de Dagón'); this.addStatus({ id: 'susurro', n: 2, to: 'draw' }); } // v0.71 · reliquia maldita
-    if (this.pacto('excentrico')) masaOVel(2, 'Pacto Excéntrico');
+    if (this.necro('geometria')) this.masaOVel(2, 'Geometría Imposible');
+    if (this.has('idoloDagon')) { this.masaOVel(2, 'Ídolo de Dagón'); this.addStatus({ id: 'susurro', n: 2, to: 'draw' }); } // v0.71 · reliquia maldita
+    if (this.pacto('excentrico')) this.masaOVel(2, 'Pacto Excéntrico');
     if (this.pacto('inercia')) { this.block += 6; this.calc('Pacto de la Inercia: +6 de Bloqueo'); }
     if (this.pacto('cafeina')) { this.bonusJ1 += 1; this.calc('Pacto de la Cafeína: +1 J en tu primer turno'); }
     // v0.73 · páginas y pactos nuevos
@@ -487,7 +499,7 @@ export class CombatScene extends Phaser.Scene {
     // mutador del tramo (v0.46)
     const mu = MUTADOR(run.mutador);
     if (mu) this.calc(`Mutador del tramo · ${mu.nombre}`);
-    if (run.mutador === 'gravedad') masaOVel(3, 'Gravedad Doble');
+    if (run.mutador === 'gravedad') this.masaOVel(3, 'Gravedad Doble');
     if (run.mutador === 'masa') { this.block += 8; this.calc('Masa Extra: +8 de Bloqueo'); }
     if (run.mutador === 'eco') this.addStatus({ id: 'susurro', n: 1, to: 'draw' });
     // los jefes del Abismo muerden la dentadura: 1 diente (2 los Primigenios) no funciona en esta pelea
@@ -507,7 +519,7 @@ export class CombatScene extends Phaser.Scene {
     const inc = this.diente('incisivo');
     if (inc) this.robo1 += inc;
     const jup = this.diente('jupiter');
-    if (jup) masaOVel(jup, `Diente de Júpiter (Gravedad nv ${jup})`);
+    if (jup) this.masaOVel(jup, `Diente de Júpiter (Gravedad nv ${jup})`);
     // v0.61 · Alineación Planetaria: +1 J en tu primer turno durante el tramo
     if (run.modo === 'abismo' && run.alineacion === (run.tramo ?? 1)) { this.bonusJ1 += 1; this.calc('Alineación Planetaria: las fuerzas se suman → +1 J en tu primer turno'); }
     if (run.familiar?.id === 'europa') { this.block += 5; this.calc('Europa, la Luna de Hielo: +5 de Bloqueo'); }
@@ -533,7 +545,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.necro('confusion')) { this.robo1 += 1; this.time.delayedCall(400, () => this.confundir('La Confusión')); }
     // Ecos Quebrados
     const qa = boonLevel('qn_alquimia');
-    if (qa) masaOVel(qa, 'Mercurio del Alquimista (Newton)');
+    if (qa) this.masaOVel(qa, 'Mercurio del Alquimista (Newton)');
     this.robo1 += boonLevel('qn_insomnio');
     const be = boonLevel('bo_equiparticion');
     if (be) this.block += 3 * be;
@@ -650,6 +662,9 @@ export class CombatScene extends Phaser.Scene {
     this.colosoKg = 0;
     this.combustibleAb = 0;
     this.vacioAb = 0;
+    this.cascoUsado = false;
+    this.lavalUsado = false;
+    this.esquivaExtra = 0;
     this.vmax = this.isPen ? VMAX_PEN : VMAX;
     this.ve = VE_BASE;
     this.critica = false;
@@ -783,7 +798,7 @@ export class CombatScene extends Phaser.Scene {
     // dones de figuras históricas
     this.baseAcel += boonLevel('n_principia');
     const gig = boonLevel('duo_gigantes'); // Galileo + Newton
-    if (gig) { this.baseAcel += 1; this.masa += gig; }
+    if (gig) { this.baseAcel += 1; this.masaOVel(gig, 'A Hombros de Gigantes'); }
     this.block += 5 * boonLevel('j_trabajo');
     if (this.has('guante')) this.baseAcel += 1;
     this.marco = boonLevel('e_marco');
@@ -798,7 +813,9 @@ export class CombatScene extends Phaser.Scene {
     if (this.usaVel) {
       // el Arcanista convierte sus bonos de aceleración en rapidez inicial
       // (la mitad de los bonos, para que no se dispare K = ½mv²)
-      this.subirVel((this.isPen ? 0 : 4) + Math.floor(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0)); // suma: no borra lo que ya dieron los bonos de inicio
+      // v0.87 · redondeando, no truncando: antes un bono de +1 m/s² (Guantelete, Principia)
+      // se perdía por completo con estas dos clases
+      this.subirVel((this.isPen ? 0 : 4) + Math.round(this.baseAcel / 2) + (this.cond?.id === 'viento' ? 1 : 0)); // suma: no borra lo que ya dieron los bonos de inicio
       this.baseAcel = 0;
     }
     // Coriolis · El ½ de ½mv²
@@ -807,6 +824,10 @@ export class CombatScene extends Phaser.Scene {
       if (this.usaVel) this.subirVel(cm);
       else this.masa += cm;
     }
+    // v0.87 · reliquias de clase que actúan al empezar el combate
+    // (van después de convertir la aceleración en rapidez, para que no se borren)
+    if (this.has('maxwell')) { this.subirVel(3); this.calc(`Rueda de Maxwell: la rotación guardada te arranca en ${this.vel} m/s`); }
+    if (this.has('induccion')) { this.maxFormas = Math.min(FORMAS_TOPE, this.maxFormas + 1); this.calc(`Bobina de Inducción: ${this.maxFormas} ranuras de energía`); }
     this.abismoModoInicio();
     this.showFamiliar();
     this.showAliado();
@@ -1264,6 +1285,10 @@ export class CombatScene extends Phaser.Scene {
       case 'doppler': return b({ dmg: K(), todos: this.vel >= 6 });
       case 'honda': { const vv = this.hondaV.get(v.inst.uid) ?? (st.extra ?? 4); return b({ dmg: Math.round(0.5 * (st.m ?? 2) * vv * vv) }); }
       case 'embestidaArd': return b({ dmg: crit(pmv(st, c).p + (st.extra ?? 2)) });
+      // v0.87 · cartas nuevas de clase
+      case 'inelastico': return b({ dmg: K(), nota: 'Le quita el impulso que lleva acumulado.' });
+      case 'expulsion': return b({ dmg: crit(pmv(st, c).p), nota: 'Y te empuja: +1 m/s.' });
+      case 'e_oblicuo': return b({ dmg: (st.block ?? 5) + (st.extra ?? 2) * this.formas.length });
       // v0.82 · cartas de personaje del Abismo
       case 'ab_palanca': return b({ dmg: F(), nota: 'Si el objetivo tiene más de la mitad de su vida: ×1.5.' });
       case 'ab_steiner': return b({ dmg: F(), nota: `Y la mitad (${Math.round(F() / 2)}) a los demás.` });
@@ -1490,6 +1515,9 @@ export class CombatScene extends Phaser.Scene {
       case 'conservacion': baseB = (st.extra ?? 3) * quedan; break;
       case 'barrera': baseB = Math.round((st.extra ?? 1.5) * this.vel); break;
       case 'retro': baseB = Math.round((st.extra ?? 3) * Math.min(4, this.vel)); break;
+      // v0.87 · defensas nuevas de clase
+      case 'ablativo': baseB = Math.round((st.block ?? 3) * dvEscudo(st.extra ?? 4, this.ctx())); break;
+      case 'e_pozo': baseB = (st.extra ?? 4) * (this.formas.length + 1); break;
       case 'frenado': { const v2 = Math.max(0, this.vel - 2); baseB = Math.round(0.5 * (st.m ?? 1) * (this.vel * this.vel - v2 * v2)); break; }
       case 'equilibrio': {
         const inc = this.alive().reduce((n, e) => { const i = e.st.intent; return n + (i.kind === 'attack' ? i.dmg * (i.hits ?? 1) : i.kind === 'block' ? i.dmg ?? 0 : 0); }, 0);
@@ -2426,6 +2454,22 @@ export class CombatScene extends Phaser.Scene {
         await this.canalizar(f.tipo, def.name);
         break;
       }
+      // v0.87 · Trabajo Oblicuo: W = F·d·cos θ, crece con las formas canalizadas
+      case 'e_oblicuo': {
+        const d = (st.block ?? 5) + (st.extra ?? 2) * this.formas.length;
+        this.calc(`Trabajo Oblicuo: ${st.block} + ${st.extra}·${this.formas.length} formas = ${d}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, d);
+        break;
+      }
+      // v0.87 · Pozo de Potencial: canaliza y luego cuenta las formas (la nueva incluida)
+      case 'e_pozo': {
+        await this.canalizar('potencial', def.name);
+        const n = (st.extra ?? 4) * this.formas.length;
+        this.gainBlock(n);
+        this.calc(`Pozo de Potencial: ${st.extra}·${this.formas.length} formas = ${n} de Bloqueo`);
+        break;
+      }
       case 'e_eficiencia': {
         const n = (st.block ?? 4) + (st.extra ?? 2) * this.formas.length;
         this.gainBlock(n);
@@ -2473,7 +2517,37 @@ export class CombatScene extends Phaser.Scene {
       case 'empuje':
       case 'etapa': {
         this.quemar(st.extra ?? 4, def.name);
+        // v0.87 · Vis Viva (Châtelet): Empuje es la carta de impulso del Penitente
+        const vvp = def.id === 'empuje' ? boonLevel('c_visviva') : 0;
+        if (vvp) { this.subirVel(vvp); this.calc(`Vis Viva: +${vvp} m/s adicionales (v = ${this.vel})`); }
         if (def.id === 'etapa') this.drawCards(st.block ?? 1);
+        break;
+      }
+      // v0.87 · Maniobra Evasiva: una esquiva garantizada, sin depender de la rapidez
+      case 'evasiva': {
+        this.quemar(st.extra ?? 2, def.name);
+        this.esquivaExtra += 1;
+        this.calc('Maniobra Evasiva: te sales de la trayectoria (esquivas el siguiente golpe)');
+        break;
+      }
+      // v0.87 · Escudo Ablativo: la masa que se quema se lleva el golpe
+      case 'ablativo': {
+        const dv = dvEscudo(st.extra ?? 4, this.ctx());
+        const real = rocket(st.extra ?? 4, this.ctx()).dv;
+        this.quemar(st.extra ?? 4, def.name);
+        const b2 = Math.round((st.block ?? 3) * dv);
+        this.gainBlock(b2);
+        this.calc(`Escudo Ablativo: Bloqueo = ${st.block}·Δv = ${st.block}·${dv} = ${b2}${real > dv ? ` (el escudo sólo aguanta Δv = ${DV_ESCUDO}; tú ganaste ${real} m/s)` : ''}`);
+        break;
+      }
+      // v0.87 · Expulsión de Masa: 3ª ley, el disparo te acelera sin quemar masa
+      case 'expulsion': {
+        const r = pmv(st, c);
+        this.calc(`Expulsión de Masa: p = ${r.m}·${r.v} = ${r.p}`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, this.critico(r.p));
+        this.subirVel(1);
+        this.calc(`Tercera ley: el disparo te empuja → v = ${this.vel} m/s`);
         break;
       }
       case 'llamarada': {
@@ -3041,6 +3115,30 @@ export class CombatScene extends Phaser.Scene {
         await this.heroLunge();
         if (target) await this.hitEnemy(target, k.K);
         if (def.id === 'proyectil') this.vel = Math.max(0, this.vel - 1);
+        break;
+      }
+      // v0.87 · Choque Inelástico: los dos quedan pegados (se conserva p, se pierde K)
+      case 'inelastico': {
+        const k = kinetic(st, c);
+        this.calc(`Choque Inelástico: K = ½·${r1(k.m)}·${k.v}² = ${k.K} J`);
+        await this.heroLunge();
+        if (target) await this.hitEnemy(target, k.K);
+        if (target && !target.dead && target.st.carga > 0) {
+          this.calc(`Quedan pegados: ${target.st.def.name} pierde sus ${target.st.carga} carga(s) de impulso`);
+          target.st.carga = 0;
+          this.refreshEnemy(target);
+        }
+        this.vel = Math.max(0, Math.round((this.vel - 3) * 10) / 10);
+        this.calc(`Parte de la energía se fue en deformación: v → ${this.vel} m/s`);
+        break;
+      }
+      // v0.87 · Fricción Controlada: la energía cinética se vuelve calor
+      case 'friccionCtrl': {
+        const v0 = this.vel;
+        this.vel = Math.max(0, Math.round((this.vel - 1) * 10) / 10);
+        this.gainBlock(st.block ?? 6);
+        for (const e of this.alive()) { e.st.calor += st.extra ?? 2; this.burst(e.baseX, 260, 0xc87533, 8); this.refreshEnemy(e); }
+        this.calc(`Fricción Controlada: v ${v0} → ${this.vel} m/s; ${st.block} de Bloqueo y +${st.extra} de Calor a todos`);
         break;
       }
       case 'rafaga': {
@@ -3844,6 +3942,13 @@ export class CombatScene extends Phaser.Scene {
 
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
+    // v0.87 · Casco del Túnel de Viento (Arcanista): el primer golpe del combate se reparte en más tiempo
+    if (from && dmg > 1 && !this.cascoUsado && this.has('cascoTunel')) {
+      this.cascoUsado = true;
+      const antes = dmg;
+      dmg = Math.ceil(dmg / 2);
+      this.calc(`Casco del Túnel de Viento: Δt más largo → F = Δp/Δt, ${antes} → ${dmg} de daño`);
+    }
     if (from && dmg > 0 && this.prohibido('p_masaneg')) dmg += 2; // Masa Negativa
     if (from && dmg > 0 && this.necro('steiner')) dmg += 1; // Página de Steiner
     if (from && dmg > 0 && this.necro('marea')) dmg += 1; // v0.73 · La Marea de Innsmouth
@@ -3857,6 +3962,16 @@ export class CombatScene extends Phaser.Scene {
       this.calc(`Fuego Amigo: el golpe de ${from.st.def.name} se desvía hacia ${t === from ? 'sí mismo' : t.st.def.name} (${dmg})`);
       this.beamFrom(from.baseX, t, 0xff9a5a);
       await this.hitEnemy(t, dmg, false, 'res');
+      return;
+    }
+    // v0.87 · Maniobra Evasiva: esquiva garantizada, sin importar la rapidez
+    if (from && dmg > 0 && this.esquivaExtra > 0 && this.block < dmg) {
+      this.esquivaExtra--;
+      this.calc(`Maniobra Evasiva: el golpe de ${from.st.def.name} pasa de largo${this.esquivaExtra ? ` (te quedan ${this.esquivaExtra})` : ''}`);
+      this.floatText(this.heroX, 200, 'Esquiva', '#9ad8f0');
+      this.tweens.add({ targets: this.hero, y: this.hero.y - 30, duration: 120, yoyo: true });
+      audio.sfx('block');
+      this.refreshPlayer();
       return;
     }
     // Penitente: esquiva si va suficientemente rápido
@@ -4042,6 +4157,7 @@ export class CombatScene extends Phaser.Scene {
     this.jugadasIni = this.played;
     if (this.has('estatuillaAngell') && (Game.run!.entropia ?? 0) >= 50) { this.energy += 1; this.calc('Estatuilla del Profesor Angell: tu Locura se vuelve poder (+1 J)'); }
     if (this.vacioAb) { this.eAbs = Math.min(this.eAbsMax, this.eAbs + this.vacioAb); this.calc(`Energía del Vacío: +${this.vacioAb} de Energía Absorbida`); }
+    if (this.has('dinamo')) { this.eAbs = Math.min(this.eAbsMax, this.eAbs + 2); this.calc('Dinamo de Mano: trabajo mecánico → +2 de Energía Absorbida'); }
     if (this.isEsp) {
       this.absTotal = false;
       for (let k = 0; k < this.conservacion; k++) await this.canalizar(Phaser.Utils.Array.GetRandom(FORMAS_TIPOS), 'Conservación de la Energía');
@@ -4795,6 +4911,12 @@ export class CombatScene extends Phaser.Scene {
     // los efectos pasajeros se consumen al terminar el combate
     const cons = boonLevel('c_conserva');
     if (cons) run.hp = Math.min(run.maxHp, run.hp + 5 * cons);
+    // v0.87 · Tanque de Lastre (Penitente): repone la masa que quemó en el combate
+    if (this.has('lastre') && run.hp < run.maxHp) {
+      const n = Math.min(8, run.maxHp - run.hp);
+      run.hp += n;
+      this.calc(`Tanque de Lastre: recuperas ${n} kg de masa`);
+    }
     const vm = boonLevel('m_vidamedia');
     if (vm) {
       run.maxHp += vm === 2 ? 3 : 2;
@@ -5179,11 +5301,15 @@ export class CombatScene extends Phaser.Scene {
   private quemar(kg: number, fuente: string) {
     const run = Game.run!;
     const r = rocket(kg, this.ctx());
-    run.hp = r.m1;
+    // v0.87 · Tobera de Laval (Penitente): la primera quema del combate empuja igual, pero no cuesta masa
+    const gratis = !this.lavalUsado && this.has('laval');
+    if (gratis) this.lavalUsado = true;
+    else run.hp = r.m1;
     const v0 = this.vel;
     this.subirVel(r.dv);
     this.calc(`${fuente}: Δv = ${r.ve}·ln(${r.m0}/${r.m1}) = ${r.dv} m/s → v ${v0} → ${this.vel}`);
-    this.floatText(this.heroX - 30, 210, `−${kg} kg`, '#e8a060');
+    if (gratis) this.calc('Tobera de Laval: los gases salen supersónicos → esta quema no te costó masa');
+    this.floatText(this.heroX - 30, 210, gratis ? `${kg} kg gratis` : `−${kg} kg`, '#e8a060');
     this.burst(this.heroX - 50, 300, 0xff9a3a, 18);
     this.hud.refresh();
     if (this.combustibleAb) {
@@ -5683,7 +5809,8 @@ export class CombatScene extends Phaser.Scene {
   /** Bono de las formas: la masa extra alimenta la Potencial; la aceleración extra (menos la fricción), la Cinética */
   private bonoForma(tipo: FormaTipo) {
     if (tipo === 'potencial') return Math.max(0, Math.round(this.masa));
-    if (tipo === 'cinetica') return Math.max(0, Math.round(this.acel - this.friccion));
+    // v0.87 · Vis Viva (Châtelet) también alimenta la Cinética del Espectro
+    if (tipo === 'cinetica') return Math.max(0, Math.round(this.acel - this.friccion) + boonLevel('c_visviva'));
     return 0;
   }
 

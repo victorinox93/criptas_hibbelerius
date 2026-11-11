@@ -18,6 +18,7 @@ import { dentaduraView, dibujarDiente, etiquetaDiente, resumenCosmos, textoCrist
 import { ENEMIES } from '../data/enemies';
 import { ALMAS } from '../data/almas';
 import { bonosFinales } from '../data/puntaje';
+import { gravityOf } from '../data/gravity';
 import { cardView, CW, CH } from '../ui/card';
 import { guiaAbismo } from '../ui/guiaAbismo';
 import { hojaDiario, hojaPresente } from '../ui/diario';
@@ -183,6 +184,9 @@ export class AbismoScene extends Phaser.Scene {
       const hallas = (Game.codex.diario ?? 0) + 1;
       L(txt(this, W / 2, 320, `Diario de Montemayor: ${hallas} de ${PROLOGO.length} hojas. Las demás están perdidas allá abajo (son raras).`, 18, '#8a7a5a').setOrigin(0.5));
       L(txt(this, W / 2, 344, 'Cada hoja que encuentras te da un apunte (pista gratis) y Cordura.', 17, '#9ad8c8').setOrigin(0.5));
+      // v0.87 · se ve con qué gravedad vas a bajar (se eligió en el portal del menú)
+      const gv = gravityOf(this.d?.gravedad ?? 1);
+      L(txt(this, W / 2, 368, `Gravedad: ${gv.name} · g = ${gv.g} m/s² · puntaje ×${gv.scoreMul}`, 17, gv.id === 1 ? '#8a7a5a' : '#f0c87a').setOrigin(0.5));
       const primera = !(Game.codex.flags ?? []).includes('abismo_guia');
       if (primera) {
         // la primera vez se explican las reglas antes de abrir el libro

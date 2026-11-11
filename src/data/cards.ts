@@ -99,6 +99,13 @@ function rText(kg: number, c: CalcCtx) {
   const r = rocket(kg, c);
   return `Quema ${kg} kg: Δv = ${r.ve}·ln(${r.m0}/${r.m1})\n= ${r.dv} m/s`;
 }
+/**
+ * v0.87 · Δv que aprovecha el Escudo Ablativo, con tope.
+ * Δv = vₑ·ln(m₀/m₁) crece sin límite cuando queda poca masa, así que para
+ * convertirlo en Bloqueo se topa: si no, con 12 kg el escudo daba 150+.
+ */
+export const DV_ESCUDO = 6;
+export const dvEscudo = (kg: number, c: CalcCtx) => Math.min(DV_ESCUDO, rocket(kg, c).dv);
 /** Golpe del Penitente: p = m·v */
 export function pmv(s: CardStats, c: CalcCtx) {
   const m = (s.m ?? 0) + c.masaBonus * 0.5;
@@ -511,6 +518,19 @@ export const CARDS: Record<string, CardDef> = {
     text: (s, c) => `${kText(s, c)}\nK a TODOS. Tu rapidez\nqueda en 0.`,
     lore: 'Toda tu energía cinética colapsa en un solo punto… y explota.',
   },
+  // ── v0.87 · más opciones para el Arcanista (le faltaban defensas) ──
+  friccionCtrl: {
+    id: 'friccionCtrl', name: 'Fricción Controlada', type: 'Defensa', icon: 'i_mud', concept: 'Friccion', rarity: 'común', target: 'self', cls: 'arcanista',
+    stats: (up) => ({ cost: 1, block: up ? 9 : 6, extra: up ? 3 : 2 }),
+    text: (s) => `Pierdes 1 m/s.\nGana ${s.block} de Bloqueo y\n${s.extra} de Calor a TODOS.`,
+    lore: 'La fricción no destruye la energía cinética: la convierte en calor. Frenar es calentar.',
+  },
+  inelastico: {
+    id: 'inelastico', name: 'Choque Inelástico', type: 'Ataque', icon: 'i_momentum', concept: 'Choques', rarity: 'rara', target: 'enemy', cls: 'arcanista',
+    stats: (up) => ({ cost: 1, m: up ? 2.2 : 1.8 }),
+    text: (s, c) => `${kText(s, c)}\nInflige K y quedan pegados:\npierdes 3 m/s y él pierde\nsu impulso acumulado.`,
+    lore: 'En un choque perfectamente inelástico los cuerpos siguen juntos: se conserva la cantidad de movimiento, pero parte de K se va en calor y deformación.',
+  },
   // ── Neutrales ──
   apuntes: {
     id: 'apuntes', name: 'Apuntes del Profe', type: 'Habilidad', icon: 'i_book', concept: 'Análisis', rarity: 'común', target: 'self', cls: 'neutral', exhaust: true, lock: 2,
@@ -805,6 +825,19 @@ export const CARDS: Record<string, CardDef> = {
     text: (s) => `Gana ${s.block} de Bloqueo.\nHasta tu siguiente turno\nabsorbes el 100 % de\ncada golpe (no el 50 %).`,
     lore: 'Un cuerpo perfectamente inelástico se queda con toda la energía del choque.',
   },
+  // ── v0.87 · más opciones para el Espectro ──
+  e_oblicuo: {
+    id: 'e_oblicuo', name: 'Trabajo Oblicuo', type: 'Ataque', icon: 'i_angle', concept: 'Trabajo', rarity: 'común', target: 'enemy', cls: 'espectro',
+    stats: (up) => ({ cost: 1, block: up ? 7 : 5, extra: up ? 3 : 2 }),
+    text: (s, c) => `W = F·d·cos θ.\nInflige ${s.block} + ${s.extra} por cada\nforma canalizada (${(s.block ?? 5) + (s.extra ?? 2) * (c.formas ?? 0)}).`,
+    lore: 'Sólo la componente de la fuerza que va en la dirección del movimiento hace trabajo: W = F·d·cos θ. De lado, no empuja.',
+  },
+  e_pozo: {
+    id: 'e_pozo', name: 'Pozo de Potencial', type: 'Defensa', icon: 'i_shield', concept: 'Energia potencial', rarity: 'rara', target: 'self', cls: 'espectro',
+    stats: (up) => ({ cost: 1, extra: up ? 5 : 4 }),
+    text: (s, c) => `Canaliza POTENCIAL y gana\n${s.extra} de Bloqueo por cada\nforma canalizada (${(s.extra ?? 4) * ((c.formas ?? 0) + 1)}).`,
+    lore: 'Para salir de un pozo de potencial hace falta energía. Mientras más profundo, más trabajo cuesta sacarte de ahí.',
+  },
   // ════════ PENITENTE DEL EMPUJE (masa variable: su vida es su combustible) ════════
   embestidaArd: {
     id: 'embestidaArd', name: 'Embestida Ardiente', type: 'Ataque', icon: 'i_fire', concept: 'Cantidad de movimiento', rarity: 'inicial', target: 'enemy', cls: 'penitente',
@@ -883,6 +916,26 @@ export const CARDS: Record<string, CardDef> = {
     stats: (up) => ({ cost: 2, m: 6, extra: up ? 7 : 5 }),
     text: (s, c) => { const r = pmv(s, c); return `p = ${r.m}·${r.v} = ${r.p} y ${s.extra}\nde Calor. El roce te quema\n3 kg (sin ganar rapidez).`; },
     lore: 'Al volver a la atmósfera, la fricción con el aire convierte la energía cinética en calor.',
+  },
+  // ── v0.87 · el Penitente tenía una sola Defensa: aquí van dos más y un ataque barato ──
+  evasiva: {
+    id: 'evasiva', name: 'Maniobra Evasiva', type: 'Defensa', icon: 'i_feather', concept: 'Masa variable', rarity: 'común', target: 'self', cls: 'penitente',
+    stats: (up) => ({ cost: 1, extra: up ? 1 : 2 }),
+    text: (s, c) => `${rText(s.extra ?? 2, c)}\nEsquivas el siguiente golpe,\naunque vayas despacio.`,
+    lore: 'Para no recibir un golpe no hace falta frenarlo: basta no estar ahí. Un empujón lateral corto cambia la trayectoria.',
+  },
+  ablativo: {
+    id: 'ablativo', name: 'Escudo Ablativo', type: 'Defensa', icon: 'i_shield', concept: 'Masa variable', rarity: 'rara', target: 'self', cls: 'penitente',
+    stats: (up) => ({ cost: 1, extra: 4, block: up ? 4 : 3 }),
+    // el Δv del escudo se topa en 6 m/s: con poca masa la ecuación del cohete se dispara
+    text: (s, c) => `${rText(s.extra ?? 4, c)}\nBloqueo = ${s.block}·Δv = ${Math.round((s.block ?? 3) * dvEscudo(s.extra ?? 4, c))}\n(Δv del escudo: máx. ${DV_ESCUDO}).`,
+    lore: 'Un escudo ablativo se sacrifica: al quemarse se lleva el calor consigo. Así regresaban las cápsulas Apollo.',
+  },
+  expulsion: {
+    id: 'expulsion', name: 'Expulsión de Masa', type: 'Ataque', icon: 'i_reflect', concept: '3a ley', rarity: 'común', target: 'enemy', cls: 'penitente',
+    stats: (up) => ({ cost: 0, m: up ? 2 : 1.5 }),
+    text: (s, c) => { const r = pmv(s, c); return `p = ${r.m}·${r.v} = ${r.p}.\nEl disparo te empuja:\n+1 m/s, sin quemar masa.`; },
+    lore: 'Tercera ley: si lanzas masa hacia adelante, esa masa te lanza hacia atrás. Así avanza un cohete en el vacío.',
   },
   // ════════ LEGENDARIAS: una copia por expedición. Salen tras vencer a un jefe
   //          (elige 1 de 3) o, a veces, en el botín de una élite. ════════

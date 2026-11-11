@@ -210,10 +210,14 @@ export class MenuScene extends Phaser.Scene {
       }
       audio.sfx('click');
       tip.setVisible(false);
+      // v0.87 · el Abismo también se baja con la gravedad que elijas:
+      // se multiplica con la dificultad del tramo y con el puntaje del ranking
       this.confirmarAbandono('Abandonar y bajar al Abismo', () => {
-        if (Game.run && !Game.run.done) syncRun('abandonada', 'bajó al Abismo');
-        logEvent('abismo_portal', '', '', {});
-        fadeTo(this, 'Abismo', { clase: claseJugable(Game.profile?.avatar?.clase), gravedad: 1, debug: false });
+        this.pickGravity((gravedad) => {
+          if (Game.run && !Game.run.done) syncRun('abandonada', 'bajó al Abismo');
+          logEvent('abismo_portal', '', '', { gravedad });
+          fadeTo(this, 'Abismo', { clase: claseJugable(Game.profile?.avatar?.clase), gravedad, debug: false });
+        }, T.menu.gravedadAbismo);
       });
     });
   }
@@ -285,20 +289,24 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  /** Ventana para elegir el nivel de gravedad antes de una expedición */
-  private pickGravity() {
+  /**
+   * Ventana para elegir el nivel de gravedad.
+   * v0.87 · también la usa el portal del Abismo: `onPick` recibe el nivel elegido
+   * e `info` cambia el renglón de explicación.
+   */
+  private pickGravity(onPick: (id: number) => void = (id) => this.start(id), info = T.menu.gravedadInfo) {
     const layer = this.add.container(0, 0).setDepth(900);
     const shade = this.add.rectangle(0, 0, W, H, 0x000000, 0.8).setOrigin(0).setInteractive();
     const g = this.add.graphics();
     frame(g, 150, 70, W - 300, 410, 0x0b090e, UI.gold);
     layer.add([shade, g, title(this, W / 2, 104, T.menu.gravedad, 36),
-      txt(this, W / 2, 138, T.menu.gravedadInfo, 18, CSS.dim, { align: 'center', wordWrap: { width: W - 360 } }).setOrigin(0.5, 0)]);
+      txt(this, W / 2, 138, info, 18, CSS.dim, { align: 'center', wordWrap: { width: W - 360 } }).setOrigin(0.5, 0)]);
     GRAVITY.forEach((lv, i) => {
       const unlocked = lv.id <= Game.codex.gravedadMax + 1;
       const y = 200 + i * 86;
       const b = button(this, W / 2, y + 18, W - 360, 74, '', () => {
         layer.destroy();
-        this.start(lv.id);
+        onPick(lv.id);
       }, { enabled: unlocked, color: i === 0 ? UI.border : i === 1 ? 0x6a8fc4 : 0xc87533 });
       b.label.setText('');
       b.add(txt(this, -(W - 360) / 2 + 20, -26, `${lv.name}  ·  g = ${lv.g} m/s²  ·  puntaje ×${lv.scoreMul}`, 23, unlocked ? CSS.gold : '#5a5468'));

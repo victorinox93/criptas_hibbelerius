@@ -14,7 +14,7 @@ import { JEFES as JEFES_ABISMO, JEFES_TRAMO, PAGINAS, PRIMIGENIOS } from '../dat
 
 /** Nombres cortos de las almas para el botón «Fin + alma» (cada clic pasa a la siguiente) */
 const CORTO: Record<string, string> = { icaro: 'Ícaro', ayudante: 'Ayudante', bernoulli: 'Bernoulli', radian: 'Radián', doctorando: 'Doctor', procrastinador: 'Mañana', decimales: 'Dama', duda: 'Duda', autocompleto: 'Autocomp.', manco: 'Dextro', histeresis: 'Histéresis', cebollin: 'Cebollín', helios: 'Helios', parches: 'Parches', hanbei: 'Hanbei', gough: 'Gough' };
-import { RELIC_POOL, RELICS } from '../data/relics';
+import { RELIC_POOL, RELICS, reliquiasDeClase } from '../data/relics';
 import { codexFlag, emptyCodex, Game, pisosDe, generateMap, isAdmin, newRun, Run, saveLocal, unlock, ganarMomentum } from '../state';
 import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui/widgets';
 
@@ -195,11 +195,12 @@ export class DebugScene extends Phaser.Scene {
       const n = OPTS.mazo === 'fuerte' ? 10 : acto * 3;
       for (let i = 0; i < n; i++) r.deck.push({ uid: r.nextUid++, id: Phaser.Utils.Array.GetRandom(pool), up: OPTS.mazo === 'fuerte' || Math.random() < 0.4 });
       if (OPTS.mazo === 'fuerte') r.deck.forEach((c) => (c.up = true));
-      r.relics = Phaser.Utils.Array.Shuffle([...RELIC_POOL]).slice(0, acto - 1 + (OPTS.mazo === 'fuerte' ? 2 : 0));
+      // v0.87 · las reliquias de la clase elegida entran en el sorteo de prueba
+      r.relics = Phaser.Utils.Array.Shuffle([...RELIC_POOL, ...reliquiasDeClase(r.clase)]).slice(0, acto - 1 + (OPTS.mazo === 'fuerte' ? 2 : 0));
     }
     if (OPTS.extras) {
       r.ergios = 500;
-      r.relics = [...RELIC_POOL, 'vidaExtra', 'necronomicon'];
+      r.relics = [...RELIC_POOL, ...reliquiasDeClase(r.clase), 'vidaExtra', 'necronomicon'];
       r.entropia = 75;
       const fam = Phaser.Utils.Array.GetRandom(FAMILIAR_POOL);
       r.familiar = { id: fam, left: FAMILIARS[fam].combats };
