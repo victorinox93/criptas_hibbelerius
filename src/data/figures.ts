@@ -34,7 +34,7 @@ export const BOONS: Record<string, BoonDef> = {
   // ── Isaac Newton ──
   n_principia: {
     id: 'n_principia', figure: 'newton', name: 'Principia', icon: 'i_gaunt',
-    text: ['+1 m/s² a todos tus ataques.', '+2 m/s² a todos tus ataques.'],
+    text: ['+1 m/s² a todos tus ataques (Arcanista y Penitente: se vuelve rapidez al empezar cada combate).', '+2 m/s² a todos tus ataques (Arcanista y Penitente: +1 m/s al empezar cada combate).'],
     lore: 'ΣF = m·a: con la misma masa, más aceleración es más fuerza.',
   },
   n_manzana: {
@@ -66,7 +66,8 @@ export const BOONS: Record<string, BoonDef> = {
   // ── Émilie du Châtelet ──
   c_visviva: {
     id: 'c_visviva', figure: 'chatelet', name: 'Vis Viva', icon: 'i_wind',
-    text: ['Carrera y Segunda Ley dan +1 m/s² adicional.', 'Carrera y Segunda Ley dan +2 m/s² adicionales.'],
+    text: ['Tus cartas de impulso dan +1 adicional: Carrera y Segunda Ley (Caballero), Acelerar (Arcanista), Empuje (Penitente) y la energía Cinética (Espectro).',
+      'Tus cartas de impulso dan +2 adicionales: Carrera y Segunda Ley (Caballero), Acelerar (Arcanista), Empuje (Penitente) y la energía Cinética (Espectro).'],
     lore: 'La "fuerza viva" crece con el cuadrado de la rapidez: K = ½·m·v².',
   },
   c_conserva: {
@@ -183,7 +184,7 @@ export const BOONS: Record<string, BoonDef> = {
   },
   co_medio: {
     id: 'co_medio', figure: 'coriolis', name: 'El ½ de ½mv²', icon: 'i_mass',
-    text: ['Caballero: +1 kg a tus ataques. Arcanista: empiezas cada combate con +1 m/s.', 'Caballero: +2 kg. Arcanista: +2 m/s.'],
+    text: ['+1 kg a tus ataques (Arcanista y Penitente: +1 m/s al empezar cada combate).', '+2 kg a tus ataques (Arcanista y Penitente: +2 m/s).'],
     lore: 'Coriolis puso el ½ en la energía cinética para que trabajo y energía cuadraran: W = ΔK = ½mv₂² − ½mv₁².',
   },
   co_desvio: {

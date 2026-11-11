@@ -8,6 +8,8 @@ export interface RelicDef {
   especial?: boolean; // no sale en botines ni en la tienda
   maldita?: boolean; // v0.71 · reliquia maldita: muy poderosa, pero trae maldiciones (sólo de pactos del mythos)
   abismo?: boolean; // v0.82 · sólo sale en El Abismo de los Ejes
+  /** v0.87 · reliquia de CLASE: sólo sale en los botines si juegas con esa clase ('arcanista' | 'penitente' | 'espectro') */
+  cls?: string;
 }
 
 export const RELICS: Record<string, RelicDef> = {
@@ -31,6 +33,15 @@ export const RELICS: Record<string, RelicDef> = {
   tungsteno: { id: 'tungsteno', name: 'Barra de Tungsteno', icon: 'i_mass', text: 'Pierdes 1 de vida menos cada vez que te hacen daño.', lore: 'El metal con el punto de fusión más alto: 3422 °C. No cede fácil.' },
   hule: { id: 'hule', name: 'Amortiguador de Hule', icon: 'i_reflect', text: 'Si un golpe te iba a hacer entre 2 y 5 de daño, sólo te hace 1.', lore: 'Más tiempo de contacto, menos fuerza: F = Δp / Δt.' },
   termo: { id: 'termo', name: 'Termo de Caldo', icon: 'i_jarra', text: 'Al ganar un combate, si tienes 50 % de vida o menos, te curas 12.', lore: 'Un buen aislante térmico: la energía se queda donde la necesitas.' },
+  // ── v0.87 · Reliquias de CLASE: sólo salen si juegas con esa clase ──
+  // El Caballero ya tiene las suyas en la lista de arriba (Yunque, Guantelete, Coraza…), que
+  // viven de F = m·a y del Bloqueo. Éstas le dan a cada clase un botín que sí usa su física.
+  maxwell: { id: 'maxwell', cls: 'arcanista', name: 'Rueda de Maxwell', icon: 'i_pend', text: 'Empiezas cada combate con 3 m/s de rapidez.', lore: 'Un disco que baja girando y vuelve a subir casi a la misma altura: la energía potencial se vuelve rotación y regresa. Arrancar ya no te cuesta un turno.' },
+  cascoTunel: { id: 'cascoTunel', cls: 'arcanista', name: 'Casco del Túnel de Viento', icon: 'i_wind', text: 'El primer golpe que recibes en cada combate te hace la mitad de daño.', lore: 'Un perfil aerodinámico alarga el tiempo del impacto, y si Δt crece, la fuerza baja: F = Δp/Δt. Útil cuando tienes poca vida que perder.' },
+  laval: { id: 'laval', cls: 'penitente', name: 'Tobera de Laval', icon: 'i_fire', text: 'La primera masa que quemas en cada combate no te cuesta vida.', lore: 'La garganta convergente-divergente de De Laval acelera los gases más allá de la velocidad del sonido: el mismo empuje con menos propelente.' },
+  lastre: { id: 'lastre', cls: 'penitente', name: 'Tanque de Lastre', icon: 'i_mass', text: 'Al ganar un combate recuperas 8 kg de masa (vida).', lore: 'Un tanque de reserva. Lo que sueltas para acelerar se repone cuando el combate termina… mientras quede reserva.' },
+  induccion: { id: 'induccion', cls: 'espectro', name: 'Bobina de Inducción', icon: 'i_bolt', text: '+1 ranura para formas de energía.', lore: 'Faraday: un campo magnético que cambia induce corriente en la espira. Una espira más es una forma más que puedes guardar.' },
+  dinamo: { id: 'dinamo', cls: 'espectro', name: 'Dinamo de Mano', icon: 'i_bolt', text: 'Al empezar cada turno: +2 de Energía Absorbida.', lore: 'Trabajo mecánico que se vuelve energía eléctrica. Con ésta no hace falta que te golpeen para cargarte.' },
   // ── v0.83 · Reliquias del ABISMO: sólo salen en El Abismo de los Ejes (cuerpo rígido y mythos) ──
   plomada: { id: 'plomada', abismo: true, name: 'Plomada de Montemayor', icon: 'i_pend', text: 'Al empezar cada combate: +5 de Bloqueo y −3 de Locura.', lore: 'Una plomada siempre apunta al centro de la Tierra. Montemayor la usaba para saber dónde estaba «abajo» cuando el Abismo lo mareaba.' },
   girocompas: { id: 'girocompas', abismo: true, name: 'Girocompás', icon: 'i_rune', text: 'Nada te aturde ni te da Vértigo.', lore: 'Un giroscopio que gira rápido conserva su eje: L = I·ω no cambia de dirección sin un torque.' },
@@ -62,7 +73,9 @@ export const RELICS: Record<string, RelicDef> = {
 export const MAX_RELIQUIAS = 5;
 export const cuentaTope = (id: string) => !RELICS[id]?.especial;
 
-export const RELIC_POOL = Object.keys(RELICS).filter((id) => !RELICS[id].especial && !RELICS[id].jefe && !RELICS[id].maldita && !RELICS[id].abismo);
+export const RELIC_POOL = Object.keys(RELICS).filter((id) => !RELICS[id].especial && !RELICS[id].jefe && !RELICS[id].maldita && !RELICS[id].abismo && !RELICS[id].cls);
+/** v0.87 · Reliquias propias de una clase (se suman al botín sólo si juegas con ella) */
+export const reliquiasDeClase = (clase: string) => Object.keys(RELICS).filter((id) => RELICS[id].cls === clase);
 /** v0.83 · Reliquias que sólo salen en El Abismo */
 export const RELIQUIAS_ABISMO = Object.keys(RELICS).filter((id) => RELICS[id].abismo);
 export const RELIQUIAS_MALDITAS = Object.keys(RELICS).filter((id) => RELICS[id].maldita);

@@ -524,3 +524,70 @@ Los minijuegos de física del Abismo están en `src/scenes/Gabinete.ts`, un mét
 - **Para agregar figuras al centroide:** agrégalas a la lista `figuras`. Las piezas pueden ser `rect`, `tri` o `hueco` (el hueco cuenta con área negativa).
 - **Para agregar cuerpos al juego de inercia:** agrégalos a la lista `C`. El campo `k` es el factor de I = k·m·R².
 - **Premios:** se ajustan en `ERGIOS_ACIERTO` y `CORDURA_PERFECTO`.
+
+
+---
+
+## 13. Contenido por clase y gravedad del Abismo (v0.87)
+
+### Reliquias de una sola clase
+
+En `src/data/relics.ts` una reliquia puede llevar `cls` con el id de la clase
+(`'arcanista'`, `'penitente'` o `'espectro'`). Esa reliquia **sólo sale en los botines
+de quien juega con esa clase**, y lo hace con el doble de probabilidad que las demás,
+porque son pocas:
+
+```ts
+  maxwell: { id: 'maxwell', cls: 'arcanista', name: 'Rueda de Maxwell', icon: 'i_pend',
+    text: 'Empiezas cada combate con 3 m/s de rapidez.', lore: '…' },
+```
+
+El filtro vive en `randomRelics()` (`src/scenes/Reward.ts`) y usa `reliquiasDeClase(clase)`.
+Las del Caballero no llevan `cls`: son las de siempre (Yunque, Guantelete, Coraza…),
+porque viven de F = m·a y del Bloqueo, que es justo su física.
+
+### Que un bono le sirva a las cuatro clases
+
+Un bono de «+N kg a tus ataques» no le sirve igual a todos: el Arcanista pega con
+½mv² y el Penitente con p = m·v. Para eso está `this.masaOVel(n, fuente)` en
+`Combat.ts`, que traduce el bono a lo que cada clase aprovecha:
+
+| Clase | Recibe |
+|---|---|
+| Caballero | +n kg (entra directo en F = m·a) |
+| Arcanista y Penitente | +n m/s |
+| Espectro | +n kg, que alimentan su energía Potencial (U = m·g·h) |
+
+**Usa `masaOVel` en cualquier reliquia, don, página o pacto nuevo que dé masa o
+aceleración.** Si lo escribes como `this.masa += n`, las cuatro clases lo reciben,
+pero tres de ellas lo aprovechan a la mitad o nada.
+
+Dos recordatorios al poner números en una carta del Penitente:
+
+- Δv = vₑ·ln(m₀/m₁) **se dispara cuando le queda poca masa** (con 12 kg, quemar 4 da
+  casi 40 m/s). Si vas a convertir ese Δv en Bloqueo o en daño plano, tópalo: ve
+  `dvEscudo()` y `DV_ESCUDO` en `cards.ts` (el Escudo Ablativo daba 150 de Bloqueo
+  sin ese tope).
+- `quemar()` nunca lo mata: la masa no baja de 1 kg.
+
+### Cartas nuevas de clase
+
+El `cls` de la carta decide en qué mazo de recompensas cae; `rewardPool()` las toma
+solas, no hay que registrarlas en otro lado. Si la carta es una **Defensa cuyo
+Bloqueo depende del momento** (de la rapidez, de las formas canalizadas, del Δv),
+agrégala también al `switch` de la vista previa en `Combat.ts` (busca
+`Defensas cuyo Bloqueo depende del momento`), si no el alumno no ve el número
+antes de jugarla. Lo mismo para los **Ataques** con daño calculado: van en el
+`switch` de arriba (busca `case 'pesoMuerto'`).
+
+### Gravedad en el Abismo
+
+El portal del Abismo (en `Menu.ts`) ahora abre el mismo selector de gravedad que una
+expedición normal: `pickGravity(onPick, info)` recibe qué hacer con el nivel elegido.
+El nivel viaja en `fadeTo(this, 'Abismo', { gravedad })` y de ahí a `newRun()`, así que
+multiplica vida y daño de los enemigos **además** de la escala del tramo, y multiplica
+el puntaje del ranking (`scoreMul` en `src/data/gravity.ts`). La pantalla de entrada
+del Abismo muestra con qué gravedad vas a bajar.
+
+Para agregar un astro nuevo como nivel de dificultad, copia una fila de `GRAVITY`
+(`src/data/gravity.ts`): sirve igual para las expediciones normales y para el Abismo.
