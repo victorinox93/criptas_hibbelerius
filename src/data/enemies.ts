@@ -26,7 +26,10 @@ interface IntentExtras {
   robaCarta?: number; // v0.76 · te roba N cartas de tu mazo (Ladrón de Rostros: las recuperas si lo vences)
   olvida?: number; // v0.76 · agota N cartas al azar de tu descarte en este combate (Ventana de Contexto)
   puerta?: boolean; // v0.76 · el golpe del Reloj de Yog-Sothoth al terminar su cuenta regresiva
-
+  // ── v0.88 · arquetipos al estilo «Darkest Dungeon», con la física del Abismo ──
+  locura?: number; // ataca tu CORDURA en vez de tu vida (sube tu Locura) · el Coro de Hastur
+  marca?: number; // te MARCA N turnos: mientras dure, TODOS pegan 50 % más · el Topógrafo
+  reordena?: boolean; // reordena la fila y da Bloqueo según la nueva distancia al eje · el Agrimensor
 }
 
 export type Intent =
@@ -84,6 +87,7 @@ export interface EnemyDef {
   traba?: boolean; // v0.76 · al morir traba a los demás Engranes de Leng (pierden su turno)
   cuenta?: number; // v0.76 · cuenta regresiva: al llegar a 0 usa su golpe «puerta»
   imparable?: number; // v0.49 · El Abismo: después de que lo detienes, queda IMPARABLE estos turnos (no se le puede volver a detener)
+  protege?: boolean; // v0.88 · recibe los golpes dirigidos a sus aliados mientras siga en pie (la Cariátide)
   next: (e: EnemyState) => Intent;
 }
 
@@ -559,6 +563,57 @@ export const ENEMIES: Record<string, EnemyDef> = {
         default: return { kind: 'attack', dmg: 7, hits: 3, vertigo: 1, label: 'Líneas paralelas que se cruzan' };
       }
     },
+  },
+  // ════════ v0.88 · ARQUETIPOS: los papeles de combate de «Darkest Dungeon», con la física del Abismo ════════
+  // Cada uno estrena un papel que el bestiario no tenía: proteger, estorbar, marcar,
+  // reordenar la fila y atacar la cordura en vez de la vida.
+  cariatide: {
+    id: 'cariatide', name: 'Cariátide del Pórtico', sprite: 'cariatide', scale: 4.6, hp: [46, 52], mass: 180, act: 5, protege: true,
+    desc: 'Carga sobre la cabeza el peso de todo el pórtico. Mientras siga en pie, los golpes DIRIGIDOS a sus compañeros caen sobre ella: la carga baja por su eje hasta el suelo. Los golpes a TODOS sí les llegan.',
+    next: (e) => {
+      const p = e.turn % 3;
+      if (p === 0) return { kind: 'block', block: 12, label: 'Soportar la carga' };
+      if (p === 1) return { kind: 'attack', dmg: 13, label: 'Dejar caer el arquitrabe' };
+      return { kind: 'block', block: 8, dmg: 6, label: 'La columna no cede' };
+    },
+  },
+  carronia: {
+    id: 'carronia', name: 'Carroña de Shoggoth', sprite: 'carronia', scale: 4.4, hp: [28, 32], mass: 90, act: 5, split: { id: 'cadaver', n: 1 },
+    desc: 'Un pedazo de shoggoth que ya se está deshaciendo. Al morir NO desaparece: deja un cadáver que sigue ocupando su lugar en la fila, estorba las invocaciones y le cambia la distancia al eje a todos los demás.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 8, hemorragia: 2, label: 'Dentelladas sin boca' } : { kind: 'block', block: 7, add: { id: 'susurro', n: 1, to: 'discard' }, label: 'Se rehace' }),
+  },
+  cadaver: {
+    id: 'cadaver', name: 'Masa Muerta', sprite: 'cadaver', scale: 4.2, hp: [12, 14], mass: 70, act: 5,
+    desc: 'Lo que quedó de la Carroña. No ataca ni se defiende: sólo pesa. Ocupa un lugar en la fila, no deja que invoquen en él y corre la distancia d de los demás. Quítalo de en medio si te estorba.',
+    next: () => ({ kind: 'stunned', label: 'Masa muerta' }),
+  },
+  topografo: {
+    id: 'topografo', name: 'El Topógrafo de Ejes', sprite: 'topografo', scale: 4.6, hp: [30, 34], mass: 45, act: 5,
+    desc: 'Él casi no pega: te APUNTA. Mientras estés marcado, TODOS los enemigos te pegan 50 % más, porque ya saben por dónde pasa tu eje. Cállalo primero.',
+    next: (e) => (e.turn % 3 === 0
+      ? { kind: 'buff', marca: 2, label: 'Fijar el eje' }
+      : e.turn % 3 === 1 ? { kind: 'attack', dmg: 5, label: 'Plomada' } : { kind: 'block', block: 8, dmg: 4, label: 'Nivelar' }),
+  },
+  agrimensor: {
+    id: 'agrimensor', name: 'Agrimensor de Leng', sprite: 'agrimensor', scale: 4.6, hp: [38, 42], mass: 55, act: 5,
+    desc: 'Vuelve a medir el terreno y REORDENA la fila. Cada quien gana Bloqueo según su nueva distancia al eje: I = I_cm + m·d². El que queda más lejos es el más difícil de frenar… y tu tiro parabólico ya no cae donde apuntabas.',
+    next: (e) => (e.turn % 3 === 1
+      ? { kind: 'buff', reordena: true, label: 'Levantar el eje otra vez' }
+      : { kind: 'attack', dmg: 9, ...(e.turn % 3 === 2 ? { vertigo: 1 } : {}), label: 'Cadena de agrimensor' }),
+  },
+  coroHastur: {
+    id: 'coroHastur', name: 'El Coro de Hastur', sprite: 'coroHastur', scale: 4.4, hp: [26, 30], mass: 20, act: 5,
+    desc: 'No te toca: canta. Cada canto te sube la LOCURA, y si tu Cordura llega a cero vas al Quiebre y una Sombra te persigue. El Bloqueo no sirve de nada contra una canción.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'buff', locura: 9, label: 'El canto amarillo' }
+      : { kind: 'attack', dmg: 5, locura: 4, vertigo: 1, label: 'La máscara pálida' }),
+  },
+  trompoAzathoth: {
+    id: 'trompoAzathoth', name: 'Trompo de Azathoth', sprite: 'trompoAzathoth', scale: 4.4, hp: [36, 40], mass: 40, act: 5,
+    desc: 'Reparte su masa hacia afuera y hacia adentro: k = √(I/m) es su radio de giro. Con k grande gira lento y pega una vez durísimo; cuando recoge la masa, k baja, ω sube y pega muchas veces seguidas.',
+    next: (e) => (e.turn % 2 === 0
+      ? { kind: 'attack', dmg: 17, label: 'k grande: una vuelta, un golpe' }
+      : { kind: 'attack', dmg: 4, hits: 4, label: 'k chico: ω se dispara' }),
   },
   // ════════ v0.76 · RESCATADOS: enemigos del juego base con un giro de horror cósmico ════════
   byakhee: {
@@ -1116,23 +1171,31 @@ export const ENCOUNTERS_4 = {
 export const ENCOUNTERS_5_TRAMO: Record<1 | 2, { easy: string[][]; normal: string[][]; elite: string[][] }> = {
   // Tramo 1 · los Muelles Inclinados: el mar de Innsmouth, Dagón y las Tierras del Sueño
   1: {
-    easy: [['acolito'], ['polipo'], ['profundo'], ['martense'], ['osario'], ['animaAhogada'], ['shoggothJoven']],
+    easy: [['acolito'], ['polipo'], ['profundo'], ['martense'], ['osario'], ['animaAhogada'], ['shoggothJoven'], ['carronia']],
     normal: [['acolito', 'acolito'], ['polipo', 'acolito'], ['cultistaEje', 'acolito'], ['profundo', 'polipito'], ['cultistaEje', 'profundo'],
       ['polipo', 'cultistaEje'], ['profundo', 'acolito'], ['polipito', 'polipito', 'cultistaEje'],
       ['necrofago'], ['necrofago', 'acolito'], ['martense', 'martense'], ['aladoFestival', 'profundo'], ['reptilSinNombre'],
       ['reptilSinNombre', 'martense'], ['aladoFestival', 'aladoFestival'], ['necrofago', 'martense'],
       ['lengChico', 'lengCentro', 'lengGrande'],
       ['osario', 'osario'], ['shoggothJoven', 'acolito'], ['profundo', 'sacerdoteDagon'], ['acolito', 'sacerdoteDagon'],
-      ['animaAhogada', 'animaAhogada'], ['animaAhogada', 'profundo'], ['osario', 'necrofago']],
+      ['animaAhogada', 'animaAhogada'], ['animaAhogada', 'profundo'], ['osario', 'necrofago'],
+      // v0.88 · arquetipos: la Cariátide tapa a los de atrás, el Topógrafo marca y la Carroña estorba al morir
+      ['cariatide', 'acolito'], ['cariatide', 'sacerdoteDagon'], ['cariatide', 'polipito', 'polipito'],
+      ['topografo', 'profundo'], ['topografo', 'martense'], ['topografo', 'cariatide'],
+      ['carronia', 'acolito'], ['carronia', 'carronia'], ['carronia', 'necrofago']],
     elite: [['vigia'], ['hidra'], ['sabueso'], ['penduloPnakotus'], ['idoloWilcox'], ['armaduraMarsh']],
   },
   // Tramo 2 · R'lyeh invertida: el espacio, Yuggoth, Carcosa y las máquinas del Núcleo
   2: {
-    easy: [['byakhee'], ['gradiente'], ['tokenizador'], ['gargolaAngulos'], ['atomoAzathoth'], ['cultistaEje']],
+    easy: [['byakhee'], ['gradiente'], ['tokenizador'], ['gargolaAngulos'], ['atomoAzathoth'], ['cultistaEje'], ['trompoAzathoth']],
     normal: [['ladronRostros'], ['ladronRostros', 'byakhee'], ['byakhee', 'byakhee'], ['ventanaContexto', 'token'], ['autocompletador', 'tokenizador'],
       ['gradiente', 'autocompletador'], ['gradiente', 'byakhee'], ['ventanaContexto', 'cultistaEje'],
       ['gargolaAngulos', 'gargolaAngulos'], ['gargolaAngulos', 'atomoAzathoth'], ['bibliotecarioCelaeno'], ['bibliotecarioCelaeno', 'tomoProhibido'],
-      ['atomoAzathoth', 'atomoAzathoth'], ['coloniaMiGo'], ['coloniaMiGo', 'miGo'], ['miGo', 'miGo', 'byakhee'], ['necrofago', 'atomoAzathoth'], ['cultistaEje', 'gargolaAngulos']],
+      ['atomoAzathoth', 'atomoAzathoth'], ['coloniaMiGo'], ['coloniaMiGo', 'miGo'], ['miGo', 'miGo', 'byakhee'], ['necrofago', 'atomoAzathoth'], ['cultistaEje', 'gargolaAngulos'],
+      // v0.88 · arquetipos: el Agrimensor reordena, el Coro ataca la Cordura y el Trompo cambia su radio de giro
+      ['agrimensor', 'byakhee'], ['agrimensor', 'gargolaAngulos'], ['agrimensor', 'trompoAzathoth'],
+      ['coroHastur', 'byakhee'], ['coroHastur', 'coroHastur'], ['coroHastur', 'cultistaEje'],
+      ['trompoAzathoth', 'atomoAzathoth'], ['trompoAzathoth', 'miGo'], ['coroHastur', 'agrimensor']],
     elite: [['wilbur'], ['relojYog'], ['shoggothRLHF'], ['turcoAmarillo'], ['hornoYuggoth'], ['volanteAzathoth']],
   },
 };

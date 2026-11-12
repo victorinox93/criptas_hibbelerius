@@ -324,6 +324,103 @@ line(g, 10, 22, 2, 30, 'h'); line(g, 28, 22, 36, 30, 'h')            # mangas
 for (x, y) in ((19, 28), (17, 30), (21, 30), (19, 32)): P(g, x, y, 'n')  # el Signo Amarillo
 S['hastur'] = rows(outline(g))
 
+# ════════ v0.88 · ARQUETIPOS: papeles de combate al estilo «Darkest Dungeon» ════════
+
+# ── Cariátide del Pórtico Hundido: columna-mujer que carga el arquitrabe ──
+g = canvas(26, 34)
+rect(g, 2, 0, 24, 4, 'L')                                   # arquitrabe que carga
+rect(g, 3, 4, 23, 5, 'l')
+rect(g, 9, 5, 17, 8, 'l')                                   # canasto sobre la cabeza
+disc(g, 13, 11, 3.4, 'w', 3.8)                              # cabeza
+P(g, 11, 11, 'k'); P(g, 15, 11, 'k')
+poly(g, [(9, 14), (17, 14), (19, 33), (7, 33)], 'L')        # cuerpo-columna
+for x in (9, 12, 15, 18):                                   # estrías de la columna
+    line(g, x, 16, x, 32, 'l')
+line(g, 9, 14, 5, 22, 'w'); line(g, 17, 14, 21, 22, 'w')    # brazos levantados
+rect(g, 5, 32, 21, 33, 'g')                                 # base ancha: el peso baja por su eje
+line(g, 13, 14, 13, 32, 'y')                                # la línea de carga
+for x, y in ((6, 20), (20, 27), (8, 30)): P(g, x, y, 'u')   # algas
+shade(g, 'L', 'l', frac=0.3)
+S['cariatide'] = rows(outline(g))
+
+# ── Carroña de Shoggoth: masa que ya se está deshaciendo ──
+g = canvas(26, 22)
+disc(g, 13, 14, 10, 'M', 7)
+disc(g, 8, 11, 4, 'm', 3)
+for x, y in ((6, 15), (12, 10), (18, 14), (10, 17), (16, 18)):
+    disc(g, x, y, 1.5, 'E', 1.2); P(g, x, y, 'k')           # ojos que salen y se cierran
+for x in range(4, 23, 3):                                   # se escurre
+    line(g, x, 19, x + (1 if x % 2 else -1), 21, 'M')
+shade(g, 'M', 'p', frac=0.35)
+S['carronia'] = rows(outline(g))
+
+# ── Masa Muerta: el cadáver que deja la Carroña (sólo estorba) ──
+g = canvas(24, 12)
+disc(g, 12, 9, 10, 'p', 4)
+for x in range(4, 21, 4): P(g, x, 6, 'M')
+line(g, 6, 4, 9, 6, 'l'); line(g, 17, 4, 15, 6, 'l')        # restos tiesos
+shade(g, 'p', 'k', frac=0.4)
+S['cadaver'] = rows(outline(g))
+
+# ── El Topógrafo de Ejes: teodolito con tres patas que te apunta ──
+g = canvas(28, 32)
+line(g, 14, 18, 4, 31, 'n'); line(g, 14, 18, 24, 31, 'n'); line(g, 14, 18, 14, 31, 'n')  # trípode
+rect(g, 10, 12, 18, 18, 'l')                                # cuerpo del aparato
+rect(g, 17, 13, 26, 16, 'L')                                # catalejo apuntándote
+disc(g, 26, 14.5, 1.6, 'F')                                 # la lente roja: te está viendo
+disc(g, 13, 8, 3.2, 'w', 3)                                 # cabeza del topógrafo
+P(g, 12, 8, 'k'); P(g, 15, 8, 'k')
+rect(g, 9, 4, 18, 6, 'H')                                   # sombrero de ala
+line(g, 2, 24, 8, 21, 'y')                                  # la mira: una cruz
+line(g, 5, 20, 5, 26, 'y')
+for y in range(19, 31, 3): P(g, 14, y, 'Y')                 # la plomada marca el eje
+shade(g, 'l', 'g', frac=0.3)
+S['topografo'] = rows(outline(g))
+
+# ── El Agrimensor de Leng: encapuchado con cadena de medir y estacas ──
+g = canvas(28, 32)
+poly(g, [(8, 31), (20, 31), (18, 12), (10, 12)], 'P')       # túnica
+poly(g, [(9, 13), (19, 13), (17, 4), (11, 4)], 'p')         # capucha
+disc(g, 14, 9, 2.4, 'd')
+P(g, 12.8, 9, 'E'); P(g, 15.2, 9, 'E')
+for x in range(3, 26, 4):                                   # la cadena de agrimensor, tendida
+    P(g, x, 27, 'L'); P(g, x + 2, 27, 'l')
+line(g, 8, 18, 3, 25, 's'); line(g, 20, 18, 25, 25, 's')    # brazos que tienden la cadena
+line(g, 2, 22, 2, 31, 'n'); line(g, 26, 22, 26, 31, 'n')    # estacas: los ejes que mueve
+poly(g, [(1, 20), (4, 21), (2, 23)], 'y'); poly(g, [(25, 20), (28, 21), (26, 23)], 'y')
+for y in (16, 20, 24): P(g, 14, y, 'v')                     # cordón
+shade(g, 'P', 'p', frac=0.3)
+S['agrimensor'] = rows(outline(g))
+
+# ── El Coro de Hastur: tres máscaras pálidas cantando bajo un manto amarillo ──
+g = canvas(32, 28)
+poly(g, [(4, 27), (28, 27), (24, 8), (8, 8)], 'H')          # manto
+for cx, cy, r in ((10, 11, 3.4), (16, 8, 3.8), (22, 11, 3.4)):
+    disc(g, cx, cy, r, 'W', r)                              # máscaras pálidas
+    P(g, cx - 1, cy - 1, 'k'); P(g, cx + 1, cy - 1, 'k')
+    disc(g, cx, cy + 1.6, 1.1, 'k', 1.4)                    # la boca abierta: cantan
+for x, y in ((6, 20), (26, 20), (16, 24)):                  # el Signo Amarillo repetido
+    P(g, x, y, 'h'); P(g, x, y + 1, 'h'); P(g, x - 1, y + 1, 'h'); P(g, x + 1, y + 1, 'h')
+for x in range(5, 28, 3): P(g, x, 26, 'y')                  # orla
+shade(g, 'H', 'Y', frac=0.35)
+S['coroHastur'] = rows(outline(g))
+
+# ── El Trompo de Azathoth: peonza con brazos que recoge y extiende su masa ──
+g = canvas(32, 28)
+poly(g, [(6, 10), (26, 10), (16, 26)], 'P')                 # cuerpo cónico del trompo
+disc(g, 16, 9, 9, 'v', 4)                                   # disco superior
+disc(g, 16, 9, 4, 'd', 2.4)
+disc(g, 16, 9, 2, 'E', 1.4)                                 # el ojo ciego del centro
+line(g, 7, 9, 1, 5, 'M'); line(g, 25, 9, 31, 5, 'M')        # brazos extendidos: k grande
+disc(g, 1, 4, 2, 'm'); disc(g, 31, 4, 2, 'm')               # las masas en las puntas
+for a in range(0, 360, 45):                                 # estela del giro
+    x = 16 + 11 * math.cos(math.radians(a))
+    y = 9 + 5.5 * math.sin(math.radians(a))
+    P(g, x, y, 'i')
+P(g, 16, 27, 'y')                                           # la punta donde se apoya
+shade(g, 'P', 'p', frac=0.3)
+S['trompoAzathoth'] = rows(outline(g))
+
 out = ['// ════════ EL ABISMO DE LOS EJES · generado con tools/arte/abismo.py (python3) ════════',
        '/** Paleta abisal: verdes ahogados, violeta y hueso */',
        'export const ABISMO_PAL: Record<string, string> = ' + json.dumps(PAL) + ';',

@@ -57,6 +57,8 @@ interface EnemyView {
   nameT: Phaser.GameObjects.Text;
 }
 
+/** v0.88 · cuánto más pegan todos mientras el Topógrafo te tiene marcado */
+const MARCA_MUL = 1.5;
 const HAND_Y = 460;
 const CARD_SCALE = 0.66;
 
@@ -117,6 +119,7 @@ export class CombatScene extends Phaser.Scene {
   private cascoUsado = false; // Casco del Túnel de Viento (Arcanista)
   private lavalUsado = false; // Tobera de Laval (Penitente)
   private esquivaExtra = 0; // Maniobra Evasiva: esquivas garantizadas que te quedan
+  private marcado = 0; // v0.88 · turnos que te quedan MARCADO por el Topógrafo (todos pegan más)
   private vmax = VMAX; // rapidez máxima según la clase
   private ve = VE_BASE; // Penitente: velocidad de escape de sus gases (m/s)
   private critica = false; // Masa Crítica: ataques ×1.5 con poca masa
@@ -665,6 +668,7 @@ export class CombatScene extends Phaser.Scene {
     this.cascoUsado = false;
     this.lavalUsado = false;
     this.esquivaExtra = 0;
+    this.marcado = 0;
     this.vmax = this.isPen ? VMAX_PEN : VMAX;
     this.ve = VE_BASE;
     this.critica = false;
@@ -969,7 +973,11 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private intentText0(i: Intent) {
-    if (i.kind === 'stunned') return { ic: 'i_stun', t: 'Detenido', d: 'Está detenido: no actuará este turno y recibe ×1.5 de daño.' };
+    // v0.88 · una intención «stunned» CON etiqueta es algo que nunca actúa (la Masa Muerta),
+    // no un enemigo al que acabas de detener
+    if (i.kind === 'stunned') return i.label
+      ? { ic: 'i_stun', t: i.label, d: 'No ataca ni se defiende: sólo ocupa un lugar en la fila, estorba las invocaciones y recibe ×1.5 de daño.' }
+      : { ic: 'i_stun', t: 'Detenido', d: 'Está detenido: no actuará este turno y recibe ×1.5 de daño.' };
     let r: { ic: string; t: string; d: string };
     if (i.kind === 'block')
       r = { ic: 'i_shield', t: `${i.block}${i.dmg ? ` +${i.dmg}` : ''}`, d: `Ganará ${i.block} de Bloqueo${i.dmg ? ` y atacará con ${i.dmg} N` : ''}.` };
@@ -1805,6 +1813,38 @@ export class CombatScene extends Phaser.Scene {
   /** Distancia (m) a cada enemigo según su lugar en la fila: 6, 10, 14, 18 m */
   private distancias() {
     return this.alive().sort((a, b) => a.baseX - b.baseX).map((e, i) => ({ e, d: 6 + 4 * i }));
+  }
+
+  /**
+   * v0.88 · El Agrimensor vuelve a medir el terreno: revuelve los lugares de la fila
+   * y le da a cada quien Bloqueo según su NUEVA distancia al eje (I = I_cm + m·d²:
+   * mientras más lejos, más cuesta frenarlo). De paso le mueve el piso al Tiro Parabólico.
+   */
+  private reordenarFila(quien: string) {
+    const vivos = this.alive();
+    if (vivos.length < 2) {
+      this.calc(`${quien} mide de nuevo, pero está solo: nada que reordenar`);
+      return;
+    }
+    const lugares = vivos.map((e) => e.baseX).sort((a, b) => a - b);
+    const mezcla = Phaser.Utils.Array.Shuffle([...vivos]);
+    mezcla.forEach((e, i) => this.moverEnemigo(e, lugares[i]));
+    const notas = mezcla.map((e, i) => {
+      const d = 6 + 4 * i, b = Math.round(d / 2);
+      e.st.block += b;
+      this.refreshEnemy(e);
+      return `${e.st.def.name} a ${d} m (+${b})`;
+    });
+    this.calc(`${quien} reordena la fila · I = I_cm + m·d² → ${notas.join(' · ')}`);
+  }
+
+  /** Mueve a un enemigo a otro lugar de la fila con todo y su barra, nombre e intención */
+  private moverEnemigo(ev: EnemyView, x: number) {
+    const dx = x - ev.baseX;
+    if (!dx) return;
+    ev.baseX = x;
+    const piezas: { x: number }[] = [ev.root, ev.hp.g, ev.hp.t, ev.blockT, ev.intentC, ev.statusC, ev.nameT];
+    for (const o of piezas) this.tweens.add({ targets: o, x: o.x + dx, duration: 340, ease: 'Sine.inOut' });
   }
 
   /** ¿Sobre quién cae un proyectil con alcance R? (tolerancia ±2.5 m) */
@@ -3553,6 +3593,16 @@ export class CombatScene extends Phaser.Scene {
   /** Aplica una fuerza a un enemigo. Devuelve true si lo detuvo. */
   private async hitEnemy(ev: EnemyView, F: number, ignoreBlock = false, kind: number | 'golpe' | 'calor' | 'res' = 'golpe'): Promise<boolean> {
     if (ev.dead) return false;
+    // v0.88 · la Cariátide recibe los golpes DIRIGIDOS a sus compañeros: la carga
+    // baja por su eje hasta el suelo. Los golpes a TODOS sí le llegan a cada quien.
+    if (!this.curAll && !ev.st.def.protege) {
+      const guardia = this.alive().find((a) => a.st.def.protege && a !== ev);
+      if (guardia) {
+        this.calc(`${guardia.st.def.name} se interpone: el golpe a ${ev.st.def.name} baja por su eje`);
+        this.floatText(guardia.baseX, 200, 'Protege', '#c8b890');
+        ev = guardia;
+      }
+    }
     const st = ev.st;
     if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
     const cardHit = kind === 'golpe' || typeof kind === 'number';
@@ -3942,6 +3992,12 @@ export class CombatScene extends Phaser.Scene {
 
   private async hurtPlayer(dmg: number, from: EnemyView | null) {
     const run = Game.run!;
+    // v0.88 · MARCADO por el Topógrafo: ya saben por dónde pasa tu eje y todos afinan el golpe
+    if (from && dmg > 0 && this.marcado > 0) {
+      const antes = dmg;
+      dmg = Math.round(dmg * MARCA_MUL);
+      this.calc(`Estás marcado: ${from.st.def.name} sabe dónde pegar (${antes} → ${dmg})`);
+    }
     // v0.87 · Casco del Túnel de Viento (Arcanista): el primer golpe del combate se reparte en más tiempo
     if (from && dmg > 1 && !this.cascoUsado && this.has('cascoTunel')) {
       this.cascoUsado = true;
@@ -4158,6 +4214,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.has('estatuillaAngell') && (Game.run!.entropia ?? 0) >= 50) { this.energy += 1; this.calc('Estatuilla del Profesor Angell: tu Locura se vuelve poder (+1 J)'); }
     if (this.vacioAb) { this.eAbs = Math.min(this.eAbsMax, this.eAbs + this.vacioAb); this.calc(`Energía del Vacío: +${this.vacioAb} de Energía Absorbida`); }
     if (this.has('dinamo')) { this.eAbs = Math.min(this.eAbsMax, this.eAbs + 2); this.calc('Dinamo de Mano: trabajo mecánico → +2 de Energía Absorbida'); }
+    // v0.88 · la marca del Topógrafo se gasta al empezar tu turno
+    if (this.marcado > 0 && --this.marcado === 0) this.calc('Pierden tu eje: ya no estás marcado');
     if (this.isEsp) {
       this.absTotal = false;
       for (let k = 0; k < this.conservacion; k++) await this.canalizar(Phaser.Utils.Array.GetRandom(FORMAS_TIPOS), 'Conservación de la Energía');
@@ -4773,6 +4831,23 @@ export class CombatScene extends Phaser.Scene {
             this.calc(`${st.def.name} invoca: ${ENEMIES[it.summon].name}`);
           } else this.calc(`${st.def.name} intenta invocar, pero no hay lugar`);
         }
+        // v0.88 · el Coro de Hastur canta: no te quita vida, te quita CORDURA
+        if (it.locura) {
+          const d = addEntropia(it.locura);
+          if (d > 0) {
+            this.floatText(this.heroX, 180, `Locura +${d}`, '#d0a0f0');
+            this.calc(`${st.def.name}: el canto te sube la Locura ${d} (Cordura ${corduraDe(Game.run!.entropia)})`);
+          } else this.calc(`${st.def.name} canta, pero tu mente no se mueve`);
+        }
+        // v0.88 · el Topógrafo fija tu eje: mientras dure, TODOS pegan más
+        if (it.marca) {
+          this.marcado = Math.max(this.marcado, it.marca);
+          this.floatText(this.heroX, 200, '¡MARCADO!', '#ff8a6a');
+          this.calc(`${st.def.name} fija tu eje: por ${this.marcado} turnos TODOS te pegan ${Math.round((MARCA_MUL - 1) * 100)} % más`);
+          this.refreshPlayer();
+        }
+        // v0.88 · el Agrimensor vuelve a medir: reordena la fila y reparte Bloqueo por distancia
+        if (it.reordena) this.reordenarFila(st.def.name);
         if (it.shieldAll) {
           for (const a of this.alive()) { a.st.block += it.shieldAll; this.refreshEnemy(a); }
           this.calc(`${st.def.name}: +${it.shieldAll} de Bloqueo a todos sus aliados`);
