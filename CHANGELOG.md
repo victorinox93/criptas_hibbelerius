@@ -2,6 +2,24 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.87.0 · Cada personaje, lo suyo
+
+Los alumnos reportaron que el juego estaba cargado al Caballero de la Masa. Las cartas propias estaban parejas (21 del Caballero contra 22 del Arcanista), pero todo lo que rodea a las cartas sí lo favorecía.
+
+- **6 reliquias que sólo le salen a su personaje** (campo `cls` nuevo en `relics.ts`; en su botín salen con el doble de probabilidad).
+  - **Arcanista:** Rueda de Maxwell (empiezas con 3 m/s) y Casco del Túnel de Viento (el primer golpe del combate hace la mitad, F = Δp/Δt).
+  - **Penitente:** Tobera de Laval (la primera quema no cuesta vida) y Tanque de Lastre (recuperas 8 kg al ganar).
+  - **Espectro:** Bobina de Inducción (+1 ranura de forma) y Dinamo de Mano (+2 de Energía Absorbida por turno).
+- **7 cartas nuevas.** Penitente, que tenía una sola Defensa: Maniobra Evasiva, Escudo Ablativo y Expulsión de Masa. Arcanista: Fricción Controlada y Choque Inelástico (le quita al enemigo el impulso acumulado). Espectro: Trabajo Oblicuo y Pozo de Potencial.
+- **Los dones de los ecos ya le sirven a las cuatro clases.** `masaOVel()` pasó a ser método de `Combat`: cualquier bono de masa o aceleración se traduce a kg, m/s o energía Potencial según la clase, y lo usan reliquias, dones, páginas y pactos.
+  - Vis Viva sólo mejoraba cartas del Caballero y del Arcanista; ahora también Empuje (Penitente) y la energía Cinética (Espectro).
+  - **Arreglo:** los bonos de aceleración se convertían a rapidez con `Math.floor`, así que un bono de +1 m/s² (Guantelete de Newton, Principia nivel 1) se perdía completo con el Arcanista y el Penitente.
+- **Se elige la gravedad al bajar al Abismo.** Multiplica vida y daño además de la escala del tramo, y multiplica el puntaje del ranking. La pantalla de entrada dice con qué gravedad bajas.
+- **Avisos de novedades:** al entrar después de una actualización sale un pergamino con lo nuevo, una sola vez, y queda consultable en «★ Novedades» del menú. El contenido vive en `src/data/novedades.ts`.
+- **El Grimorio se filtra por personaje** en las pestañas de Cartas y de Reliquias.
+- **Puntajes grandes legibles:** el ranking y las pantallas finales usan prefijos del SI (12.3 k, 1.20 M, 1.20 G) en lugar de números de trece dígitos.
+- Balance: el Δv que el Escudo Ablativo convierte en Bloqueo tiene tope (`DV_ESCUDO`), porque Δv = vₑ·ln(m₀/m₁) se dispara cuando queda poca masa.
+
 ## v0.86.0 · Sin topes en el Abismo y aciertos en el ranking
 
 - **Personajes sin tope en el Abismo** (el Caballero ya escalaba sin límite con sus kg). En la expedición normal no cambia nada.

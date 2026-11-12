@@ -28,11 +28,42 @@ interface Entry {
   detail: (c: Phaser.GameObjects.Container) => void;
 }
 
+/**
+ * v0.87 · Filtros de las pestañas, pedidos por los alumnos para no revolver
+ * las cartas de los cuatro personajes en una sola cuadrícula.
+ * Sólo las pestañas de Cartas (3) y de Reliquias y dones (4) tienen filtros.
+ */
+const FILTROS: Record<number, { nombre: string; pasa: (e: Entry) => boolean }[]> = {
+  3: [
+    { nombre: 'Todas', pasa: () => true },
+    // en cards.ts, una carta sin `cls` es del Caballero
+    { nombre: 'Caballero', pasa: (e) => !CARDS[e.id]?.cls },
+    { nombre: 'Arcanista', pasa: (e) => CARDS[e.id]?.cls === 'arcanista' },
+    { nombre: 'Penitente', pasa: (e) => CARDS[e.id]?.cls === 'penitente' },
+    { nombre: 'Espectro', pasa: (e) => CARDS[e.id]?.cls === 'espectro' },
+    { nombre: 'Neutrales', pasa: (e) => CARDS[e.id]?.cls === 'neutral' },
+  ],
+  4: [
+    { nombre: 'Todo', pasa: () => true },
+    { nombre: 'Reliquias', pasa: (e) => e.kind === 'relics' },
+    { nombre: 'Dones', pasa: (e) => e.kind === 'boons' },
+    { nombre: 'Efectos', pasa: (e) => e.kind === 'effects' },
+    { nombre: 'De clase', pasa: (e) => e.kind === 'relics' && !!RELICS[e.id]?.cls },
+  ],
+};
+
+/** Nombre del personaje dueño de una reliquia de clase */
+const CLASE_NOMBRE: Record<string, string> = {
+  arcanista: 'Arcanista Cinético', penitente: 'Penitente del Empuje', espectro: 'Espectro de la Energía',
+};
+
 const DX = 488; // panel de detalle
 const DW = 436;
 
 export class CodexScene extends Phaser.Scene {
   private tab = 0;
+  private filtro = 0; // v0.87 · filtro activo de la pestaña (0 = todo)
+  private chips: Btn[] = [];
   private grid!: Phaser.GameObjects.Container;
   private detail!: Phaser.GameObjects.Container;
   private tabs: Btn[] = [];
@@ -212,7 +243,10 @@ export class CodexScene extends Phaser.Scene {
             for (let f = 25; ct.width > DW - 190 && f >= 18; f--) ct.setFontSize(f);
             if (ct.width > DW - 190) ct.setWordWrapWidth(DW - 190);
             L(c, ct);
-            L(c, txt(this, DX + 185, Math.max(186, ct.y + ct.height + 4), `${cd.type} · ${cd.concept}\n${cd.rarity}`, 19, CSS.dim));
+            // v0.87 · se dice de qué personaje es la carta
+            const duena = cd.cls === 'neutral' ? 'de cualquiera' : cd.cls === 'estado' ? 'te la meten los enemigos'
+              : cd.cls ? `del ${CLASE_NOMBRE[cd.cls] ?? cd.cls}` : 'del Caballero de la Masa';
+            L(c, txt(this, DX + 185, Math.max(186, ct.y + ct.height + 4), `${cd.type} · ${cd.concept}\n${cd.rarity} · ${duena}`, 19, CSS.dim, { wordWrap: { width: DW - 190 } }));
             L(c, txt(this, DX + 185, 250, cd.lore, 19, CSS.bone, { wordWrap: { width: DW - 190 }, lineSpacing: 2 }));
             if (cd.lock) L(c, txt(this, DX + 185, 440, `Desbloqueable: nivel ${cd.lock} de Conocimiento`, 17, '#9ad8f0', { wordWrap: { width: DW - 190 } }));
           },
@@ -221,7 +255,8 @@ export class CodexScene extends Phaser.Scene {
         const rel: Entry[] = Object.values(RELICS).map((r) => ({
           kind: 'relics', id: r.id, tex: r.icon, name: r.name,
           detail: (c) => {
-            head(c, r.icon, r.name, 'Reliquia', 9);
+            // v0.87 · se dice de quién es: las de clase sólo le salen a su personaje
+            head(c, r.icon, r.name, r.cls ? `Reliquia · sólo para el ${CLASE_NOMBRE[r.cls] ?? r.cls}` : 'Reliquia', 9);
             body(c, 290, r.text, CSS.gold);
             body(c, 340, r.lore);
           },
@@ -322,22 +357,44 @@ export class CodexScene extends Phaser.Scene {
   }
 
   private show(tab: number, mismaPestana = false) {
-    if (!mismaPestana) this.pag = 0;
+    if (!mismaPestana) { this.pag = 0; this.filtro = 0; }
     this.tab = tab;
     audio.sfx('click');
     this.tabs.forEach((b, i) => b.label.setColor(i === tab ? CSS.gold : CSS.dim));
     this.grid.removeAll(true);
     this.detail.removeAll(true);
+    this.chips.forEach((b) => b.destroy());
+    this.chips = [];
     if (tab === 5) return this.showProgress();
     if (tab === 6) return this.showRelaciones();
-    const list = this.entries(tab);
+    const todas = this.entries(tab);
+
+    // v0.87 · fila de filtros (sólo Cartas y Reliquias): deja ver un personaje a la vez
+    const filtros = FILTROS[tab] ?? [];
+    this.filtro = Math.min(this.filtro, Math.max(0, filtros.length - 1));
+    const list = filtros.length ? todas.filter(filtros[this.filtro].pasa) : todas;
+    if (filtros.length) {
+      const ancho = Math.floor((436 - (filtros.length - 1) * 4) / filtros.length);
+      this.chips = filtros.map((f, i) => {
+        const b = button(this, 40 + ancho / 2 + i * (ancho + 4), 140, ancho, 28,
+          f.nombre, () => { this.filtro = i; this.pag = 0; this.show(tab, true); }, { size: ancho < 72 ? 14 : 16 });
+        b.label.setColor(i === this.filtro ? CSS.gold : CSS.dim);
+        return b;
+      });
+    }
     const known = list.filter((e) => this.has(e.kind, e.id)).length;
     this.countT.setText(`${T.grimorio.descubiertos}: ${known} / ${list.length}`);
+    if (!list.length) {
+      this.grid.add(txt(this, 248, 300, 'Nada por aquí todavía.', 20, CSS.dim).setOrigin(0.5));
+      return;
+    }
 
     // cuadrícula: si hay muchas entradas se divide en páginas (◀ ▶)
     const many = list.length > 30;
-    const cols = many ? 8 : 6, size = many ? 44 : 62, gap = many ? 6 : 8, x0 = 40, y0 = 136;
-    const porPag = many ? cols * 6 : 30;
+    const cols = many ? 8 : 6, size = many ? 44 : 62, gap = many ? 6 : 8, x0 = 40;
+    // con la fila de filtros arriba, la cuadrícula empieza más abajo y cabe un renglón menos
+    const y0 = filtros.length ? 168 : 136;
+    const porPag = cols * (many ? (filtros.length ? 5 : 6) : (filtros.length ? 4 : 5));
     const pags = Math.max(1, Math.ceil(list.length / porPag));
     this.pag = Math.min(this.pag, pags - 1);
     if (pags > 1) {

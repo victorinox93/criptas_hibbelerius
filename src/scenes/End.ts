@@ -17,6 +17,7 @@ import { ALMAS } from '../data/almas';
 import { epilogoAlma } from '../art/epilogos';
 import { button, embers, fadeTo, panel, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { gravityOf } from '../data/gravity';
+import { fmtPuntos, fmtPuntosExacto } from '../data/puntaje';
 
 const TIPS = T.final.consejos;
 
@@ -169,7 +170,7 @@ export class EndScene extends Phaser.Scene {
       [F[2], run.stats.elites],
       [F[3], `${run.stats.runasOk}/${run.stats.runasTotal}`],
       [F[4], run.stats.ergiosTotal ?? 0],
-      [F[5], run.score.toLocaleString('es-MX')],
+      [F[5], fmtPuntos(run.score)], // v0.87 · corto con prefijos del SI; el exacto va en el desglose (ⓘ)
       ['Tiempo de juego', `${Math.round((run.tiempo ?? 0) / 60)} min`],
     ];
     rows.forEach(([k, v], i) => {
@@ -178,11 +179,13 @@ export class EndScene extends Phaser.Scene {
       if (i === 5) {
         // desglose del puntaje (estilo arcade)
         const d = Object.entries(run.desglose ?? {}).filter(([, n]) => n !== 0).sort((a, b) => b[1] - a[1]);
-        const body = d.length ? d.map(([c, n]) => `${c}: ${n > 0 ? '+' : ''}${n.toLocaleString('es-MX')}`).join('\n') : 'Sin puntos todavía.';
+        const body = d.length ? d.map(([c, n]) => `${c}: ${n > 0 ? '+' : ''}${fmtPuntos(n)}`).join('\n') : 'Sin puntos todavía.';
         const mul = gravityOf(run.gravity).scoreMul;
         const info = txt(this, 580, 178 + i * 40, 'ⓘ', 20, CSS.dim).setOrigin(0, 0);
+        // v0.87 · el número exacto vive aquí, porque en la fila ya se ve abreviado
+        const exacto = `Puntaje exacto: ${fmtPuntosExacto(run.score)}\n\n`;
         [t, info].forEach((o) => o.setInteractive({ useHandCursor: true })
-          .on('pointerover', () => tip.show(600, 120, 'Desglose del puntaje', `${body}${mul !== 1 ? `\n(ya incluye ×${mul} por gravedad)` : ''}`))
+          .on('pointerover', () => tip.show(600, 120, 'Desglose del puntaje', `${exacto}${body}${mul !== 1 ? `\n(ya incluye ×${mul} por gravedad)` : ''}`))
           .on('pointerout', () => tip.hide()));
       }
     });

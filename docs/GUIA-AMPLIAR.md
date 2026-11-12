@@ -591,3 +591,78 @@ del Abismo muestra con qué gravedad vas a bajar.
 
 Para agregar un astro nuevo como nivel de dificultad, copia una fila de `GRAVITY`
 (`src/data/gravity.ts`): sirve igual para las expediciones normales y para el Abismo.
+
+---
+
+## 14. Avisos de novedades, filtros del Grimorio y puntajes (v0.87)
+
+### Avisar de una actualización
+
+El contenido de los avisos vive en **`src/data/novedades.ts`**, aparte del
+`CHANGELOG.md`: el changelog es para quien programa y las novedades son para el
+alumno, contadas en corto.
+
+Al publicar una versión nueva:
+
+1. Sube `VERSION` en `src/config.ts` (por ejemplo a `'0.88.0 · …'`).
+2. Agrega la entrada **arriba** de `NOVEDADES`, con el mismo número de versión:
+
+```ts
+  {
+    v: '0.88.0',
+    titulo: 'Lo que sea que hayas hecho',
+    puntos: [
+      '**Un encabezado corto.** La explicación va después del punto y sale en gris.',
+      'Un punto sin encabezado también funciona.',
+    ],
+  },
+```
+
+De 3 a 6 puntos, en segunda persona. Lo que va entre `**dobles asteriscos**` al
+**inicio** del punto se pinta en dorado como encabezado; si una versión trae
+muchos puntos, el pergamino se parte solo en varias páginas.
+
+Quién ve el aviso:
+
+| Alumno | Qué pasa |
+|---|---|
+| Ya jugaba y se perdió versiones | Ve el pergamino con todas las que le faltan |
+| Ya jugaba pero nunca vio un aviso | Ve sólo la versión más reciente |
+| Entra por primera vez | No ve nada (para él todo es nuevo) y queda al día |
+
+Al cerrarlo se guarda la versión en `Game.codex.novedades` y no vuelve a salir
+hasta la próxima. Siempre se puede volver a leer en **★ Novedades** del menú.
+Si se te olvida subir `VERSION_NUM`, el aviso sale una vez y se calla: se guarda
+la más alta entre la del juego y la de la lista.
+
+> El aviso se llama directo al final de `create()` del menú, **sin
+> `delayedCall`**: así no depende de que el reloj de la escena esté corriendo.
+
+### Filtros del Grimorio
+
+Están en `FILTROS` (`src/scenes/Codex.ts`), una lista por número de pestaña:
+
+```ts
+  3: [
+    { nombre: 'Todas', pasa: () => true },
+    { nombre: 'Arcanista', pasa: (e) => CARDS[e.id]?.cls === 'arcanista' },
+  ],
+```
+
+`pasa` recibe la entrada de la cuadrícula (trae `kind` e `id`), así que se puede
+filtrar por lo que sea del dato. Una pestaña con filtros pierde un renglón de la
+cuadrícula, que se descuenta solo. Para agregar filtros a otra pestaña basta con
+ponerla en `FILTROS` con su número.
+
+### Puntajes grandes
+
+`fmtPuntos()` (`src/data/puntaje.ts`) escribe los números con **prefijos del
+SI**: hasta 100 000 va completo (`12,340`) y de ahí en adelante `128 k`,
+`1.20 M`, `1.20 G`, `1.20 T`. Se usan los prefijos del SI y no «billones»
+porque significan cosas distintas en español y en inglés —y porque es un curso
+de física—. `fmtPuntosExacto()` da el número completo, para donde sí quepa: hoy
+se usa en el desglose de la pantalla final.
+
+**Úsalo en cualquier pantalla nueva que muestre puntaje.** En el infinito del
+Abismo la vida de los enemigos crece exponencialmente y los puntajes llegan a
+trece dígitos.

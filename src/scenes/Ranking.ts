@@ -10,6 +10,7 @@ import { ARMORS, CAPES, VISORS } from '../art/palette';
 import { CLASSES } from '../data/classes';
 import { ACC } from '../data/tienda';
 import { gravityOf } from '../data/gravity';
+import { fmtPuntos } from '../data/puntaje';
 import { Game, TOTAL_PISOS } from '../state';
 import { T } from '../textos';
 import { button, Btn, dungeonBackground, embers, fadeTo, frame, title, txt } from '../ui/widgets';
@@ -149,7 +150,7 @@ export class RankingScene extends Phaser.Scene {
       R(txt(this, COLS[3], y + 26, p.minutos === undefined ? '—' : tiempoJugado(p.minutos), 16, '#9ad8c8'));
       R(txt(this, COLS[7], y + 2, pctAciertos(p), 24, p.runasTotal ? CSS.green : CSS.dim));
       if (p.runasTotal) R(txt(this, COLS[7], y + 28, `${p.runasOk ?? 0}/${p.runasTotal}`, 15, CSS.dim));
-      R(txt(this, COLS[4], y + 8, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
+      R(txt(this, COLS[4], y + 8, `✦ ${fmtPuntos(Number(p.puntaje))}`, 24, CSS.gold)); // v0.87 · prefijos del SI: los puntajes del infinito no cabían
       if (this.modo === 'abismo') {
         // profundidad: tramo alcanzado (5+ = modo infinito)
         const tramo = Math.floor(p.piso / (PISOS_TRAMO + 1)) + 1; // v0.54 · tramos de 10 pisos + jefe
@@ -196,7 +197,7 @@ export class RankingScene extends Phaser.Scene {
     y += 34;
     const medal = p.lugar === 1 ? CSS.gold : p.lugar === 2 ? '#c8c8d8' : p.lugar === 3 ? '#c8875a' : CSS.bone;
     L.add(txt(this, x, y, `Lugar ${p.lugar}`, 24, medal));
-    L.add(txt(this, x + 140, y, `✦ ${Number(p.puntaje).toLocaleString('es-MX')}`, 24, CSS.gold));
+    L.add(txt(this, x + 140, y, `✦ ${fmtPuntos(Number(p.puntaje))}`, 24, CSS.gold));
     y += 30;
     const piso2 = p.piso > TOTAL_PISOS ? `${TOTAL_PISOS} + Acto IV` : `${p.piso}/${TOTAL_PISOS}`;
     L.add(txt(this, x, y, `Piso máx. ${piso2}`, 21, CSS.bone));

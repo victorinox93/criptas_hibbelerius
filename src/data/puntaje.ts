@@ -54,10 +54,40 @@ export function multRacha(racha: number) {
   return Math.min(PUNTOS.rachaMax, 1 + PUNTOS.rachaPaso * Math.max(0, racha - 1));
 }
 
-/** Formato corto para la barra superior: 12,340 → 12.3k */
+/**
+ * v0.87 · Formato corto de puntajes, con PREFIJOS DEL SI.
+ *
+ * En el infinito del Abismo la vida de los enemigos crece exponencialmente y
+ * los puntajes llegan a trece dígitos: 1,204,573,900,000 no se lee ni se
+ * compara. Se usan los prefijos del SI (k, M, G, T, P) en lugar de «billones»,
+ * que además significa distinto en español y en inglés —y, siendo un curso de
+ * física, son los que los alumnos ya conocen.
+ *
+ *   999 → 999        ·  12 340 → 12,340   ·  128 400 → 128 k
+ *   1 204 000 → 1.20 M  ·  1.2e9 → 1.20 G  ·  1.2e12 → 1.20 T
+ *
+ * Hasta 100 000 se escribe completo, para que los puntajes de una expedición
+ * normal se sigan viendo exactos.
+ */
+const PREFIJOS: [number, string][] = [[1e15, 'P'], [1e12, 'T'], [1e9, 'G'], [1e6, 'M'], [1e3, 'k']];
+
 export function fmtPuntos(n: number) {
-  return n >= 100000 ? `${Math.round(n / 1000)}k` : n.toLocaleString('es-MX');
+  const neg = n < 0 ? '−' : '';
+  const a = Math.abs(Math.round(n));
+  if (a < 100000) return neg + a.toLocaleString('es-MX');
+  for (const [escala, p] of PREFIJOS) {
+    // el 0.9995 evita «1000 k»: 999 999 ya se muestra como 1.00 M
+    if (a < escala * 0.9995) continue;
+    const v = a / escala;
+    // 3 cifras significativas: 1.20 G, 12.3 G, 123 G
+    const dec = v < 10 ? 2 : v < 100 ? 1 : 0;
+    return `${neg}${v.toFixed(dec)} ${p}`;
+  }
+  return neg + a.toLocaleString('es-MX');
 }
+
+/** El número completo, con separadores de miles (para donde sí quepa) */
+export const fmtPuntosExacto = (n: number) => Math.round(n).toLocaleString('es-MX');
 
 interface RunFinal extends RunLike {
   hp: number;
