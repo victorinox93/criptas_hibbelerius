@@ -64,6 +64,9 @@ export class MenuScene extends Phaser.Scene {
     this.progreso();
     this.portalAbismo();
     button(this, 70, 22, 110, 26, T.menu.creditos, () => fadeTo(this, 'Credits'), { size: 15 });
+    // v0.87 · el historial va aquí arriba, junto a Créditos: en la rejilla de
+    // abajo recorría los botones y dejaba «Cerrar sesión» descolgado
+    button(this, 188, 22, 116, 26, '★ Novedades', () => novedades(this), { size: 15 });
     // regalo diario de Layla (fomenta entrar seguido)
     this.avisosHuellas();
     const regalo = tiendaAbierta() ? regaloDiario(REGALO_DIARIO) : 0;
@@ -147,7 +150,6 @@ export class MenuScene extends Phaser.Scene {
         const t = txt(this, 690, 112, 'Vence a Hibbelerius para desbloquear el soundtrack.', 18, CSS.dim).setOrigin(0.5);
         this.tweens.add({ targets: t, alpha: 0, delay: 1800, duration: 500, onComplete: () => t.destroy() });
       }],
-      ['★ Novedades', () => novedades(this)], // v0.87 · historial de cambios
       ...(FORM_URL ? [['✎ Tu opinión', () => window.open(FORM_URL, '_blank')] as [string, () => void]] : []),
       [T.menu.salir, () => {
         clearSession();
