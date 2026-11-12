@@ -755,3 +755,53 @@ Los dos jefes nuevos, como ejemplo de lo que se puede armar con esto:
 - **El Par de Fuerzas** (ΣF = 0, ΣM ≠ 0). Dos cuerpos que se curan con
   `healAll`. En `killEnemy()`, cuando cae uno, el otro recibe `furia = true` y
   su `next()` cambia a los golpes grandes.
+
+---
+
+## 16. La pelea en curso: por qué recargar ya no sirve de nada (v0.88)
+
+**El agujero.** `run.floor` sólo avanza **al ganar** un combate. Como la partida
+se guarda en `localStorage`, cerrar la pestaña a medio combate devolvía al
+alumno justo antes de pelear… y todo se volvía a sortear: los enemigos, la
+condición del piso y, sobre todo, la **condición del jefe**. Varios alumnos lo
+usaban para esquivar «Mente en Blanco».
+
+**El parche.** `run.combate` (en `state.ts`) guarda la pelea tal como quedó
+sorteada:
+
+```ts
+combate?: {
+  piso: number; kind: string; nodo?: number;
+  enc: string[]; cond?: string; condJefe?: string; mordidos?: number[];
+  veces: number;
+};
+```
+
+- `guardarPelea()` lo escribe al entrar; `olvidarPelea()` lo borra al ganar, y
+  el camino de la muerte lo borra también.
+- Al entrar, si `run.combate` corresponde a **esta misma** pelea (mismo nodo del
+  mapa, o mismo piso y tipo si no hay nodo), se restauran los enemigos y las dos
+  condiciones en lugar de sortear.
+- `veces` cuenta los reingresos y se manda a la hoja en el evento `pelea`.
+
+> **Importante para quien agregue algo que se sortee al empezar un combate:**
+> guárdalo en `run.combate` y restáuralo, o volverá a ser re-sorteable. Y
+> `guardarPelea()` tiene que quedarse **después** de `abismoModoInicio()`, que es
+> quien elige la condición del jefe: si se llama antes, se guarda a medias y el
+> agujero sigue abierto (pasó al escribir esto).
+
+**Detectarlo en la hoja.** Cada entrada a un combate deja un evento `pelea` con
+`{piso, tipo, veces, cond, condJefe}`. Un alumno que recarga a propósito aparece
+con `veces` mayor que 1 muchas veces. Para verlo por alumno:
+
+```
+=QUERY(Eventos!A:H,"select C, B, count(A) where E = 'pelea' and H like '%\"veces\":2%' group by C, B order by count(A) desc",1)
+```
+
+Eso no castiga a nadie solo: una recarga suelta también puede ser que se cayera
+el internet. Lo que delata es el patrón.
+
+**Condiciones de jefe** (`CONDICIONES_JEFE` en `abismo_modo.ts`): ya son nueve.
+Las nuevas se enganchan en un solo lugar cada una — `usePotion()` (Frasco
+Sellado), el robo de `startTurn()` (Mano Corta), `const fam = …` (Soledad) y la
+energía del primer turno (Arranque Lento).

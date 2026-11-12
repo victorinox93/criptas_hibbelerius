@@ -414,14 +414,14 @@ export class MapScene extends Phaser.Scene {
   enter(n: MapNode) {
     switch (n.type) {
       case 'combate':
-        return fadeTo(this, 'Combat', { kind: n.floor <= 1 ? 'easy' : 'normal', floor: n.floor });
+        return fadeTo(this, 'Combat', { kind: n.floor <= 1 ? 'easy' : 'normal', floor: n.floor, nodo: n.id });
       case 'elite':
-        return fadeTo(this, 'Combat', { kind: 'elite', floor: n.floor });
+        return fadeTo(this, 'Combat', { kind: 'elite', floor: n.floor, nodo: n.id });
       case 'jefe': {
         const r = Game.run!;
         const signos = r.huellas?.acto === (r.acto ?? 1) ? r.huellas.signos : [];
         if (signos.length && !r.fantasma) return this.elegirSigno(n.floor, signos);
-        return fadeTo(this, 'Combat', { kind: 'boss', floor: n.floor });
+        return fadeTo(this, 'Combat', { kind: 'boss', floor: n.floor, nodo: n.id });
       }
       case 'fogata':
         return fadeTo(this, 'Campfire', { floor: n.floor });
@@ -444,7 +444,7 @@ export class MapScene extends Phaser.Scene {
       case 'gabinete':
         return fadeTo(this, 'Gabinete', { floor: n.floor });
       case 'astro':
-        return fadeTo(this, 'Combat', { kind: 'elite', floor: n.floor, astro: n.astro ?? 'mercurio' });
+        return fadeTo(this, 'Combat', { kind: 'elite', floor: n.floor, astro: n.astro ?? 'mercurio', nodo: n.id });
     }
   }
 
