@@ -421,6 +421,52 @@ P(g, 16, 27, 'y')                                           # la punta donde se 
 shade(g, 'P', 'p', frac=0.3)
 S['trompoAzathoth'] = rows(outline(g))
 
+# ════════ v0.88 · JEFES NUEVOS ════════
+
+# ── El Centro Instantáneo: mecanismo de barras con el pivote marcado ──
+g = canvas(40, 38)
+disc(g, 20, 20, 11, 'p', 11)                                 # masa central
+disc(g, 20, 20, 7, 'P', 7)
+for a in (20, 140, 260):                                     # tres brazos que salen del eje
+    x = 20 + 17 * math.cos(math.radians(a)); y = 20 + 15 * math.sin(math.radians(a))
+    line(g, 20, 20, x, y, 'L'); line(g, 20, 21, x, y + 1, 'l')
+    disc(g, x, y, 2.6, 'v', 2.4)
+    P(g, x, y, 'E')
+disc(g, 20, 20, 3.4, 'y', 3.4)                               # el CIR, en oro
+disc(g, 20, 20, 1.6, 'k', 1.6)
+for a in range(0, 360, 30):                                  # estela: lo que gira alrededor
+    P(g, 20 + 14 * math.cos(math.radians(a)), 20 + 13 * math.sin(math.radians(a)), 'i')
+for x, y in ((12, 13), (28, 13)): P(g, x, y, 'F')            # dos ojos en la masa
+shade(g, 'P', 'p', frac=0.3)
+S['centroInstantaneo'] = rows(outline(g))
+
+# ── Brazo del Mecanismo: una barra con su masa en la punta ──
+g = canvas(16, 30)
+rect(g, 6, 6, 9, 28, 'L')
+rect(g, 7, 7, 8, 27, 'l')
+disc(g, 7.5, 4, 4, 'v', 4)
+P(g, 6, 4, 'E'); P(g, 9, 4, 'E')
+disc(g, 7.5, 28, 2, 'y', 1.6)                                # la junta que lo ata al eje
+shade(g, 'L', 'l', frac=0.3)
+S['brazoCir'] = rows(outline(g))
+
+# ── El Par de Fuerzas: dos brazos iguales y opuestos sobre un mismo cuerpo ──
+def par(ch_cuerpo, ch_brazo, flecha_arriba):
+    g = canvas(30, 34)
+    poly(g, [(9, 33), (21, 33), (19, 12), (11, 12)], ch_cuerpo)   # cuerpo
+    disc(g, 15, 9, 5, ch_brazo, 4.6)                              # cabeza
+    P(g, 13, 9, 'F'); P(g, 17, 9, 'F')
+    rect(g, 2, 18, 28, 19, 'L')                                   # la barra del par
+    # dos fuerzas iguales y opuestas: una arriba de un lado, otra abajo del otro
+    ay, by = (14, 23) if flecha_arriba else (23, 14)
+    line(g, 3, 18, 3, ay, 'y'); poly(g, [(1, ay), (5, ay), (3, ay - 3 if flecha_arriba else ay + 3)], 'h')
+    line(g, 27, 18, 27, by, 'y'); poly(g, [(25, by), (29, by), (27, by + 3 if flecha_arriba else by - 3)], 'h')
+    for yy in range(21, 33, 3): P(g, 15, yy, ch_brazo)            # costura central
+    shade(g, ch_cuerpo, 'p', frac=0.3)
+    return rows(outline(g))
+S['parFuerzas'] = par('P', 'v', True)
+S['parGemelo'] = par('M', 'm', False)
+
 out = ['// ════════ EL ABISMO DE LOS EJES · generado con tools/arte/abismo.py (python3) ════════',
        '/** Paleta abisal: verdes ahogados, violeta y hueso */',
        'export const ABISMO_PAL: Record<string, string> = ' + json.dumps(PAL) + ';',
