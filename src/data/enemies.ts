@@ -63,6 +63,8 @@ export interface EnemyState {
   recibido?: number; // daño total que ha recibido (los autómatas integradores lo usan)
   cuenta?: number; // v0.76 · turnos que le faltan a su cuenta regresiva (Reloj de Yog-Sothoth)
   cartasRobadas?: { uid: number; id: string; up: boolean }[]; // v0.76 · Ladrón de Rostros
+  cir?: number; // v0.88 · El Centro Instantáneo: en qué lugar de la fila está el pivote este turno
+  furia?: boolean; // v0.88 · El Par de Fuerzas: se quedó solo, ya hay fuerza neta
   jugadasPrev?: number; // v0.76 · cartas que jugaste tu turno pasado (el Autocompletador lo usa)
 }
 
@@ -614,6 +616,54 @@ export const ENEMIES: Record<string, EnemyDef> = {
     next: (e) => (e.turn % 2 === 0
       ? { kind: 'attack', dmg: 17, label: 'k grande: una vuelta, un golpe' }
       : { kind: 'attack', dmg: 4, hits: 4, label: 'k chico: ω se dispara' }),
+  },
+  // ════════ v0.88 · JEFES DE TRAMO NUEVOS ════════
+  centroInstantaneo: {
+    id: 'centroInstantaneo', name: 'El Centro Instantáneo', sprite: 'centroInstantaneo', scale: 3.6,
+    hp: [170, 170], mass: 120, umbral: 18, act: 5, imparable: 1,
+    desc: 'Jefe del tramo. Un mecanismo de tres cuerpos que gira sobre un punto que se mueve cada turno: el centro instantáneo de rotación. El cuerpo que queda EN el CIR tiene r = 0, así que v = ω·r = 0: ni se mueve ni te pega, y tus golpes casi no le hacen nada. Mientras más lejos del CIR esté un cuerpo, más rápido va: pega más fuerte y recibe más daño. Pégale al de lejos.',
+    next: (e) => {
+      // el pivote recorre los tres lugares de la fila
+      e.cir = (e.turn + 1) % 3;
+      const fase2 = e.hp <= e.maxHp / 2;
+      if (fase2 && e.turn % 4 === 3) return { kind: 'buff', summon: 'brazoCir', shieldAll: 6, label: 'Montar otro brazo' };
+      switch (e.turn % 3) {
+        case 0: return { kind: 'attack', dmg: fase2 ? 16 : 13, hits: 2, label: 'ω barre el brazo largo' };
+        case 1: return { kind: 'block', block: 15, dmg: 8, label: 'El eje aguanta' };
+        default: return { kind: 'attack', dmg: fase2 ? 26 : 20, vertigo: 1, label: 'v = ω·r en la punta' };
+      }
+    },
+  },
+  brazoCir: {
+    id: 'brazoCir', name: 'Brazo del Mecanismo', sprite: 'brazoCir', scale: 4, hp: [44, 48], mass: 25, act: 5,
+    desc: 'Una barra del mecanismo. Gira alrededor del centro instantáneo igual que el resto: si le toca estar en el CIR se queda quieta, y si le toca la punta pega durísimo.',
+    next: (e) => (e.turn % 2 === 0 ? { kind: 'attack', dmg: 9, label: 'Barrido' } : { kind: 'block', block: 8, dmg: 5, label: 'Pasa por el eje' }),
+  },
+  parFuerzas: {
+    id: 'parFuerzas', name: 'El Par de Fuerzas', sprite: 'parFuerzas', scale: 3.8,
+    hp: [115, 115], mass: 80, umbral: 16, act: 5, imparable: 1,
+    desc: 'Jefe del tramo. Son dos y son el mismo. Mientras los dos vivan forman un par puro: dos fuerzas iguales y opuestas que suman MOMENTO pero cuya fuerza neta es cero, así que no avanzan, pegan flojo y se curan entre sí. Mata a uno y al otro le queda fuerza neta: se desata y pega el doble.',
+    next: (e) => {
+      if (e.furia) return e.turn % 3 === 2
+        ? { kind: 'attack', dmg: 14, hits: 2, aturde: true, label: '¡Ya hay fuerza neta!' }
+        : { kind: 'attack', dmg: 24, label: 'ΣF ≠ 0: embiste' };
+      return e.turn % 2 === 0
+        ? { kind: 'block', block: 12, healAll: 9, label: 'Par puro: ΣF = 0' }
+        : { kind: 'attack', dmg: 7, hits: 2, label: 'Momento sin empuje' };
+    },
+  },
+  parGemelo: {
+    id: 'parGemelo', name: 'El Otro Par', sprite: 'parGemelo', scale: 3.8,
+    hp: [115, 115], mass: 80, umbral: 16, act: 5, imparable: 1,
+    desc: 'El otro extremo del par. Misma magnitud, sentido contrario. Mientras su gemelo viva, los dos giran el mundo sin moverse de su lugar.',
+    next: (e) => {
+      if (e.furia) return e.turn % 3 === 2
+        ? { kind: 'attack', dmg: 14, hits: 2, aturde: true, label: '¡Ya hay fuerza neta!' }
+        : { kind: 'attack', dmg: 24, label: 'ΣF ≠ 0: embiste' };
+      return e.turn % 2 === 0
+        ? { kind: 'attack', dmg: 7, hits: 2, label: 'Momento sin empuje' }
+        : { kind: 'block', block: 12, healAll: 9, label: 'Par puro: ΣF = 0' };
+    },
   },
   // ════════ v0.76 · RESCATADOS: enemigos del juego base con un giro de horror cósmico ════════
   byakhee: {
@@ -1206,7 +1256,18 @@ export const ENCOUNTERS_5 = {
   normal: [...ENCOUNTERS_5_TRAMO[1].normal, ...ENCOUNTERS_5_TRAMO[2].normal],
   elite: [...ENCOUNTERS_5_TRAMO[1].elite, ...ENCOUNTERS_5_TRAMO[2].elite],
   // el jefe de cada tramo se sortea (run.jefe, src/data/abismo_modo.ts); esta lista sólo los marca como jefes
-  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug'], ['calculadora']],
+  boss: [['geometra'], ['dagon'], ['colorCielo'], ['bailarina'], ['dunwich'], ['yig'], ['cincoCabezas'], ['nyarlathotep'], ['cthulhu'], ['yogSothoth'], ['hastur'], ['shubNiggurath'], ['bokrug'], ['calculadora'],
+    ['centroInstantaneo'], ['parFuerzas']],
+};
+
+/**
+ * v0.88 · Jefes que no llegan solos: el combate arma el grupo completo.
+ * El Centro Instantáneo necesita tres cuerpos para que el pivote tenga a dónde
+ * moverse, y el Par de Fuerzas no es un par si está solo.
+ */
+export const JEFE_GRUPO: Record<string, string[]> = {
+  centroInstantaneo: ['brazoCir', 'centroInstantaneo', 'brazoCir'],
+  parFuerzas: ['parFuerzas', 'parGemelo'],
 };
 
 /** v0.81 · Encuentros del Abismo según el tramo (desde el 3, todos) */

@@ -722,3 +722,36 @@ Las texturas se registran solas desde `ABISMO_SPRITES`.
 > Los nombres largos se cortan en el lugar de la derecha de la fila: conviene
 > dejarlos en unos 20 caracteres («Cariátide del Pórtico», no «Cariátide del
 > Pórtico Hundido»).
+
+### Jefes que llegan acompañados (v0.88)
+
+Un jefe del Abismo normalmente pelea solo: el combate arma el grupo con
+`[run.jefe]`. Para los que necesitan compañía está **`JEFE_GRUPO`**
+(`src/data/enemies.ts`):
+
+```ts
+export const JEFE_GRUPO: Record<string, string[]> = {
+  centroInstantaneo: ['brazoCir', 'centroInstantaneo', 'brazoCir'],
+  parFuerzas: ['parFuerzas', 'parGemelo'],
+};
+```
+
+El orden es el de la fila, así que el jefe puede ir en medio. Los
+acompañantes **no** van en `JEFES` de `abismo_modo.ts`: así reciben vida de
+enemigo normal y no de jefe.
+
+> Si agregas uno, acuérdate de que el combate ya no puede suponer que el jefe
+> es el primer enemigo vivo. Para eso está `jefeDelCombate()`, que busca al que
+> sí está en `JEFES`; úsalo en cualquier código nuevo que necesite «el jefe de
+> esta pelea» (la condición del jefe y la mordida de la dentadura ya lo usan).
+
+Los dos jefes nuevos, como ejemplo de lo que se puede armar con esto:
+
+- **El Centro Instantáneo** (v = ω·r). Su `next()` escribe en `e.cir` sobre qué
+  lugar de la fila pasa el eje este turno. Después de repartir las intenciones,
+  `aplicarCir()` le cambia la intención a ese cuerpo por un bloqueo (r = 0: no
+  se mueve) y `hitEnemy()` ajusta el daño por distancia al pivote: ×0.25 encima
+  del eje, normal al lado y ×1.5 en la punta.
+- **El Par de Fuerzas** (ΣF = 0, ΣM ≠ 0). Dos cuerpos que se curan con
+  `healAll`. En `killEnemy()`, cuando cae uno, el otro recibe `furia = true` y
+  su `next()` cambia a los golpes grandes.
