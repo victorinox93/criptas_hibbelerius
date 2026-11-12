@@ -666,3 +666,59 @@ se usa en el desglose de la pantalla final.
 **Úsalo en cualquier pantalla nueva que muestre puntaje.** En el infinito del
 Abismo la vida de los enemigos crece exponencialmente y los puntajes llegan a
 trece dígitos.
+
+---
+
+## 15. Papeles de combate: proteger, marcar, reordenar y atacar la cordura (v0.88)
+
+Los enemigos ya no sólo pegan y bloquean. Estos campos nuevos dan papeles al
+estilo de «Darkest Dungeon», cada uno atado a la física del Abismo.
+
+### En el enemigo (`EnemyDef`)
+
+| Campo | Qué hace | Ejemplo |
+|---|---|---|
+| `protege: true` | Recibe los golpes DIRIGIDOS a sus compañeros mientras siga en pie. Los golpes a TODOS sí le llegan a cada quien, que es la forma de rodearlo. | Cariátide del Pórtico |
+
+El desvío está al principio de `hitEnemy()`. Si pones dos enemigos con
+`protege` en el mismo grupo, el primero de la fila se queda con todo: es
+preferible uno solo por encuentro.
+
+### En la intención (`IntentExtras`)
+
+| Campo | Qué hace | Ejemplo |
+|---|---|---|
+| `locura: n` | Sube la Locura del alumno (le baja la Cordura). El Bloqueo no protege de esto. | Coro de Hastur |
+| `marca: n` | Lo MARCA n turnos: mientras dure, TODOS los enemigos le pegan `MARCA_MUL` veces más (1.5). Se gasta al inicio de cada turno suyo. | Topógrafo de Ejes |
+| `reordena: true` | Revuelve los lugares de la fila y le da a cada quien Bloqueo según su NUEVA distancia al eje (d/2, o sea 3, 5, 7 y 9). | Agrimensor de Leng |
+
+`reordena` usa `reordenarFila()`, que mueve a cada enemigo con todo y su barra
+de vida, su nombre y su intención (`moverEnemigo()`). Como las distancias
+(6, 10, 14 y 18 m) salen del orden de la fila, reordenar también le mueve el
+piso al Tiro Parabólico del alumno.
+
+### Dejar un cadáver
+
+No hace falta un campo nuevo: se reutiliza `split`. La Carroña de Shoggoth
+muere con `split: { id: 'cadaver', n: 1 }` y deja una **Masa Muerta**, un
+enemigo cuya intención es siempre `{ kind: 'stunned', label: 'Masa muerta' }`.
+
+> Una intención `stunned` **con `label`** es algo que nunca actúa y así se lo
+> explica al alumno; sin `label` sigue siendo «Detenido», el enemigo al que
+> acabas de frenar. Las dos reciben ×1.5 de daño.
+
+El cadáver ocupa un lugar de los cuatro, así que estorba las invocaciones
+(`summon` busca lugar libre) y corre la distancia d de los demás.
+
+### El arte
+
+Los siete sprites están en `tools/arte/abismo.py`, que se dibuja con figuras
+(`disc`, `poly`, `line`, `rect`, `shade`, `outline`) y exporta matrices de
+letras. Se corre con `python3 tools/arte/abismo.py`: reescribe
+`src/art/abismo_sprites.ts` **completo** y deja una vista previa en
+`/tmp/abismo.png`, así que agrega tus sprites al script, nunca al `.ts`.
+Las texturas se registran solas desde `ABISMO_SPRITES`.
+
+> Los nombres largos se cortan en el lugar de la derecha de la fila: conviene
+> dejarlos en unos 20 caracteres («Cariátide del Pórtico», no «Cariátide del
+> Pórtico Hundido»).
