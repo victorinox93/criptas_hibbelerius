@@ -127,6 +127,23 @@ export interface Run {
   cristalesRotos?: string[]; // v0.43 · cartas de Cristal que se rompieron (Herbert West las reanima)
   apuntes?: number; // v0.44 · pistas gratis que dan las hojas del diario de Montemayor
   aliadoTramo?: number; // v0.49 · el aliado es un alma del Abismo: se va al terminar este tramo
+  /**
+   * v0.88 · LA PELEA EN CURSO.
+   *
+   * Se escribe al entrar a un combate y se borra al ganarlo o perderlo. Guarda
+   * TODO lo que se sortea al empezar (enemigos, condición del piso, condición
+   * del jefe, dientes mordidos), así que si el alumno cierra la pestaña y vuelve
+   * a entrar, se encuentra exactamente la misma pelea.
+   *
+   * Antes no se guardaba nada: cerrar la pestaña volvía a sortear la condición
+   * del jefe, y algunos alumnos lo usaban para esquivar «Mente en Blanco».
+   * `veces` cuenta los reingresos y se manda a la hoja para poder verlos.
+   */
+  combate?: {
+    piso: number; kind: string; nodo?: number;
+    enc: string[]; cond?: string; condJefe?: string; mordidos?: number[];
+    veces: number;
+  };
   mordidos?: number[]; // v0.52 · huecos de la dentadura mordidos por el jefe en la pelea actual (para verlos en la dentadura)
   suenoHp?: number; // v0.51 · vida al entrar a una pesadilla (al despertar se recupera)
   mutador?: string; // v0.46 · regla especial del tramo actual (src/data/abismo_modo.ts → MUTADORES)

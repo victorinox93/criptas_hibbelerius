@@ -344,5 +344,10 @@ export const CONDICIONES_JEFE: CondicionJefe[] = [
   { id: 'sinDefensa', nombre: 'Sin Defensa', texto: () => 'Tus cartas de Defensa no dan Bloqueo en esta pelea (otros Bloqueos sí).' },
   { id: 'sinHabilidades', nombre: 'Mente en Blanco', texto: () => 'No puedes jugar cartas de Habilidad en esta pelea.' },
   { id: 'sinEdiciones', nombre: 'Opacidad', texto: () => 'Las ediciones de tus cartas (Lámina, Holográfica, Polícroma, Cristal) no hacen nada.' },
+  // v0.88 · más condiciones, para que la ruleta del jefe no se repita tanto
+  { id: 'sinPociones', nombre: 'Frasco Sellado', texto: () => 'No puedes usar pociones en esta pelea.' },
+  { id: 'manoCorta', nombre: 'Mano Corta', texto: () => 'Robas 1 carta menos cada turno.' },
+  { id: 'sinFamiliar', nombre: 'Soledad', texto: () => 'Tu familiar no actúa en esta pelea.' },
+  { id: 'arranqueLento', nombre: 'Arranque Lento', texto: () => 'En tu primer turno tienes 1 J menos.' },
 ];
 export const CONDICION_JEFE = (id?: string) => CONDICIONES_JEFE.find((c) => c.id === id);

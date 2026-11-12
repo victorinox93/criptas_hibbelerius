@@ -22,7 +22,7 @@ const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
 import { AddCards, danoDe, encounters, encuentrosAbismo, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, JEFE_GRUPO, masaTexto, pick, spawn } from '../data/enemies';
 import { darMaldicion } from '../data/maldiciones';
-import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
+import { Run, aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
 import { FAMILIARS } from '../data/familiars';
 import { ALMAS } from '../data/almas';
@@ -250,6 +250,9 @@ export class CombatScene extends Phaser.Scene {
   private rlyehUsado = false; // Diente de R'lyeh: primer ataque del combate ×3
   private jugoDefensa = false; // carta de Providence «sin Defensas»
   private condJefe = ''; // v0.48 · condición del jefe del Abismo (CONDICIONES_JEFE)
+  private nodo?: number; // v0.88 · nodo del mapa de esta pelea
+  private guardado?: NonNullable<Run['combate']>; // v0.88 · la pelea tal como se sorteó la primera vez
+  private reingreso = 0; // v0.88 · cuántas veces se ha entrado a ESTA pelea (1 = la primera)
   private cartaTipo = ''; // tipo de la carta que se está resolviendo (para «Sin Defensa»)
   private mordidos: number[] = []; // v0.46 · huecos de la dentadura que el jefe mordió (no funcionan en esta pelea)
   private bonusJ1 = 0; // J extra en el primer turno (Boltzmann, Cantor)
@@ -257,12 +260,13 @@ export class CombatScene extends Phaser.Scene {
 
   constructor() { super('Combat'); }
 
-  init(data: { kind: Kind; floor: number; sueno?: string; astro?: string }) {
+  init(data: { kind: Kind; floor: number; sueno?: string; astro?: string; nodo?: number }) {
     this.astro = data.astro;
     this.pausas = 0;
     this.tweens.timeScale = 1; // v0.68 · por si la escena se cerró en plena pausa de impacto
     this.kind = data.kind;
     this.floor = data.floor;
+    this.nodo = data.nodo; // v0.88 · para reconocer la MISMA pelea si el alumno vuelve a entrar
     this.sueno = data.sueno; // v0.51 · pesadilla (src/scenes/Sueno.ts)
     this.radianes = false;
     this.ultimoGolpe = 0;
@@ -509,10 +513,12 @@ export class CombatScene extends Phaser.Scene {
     if (this.kind === 'boss' && this.jefeDelCombate()) {
       const prim = !!JEFES_ABISMO[this.jefeDelCombate()!.st.def.id].primigenio;
       // v0.48: cada jefe impone una condición al azar (la mordida es una de ellas)
-      this.condJefe = Phaser.Utils.Array.GetRandom(CONDICIONES_JEFE).id;
+      // v0.88 · si ya se había sorteado para esta pelea, se respeta: cerrar la
+      // pestaña ya no sirve para cambiar la condición del jefe
+      this.condJefe = this.guardado?.condJefe ?? Phaser.Utils.Array.GetRandom(CONDICIONES_JEFE).id;
       if (this.condJefe === 'mordida') {
         const libres = (run.dientes ?? []).map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
-        this.mordidos = Phaser.Utils.Array.Shuffle(libres).slice(0, prim ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE);
+        this.mordidos = this.guardado?.mordidos ?? Phaser.Utils.Array.Shuffle(libres).slice(0, prim ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE);
       }
     }
     run.mordidos = this.mordidos.length ? [...this.mordidos] : undefined; // v0.52 · la dentadura los marca
@@ -731,12 +737,22 @@ export class CombatScene extends Phaser.Scene {
 
     // ── Enemigos ──
     // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
-    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb']
+    // ── v0.88 · ¿YA HABÍA ENTRADO A ESTA MISMA PELEA? ──
+    // Cerrar la pestaña a medio combate devolvía al alumno justo antes de pelear
+    // (el piso sólo avanza al ganar) y TODO se volvía a sortear: los enemigos, la
+    // condición del piso y la condición del jefe. Algunos lo usaban para esquivar
+    // «Mente en Blanco». Ahora la pelea se guarda al entrar y se restaura igual.
+    const mismaPelea = run.combate && (this.nodo !== undefined && run.combate.nodo !== undefined
+      ? run.combate.nodo === this.nodo
+      : run.combate.piso === this.floor && run.combate.kind === this.kind);
+    this.guardado = mismaPelea ? run.combate : undefined;
+    this.reingreso = (this.guardado?.veces ?? 0) + 1;
+    const enc = this.guardado?.enc ?? (this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb']
       // v0.88 · algunos jefes llegan acompañados (el Par de Fuerzas, el Centro Instantáneo)
       : this.acto === 5 && this.kind === 'boss' ? (JEFE_GRUPO[run.jefe ?? ''] ?? [run.jefe ?? 'geometra'])
-        : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]);
+        : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]));
     const n = enc.length;
-    enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
+    enc.forEach((id: string, i: number) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
     this.aplicarCir(true); // el pivote del primer turno
     ditherLocura(this); // v0.67 · con mucha Locura el fondo se pixela (sólo el fondo)
 
@@ -816,8 +832,13 @@ export class CombatScene extends Phaser.Scene {
     this.tiposTurno.clear();
     this.hpIni = Game.run!.hp;
     this.abismoInicio();
-    // ── condición del piso (azar) ──
-    if (this.kind !== 'boss' && Math.random() < CONDITION_CHANCE) this.applyCondition(Phaser.Utils.Array.GetRandom(CONDITIONS));
+    // ── condición del piso (azar, o la que ya le había tocado a esta pelea) ──
+    if (this.guardado) {
+      const c = CONDITIONS.find((x) => x.id === this.guardado!.cond);
+      if (c) this.applyCondition(c);
+    } else if (this.kind !== 'boss' && Math.random() < CONDITION_CHANCE) {
+      this.applyCondition(Phaser.Utils.Array.GetRandom(CONDITIONS));
+    }
     if (this.usaVel) {
       // el Arcanista convierte sus bonos de aceleración en rapidez inicial
       // (la mitad de los bonos, para que no se dispare K = ½mv²)
@@ -837,6 +858,9 @@ export class CombatScene extends Phaser.Scene {
     if (this.has('maxwell')) { this.subirVel(3); this.calc(`Rueda de Maxwell: la rotación guardada te arranca en ${this.vel} m/s`); }
     if (this.has('induccion')) { this.maxFormas = Math.min(FORMAS_TOPE, this.maxFormas + 1); this.calc(`Bobina de Inducción: ${this.maxFormas} ranuras de energía`); }
     this.abismoModoInicio();
+    // v0.88 · se apunta la pelea DESPUÉS de sortear todo (abismoModoInicio es
+    // quien elige la condición del jefe), si no se guardaría a medias
+    this.guardarPelea();
     this.showFamiliar();
     this.showAliado();
     this.showFantasma();
@@ -1812,6 +1836,35 @@ export class CombatScene extends Phaser.Scene {
       }, { size: 20 }),
     );
     layer.add(button(this, W / 2 + 200, 168, 36, 30, '×', close, { size: 20 }));
+  }
+
+  /**
+   * v0.88 · Deja apuntada la pelea tal como quedó sorteada, para que recargar
+   * la página devuelva exactamente la misma. Se borra al ganarla o perderla
+   * (`olvidarPelea`). Manda a la hoja cuántas veces se ha entrado: si un alumno
+   * aparece con `veces` mayor que 1 una y otra vez, está recargando a propósito.
+   */
+  private guardarPelea() {
+    const run = Game.run;
+    if (!run) return;
+    run.combate = {
+      piso: this.floor, kind: this.kind, nodo: this.nodo,
+      enc: this.enemies.map((e) => e.st.def.id),
+      cond: this.cond?.id,
+      condJefe: this.condJefe || undefined,
+      mordidos: this.mordidos.length ? [...this.mordidos] : undefined,
+      veces: this.reingreso,
+    };
+    saveLocal();
+    logEvent('pelea', '', '', {
+      piso: this.floor, tipo: this.kind, veces: this.reingreso,
+      cond: this.cond?.id ?? '', condJefe: this.condJefe || '',
+    });
+  }
+
+  /** La pelea terminó (ganada o perdida): ya no hay nada que restaurar */
+  private olvidarPelea() {
+    if (Game.run) { Game.run.combate = undefined; saveLocal(); }
   }
 
   /** Distancia (m) a cada enemigo según su lugar en la fila: 6, 10, 14, 18 m */
@@ -4243,6 +4296,7 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.pacto('pendulo') && this.turn % 2 === 1) { this.energy += 1; this.calc('Pacto del Péndulo (ida): +1 J'); }
     if (this.turn === 1 && Game.run?.mutador === 'agua') { this.energy = Math.max(0, this.energy - 1); this.calc('Fricción del Agua: −1 J en tu primer turno'); }
+    if (this.turn === 1 && this.condJefe === 'arranqueLento') { this.energy = Math.max(0, this.energy - 1); this.calc('Arranque Lento: −1 J en tu primer turno'); } // v0.88
     if (this.turn === 1 && this.condJefe && this.condJefe !== 'mordida') {
       const cj = CONDICION_JEFE(this.condJefe)!;
       const jefe = this.jefeDelCombate()?.st.def.name ?? this.alive()[0]?.st.def.name ?? 'El jefe';
@@ -4425,7 +4479,7 @@ export class CombatScene extends Phaser.Scene {
       this.energy += 1;
       this.calc('Núcleo Activo: +1 J');
     }
-    const fam = Game.run!.familiar;
+    const fam = this.condJefe === 'sinFamiliar' ? undefined : Game.run!.familiar; // v0.88 · Soledad
     if (fam?.id === 'lechuza' || fam?.id === 'pezLinterna') draw += 1;
     draw += this.robaTurno; // v0.65
     if (this.isPen && this.turn > 1 && this.vel > 0) {
@@ -4470,6 +4524,10 @@ export class CombatScene extends Phaser.Scene {
     if (lar) {
       draw += lar;
       if (this.turn % 3 === 0) { this.addStatus({ id: 'susurro', n: 1, to: 'discard' }); this.calc('☣ Larva de Shoggoth: tekeli-li… un Susurro a tu descarte'); }
+    }
+    if (this.condJefe === 'manoCorta') { // v0.88
+      draw = Math.max(1, draw - 1);
+      this.calc('Mano Corta: robas 1 carta menos');
     }
     if (this.vertigo) {
       draw = Math.max(1, draw - this.vertigo);
@@ -4675,7 +4733,7 @@ export class CombatScene extends Phaser.Scene {
     this.refreshPlayer();
     await this.wait(300);
     // familiares que actúan al final de tu turno
-    const fam = Game.run!.familiar;
+    const fam = this.condJefe === 'sinFamiliar' ? undefined : Game.run!.familiar; // v0.88 · Soledad
     if (fam && this.alive().length) {
       if (fam.id === 'dragon') {
         this.famHop();
@@ -5013,6 +5071,7 @@ export class CombatScene extends Phaser.Scene {
     this.busy = true;
     const run = Game.run!;
     run.floor = this.floor + 1;
+    this.olvidarPelea(); // v0.88 · ganada: ya no se restaura
     run.mordidos = undefined; // v0.52 · la mordida sólo dura la pelea
     run.stats.combates++;
     // puntaje: combate perfecto (sin perder vida)
@@ -5297,6 +5356,7 @@ export class CombatScene extends Phaser.Scene {
     this.busy = true;
     run.hp = 0;
     run.done = true;
+    run.combate = undefined; // v0.88 · perdida: tampoco se restaura
     bonosFinales(run);
     saveLocal();
     logEvent('derrota', '', false, { piso: this.floor, enemigo: by });
@@ -5416,7 +5476,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private showFamiliar() {
-    const fam = Game.run!.familiar;
+    const fam = this.condJefe === 'sinFamiliar' ? undefined : Game.run!.familiar; // v0.88 · Soledad
     if (!fam) {
       // v0.55 · sin familiar de verdad, aparece tu compañero cosmético (no hace nada en combate)
       const m = mascotaJunto(this, this.heroX - 100, 318, 3.2);
@@ -5854,6 +5914,11 @@ export class CombatScene extends Phaser.Scene {
   /** Usa una poción (la llama la barra superior). Devuelve true si se usó. */
   private usePotion(id: string): boolean {
     if (this.busy || this.bannerT.getData('ended') || this.bannerT.getData('dead') || this.discardMode > 0) return false;
+    // v0.88 · Frasco Sellado (condición de jefe)
+    if (this.condJefe === 'sinPociones') {
+      this.anunciarEstado('¡FRASCO SELLADO!', 'No puedes usar pociones en esta pelea', 0xa83a4a, '#ff9aa8');
+      return false;
+    }
     const run = Game.run!;
     const al = this.alive();
     switch (id) {
