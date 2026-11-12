@@ -805,3 +805,30 @@ el internet. Lo que delata es el patrón.
 Las nuevas se enganchan en un solo lugar cada una — `usePotion()` (Frasco
 Sellado), el robo de `startTurn()` (Mano Corta), `const fam = …` (Soledad) y la
 energía del primer turno (Arranque Lento).
+
+
+## 17. Validación de partidas en el servidor (v0.88.1)
+
+El puntaje se calcula en el navegador, así que alguien que edite el `localStorage` o llame a la API a mano puede mandar cualquier número. El servidor no puede recalcularlo exacto, pero sí revisar que sea **posible**. Todo vive en `apps-script/Code.gs`, sección «Validación de partidas»; el juego no cambia.
+
+**Al recibir cada partida** (`updateRun` → `validarFila_`), sin leer Eventos:
+
+| regla | por qué |
+|---|---|
+| puntaje ≤ `cotaAbismo` × gravedad × Σ escalaTramo(t) | en el Abismo los puntos salen de la vida de los enemigos, que crece con `escalaTramo()`; el puntaje normalizado de las 516 partidas reales llega a 50 475 y la cota es 150 000 |
+| expedición normal: puntaje ≤ gravedad × (25 000 × combates + 60 000) | máximo real: 9 665 por combate |
+| aciertos ≤ preguntas · élites ≤ combates | |
+| ≥ 8 s por combate | el más rápido real juega a 30 s |
+| en el Abismo, combates ≥ jefes vencidos | cada tramo termina con un jefe |
+
+Si alguna falla, la columna `validacion` de Partidas queda en `revisar: …` y **la partida no entra al ranking**. Para indultarla escribe `aprobada` en esa celda: el servidor ya no la vuelve a tocar.
+
+**Revisión contra Eventos** (menú *Criptas → Revisar partidas sospechosas*, y cada madrugada a las 4 si instalaste el disparador) → `revisar_()`. Cruza cada partida con lo que el servidor vio pasar y arma la hoja **Revisión**:
+
+- jefes o combates declarados que no aparecen en Eventos;
+- **victorias repetidas**: el mismo piso del mismo tramo ganado dos veces = la pestaña se cerró y la partida se rebobinó;
+- **reentradas** (`veces` > 1 en el evento `pelea`, desde v0.88) y cuántos jefes salieron con *Mente en Blanco*.
+
+Esto son sólo **avisos**: un evento se pierde si se cae la red justo entonces (la cola de `api.ts` vive en memoria), pero los contadores de la partida no. Por eso no sacan a nadie del ranking; son para que el profe decida.
+
+**Si cambias la vida de los enemigos o los puntos** (`src/data/puntaje.ts`, `escalaTramo`, `VIDA_ABISMO`), revisa `VALIDA` y `escalaTramo_()`: son copias del cliente. Para recalibrar, corre la revisión y mira que ninguna partida legítima quede en `revisar`.

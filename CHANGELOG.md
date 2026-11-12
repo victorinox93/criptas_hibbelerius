@@ -2,6 +2,11 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## Servidor · validación de partidas (sin cambios en el juego)
+
+- **El servidor revisa que cada partida sea posible** antes de meterla al ranking: puntaje dentro de la cota de su profundidad y gravedad, aciertos ≤ preguntas, élites ≤ combates, al menos 8 s por combate y, en el Abismo, al menos un combate por jefe. Lo imposible queda en «revisar» y no entra al ranking hasta que el profe escriba «aprobada». Calibrado con las 516 partidas reales: ninguna queda marcada.
+- **Hoja «Revisión»** (menú *Criptas*, y cada madrugada): cruza cada partida con la hoja Eventos y avisa de victorias repetidas (pestaña cerrada y reabierta), reentradas a peleas y jefes que no aparecen registrados.
+
 ## v0.87.0 · Cada personaje, lo suyo
 
 Los alumnos reportaron que el juego estaba cargado al Caballero de la Masa. Las cartas propias estaban parejas (21 del Caballero contra 22 del Arcanista), pero todo lo que rodea a las cartas sí lo favorecía.

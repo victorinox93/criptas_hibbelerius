@@ -11,6 +11,8 @@
  *     Copia la URL que termina en /exec y pégala en src/config.ts
  *  5) En la hoja "Grupos" da de alta tus claves de grupo.
  *  6) Menú "Criptas" → Actualizar panel, para ver el avance.
+ *  7) Menú "Criptas" → Revisar partidas sospechosas (hoja «Revisión»). Con
+ *     «Actualizar panel cada hora» también queda programada cada madrugada.
  *
  *  AL ACTUALIZAR ESTE ARCHIVO: pega el código nuevo, ejecuta setup otra vez
  *  (agrega columnas nuevas sin borrar datos) y luego
@@ -24,7 +26,9 @@ var HEAD = {
   // Ganado/Gastado (v0.32.1): Momentum del alumno, lo escribe el servidor al guardar el Grimorio (no pongas fórmulas aquí)
   Alumnos: ['matricula', 'grupo', 'alias', 'avatar', 'salt', 'hash', 'token', 'creado', 'ultimoAcceso', 'grimorio', 'Ganado', 'Gastado'],
   Partidas: ['runId', 'matricula', 'grupo', 'alias', 'clase', 'inicio', 'actualizado', 'acto', 'pisoMax', 'vida',
-    'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo', 'gravedad', 'minutos'],
+    'puntaje', 'resultado', 'causa', 'combates', 'elites', 'runasOk', 'runasTotal', 'mazo', 'gravedad', 'minutos',
+    // v0.88.1 · lo escribe el servidor (ver «Validación de partidas»). Escribe «aprobada» para indultar una fila.
+    'validacion'],
   Eventos: ['fecha', 'matricula', 'grupo', 'runId', 'tipo', 'concepto', 'correcto', 'detalle'],
   // v0.30: lápidas (donde murió un compañero) y signos de invocación (quien venció a un jefe)
   Huellas: ['fecha', 'matricula', 'grupo', 'alias', 'tipo', 'acto', 'piso', 'jefe', 'datos', 'usos', 'avisado'],
@@ -53,6 +57,7 @@ function onOpen() {
     .addItem('Configurar hojas', 'setup')
     .addItem('Actualizar panel cada hora', 'instalarDisparador')
     .addSeparator()
+    .addItem('Revisar partidas sospechosas', 'revisarPartidas')
     .addItem('Calcular ganancia de aprendizaje (Hake)', 'calcularGanancia')
     .addItem('Generar evidencia (reporte del proyecto)', 'generarEvidencia')
     .addItem('Crear formulario de retroalimentación', 'crearFormulario')
@@ -177,6 +182,11 @@ function instalarDisparador() {
     if (t.getHandlerFunction() === 'actualizarPanel') ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('actualizarPanel').timeBased().everyHours(1).create();
+  // v0.88.1 · y la revisión contra Eventos, una vez al día de madrugada
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'revisarPartidasAuto') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('revisarPartidasAuto').timeBased().everyDays(1).atHour(4).create();
 }
 
 // ───────────────────────── API ─────────────────────────
@@ -293,6 +303,13 @@ var ACTIONS = {
     cur[17] = num_(r.mazo);
     if (r.gravedad) cur[18] = num_(r.gravedad);
     if (r.minutos !== undefined) cur[19] = Math.max(num_(cur[19]), num_(r.minutos));
+    // v0.88.1 · validación rápida (sin leer Eventos). Lo que el profe aprobó a mano no se toca.
+    if (String(cur[20]) !== 'aprobada') {
+      var m = validarFila_(cur);
+      var previo = String(cur[20] || '');
+      // la revisión diaria puede haber dejado un «aviso:»; sólo se reemplaza si ahora hay algo peor
+      cur[20] = m.length ? 'revisar: ' + m.join(' · ') : (/^aviso/.test(previo) ? previo : 'ok');
+    }
     sh.getRange(row, 1, 1, cur.length).setValues([cur]);
     return { ok: true };
   },
@@ -321,6 +338,7 @@ var ACTIONS = {
       if (!who || !who.alias) return;
       if (soloGrupo && who.grupo !== u.grupo) return;
       if ((num_(p[7]) === 5) !== abismo) return; // acto 5 = Abismo
+      if (/^revisar/.test(String(p[20] || ''))) return; // v0.88.1 · no entra al ranking hasta que el profe la apruebe
       var b = best[p[1]] || (best[p[1]] = { alias: who.alias, avatar: who.avatar, grupo: who.grupo, puntaje: 0, piso: 0, victorias: 0, gravedad: 0, partidas: 0, minutos: 0, runasOk: 0, runasTotal: 0, yo: p[1] === u.mat });
       b.partidas++;
       b.minutos += num_(p[19]); // v0.54 · tiempo jugado en este modo
@@ -603,6 +621,150 @@ function resumenGrupos_(ss, alumnos, partidas, eventos) {
   as.autoResizeColumns(1, ah.length);
 }
 
+// ───────────────────────── v0.88.1 · Validación de partidas ─────────────────────────
+// El puntaje lo calcula el juego en el navegador, así que el servidor no lo puede
+// recalcular exacto. Lo que sí puede es revisar que los números sean POSIBLES:
+//
+//  1) Cada vez que llega una partida (updateRun) → validarFila_(): reglas rápidas, sin leer Eventos.
+//     Si algo es imposible, la columna «validacion» queda «revisar: …» y la partida NO entra
+//     al ranking hasta que escribas «aprobada» en esa celda.
+//  2) Menú Criptas → «Revisar partidas sospechosas» (y cada madrugada, si instalaste el
+//     disparador) → revisar_(): cruza cada partida contra la hoja Eventos y arma la hoja
+//     «Revisión». Lo que sale de ahí son AVISOS: se ven en la hoja, pero no sacan a nadie del
+//     ranking, porque un evento se puede perder si se cae la red (y los contadores no).
+//
+// Las cotas se calibraron con las 516 partidas reales del 12/11/2026: ninguna queda marcada.
+// Si cambias la vida de los enemigos o los puntos del juego, revisa estos números.
+var VALIDA = {
+  pisosPorTramo: 15,       // PISOS_TRAMO (14) + el jefe · src/data/abismo_modo.ts
+  cotaAbismo: 150000,      // puntaje ≤ cotaAbismo × gravedad × Σ escalaTramo  (máx. real observado: 50 475)
+  cotaPorCombate: 25000,   // expedición normal: puntaje ≤ gravedad × (cotaPorCombate × combates + cotaBase)
+  cotaBase: 60000,         //   (máx. real observado: 9 665 por combate)
+  segMinPorCombate: 8,     // más rápido que esto no se puede jugar (el más rápido real: 30 s)
+  avisoRepetidas: 3,       // victorias registradas dos veces en el mismo piso (pestaña cerrada y reabierta)
+  avisoReentradas: 3,      // peleas con «veces» > 1 en el evento «pelea» (desde v0.88)
+};
+var ESCALA_GRAV_ = { 1: 1, 2: 1.5, 3: 2 }; // scoreMul de src/data/gravity.ts
+
+/** Igual que escalaTramo() de src/data/abismo_modo.ts */
+function escalaTramo_(t) {
+  return t <= 2 ? 1 + 0.3 * (t - 1) : 1.3 * Math.pow(1.25, t - 2);
+}
+/** Σ escalaTramo hasta la profundidad dada (el último tramo, en proporción a los pisos recorridos) */
+function sumaEscala_(piso) {
+  var T = Math.floor(piso / VALIDA.pisosPorTramo) + 1;
+  var s = 0;
+  for (var t = 1; t < T; t++) s += escalaTramo_(t);
+  return s + ((piso % VALIDA.pisosPorTramo) + 1) / VALIDA.pisosPorTramo * escalaTramo_(T);
+}
+/** Cota superior del puntaje para una fila de Partidas */
+function cotaPuntaje_(cur) {
+  var g = ESCALA_GRAV_[num_(cur[18]) || 1] || 1;
+  if (num_(cur[7]) === 5) return VALIDA.cotaAbismo * g * sumaEscala_(num_(cur[8]));
+  return g * (VALIDA.cotaPorCombate * num_(cur[13]) + VALIDA.cotaBase);
+}
+/** Reglas rápidas: números que el juego no puede producir. Devuelve la lista de motivos. */
+function validarFila_(cur) {
+  var m = [];
+  var puntaje = num_(cur[10]), piso = num_(cur[8]), comb = num_(cur[13]), eli = num_(cur[14]);
+  var cota = cotaPuntaje_(cur);
+  if (puntaje > cota) m.push('puntaje ' + fmt_(puntaje) + ' > máximo posible ' + fmt_(cota));
+  if (num_(cur[15]) > num_(cur[16])) m.push('más aciertos que preguntas');
+  if (eli > comb) m.push('más élites que combates');
+  var min = num_(cur[19]);
+  if (comb >= 20 && min > 0 && (min * 60) / comb < VALIDA.segMinPorCombate) m.push('demasiado rápido (' + Math.round(min * 60 / comb) + ' s por combate)');
+  if (num_(cur[7]) === 5 && comb < Math.floor(piso / VALIDA.pisosPorTramo)) m.push('menos combates que jefes vencidos');
+  return m;
+}
+function fmt_(n) {
+  var P = [[1e15, 'P'], [1e12, 'T'], [1e9, 'G'], [1e6, 'M'], [1e3, 'k']];
+  for (var i = 0; i < P.length; i++) if (n >= P[i][0]) return (n / P[i][0]).toFixed(2) + ' ' + P[i][1];
+  return String(Math.round(n));
+}
+
+function revisarPartidas() { revisar_(true); }
+function revisarPartidasAuto() { revisar_(false); }
+
+function revisar_(conUi) {
+  // 1) Lo que dice Eventos de cada partida
+  var ev = {};
+  var sE = sheet_('Eventos');
+  var nE = sE.getLastRow() - 1;
+  if (nE > 0) {
+    var datos = sE.getRange(2, 4, nE, 5).getValues(); // runId, tipo, concepto, correcto, detalle
+    for (var i = 0; i < datos.length; i++) {
+      var id = String(datos[i][0]), tipo = datos[i][1];
+      if (!id) continue;
+      var e = ev[id] || (ev[id] = { n: 0, comb: 0, tramos: 0, seg: 0, vistos: {}, repetidas: 0, reentradas: 0, jefes: {}, menteEnBlanco: {} });
+      e.n++;
+      if (tipo === 'tramo') { e.tramos++; e.seg++; continue; }
+      if (tipo !== 'combate' && tipo !== 'pelea') continue;
+      var d = {};
+      try { d = JSON.parse(datos[i][4] || '{}'); } catch (x) {}
+      var clave = e.seg + '|' + d.piso + '|' + d.tipo;
+      if (tipo === 'combate') {
+        e.comb++;
+        // la misma victoria dos veces en el mismo piso del mismo tramo = la partida se rebobinó
+        if (e.vistos[clave]) e.repetidas++; else e.vistos[clave] = true;
+      } else { // 'pelea' (v0.88): una por cada vez que se entra a una pelea
+        if (num_(d.veces) > 1) e.reentradas++;
+        if (d.tipo === 'boss') {
+          e.jefes[clave] = true;
+          if (d.condJefe === 'sinHabilidades') e.menteEnBlanco[clave] = true;
+        }
+      }
+    }
+  }
+  // 2) Revisar cada partida y escribir la columna «validacion»
+  var sP = sheet_('Partidas');
+  var nP = sP.getLastRow() - 1;
+  if (nP < 1) return;
+  var w = HEAD.Partidas.length, col = w; // «validacion» es la última columna
+  var filas = sP.getRange(2, 1, nP, w).getValues();
+  var salida = [], reporte = [];
+  filas.forEach(function (cur) {
+    var actual = String(cur[col - 1] || '');
+    if (actual === 'aprobada') { salida.push([actual]); return; }
+    var graves = validarFila_(cur), avisos = [];
+    var e = ev[String(cur[0])];
+    if (e && e.n >= 5) {
+      var comb = num_(cur[13]);
+      var declarados = num_(cur[7]) === 5 ? Math.floor(num_(cur[8]) / VALIDA.pisosPorTramo) : 0;
+      if (declarados > e.tramos + Math.max(2, Math.ceil(declarados * 0.1))) avisos.push(declarados + ' jefes declarados, ' + e.tramos + ' en Eventos');
+      if (comb > e.comb + Math.max(3, Math.ceil(comb * 0.1))) avisos.push(comb + ' combates declarados, ' + e.comb + ' en Eventos');
+      if (e.repetidas >= VALIDA.avisoRepetidas) avisos.push(e.repetidas + ' victorias repetidas (recargó la página)');
+      if (e.reentradas >= VALIDA.avisoReentradas) avisos.push(e.reentradas + ' reentradas a peleas');
+    }
+    var txt = graves.length ? 'revisar: ' + graves.join(' · ') : avisos.length ? 'aviso: ' + avisos.join(' · ') : 'ok';
+    salida.push([txt]);
+    if (txt !== 'ok') {
+      var jefes = e ? Object.keys(e.jefes).length : 0;
+      reporte.push([cur[3], cur[1], cur[0], num_(cur[7]) === 5 ? 'Abismo' : 'Normal', num_(cur[8]), num_(cur[10]), cur[11], txt,
+        e ? e.repetidas : '', e ? e.reentradas : '', jefes ? Object.keys(e.menteEnBlanco).length + ' de ' + jefes : '']);
+    }
+  });
+  sP.getRange(2, col, nP, 1).setValues(salida);
+  // 3) Hoja «Revisión»
+  var ss = SpreadsheetApp.getActive();
+  var sR = ss.getSheetByName('Revisión') || ss.insertSheet('Revisión');
+  sR.clear();
+  var cab = ['alias', 'matrícula', 'runId', 'modo', 'pisoMax', 'puntaje', 'resultado', 'validación',
+    'victorias repetidas', 'reentradas (v0.88+)', 'jefes con Mente en Blanco (v0.88+)'];
+  sR.getRange(1, 1, 1, cab.length).setValues([cab]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a');
+  sR.setFrozenRows(1);
+  reporte.sort(function (a, b) { return (/^revisar/.test(b[7]) - /^revisar/.test(a[7])) || b[4] - a[4]; });
+  if (reporte.length) {
+    sR.getRange(2, 1, reporte.length, cab.length).setValues(reporte);
+    sR.getRange(2, 6, reporte.length, 1).setNumberFormat('#,##0');
+  }
+  sR.getRange(reporte.length + 3, 1).setValue('«revisar» = números imposibles: la partida no entra al ranking hasta que escribas «aprobada» en su celda de Partidas → validacion. ' +
+    '«aviso» = sólo informativo (un evento se puede perder si se cae la red). Actualizado: ' + new Date());
+  if (conUi) {
+    var g = reporte.filter(function (r) { return /^revisar/.test(r[7]); }).length;
+    SpreadsheetApp.getUi().alert('Revisión de partidas', nP + ' partidas revisadas: ' + g + ' para revisar y ' + (reporte.length - g) + ' con avisos. Detalle en la hoja «Revisión».', SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
 // ───────────────────────── utilidades ─────────────────────────
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
@@ -617,6 +779,8 @@ function sheet_(n) {
     sh.setFrozenRows(1);
   }
   if (!sh) throw new Error('Falta la hoja ' + n + '. Ejecuta setup().');
+  // v0.88.1 · si se pegó el código nuevo sin correr setup, la columna nueva aún no existe
+  if (HEAD[n] && sh.getMaxColumns() < HEAD[n].length) sh.insertColumnsAfter(sh.getMaxColumns(), HEAD[n].length - sh.getMaxColumns());
   return sh;
 }
 function rows_(n) {
