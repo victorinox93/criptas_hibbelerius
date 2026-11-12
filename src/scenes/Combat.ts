@@ -20,7 +20,7 @@ function umbralDe(st: EnemyState) {
 }
 const ESQUIVA = 6;
 import { dejarSigno, usarHuella } from '../huellas';
-import { AddCards, danoDe, encounters, encuentrosAbismo, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, masaTexto, pick, spawn } from '../data/enemies';
+import { AddCards, danoDe, encounters, encuentrosAbismo, ENCOUNTERS_SUENO, ENEMIES, EnemyState, Intent, JEFE_GRUPO, masaTexto, pick, spawn } from '../data/enemies';
 import { darMaldicion } from '../data/maldiciones';
 import { aplicarSarro, enAbismo, addEntropia, addErgios, boonLevel, codexFlag, amVencido, codexWin, contarHib, Game, nucleoDisponible, otorgarInsigniaAM, logEvent, saveLocal, syncRun, unlock, contarBaja, addFamiliar } from '../state';
 import { CONDITION_CHANCE, CONDITIONS, ConditionDef } from '../data/conditions';
@@ -506,8 +506,8 @@ export class CombatScene extends Phaser.Scene {
     if (run.mutador === 'masa') { this.block += 8; this.calc('Masa Extra: +8 de Bloqueo'); }
     if (run.mutador === 'eco') this.addStatus({ id: 'susurro', n: 1, to: 'draw' });
     // los jefes del Abismo muerden la dentadura: 1 diente (2 los Primigenios) no funciona en esta pelea
-    if (this.kind === 'boss' && JEFES_ABISMO[this.alive()[0]?.st.def.id ?? '']) {
-      const prim = !!JEFES_ABISMO[this.alive()[0].st.def.id].primigenio;
+    if (this.kind === 'boss' && this.jefeDelCombate()) {
+      const prim = !!JEFES_ABISMO[this.jefeDelCombate()!.st.def.id].primigenio;
       // v0.48: cada jefe impone una condición al azar (la mordida es una de ellas)
       this.condJefe = Phaser.Utils.Array.GetRandom(CONDICIONES_JEFE).id;
       if (this.condJefe === 'mordida') {
@@ -731,9 +731,13 @@ export class CombatScene extends Phaser.Scene {
 
     // ── Enemigos ──
     // El Abismo: el jefe de cada tramo se sorteó al empezar el tramo (run.jefe)
-    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb'] : this.acto === 5 && this.kind === 'boss' ? [run.jefe ?? 'geometra'] : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]);
+    const enc = this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb']
+      // v0.88 · algunos jefes llegan acompañados (el Par de Fuerzas, el Centro Instantáneo)
+      : this.acto === 5 && this.kind === 'boss' ? (JEFE_GRUPO[run.jefe ?? ''] ?? [run.jefe ?? 'geometra'])
+        : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]);
     const n = enc.length;
     enc.forEach((id, i) => this.addEnemy(spawn(id), 700 + (i - (n - 1) / 2) * 190));
+    this.aplicarCir(true); // el pivote del primer turno
     ditherLocura(this); // v0.67 · con mucha Locura el fondo se pixela (sólo el fondo)
 
     // ── UI de combate ──
@@ -1836,6 +1840,40 @@ export class CombatScene extends Phaser.Scene {
       return `${e.st.def.name} a ${d} m (+${b})`;
     });
     this.calc(`${quien} reordena la fila · I = I_cm + m·d² → ${notas.join(' · ')}`);
+  }
+
+  /**
+   * v0.88 · Quién es EL JEFE de esta pelea. Antes se daba por hecho que era el
+   * primer enemigo vivo, pero ahora hay jefes que llegan acompañados (JEFE_GRUPO)
+   * y el primero de la fila puede ser un acompañante.
+   */
+  private jefeDelCombate() {
+    return this.alive().find((e) => JEFES_ABISMO[e.st.def.id]);
+  }
+
+  /**
+   * v0.88 · El Centro Instantáneo: ¿sobre qué cuerpo de la fila pasa el eje este turno?
+   * El jefe decide el lugar en su `next()`; aquí se traduce a quién le tocó.
+   */
+  private pivoteCir() {
+    const jefe = this.alive().find((e) => e.st.def.id === 'centroInstantaneo');
+    if (!jefe || jefe.st.cir === undefined) return null;
+    const fila = this.alive().sort((a, b) => a.baseX - b.baseX);
+    return { idx: jefe.st.cir % fila.length, fila };
+  }
+
+  /**
+   * El cuerpo que queda en el CIR tiene r = 0: no se mueve, así que este turno
+   * sólo se sostiene (no ataca). Los demás giran y pegan según su distancia.
+   */
+  private aplicarCir(inicio = false) {
+    const cir = this.pivoteCir();
+    if (!cir) return;
+    const p = cir.fila[cir.idx];
+    if (!p) return;
+    p.st.intent = { kind: 'block', block: 10, label: 'CIR: r = 0, no me muevo' };
+    this.refreshEnemy(p);
+    this.calc(`${inicio ? 'El mecanismo arranca: el' : 'El'} centro instantáneo pasa por ${p.st.def.name}: ese cuerpo no se mueve (v = ω·r con r = 0)`);
   }
 
   /** Mueve a un enemigo a otro lugar de la fila con todo y su barra, nombre e intención */
@@ -3606,6 +3644,22 @@ export class CombatScene extends Phaser.Scene {
     const st = ev.st;
     if (this.polonio && kind !== 'calor' && kind !== 'res') F += this.polonio;
     const cardHit = kind === 'golpe' || typeof kind === 'number';
+    // v0.88 · El Centro Instantáneo: v = ω·r. Al que está en el pivote (r = 0) casi
+    // no lo mueves; al que está en la punta del brazo lo alcanzas con todo.
+    if (cardHit) {
+      const cir = this.pivoteCir();
+      const i = cir ? cir.fila.indexOf(ev) : -1;
+      if (cir && i >= 0) {
+        const r = Math.abs(i - cir.idx);
+        if (r === 0) {
+          F = Math.max(1, Math.round(F * 0.25));
+          this.calc(`${st.def.name} está en el CIR: r = 0 → v = ω·r = 0, el golpe apenas lo despeina (${F})`);
+        } else if (r >= 2) {
+          F = Math.round(F * 1.5);
+          this.calc(`${st.def.name} está en la punta: r es máximo → v = ω·r también, +50 % de daño (${F})`);
+        }
+      }
+    }
     if (cardHit && st.def.hueco && this.curAll) {
       F = Math.round(F / 2);
       this.calc(`${st.def.name}: área negativa → el golpe a todos le hace la mitad`);
@@ -3913,6 +3967,17 @@ export class CombatScene extends Phaser.Scene {
       this.floatText(ev.baseX, 170, '¡Recuperadas!', CSS.gold);
       ev.st.cartasRobadas = [];
     }
+    // v0.88 · El Par de Fuerzas: muerto uno, al otro le queda fuerza neta y se desata
+    if (ev.st.def.id === 'parFuerzas' || ev.st.def.id === 'parGemelo') {
+      const otro = this.alive().find((o) => o !== ev && (o.st.def.id === 'parFuerzas' || o.st.def.id === 'parGemelo'));
+      if (otro && !otro.st.furia) {
+        otro.st.furia = true;
+        otro.st.intent = this.scaleIntent(otro.st.def.next(otro.st), otro.st);
+        this.refreshEnemy(otro);
+        this.anunciarEstado('¡SE ROMPIÓ EL PAR!', 'Ya no se cancelan: ΣF ≠ 0', 0x8a2a3a, '#ff9a9a');
+        this.calc(`${otro.st.def.name} se queda solo: las fuerzas ya no se cancelan (ΣF ≠ 0) y ahora sí avanza`);
+      }
+    }
     // v0.76 · Engranes de Leng: sin el del eje, los demás se traban
     if (ev.st.def.traba) {
       const otros = this.alive().filter((o) => o !== ev && o.st.def.id.startsWith('leng'));
@@ -4180,13 +4245,13 @@ export class CombatScene extends Phaser.Scene {
     if (this.turn === 1 && Game.run?.mutador === 'agua') { this.energy = Math.max(0, this.energy - 1); this.calc('Fricción del Agua: −1 J en tu primer turno'); }
     if (this.turn === 1 && this.condJefe && this.condJefe !== 'mordida') {
       const cj = CONDICION_JEFE(this.condJefe)!;
-      const jefe = this.alive()[0]?.st.def.name ?? 'El jefe';
+      const jefe = this.jefeDelCombate()?.st.def.name ?? this.alive()[0]?.st.def.name ?? 'El jefe';
       this.calc(`${jefe} impone: ${cj.nombre.toUpperCase()} · ${cj.texto(false)}`);
       this.anunciarEstado(`¡${cj.nombre.toUpperCase()}!`, cj.texto(false), 0xa83a4a, '#ff9aa8');
     }
     if (this.turn === 1 && this.mordidos.length) {
       const nombres = this.mordidos.map((i) => defDiente(Game.run!.dientes![i]!).nombre).join(' y ');
-      const jefe = this.alive()[0]?.st.def.name ?? 'El jefe';
+      const jefe = this.jefeDelCombate()?.st.def.name ?? this.alive()[0]?.st.def.name ?? 'El jefe';
       this.calc(`${jefe} muerde tu dentadura: ${nombres} no funciona(n) en esta pelea`);
       this.anunciarEstado('¡TE MUERDE LA DENTADURA!', `${nombres}: sin efecto en esta pelea (míralos con ✕ en tu dentadura)`, 0xa83a4a, '#ff9aa8');
     }
@@ -4863,7 +4928,11 @@ export class CombatScene extends Phaser.Scene {
             if (it.shieldOthers) a.st.block += it.shieldOthers;
             this.refreshEnemy(a);
           }
-          if (otros.length) this.calc(`${st.def.name}: ${it.healAll ? `cura ${it.healAll} y ` : ''}da ${it.shieldOthers ?? 0} de Bloqueo a sus aliados`);
+          if (otros.length) {
+            // v0.88 · antes decía «da 0 de Bloqueo» cuando el enemigo sólo curaba
+            const partes = [it.healAll ? `cura ${it.healAll}` : '', it.shieldOthers ? `da ${it.shieldOthers} de Bloqueo` : ''].filter(Boolean);
+            this.calc(`${st.def.name}: ${partes.join(' y ')} a sus aliados`);
+          }
         }
         if (it.heal) {
           st.hp = Math.min(st.maxHp, st.hp + it.heal);
@@ -4932,6 +5001,7 @@ export class CombatScene extends Phaser.Scene {
       this.refreshPlayer();
     }
     if (await this.checkEnd()) return;
+    this.aplicarCir(); // v0.88 · ya con todas las intenciones puestas, se marca el pivote
     this.busy = false;
     this.startTurn();
   }
