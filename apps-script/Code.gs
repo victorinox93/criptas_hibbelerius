@@ -14,6 +14,10 @@
  *  7) Menú "Criptas" → Revisar partidas sospechosas (hoja «Revisión»). Con
  *     «Actualizar panel cada hora» también queda programada cada madrugada.
  *
+ *  8) FIN DE SEMESTRE (v0.89): revisa CIERRE y PREMIOS aquí abajo. Después de la fecha
+ *     de CIERRE el servidor deja de registrar partidas (el ranking queda congelado) y
+ *     Menú "Criptas" → Calcular premios arma la hoja «Premios».
+ *
  *  AL ACTUALIZAR ESTE ARCHIVO: pega el código nuevo, ejecuta setup otra vez
  *  (agrega columnas nuevas sin borrar datos) y luego
  *  Implementar → Administrar implementaciones → ✏️ editar → Versión: Nueva versión → Implementar.
@@ -33,6 +37,47 @@ var HEAD = {
   // v0.30: lápidas (donde murió un compañero) y signos de invocación (quien venció a un jefe)
   Huellas: ['fecha', 'matricula', 'grupo', 'alias', 'tipo', 'acto', 'piso', 'jefe', 'datos', 'usos', 'avisado'],
 };
+
+// ───────────────────────── v0.89 · Cierre del semestre y premios ─────────────────────────
+// CIERRE: después de este momento el servidor ya NO registra partidas ni eventos, así que los
+// rankings, el tiempo jugado y los aciertos quedan congelados tal como estaban a esa hora.
+// El juego se puede seguir abriendo, pero lo que se juegue ya no cuenta. Para reabrir: CIERRE = ''.
+// (−06:00 = hora del centro de México.)
+var CIERRE = '2026-11-22T23:59:59-06:00';
+
+// PREMIOS: reglas de «Criptas → Calcular premios». Un alumno sólo gana UN premio: el que más
+// puntos da. Los premios se reparten del más grande al más chico (y, a igualdad de puntos, en
+// el orden de esta lista); si el primer lugar de una categoría ya ganó algo, el premio pasa
+// al siguiente de esa categoría.
+var PREMIOS = {
+  reto: 'OTO26',            // id del Reto de la Semilla (src/data/reto.ts → RETO.id)
+  excluir: [],              // matrículas que no concursan (la tuya, cuentas de prueba): ['12345', '67890']
+  grupos: [],               // claves de grupo que concursan; [] = todos los grupos
+  minPreguntas: 50,         // «Mejor precisión»: mínimo de preguntas contestadas para concursar
+  // «Primer lugar por clase»: 'personaje' = mejor puntaje con cada uno de los 4 personajes;
+  //                           'grupo'     = mejor puntaje de cada grupo (clave de la hoja Grupos)
+  clasePor: 'personaje',
+  claseModo: 'abismo',      // de qué ranking sale el premio por clase: 'abismo' o 'normal' (la Expedición)
+  lista: [
+    { id: 'abismo1', nombre: 'Primer lugar del Abismo', puntos: 30, extra: 'tarjeta de regalo' },
+    { id: 'abismo2', nombre: 'Segundo lugar del Abismo', puntos: 20 },
+    { id: 'reto', nombre: 'Primer lugar del Reto de la Semilla', puntos: 15 },
+    { id: 'abismo3', nombre: 'Tercer lugar del Abismo', puntos: 10 },
+    { id: 'precision', nombre: 'Mejor precisión (% de aciertos)', puntos: 10 },
+    { id: 'correctas', nombre: 'Más preguntas correctas', puntos: 10 },
+    { id: 'tiempo', nombre: 'Más tiempo jugado', puntos: 10 },
+    { id: 'clase', nombre: 'Primer lugar por clase', puntos: 10 }, // se repite una vez por personaje (o por grupo)
+  ],
+};
+
+function cerrado_() {
+  return !!CIERRE && new Date().getTime() > new Date(CIERRE).getTime();
+}
+/** ¿La partida es de un Reto de la Semilla? (su runId empieza con «L-SEM-<id>-») */
+function retoDe_(runId) {
+  var m = /^L-SEM-([^-]+)-/.exec(String(runId));
+  return m ? m[1] : '';
+}
 
 // ───────────────────────── Configuración ─────────────────────────
 function setup() {
@@ -58,6 +103,7 @@ function onOpen() {
     .addItem('Actualizar panel cada hora', 'instalarDisparador')
     .addSeparator()
     .addItem('Revisar partidas sospechosas', 'revisarPartidas')
+    .addItem('Calcular premios de fin de semestre', 'calcularPremios')
     .addItem('Calcular ganancia de aprendizaje (Hake)', 'calcularGanancia')
     .addItem('Generar evidencia (reporte del proyecto)', 'generarEvidencia')
     .addItem('Crear formulario de retroalimentación', 'crearFormulario')
@@ -270,6 +316,7 @@ var ACTIONS = {
 
   startRun: function (r) {
     var u = auth_(r.token);
+    if (cerrado_()) return { ok: true, runId: 'X-CERRADO', cerrado: true }; // v0.89 · «X-» no se registra
     var runId = 'R-' + Utilities.getUuid().slice(0, 8);
     sheet_('Partidas').appendRow([runId, u.mat, u.grupo, u.alias, clean_(r.clase, 20), new Date(), new Date(),
       1, 0, '', 0, 'en curso', '', 0, 0, 0, 0, 10, num_(r.gravedad) || 1, 0]);
@@ -278,6 +325,7 @@ var ACTIONS = {
 
   updateRun: function (r) {
     var u = auth_(r.token);
+    if (cerrado_()) return { ok: true, cerrado: true }; // v0.89 · después del cierre nada cambia en Partidas
     var sh = sheet_('Partidas');
     var row = findRow_(sh, 1, String(r.runId));
     if (!row) {
@@ -329,6 +377,10 @@ var ACTIONS = {
     var u = auth_(r.token);
     var soloGrupo = r.alcance !== 'todos';
     var abismo = r.modo === 'abismo';
+    // v0.89 · modo 'semilla' = ranking propio de un Reto de la Semilla (partidas «L-SEM-<reto>-…»);
+    // esas partidas ya no cuentan en el ranking del Abismo.
+    var semilla = r.modo === 'semilla';
+    var retoPedido = String(r.reto || PREMIOS.reto);
     var alumnos = rows_('Alumnos');
     var info = {};
     alumnos.forEach(function (a) { info[a[0]] = { grupo: a[1], alias: a[2], avatar: a[3] }; });
@@ -337,7 +389,12 @@ var ACTIONS = {
       var who = info[p[1]];
       if (!who || !who.alias) return;
       if (soloGrupo && who.grupo !== u.grupo) return;
-      if ((num_(p[7]) === 5) !== abismo) return; // acto 5 = Abismo
+      var reto = retoDe_(p[0]);
+      if (semilla) { if (reto !== retoPedido) return; }
+      else {
+        if (reto) return;
+        if ((num_(p[7]) === 5) !== abismo) return; // acto 5 = Abismo
+      }
       if (/^revisar/.test(String(p[20] || ''))) return; // v0.88.1 · no entra al ranking hasta que el profe la apruebe
       var b = best[p[1]] || (best[p[1]] = { alias: who.alias, avatar: who.avatar, grupo: who.grupo, puntaje: 0, piso: 0, victorias: 0, gravedad: 0, partidas: 0, minutos: 0, runasOk: 0, runasTotal: 0, yo: p[1] === u.mat });
       b.partidas++;
@@ -357,7 +414,7 @@ var ACTIONS = {
     list.forEach(function (x, i) { if (x.yo) mine = i; });
     var top = list.slice(0, 25);
     if (mine >= 25) top.push(list[mine]);
-    return { ok: true, modo: abismo ? 'abismo' : 'normal', grupo: u.grupo, total: list.length, lista: top.map(function (x) {
+    return { ok: true, modo: semilla ? 'semilla' : abismo ? 'abismo' : 'normal', cerrado: cerrado_(), grupo: u.grupo, total: list.length, lista: top.map(function (x) {
       return { alias: x.alias, avatar: x.avatar, grupo: x.grupo, puntaje: x.puntaje, piso: x.piso, victorias: x.victorias, gravedad: x.gravedad, partidas: x.partidas, minutos: Math.round(x.minutos), runasOk: x.runasOk, runasTotal: x.runasTotal, yo: x.yo, lugar: list.indexOf(x) + 1 };
     }) };
   },
@@ -460,7 +517,7 @@ var ACTIONS = {
 
   logEvent: function (r) {
     var u = auth_(r.token);
-    sheet_('Eventos').appendRow([new Date(), u.mat, u.grupo, clean_(r.runId, 20), clean_(r.tipo, 20),
+    sheet_('Eventos').appendRow([new Date(), u.mat, u.grupo, clean_(r.runId, 32), clean_(r.tipo, 20),
       clean_(r.concepto, 30), r.correcto === '' ? '' : r.correcto === true, clean_(r.detalle, 500)]);
     return { ok: true };
   },
@@ -766,6 +823,141 @@ function revisar_(conUi) {
 }
 
 // ───────────────────────── utilidades ─────────────────────────
+// ───────────────────────── v0.89 · Premios de fin de semestre ─────────────────────────
+// Menú Criptas → «Calcular premios de fin de semestre». Arma la hoja «Premios» con las reglas
+// de PREMIOS (arriba). No escribe nada en las demás hojas: se puede correr las veces que quieras.
+//
+// De dónde sale cada categoría (todo de la hoja Partidas; las filas en «revisar» no cuentan):
+//   · Abismo (1.º, 2.º, 3.º): mejor puntaje en el Abismo, sin contar el Reto de la Semilla.
+//   · Reto de la Semilla: mejor puntaje en las partidas «L-SEM-<PREMIOS.reto>-…».
+//   · Mejor precisión: aciertos ÷ preguntas contestadas en TODAS sus partidas (mínimo PREMIOS.minPreguntas).
+//   · Más preguntas correctas: suma de aciertos en todas sus partidas.
+//   · Más tiempo jugado: suma de minutos de juego activo en todas sus partidas.
+//   · Por clase: mejor puntaje con cada personaje (o de cada grupo), en el ranking PREMIOS.claseModo.
+// Empates: gana quien llegó más profundo; si siguen empatados, quien lo logró primero.
+function calcularPremios() {
+  var ss = SpreadsheetApp.getActive();
+  var fuera = {};
+  PREMIOS.excluir.forEach(function (m) { fuera[String(m).trim().toUpperCase()] = true; });
+  var soloGrupos = PREMIOS.grupos.map(function (g) { return String(g).trim().toUpperCase(); });
+  var A = {};
+  rows_('Alumnos').forEach(function (a) {
+    var mat = String(a[0]).trim();
+    if (!a[2] || fuera[mat.toUpperCase()]) return;
+    if (soloGrupos.length && soloGrupos.indexOf(String(a[1]).trim().toUpperCase()) < 0) return;
+    A[mat] = { mat: mat, grupo: String(a[1]), alias: String(a[2]), ok: 0, total: 0, minutos: 0, partidas: 0,
+      abismo: null, reto: null, clase: {} };
+  });
+  var fin = CIERRE ? new Date(CIERRE).getTime() : 0;
+  var tarde = 0;
+  // mejor(a, b): ¿la marca b le gana a la a? (más puntaje; luego más profundidad; luego la más antigua)
+  var mejor = function (a, b) {
+    return !a || b.puntaje > a.puntaje || (b.puntaje === a.puntaje && (b.piso > a.piso || (b.piso === a.piso && b.fecha < a.fecha)));
+  };
+  rows_('Partidas').forEach(function (p) {
+    var al = A[String(p[1]).trim()];
+    if (!al) return;
+    if (/^revisar/.test(String(p[20] || ''))) return;
+    var fecha = p[6] instanceof Date ? p[6].getTime() : 0;
+    if (fin && fecha > fin) { tarde++; return; } // por si se registró algo después del cierre
+    al.partidas++;
+    al.ok += num_(p[15]);
+    al.total += num_(p[16]);
+    al.minutos += num_(p[19]);
+    var marca = { puntaje: num_(p[10]), piso: num_(p[8]), fecha: fecha };
+    var reto = retoDe_(p[0]);
+    var esAbismo = num_(p[7]) === 5;
+    if (reto) { if (reto === PREMIOS.reto && mejor(al.reto, marca)) al.reto = marca; return; }
+    if (esAbismo && mejor(al.abismo, marca)) al.abismo = marca;
+    if (esAbismo === (PREMIOS.claseModo === 'abismo')) {
+      var k = PREMIOS.clasePor === 'grupo' ? al.grupo : String(p[4] || 'caballero');
+      if (mejor(al.clase[k], marca)) al.clase[k] = marca;
+    }
+  });
+  var todos = Object.keys(A).map(function (k) { return A[k]; });
+  // una categoría = lista ordenada de { al, valor (para ordenar), texto (para leer) }
+  var porMarca = function (get) {
+    return todos.filter(function (al) { var m = get(al); return m && m.puntaje > 0; })
+      .sort(function (x, y) { var a = get(x), b = get(y); return mejor(a, b) ? 1 : mejor(b, a) ? -1 : 0; })
+      .map(function (al) { var m = get(al); return { al: al, texto: fmt_(m.puntaje) + ' pts · piso ' + m.piso }; });
+  };
+  var cat = {};
+  var abis = porMarca(function (al) { return al.abismo; });
+  cat.abismo1 = cat.abismo2 = cat.abismo3 = abis;
+  cat.reto = porMarca(function (al) { return al.reto; });
+  cat.precision = todos.filter(function (al) { return al.total >= PREMIOS.minPreguntas; })
+    .sort(function (x, y) { return y.ok / y.total - x.ok / x.total || y.total - x.total; })
+    .map(function (al) { return { al: al, texto: (100 * al.ok / al.total).toFixed(1) + ' % (' + al.ok + '/' + al.total + ')' }; });
+  cat.correctas = todos.filter(function (al) { return al.ok > 0; })
+    .sort(function (x, y) { return y.ok - x.ok || x.total - y.total; })
+    .map(function (al) { return { al: al, texto: al.ok + ' correctas de ' + al.total }; });
+  cat.tiempo = todos.filter(function (al) { return al.minutos > 0; })
+    .sort(function (x, y) { return y.minutos - x.minutos; })
+    .map(function (al) { return { al: al, texto: Math.floor(al.minutos / 60) + ' h ' + Math.round(al.minutos % 60) + ' min' }; });
+  var NOMBRE_CLASE = { caballero: 'Caballero de la Masa', arcanista: 'Arcanista Cinético', penitente: 'Penitente del Empuje', espectro: 'Espectro de la Energía' };
+  var claves = {};
+  todos.forEach(function (al) { Object.keys(al.clase).forEach(function (k) { claves[k] = true; }); });
+  var clases = PREMIOS.clasePor === 'grupo' ? Object.keys(claves).sort() : ['caballero', 'arcanista', 'penitente', 'espectro'];
+
+  // la lista de premios, con el de clase repetido por cada personaje o grupo
+  var premios = [];
+  PREMIOS.lista.forEach(function (pr, i) {
+    if (pr.id !== 'clase') return premios.push({ id: pr.id, nombre: pr.nombre, puntos: pr.puntos, extra: pr.extra || '', orden: i, lista: cat[pr.id] || [] });
+    clases.forEach(function (k, j) {
+      premios.push({ id: 'clase', nombre: pr.nombre + ': ' + (NOMBRE_CLASE[k] || k), puntos: pr.puntos, extra: pr.extra || '', orden: i + j / 100,
+        lista: porMarca(function (al) { return al.clase[k]; }) });
+    });
+  });
+  // reparto: del premio más grande al más chico; nadie repite
+  var lugar = { abismo1: 0, abismo2: 1, abismo3: 2 }; // el 2.º lugar no puede ir a quien quedó 1.º, etc.
+  var ganadores = {};
+  var filas = [];
+  premios.slice().sort(function (a, b) { return b.puntos - a.puntos || a.orden - b.orden; }).forEach(function (pr) {
+    var saltados = [];
+    var g = null;
+    for (var i = lugar[pr.id] || 0; i < pr.lista.length; i++) {
+      var c = pr.lista[i];
+      if (ganadores[c.al.mat]) { saltados.push(c.al.alias + ' (ya ganó «' + ganadores[c.al.mat] + '»)'); continue; }
+      g = c;
+      break;
+    }
+    if (g) ganadores[g.al.mat] = pr.nombre;
+    filas.push([pr.orden, pr.nombre, pr.puntos, pr.extra, g ? g.al.alias : '— sin ganador —', g ? g.al.mat : '', g ? g.al.grupo : '', g ? g.texto : '',
+      saltados.length ? 'Pasó de: ' + saltados.join(', ') : '']);
+  });
+  filas.sort(function (a, b) { return a[0] - b[0]; });
+
+  var sh = ss.getSheetByName('Premios') || ss.insertSheet('Premios');
+  sh.clear();
+  var hdr = function (row, vals) { sh.getRange(row, 1, 1, vals.length).setValues([vals]).setFontWeight('bold').setBackground('#221c2a').setFontColor('#e8c15a'); };
+  sh.getRange(1, 1).setValue('Premios de fin de semestre · calculado el ' + Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm') +
+    (CIERRE ? ' · cierre: ' + Utilities.formatDate(new Date(CIERRE), ss.getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm') + (cerrado_() ? ' (YA CERRADO: resultado final)' : ' (AÚN ABIERTO: resultado provisional)') : '') +
+    (tarde ? ' · ' + tarde + ' partida(s) posteriores al cierre no se contaron' : '')).setFontWeight('bold');
+  hdr(3, ['Premio', 'Puntos', 'Extra', 'Ganador (alias)', 'Matrícula', 'Grupo', 'Marca', 'Notas']);
+  if (filas.length) sh.getRange(4, 1, filas.length, 8).setValues(filas.map(function (f) { return f.slice(1); }));
+  // los primeros 5 de cada categoría, para que cualquiera pueda revisar el reparto
+  var r0 = filas.length + 6;
+  sh.getRange(r0 - 1, 1).setValue('Los 5 primeros de cada categoría (antes de aplicar «un premio por alumno»)').setFontWeight('bold');
+  hdr(r0, ['Categoría', 'Lugar', 'Alias', 'Matrícula', 'Grupo', 'Marca']);
+  var top = [];
+  var vistas = {};
+  premios.forEach(function (pr) {
+    var nombre = /^abismo/.test(pr.id) ? 'El Abismo' : pr.nombre;
+    if (vistas[nombre]) return;
+    vistas[nombre] = true;
+    pr.lista.slice(0, 5).forEach(function (c, i) { top.push([nombre, i + 1, c.al.alias, c.al.mat, c.al.grupo, c.texto]); });
+    if (!pr.lista.length) top.push([nombre, '', '— nadie todavía —', '', '', '']);
+  });
+  if (top.length) sh.getRange(r0 + 1, 1, top.length, 6).setValues(top);
+  sh.setFrozenRows(3);
+  sh.autoResizeColumns(1, 8);
+  ss.setActiveSheet(sh);
+  try {
+    SpreadsheetApp.getUi().alert('Premios', 'Hoja «Premios» lista: ' + Object.keys(ganadores).length + ' alumnos premiados de ' + premios.length + ' premios.\n' +
+      (cerrado_() ? 'El semestre ya cerró: este resultado es el final.' : 'Todavía no llega la fecha de cierre: el resultado es provisional.'), SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch (e) {}
+}
+
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }

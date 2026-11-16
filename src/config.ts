@@ -2,9 +2,18 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.87.0 · Cada personaje, lo suyo';
+export const VERSION = '0.89.0 · Fin de semestre';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
+/**
+ * v0.89 · CIERRE DEL SEMESTRE. Después de este momento el servidor ya no registra partidas
+ * (apps-script/Code.gs → CIERRE, que es el que manda) y el menú y el ranking lo avisan.
+ * El juego se puede seguir abriendo. Vacío ('') = sin cierre. Usa la misma fecha en los dos archivos.
+ */
+export const CIERRE_ISO = '2026-11-22T23:59:59-06:00';
+export const CIERRE_TEXTO = 'el domingo 22 de noviembre a las 11:59 pm';
+/** ¿Ya pasó el cierre? */
+export const cerrado = () => !!CIERRE_ISO && Date.now() > new Date(CIERRE_ISO).getTime();
 export const W = 960; // tamaño lógico (todo el juego se diseña a 960×540)
 export const H = 540;
 // Se dibuja al doble de resolución para verse nítido.

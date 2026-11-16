@@ -2,6 +2,25 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.89.0 · Fin de semestre
+
+**Necesita actualizar `apps-script/Code.gs`** (pégalo, guarda y publica una nueva versión) **antes de publicar el juego**: sin eso, las partidas del Reto de la Semilla se mezclan con el ranking del Abismo y el ranking «Reto» avisa que falta la versión nueva del servidor.
+
+- **La Madriguera de Roído** (relato nuevo en los «?» del Abismo, `src/data/relatos.ts`). Cuenta su historia y la enlaza con el Registro 10 del diario: Roído bajó en 1931 por la muela de Montemayor, con la moneda para pagarla, y nunca pudo subir. Ahí se consigue **La Moneda de Roído** (reliquia especial: no cuenta para el tope).
+  - Con la Moneda, cuando Roído te alcanza puedes **pelear con él** en lugar de perder un diente (`ratonPerez()` en `MapScene.ts`). Es una élite nueva (`roido` en `enemies.ts`): pesa 0.4 kg y por eso pega muchas veces (a = F/m).
+  - Si lo vences, **no vuelve en toda la expedición** (`run.ratonVencido`) y te deja un diente raro. Cerrar la pestaña a media pelea no sirve para huir: se retoma.
+- **Los Hibbelievers** (idea de los alumnos). Cuatro cultistas de Hibbeler salen en los «?» del Abismo con su propio sorteo (30 %, `HIBBELIEVER_CHANCE`). Se unen si respondes su pregunta o pagas el diezmo (35 Ergios). Con 3 te entregan **La 14.ª Edición**.
+  - Con el libro aparece el botón **«Invocar a Hibbeler»** en combate (`invocarHibbeler()` en `Combat.ts`). Una vez, en la pelea que elijas: +10 de Bloqueo y, al final de cada turno tuyo, 16 × escala del tramo de daño a TODOS los enemigos.
+  - En el mapa se ve cuántos te siguen. En el modo infinito se pueden volver a reunir después de usar el libro.
+- **El Reto de la Semilla** (`src/data/reto.ts` y `src/semilla.ts`). El portal del Abismo ahora pregunta: descenso libre o reto.
+  - En el reto todos empiezan igual (Arcanista Cinético, El Tiempo Dilatado, Pacto del Volante, 17 cartas y 2 dientes fijos; sin Legado ni Bendición) y el Abismo se sortea igual para todos: mapa, jefes, mutadores, enemigos de cada nodo, condiciones, tiendas, encuentros, recompensas y el primer barajeo de cada pelea.
+  - **No** se siembran las preguntas ni los minijuegos (no sirve memorizar respuestas) ni lo que pasa dentro de una pelea después del primer barajeo.
+  - Ranking propio: Ranking → botón de la derecha (Expedición → Abismo → Reto). Sus partidas llevan `runId` «L-SEM-<id>-…» y ya no cuentan en el ranking del Abismo.
+  - Para otro reto (otro semestre): cambia `id` y `semilla` en `src/data/reto.ts`.
+- **Cierre del semestre.** `CIERRE` en `Code.gs` (el que manda) y `CIERRE_ISO` en `src/config.ts` (el aviso): después del domingo 22 de noviembre de 2026 a las 23:59 el servidor ya no registra partidas, así que rankings, aciertos y tiempo quedan congelados. El menú y el ranking lo avisan. Para reabrir: deja las dos fechas vacías.
+- **Menú Criptas → «Calcular premios de fin de semestre»** (hoja «Premios»). Aplica las reglas de `PREMIOS` en `Code.gs`: un premio por alumno, del más grande al más chico, y si el primer lugar ya ganó algo el premio pasa al siguiente. Muestra también los 5 primeros de cada categoría para que el reparto se pueda revisar. Antes de usarlo, escribe tu matrícula en `PREMIOS.excluir`.
+- Modo profesor: botones para probar la Madriguera, un Hibbeliever, la pelea con Roído y el Reto.
+
 ## Servidor · validación de partidas (sin cambios en el juego)
 
 - **El servidor revisa que cada partida sea posible** antes de meterla al ranking: puntaje dentro de la cota de su profundidad y gravedad, aciertos ≤ preguntas, élites ≤ combates, al menos 8 s por combate y, en el Abismo, al menos un combate por jefe. Lo imposible queda en «revisar» y no entra al ranking hasta que el profe escriba «aprobada». Calibrado con las 516 partidas reales: ninguna queda marcada.

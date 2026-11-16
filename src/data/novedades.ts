@@ -21,6 +21,18 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    v: '0.89.0',
+    titulo: 'Fin de semestre',
+    puntos: [
+      '**Las Criptas cierran el domingo 22 de noviembre a las 11:59 pm.** Lo que juegues después ya no cuenta para el ranking ni para los premios. La semana del examen es para estudiar.',
+      '**El Reto de la Semilla.** En el portal del Abismo ahora eliges: descenso libre o reto. En el reto todos bajan con el mismo personaje, las mismas cartas y el MISMO Abismo (mapa, jefes, enemigos y tiendas). Tiene su propio ranking: Ranking → Reto.',
+      '**Los Hibbelievers** (idea de ustedes). Un culto que le reza a Hibbeler anda por los «?» del Abismo. Responde su catecismo o paga el diezmo: cuando te sigan 3, te entregan «La 14.ª Edición» y puedes **invocar a Hibbeler** en el combate que elijas.',
+      '**La Madriguera de Roído.** En algún «?» está la casa del Coleccionista de Sonrisas, y su historia. Si te llevas su Moneda, la próxima vez que te alcance puedes pelear con él. Si le ganas, no vuelve en toda la expedición.',
+      '**Premios (puntos sobre el examen):** 1.er lugar del Abismo 30 + tarjeta de regalo · 2.º lugar 20 · 1.er lugar del Reto de la Semilla 15 · 3.er lugar 10 · mejor precisión 10 · más preguntas correctas 10 · más tiempo jugado 10 · 1.er lugar con cada personaje 10.',
+      '**Los premios no se acumulan.** Si ganas dos, te quedas con el que da más puntos y el otro pasa al siguiente lugar de esa categoría.',
+    ],
+  },
+  {
     v: '0.87.0',
     titulo: 'Cada personaje, lo suyo',
     puntos: [

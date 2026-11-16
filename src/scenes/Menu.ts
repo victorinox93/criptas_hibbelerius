@@ -6,7 +6,7 @@ import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { mascotaJunto } from '../ui/mascota';
 import { T } from '../textos';
-import { FORM_URL, W, H } from '../config';
+import { cerrado, CIERRE_ISO, CIERRE_TEXTO, FORM_URL, W, H } from '../config';
 import { starterDeck } from '../data/cards';
 import { CLASSES } from '../data/classes';
 import { GRAVITY } from '../data/gravity';
@@ -20,6 +20,7 @@ import { MOMENTUM_POR_AYUDA, TOPE_AYUDAS } from '../huellas';
 import { amVencido, claseJugable, codexFlag, expediciones, ganarMomentum, momentum, tiendaAbierta, regaloDiario, clearSession, Game, isAdmin, nucleoDisponible, nivelActual, logEvent, newRun, saveLocal, syncRun, unlock } from '../state';
 import { button, dungeonBackground, embers, fadeTo, frame, panel, title, torch, txt } from '../ui/widgets';
 import { avisoDeNovedades, novedades } from '../ui/novedades';
+import { RETO } from '../data/reto';
 
 /** ¿Qué diagnóstico toca? (el profesor no lo hace) */
 function diagPendiente(): 'pre' | 'post' | null {
@@ -63,6 +64,12 @@ export class MenuScene extends Phaser.Scene {
 
     this.progreso();
     this.portalAbismo();
+    // v0.89 · cierre del semestre: se avisa antes y después
+    if (CIERRE_ISO) {
+      const ya = cerrado();
+      const tc = txt(this, W / 2, 530, ya ? 'Las Criptas ya cerraron: lo que juegues no cuenta para el ranking ni para los premios.' : `Las Criptas cierran ${CIERRE_TEXTO}. Premios: ★ Novedades.`, 15, ya ? '#e08a8a' : '#ffd060').setOrigin(0.5).setStroke('#000', 3);
+      if (!ya) this.tweens.add({ targets: tc, alpha: 0.6, duration: 1200, yoyo: true, repeat: -1 });
+    }
     button(this, 70, 22, 110, 26, T.menu.creditos, () => fadeTo(this, 'Credits'), { size: 15 });
     // v0.87 · el historial va aquí arriba, junto a Créditos: en la rejilla de
     // abajo recorría los botones y dejaba «Cerrar sesión» descolgado
@@ -201,7 +208,7 @@ export class MenuScene extends Phaser.Scene {
     const tip = this.add.container(x, y - 98).setDepth(60).setVisible(false);
     const enCurso = !!(Game.run && !Game.run.done);
     const tt = txt(this, 0, 0, abierto
-      ? `El Abismo de los Ejes: modo infinito de cuerpo rígido.${enCurso ? '\nTu expedición actual se abandonará.' : ''}`
+      ? `El Abismo de los Ejes: modo infinito de cuerpo rígido.\nAhora también: ${RETO.nombre}.${enCurso ? '\nTu expedición actual se abandonará.' : ''}`
       : amVencido() ? 'Próximamente.\nEl profe todavía lo está preparando.' : 'Sólo para quienes hayan vencido a AM\n(el jefe secreto del Acto IV).', 16, '#ffe0ff', { align: 'center' }).setOrigin(0.5);
     const tg = this.add.graphics();
     frame(tg, -tt.width / 2 - 14, -tt.height / 2 - 8, tt.width + 28, tt.height + 16, 0x1a0a2a, 0xc070ff, 0.97);
@@ -218,6 +225,27 @@ export class MenuScene extends Phaser.Scene {
       }
       audio.sfx('click');
       tip.setVisible(false);
+      // v0.89 · dos formas de bajar: el descenso libre de siempre o el Reto de la Semilla
+      this.elegirDescenso();
+    });
+  }
+
+  /** v0.89 · El portal pregunta cómo quieres bajar: descenso libre (ranking del Abismo) o Reto de la Semilla (ranking aparte) */
+  private elegirDescenso() {
+    const c = this.add.container(0, 0).setDepth(900);
+    c.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.8).setOrigin(0).setInteractive());
+    const g = this.add.graphics();
+    frame(g, W / 2 - 300, 110, 600, 330, 0x07050e, 0x9a6ad0, 0.98);
+    c.add(g);
+    c.add(title(this, W / 2, 142, 'Bajar al Abismo', 36, '#b8ffd8'));
+    const opcion = (y: number, nombre: string, sub: string, color: number, fn: () => void) => {
+      const b = button(this, W / 2, y, 540, 78, '', () => { c.destroy(); fn(); }, { color });
+      b.label.setText('');
+      b.add(txt(this, -254, -30, nombre, 24, CSS.gold));
+      b.add(txt(this, -254, 0, sub, 16, CSS.bone, { wordWrap: { width: 510 } }));
+      c.add(b);
+    };
+    opcion(222, 'Descenso libre', 'Tu personaje, tu pacto y la gravedad que elijas. Cuenta para el ranking del Abismo.', 0x9a6ad0, () => {
       // v0.87 · el Abismo también se baja con la gravedad que elijas:
       // se multiplica con la dificultad del tramo y con el puntaje del ranking
       this.confirmarAbandono('Abandonar y bajar al Abismo', () => {
@@ -228,6 +256,15 @@ export class MenuScene extends Phaser.Scene {
         }, T.menu.gravedadAbismo);
       });
     });
+    const cls = CLASSES.find((k) => k.id === RETO.clase)?.name ?? RETO.clase;
+    opcion(316, `⚑ ${RETO.nombre}`, `Todos bajan igual: ${cls}, el mismo mazo y el MISMO Abismo (semilla ${RETO.semilla}). Tiene su propio ranking.`, 0xc8a030, () => {
+      this.confirmarAbandono('Abandonar y bajar al reto', () => {
+        if (Game.run && !Game.run.done) syncRun('abandonada', 'bajó al Reto de la Semilla');
+        logEvent('abismo_portal', '', '', { reto: RETO.id });
+        fadeTo(this, 'Abismo', { clase: RETO.clase, gravedad: RETO.gravedad, debug: false, reto: true });
+      });
+    });
+    c.add(button(this, W / 2, 406, 160, 34, T.menu.cancelar, () => c.destroy(), { size: 20 }));
   }
 
   /** v0.86 · Si hay una partida en curso, pregunta antes de abandonarla. Sin partida, sigue directo. */

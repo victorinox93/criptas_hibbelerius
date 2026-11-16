@@ -9,7 +9,7 @@ import { W, H } from '../config';
 import { CardInst, CARDS } from '../data/cards';
 import {
   abrirSobre, ACTO_ABISMO, DIENTES_INICIO, DIENTES_OFRECIDOS, AUTOR, CartaSobre, CORDURA, EDICIONES, editarAlAzar, ELIGES_POR_SOBRE, mazoCiego, PACTO_CIEGO_CORDURA, PactoDef, PACTOS, PaginaDef, PAGINAS, PROLOGO,
-  HOJAS_POR_EXPEDICION, RARAS_ABISMO, sortearMutador, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
+  HOJAS_POR_EXPEDICION, PACTO, PAGINA, RARAS_ABISMO, sortearMutador, rarezaDe, SobreDef, SOBRES, elegirJefe, escalaDano, escalaTramo, JEFES, multPuntaje, nombreTramo, TRAMOS, PACTOS_OFRECIDOS,
 } from '../data/abismo_modo';
 import { RUEDA, RUEDA_COSTO, RUEDA_SUBE, ARRANCAR_PARASITO, cristalDe, defDiente, esParasito, HUECOS, nivelDiente, NOMBRE_RAREZA, PROB_PARASITO_SACAMUELAS, ponerDiente, RETIRAR_DIENTES, sortearDientes, sortearParasito } from '../data/dientes';
 import { ASTROS } from '../data/astros';
@@ -24,6 +24,9 @@ import { guiaAbismo } from '../ui/guiaAbismo';
 import { hojaDiario, hojaPresente } from '../ui/diario';
 import { addCard, addEntropia, aplicarSarro, codexFlag, Game, generateMap, logEvent, newRun, otorgarInsigniaAbismo, saveLocal, syncRun, unlock } from '../state';
 import { button, fadeTo, frame, title, Tooltip, txt, vignette } from '../ui/widgets';
+import { prefijoReto, RETO } from '../data/reto';
+import { CLASSES } from '../data/classes';
+import { sembrar, sembrarCon } from '../semilla';
 
 /**
  * EL ABISMO DE LOS EJES · inicio de la expedición:
@@ -40,6 +43,7 @@ export interface AbismoData {
   debug?: boolean;
   tanque?: boolean; // Modo profesor: vida ×10
   saltarPrologo?: boolean;
+  reto?: boolean; // v0.89 · Reto de la Semilla: todos empiezan igual (src/data/reto.ts)
   fase?: 'tramo' | 'boca' | 'observatorio' | 'colocar' | 'astro';
   astro?: string; // v0.59 · astro vencido (fase 'astro': su sobre de premio)
   nuevo?: boolean; // v0.59 · primera vez que vences a ese astro (ganaste su cosmético) // tramo = entre tramos; boca = Sacamuelas Ciego; observatorio = el Astrónomo de Providence
@@ -90,6 +94,7 @@ export class AbismoScene extends Phaser.Scene {
       if (data.nuevo) this.premio!.nota = `¡Nuevo en el Vestidor: ${a.premio}!`;
       this.sobre(0);
     }
+    else if (data.reto) this.retoIntro();
     else if (data.saltarPrologo) this.necronomicon();
     else this.prologo(0);
   }
@@ -342,6 +347,7 @@ export class AbismoScene extends Phaser.Scene {
       if (modo === 'boca' && Math.random() < PROB_PARASITO_SACAMUELAS) o[o.length - 1] = sortearParasito(dent);
       return o;
     };
+    sembrar(`Abismo|dientes|${modo}`); // v0.89 · Reto de la Semilla: los mismos dientes para todos
     let opciones = nOpc ? sortear() : [];
     if (cartaPremio) { carta!.cobrada = true; saveLocal(); }
     let tomados = 0;
@@ -574,6 +580,7 @@ export class AbismoScene extends Phaser.Scene {
     const elige = this.elige();
     const aviso = L(txt(this, W / 2, 84, `Elige ${elige === 1 ? '1 carta' : `${elige} cartas`} para tu mazo (clic para marcar o desmarcar).`, 19, CSS.bone).setOrigin(0.5, 0));
     this.botonGuia();
+    sembrar(`Abismo|sobre|${def.id}`); // v0.89 · Reto de la Semilla: el mismo sobre para todos
     const cartas = abrirSobre(def.id, this.d.clase);
     const gen = this.gen;
     const elegidas = new Set<number>();
@@ -916,6 +923,7 @@ export class AbismoScene extends Phaser.Scene {
 
   /** Un sobre de premio al azar (te quedas con 1) */
   private sobrePremio(alTerminar: () => void) {
+    sembrar('Abismo|premio');
     this.premio = { def: Phaser.Utils.Array.GetRandom(SOBRES), alTerminar: () => { this.premio = null; alTerminar(); } };
     this.sobre(0);
   }
@@ -924,6 +932,7 @@ export class AbismoScene extends Phaser.Scene {
   private siguienteTramo() {
     const run = Game.run!;
     run.tramo = (run.tramo ?? 1) + 1;
+    sembrar('Abismo|tramo'); // v0.89 · Reto de la Semilla: mismo jefe, mismo mutador y mismo mapa para todos
     run.jefe = elegirJefe(run.tramo, run.jefesVistos ?? []);
     run.mutador = sortearMutador(run.mutador);
     // v0.49 · el alma del Abismo se despide al cambiar de tramo
@@ -951,13 +960,56 @@ export class AbismoScene extends Phaser.Scene {
     fadeTo(this, 'End', { victory: true, abismo: true });
   }
 
+  // ── v0.89 · El Reto de la Semilla (src/data/reto.ts): todos empiezan igual y el Abismo se sortea igual ──
+  private retoIntro() {
+    this.limpiar();
+    const L = <T extends Phaser.GameObjects.GameObject>(o: T) => { this.layer.add(o); return o; };
+    const R = RETO;
+    const pag = PAGINA(R.pagina) ?? PAGINAS[0];
+    const pac = PACTO(R.pacto) ?? PACTOS[0];
+    const clase = CLASSES.find((c) => c.id === R.clase) ?? CLASSES[0];
+    const ids = [...pac.mazo(clase.id), ...R.cartas].filter((id) => CARDS[id]);
+    const dientes = R.dientes.filter((id) => defDiente(id));
+    L(title(this, W / 2, 44, `⚑ ${R.nombre}`, 44, '#ffd060'));
+    L(txt(this, W / 2, 84, `Semilla ${R.semilla}. Todos bajan con el mismo personaje y las mismas cartas, y el Abismo es el mismo para todos: mismo mapa, mismos jefes, mismos enemigos y mismas tiendas. Gana quien mejor lo juegue.`, 18, CSS.bone, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
+    const g = this.add.graphics();
+    frame(g, 70, 150, W - 140, 250, 0x0c1614, 0xffd060, 0.96);
+    L(g);
+    const fila = (y: number, k: string, v: string, css = CSS.bone) => {
+      L(txt(this, 92, y, k, 17, '#ffd060'));
+      L(txt(this, 250, y, v, 17, css, { wordWrap: { width: W - 350 } }));
+    };
+    fila(164, 'Personaje', `${clase.name}${this.d.debug ? '' : ' (aunque tu héroe sea de otra clase)'}`);
+    fila(192, 'Página', `${pag.nombre}: ${pag.poder} Costo: ${pag.costo}`);
+    fila(240, 'Pacto', `${pac.nombre}: ${pac.regla}`);
+    fila(288, `Mazo (${ids.length})`, this.resumen(ids), CSS.gold);
+    fila(346, 'Dientes', dientes.map((id) => defDiente(id).nombre).join(', ') || '—');
+    fila(372, 'Gravedad', `${gravityOf(R.gravedad).name} · sin Legado ni Bendición`);
+    L(txt(this, W / 2, 412, 'Las preguntas sí cambian en cada intento (no sirve memorizarlas) y puedes intentarlo las veces que quieras:\ncuenta tu mejor puntaje. Este reto tiene su propio ranking: «Ranking → Reto».', 16, CSS.dim, { align: 'center', wordWrap: { width: 860 } }).setOrigin(0.5, 0));
+    L(button(this, W / 2 - 150, 490, 280, 46, 'Bajar al reto', () => {
+      this.d = { ...this.d, clase: clase.id, gravedad: R.gravedad };
+      this.pagina = pag;
+      this.elegido = pac;
+      this.mazo = ids.map((id) => ({ id, up: false }));
+      this.dientesIni = Array(HUECOS).fill(null);
+      dientes.forEach((id) => ponerDiente(this.dientesIni, id));
+      this.empezar();
+    }, { color: UI.gold, size: 22 }));
+    L(button(this, W / 2 + 150, 490, 220, 40, 'Volver al menú', () => fadeTo(this, 'Menu'), { size: 19 }));
+    this.botonGuia();
+  }
+
   /** Crea la expedición del Abismo y baja al mapa */
   private empezar() {
     Game.preparando = false;
     const p = this.elegido;
     const d = this.d;
+    // v0.89 · Reto de la Semilla: desde aquí todo se sortea con la semilla del reto
+    if (d.reto) sembrarCon(RETO.semilla, 'inicio');
     // «L-» hace que el servidor la registre aunque no se haya iniciado en línea (src/backend.ts → updateRun)
-    const r = newRun(`${d.debug ? 'DBG' : 'L-ABI'}-${Date.now().toString(36)}`, d.gravedad ?? 1, d.clase);
+    // («L-SEM-<id>-» = partida de un reto: el servidor la manda a su propio ranking)
+    const r = newRun(`${d.debug ? 'DBG-' : d.reto ? prefijoReto() : 'L-ABI-'}${Date.now().toString(36)}`, d.gravedad ?? 1, d.clase);
+    if (d.reto) { r.semilla = RETO.semilla; r.reto = RETO.id; }
     r.debug = d.debug ?? true;
     r.modo = 'abismo';
     r.acto = ACTO_ABISMO;
@@ -993,6 +1045,13 @@ export class AbismoScene extends Phaser.Scene {
     unlock('relics', 'necronomicon');
     Game.run = r;
     saveLocal();
+    if (d.reto) {
+      // en el reto no hay Legado ni Bendición: todos empiezan exactamente igual
+      logEvent('reto', '', '', { reto: RETO.id, semilla: RETO.semilla });
+      syncRun('en curso');
+      this.cameras.main.flash(400, 20, 60, 50);
+      return fadeTo(this, 'Map');
+    }
     this.extrasInicio();
   }
 

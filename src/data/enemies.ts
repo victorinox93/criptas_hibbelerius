@@ -513,6 +513,19 @@ export const ENEMIES: Record<string, EnemyDef> = {
     desc: 'Le falta un pedazo del pecho: un área negativa. Los golpes a TODOS le hacen la mitad; los golpes directos, completos. Su arpón te deja con HEMORRAGIA.',
     next: (e) => (e.turn % 3 === 1 ? { kind: 'attack', dmg: 15, hemorragia: 2, label: 'Arpón' } : { kind: 'attack', dmg: 8, friccion: 1, label: 'Red de algas' }),
   },
+  // v0.89 · Roído, el Coleccionista de Sonrisas: sólo se pelea con él si traes su Moneda (src/scenes/MapScene.ts)
+  roido: {
+    id: 'roido', name: 'Roído, el Coleccionista de Sonrisas', sprite: 'fig_perez', scale: 6, hp: [84, 92], mass: 0.4, act: 5,
+    desc: 'El ratón que bajó en 1931 por una muela y nunca pudo subir. Pesa 0.4 kg: con tan poca masa, cualquier fuerza le da una aceleración enorme (a = F/m), por eso pega tantas veces. Véncelo y no vuelve a perseguirte en esta expedición.',
+    next: (e) => {
+      switch (e.turn % 4) {
+        case 0: return { kind: 'attack', dmg: 4, hits: 3, label: 'Pinzas frías' };
+        case 1: return { kind: 'block', block: 12, drain: 1, label: 'Se mete al costal' };
+        case 2: return { kind: 'attack', dmg: 5, hits: 4, label: 'a = F/m' };
+        default: return { kind: 'attack', dmg: 15, hemorragia: 2, label: 'Extracción' };
+      }
+    },
+  },
   cultistaEje: {
     id: 'cultistaEje', name: 'Cultista del Eje', sprite: 'cultistaEje', scale: 5, hp: [34, 38], mass: 55, act: 5,
     desc: 'Gira sin parar y gana rapidez angular ω cada turno. Su golpe vale ½·I·ω². Verlo girar te da VÉRTIGO: robas cartas de menos.',

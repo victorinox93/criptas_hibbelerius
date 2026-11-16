@@ -37,6 +37,11 @@ export interface Efecto {
   cilindro?: boolean; // v0.62 · el Mi-Go lleva tu cerebro: la Cordura no baja este tramo, pero −15 de Vida máxima (se recupera al terminar)
   cartaRara?: boolean; // v0.62 · una carta rara del Abismo en Lámina
   hermanos?: boolean; // v0.62 · empieza el acertijo de Acción y Reacción (src/scenes/Hermanos.ts)
+  // ── v0.89 ──
+  reliquia?: string; // te da una reliquia de src/data/relics.ts (la Moneda de Roído)
+  ratonAvanza?: number; // Roído se acerca N pisos (negativo: se aleja)
+  hibbeliever?: boolean; // un Hibbeliever se une a tu procesión (con HIBBELIEVERS_NECESARIOS te dan «La 14.ª Edición»)
+  reaparece?: string; // este relato puede volver a salir en la expedición (el cultista que no convenciste)
 }
 
 export interface OpcionRelato {
@@ -63,6 +68,8 @@ export interface RelatoDef {
   peso?: number; // v0.61 · probabilidad relativa de salir en un «?» (1 si no se dice)
   npcTinte?: number; // v0.62 · tinte del retrato (el reflejo, la sombra)
   npcEspejo?: boolean; // v0.62 · el retrato se voltea (el reflejo)
+  culto?: boolean; // v0.89 · un Hibbeliever: no sale en el sorteo normal, tiene el suyo (src/scenes/Event.ts)
+  si?: (r: import('../state').Run) => boolean; // v0.89 · sólo sale si se cumple (la Madriguera: mientras no tengas la Moneda)
 }
 
 /** Probabilidad de que un nodo «?» del Abismo sea un Relato (si quedan sin ver) */
@@ -557,6 +564,99 @@ export const SUENOS: RelatoDef[] = [
     ],
   },
 ];
+
+// ════════════════════════════════════════════════════════════════
+//  v0.89 · LA MADRIGUERA DE ROÍDO
+//  La historia del ratón que te persigue (src/scenes/MapScene.ts → ratonPerez).
+//  Se enlaza con el Registro 10 del diario: Montemayor se sacó una muela y en su
+//  lugar puso el diente caliente de la cueva. Alguien bajó a recoger esa muela.
+//  Aquí se consigue «La Moneda de Roído» (src/data/relics.ts): con ella, cuando
+//  Roído te alcance puedes pelear con él; si ganas, no vuelve en la expedición.
+// ════════════════════════════════════════════════════════════════
+RELATOS.push({
+  id: 'madriguera', titulo: 'La Madriguera de Roído', obra: '', anio: 1931, icono: 'i_diente', tinte: 0xf0c8c8, npc: 'fig_perez', propio: true, peso: 3,
+  pie: 'La casa del Coleccionista\n(él no está… todavía)',
+  si: (r) => !r.relics.includes('monedaRoido') && !r.ratonVencido,
+  intro: 'Detrás de una grieta hay una casita hecha con cajas de cerillos. En las paredes, miles de dientes acomodados en sonrisas, cada uno con su etiqueta y su fecha. Sobre la mesa: una libreta de cuentas y una moneda de plata de 1931. El dueño salió a trabajar.',
+  opciones: [
+    {
+      label: 'Leer la libreta de cuentas', risk: 'Pregunta de impulso (Roído pesa 0.4 kg y corre muchísimo). Te llevas la Moneda. Si aciertas, además: un diente raro de su colección. Si fallas: −8 de Cordura.',
+      pregunta: {
+        concepts: ['Cantidad de movimiento', 'Impulso', 'Choques'],
+        bien: { texto: '«12 de marzo de 1931. Bajé por la muela de un tal Montemayor. Traía su moneda. En la almohada había un diente caliente que no era de él.» Desde entonces no puede subir sin terminar la entrega, y aquí abajo nadie deja dientes bajo la almohada. Así que se los lleva. Te guardas la moneda… y un diente de la repisa.', reliquia: 'monedaRoido', diente: 'raro' },
+        mal: { texto: 'Las cuentas están en una letra diminuta y las fechas no cuadran: todas dicen 1931. Te mareas, pero entiendes lo esencial: la moneda es una deuda que nunca pudo pagar. Te la guardas.', reliquia: 'monedaRoido', cordura: -8 },
+      },
+    },
+    {
+      label: 'Tomar la moneda y salir corriendo', risk: 'Te llevas la Moneda sin leer nada. Roído lo huele: se acerca 2 pisos.',
+      salidas: [{ p: 1, e: { texto: 'La moneda está tibia. En cuanto la levantas, a lo lejos, unas pinzas hacen clic-clic más rápido.', reliquia: 'monedaRoido', ratonAvanza: 2 } }],
+    },
+    {
+      label: 'Dejarle un regalo bajo la almohada', risk: 'Le dejas 25 Ergios. Roído se entretiene contándolos: se aleja 3 pisos.', need: { ergios: 25 },
+      salidas: [{ p: 1, e: { texto: 'Levantas la almohadita (es una bolsa de té) y dejas las monedas. Nadie le había dejado nada en noventa y cinco años.', ergios: -25, ratonAvanza: -3 } }],
+    },
+    IRSE,
+  ],
+});
+
+// ════════════════════════════════════════════════════════════════
+//  v0.89 · LOS HIBBELIEVERS (idea de los alumnos de Dinámica, otoño 2026)
+//  Un culto que le reza a Hibbeler. Cada uno te hace una pregunta: si aciertas
+//  (o pagas el diezmo) se une a tu procesión. Con HIBBELIEVERS_NECESARIOS te
+//  entregan «La 14.ª Edición» (src/data/relics.ts) y en un combate puedes
+//  invocar a Hibbeler (src/scenes/Combat.ts → invocarHibbeler).
+//  Salen con su propio sorteo en los «?» (src/scenes/Event.ts).
+// ════════════════════════════════════════════════════════════════
+/** Cuántos Hibbelievers hacen falta para la invocación */
+export const HIBBELIEVERS_NECESARIOS = 3;
+/** Probabilidad de que un «?» del Abismo sea un Hibbeliever (mientras no tengas el libro) */
+export const HIBBELIEVER_CHANCE = 0.3;
+const DIEZMO = 35;
+const fiel = (id: string, titulo: string, sprite: string, tinte: number, intro: string, pregunta: string, concepts: string[], bien: string, mal: string, diezmo: string): RelatoDef => ({
+  id, titulo, obra: '', anio: 0, icono: 'i_necro', tinte: 0xe8c15a, npc: sprite, npcTinte: tinte, culto: true,
+  pie: 'Hibbeliever\n(culto de la 14.ª Edición)',
+  intro,
+  opciones: [
+    {
+      label: 'Responder su catecismo', risk: `Pregunta: ${pregunta}. Si aciertas, se une a tu procesión. Si fallas: −6 de Cordura (lo puedes volver a encontrar).`,
+      pregunta: { concepts, bien: { texto: bien, hibbeliever: true }, mal: { texto: mal, cordura: -6, reaparece: id } },
+    },
+    {
+      label: `Pagar el diezmo (${DIEZMO} Ergios)`, risk: 'Se une a tu procesión sin preguntar nada. La fe también se compra.', need: { ergios: DIEZMO },
+      salidas: [{ p: 1, e: { texto: diezmo, ergios: -DIEZMO, hibbeliever: true } }],
+    },
+    IRSE,
+  ],
+});
+RELATOS.push(
+  fiel('hib_diagrama', 'El Hermano del Diagrama', 'acolito', 0xf0d890,
+    'Un encapuchado dibuja en el suelo, con gis, un bloque y todas sus flechas. No levanta la vista. «No hay solución sin diagrama de cuerpo libre. Así está escrito, capítulo 13. ¿Tú dibujas el tuyo, o eres de los que “lo ven en la mente”?»',
+    'leyes de Newton', ['2a ley', '2a ley (sistemas)', 'Fuerza normal', 'Plano inclinado'],
+    '«ΣF = m·a… con su diagrama.» El Hermano se levanta, se sacude el gis y camina detrás de ti. «Hibbeler te ve.»',
+    'Borra tu respuesta con la manga. «Te faltó una fuerza. Siempre falta una fuerza.» Se queda dibujando.',
+    'Guarda las monedas en la capucha. «El gis no es gratis.» Camina detrás de ti.'),
+  fiel('hib_edicion', 'La Guardiana de la 14.ª Edición', 'cultistaEje', 0xe8c15a,
+    'Lleva un libro enorme encadenado a la espalda. Pesa tanto que camina inclinada. «¿Traes la 14.ª edición o la 12.ª? Los números de los problemas cambian de una a otra, hereje. Demuéstrame que estudiaste con la buena.»',
+    'trabajo y energía', ['Trabajo-energia', 'Conservacion', 'Energia cinetica', 'Energia potencial'],
+    '«T₁ + ΣU₁₋₂ = T₂.» La Guardiana sonríe por primera vez en años. «Problema 14-7. Lo sabía.» Se une a ti; el libro va rechinando.',
+    '«Eso es de la 12.ª.» Aprieta la cadena del libro y te da la espalda.',
+    'Pesa las monedas en la mano. «Con esto compro la 15.ª.» Se une a ti.'),
+  fiel('hib_impares', 'El Monje de las Respuestas Impares', 'acolito', 0xd8b8ff,
+    'Un monje flaquísimo pasa las últimas páginas de un libro sin pastas. «Sólo los problemas impares tienen respuesta al final. Los pares… los pares son cuestión de fe. Resuélveme uno y te sigo a donde vayas.»',
+    'impulso y cantidad de movimiento', ['Impulso', 'Cantidad de movimiento', 'Choques'],
+    'Compara tu resultado con el del final del libro. Coincide hasta la tercera cifra. «¡Era impar!» Te sigue, feliz.',
+    '«No coincide con el del libro.» Cierra las pastas que no tiene. «Y era de los impares. Qué pena.»',
+    'Cuenta las monedas: son treinta y cinco. «Impar. Es una señal.» Te sigue.'),
+  fiel('hib_unidades', 'La Novicia de las Unidades', 'cultistaEje', 0x9ad8c8,
+    'Una novicia reza con dos rosarios, uno en cada mano. «Slug, pie, libra. Kilogramo, metro, newton. Slug, pie, libra…» Te mira fijo. «Quien mezcla los sistemas se pierde aquí abajo. ¿Tú en qué crees?»',
+    'momento de inercia', ['Momento de inercia', 'Radio de giro', 'Ejes paralelos'],
+    '«kg·m². Con sus unidades.» La novicia guarda uno de los rosarios. «Ya no lo necesito: tú sí crees.» Camina contigo.',
+    '«¿Y las unidades?» Vuelve a empezar el rosario desde el slug.',
+    '«¿Son Ergios? Eso es CGS…» Suspira y los guarda de todos modos. Camina contigo.'),
+);
+/** Ids de los Hibbelievers */
+export const HIBBELIEVERS = RELATOS.filter((r) => r.culto).map((r) => r.id);
+
 RELATOS.push(...SUENOS);
 export const RELATO = (id?: string) => RELATOS.find((r) => r.id === id);
 /** Sueños que te faltan por soñar (codex.suenos), o todos si ya los soñaste */

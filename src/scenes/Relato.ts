@@ -5,7 +5,9 @@ import { W, H } from '../config';
 import { RARAS_ABISMO } from '../data/abismo_modo';
 import { CARDS } from '../data/cards';
 import { base, cristalDe, defDiente, DIENTES, esParasito, HUECOS, ponerDiente, sortearDientes, sortearParasito } from '../data/dientes';
-import { Efecto, INTERES_PRESTAMO, OpcionRelato, RELATO } from '../data/relatos';
+import { Efecto, HIBBELIEVERS, HIBBELIEVERS_NECESARIOS, INTERES_PRESTAMO, OpcionRelato, RELATO } from '../data/relatos';
+import { RELICS } from '../data/relics';
+import { grantRelic } from './Reward';
 import { EFFECTS } from '../data/effects';
 import { FAMILIARS } from '../data/familiars';
 import { addCard, addEffect, addFamiliar, addEntropia, aplicarSarro, Game, logEvent, saveLocal, sonarSueno, syncRun } from '../state';
@@ -148,6 +150,26 @@ export function aplicarEfecto(e: Efecto): string {
     addEffect(e.maldicion[0], e.maldicion[1]);
     partes.push(`Maldición: ${EFFECTS[e.maldicion[0]].name} (${e.maldicion[1]} combates)`);
   }
+  // ── v0.89 · la Moneda de Roído y los Hibbelievers ──
+  if (e.reliquia && !r.relics.includes(e.reliquia)) {
+    grantRelic(e.reliquia);
+    partes.push(`Obtienes: ${RELICS[e.reliquia]?.name ?? e.reliquia}`);
+  }
+  if (e.ratonAvanza && r.raton && r.raton.tramo === (r.tramo ?? 1)) {
+    r.raton.piso += e.ratonAvanza;
+    partes.push(e.ratonAvanza > 0 ? `Roído se acerca ${e.ratonAvanza} pisos` : `Roído se aleja ${-e.ratonAvanza} pisos`);
+  }
+  if (e.hibbeliever) {
+    r.hibbelievers = (r.hibbelievers ?? 0) + 1;
+    if (r.hibbelievers >= HIBBELIEVERS_NECESARIOS) {
+      r.hibbelievers = 0;
+      grantRelic('edicion14');
+      // la procesión se disuelve: en el modo infinito puedes volver a reunirla después de usar el libro
+      r.seen = (r.seen ?? []).filter((s) => !HIBBELIEVERS.some((id) => s === `relato_${id}`));
+      partes.push(`¡Ya son ${HIBBELIEVERS_NECESARIOS} Hibbelievers! Rezan juntos y te entregan «La 14.ª Edición»: en el combate que elijas podrás INVOCAR A HIBBELER.`);
+    } else partes.push(`Un Hibbeliever se une a tu procesión (${r.hibbelievers} de ${HIBBELIEVERS_NECESARIOS}).`);
+  }
+  if (e.reaparece) r.seen = (r.seen ?? []).filter((s) => s !== `relato_${e.reaparece}`);
   aplicarSarro(r);
   saveLocal();
   return partes.join('\n');
