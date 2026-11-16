@@ -1188,7 +1188,12 @@ export class CombatScene extends Phaser.Scene {
       this.tip.attach(im, h, b);
       this.pStatus.add([im, tt]);
     });
-    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && this.piezaLista(c) && !(this.condJefe === 'sinHabilidades' && CARDS[c.inst.id].type === 'Habilidad') && this.cost(c) <= this.energy));
+    this.hand.forEach((c) => c.refresh(this.ctx(), !CARDS[c.inst.id].unplayable && this.piezaLista(c) && !(this.menteEnBlanco() && CARDS[c.inst.id].type === 'Habilidad') && this.cost(c) <= this.energy));
+  }
+
+  /** v0.89.1 · «Mente en Blanco» (condición de jefe): las Habilidades se bloquean sólo en tus turnos pares */
+  private menteEnBlanco() {
+    return this.condJefe === 'sinHabilidades' && this.turn % 2 === 0;
   }
 
   private cost(c: CardView) {
@@ -1387,7 +1392,7 @@ export class CombatScene extends Phaser.Scene {
     const inst = v.inst;
     const def = CARDS[inst.id];
     if (def.unplayable || def.rarity === 'estado') return '';
-    if (this.condJefe === 'sinHabilidades' && def.type === 'Habilidad') return 'MENTE EN BLANCO: no puedes jugar Habilidades en esta pelea.';
+    if (this.menteEnBlanco() && def.type === 'Habilidad') return 'MENTE EN BLANCO: en este turno no puedes jugar Habilidades (vuelven en tu siguiente turno).';
     const st = statsOf(inst);
     const L: string[] = [];
     const costo = this.cost(v);
@@ -1689,8 +1694,8 @@ export class CombatScene extends Phaser.Scene {
     if (this.busy) return;
     this.tip.hide();
     if (this.discardMode > 0) return this.discardFromHand(v);
-    if (this.condJefe === 'sinHabilidades' && CARDS[v.inst.id].type === 'Habilidad') {
-      this.hint('MENTE EN BLANCO: no puedes jugar Habilidades en esta pelea.');
+    if (this.menteEnBlanco() && CARDS[v.inst.id].type === 'Habilidad') {
+      this.hint('MENTE EN BLANCO: en este turno no puedes jugar Habilidades.');
       this.tweens.add({ targets: v, x: v.x + 6, duration: 40, yoyo: true, repeat: 3 });
       return;
     }
@@ -4284,6 +4289,7 @@ export class CombatScene extends Phaser.Scene {
   // ───────────────────────── TURNOS ─────────────────────────
   private async startTurn() {
     this.turn++;
+    if (this.condJefe === 'sinHabilidades') this.calc(this.menteEnBlanco() ? 'Mente en Blanco: este turno NO puedes jugar Habilidades' : 'Mente en Blanco: este turno sí puedes jugar Habilidades');
     this.danoTurno = 0;
     this.derivadaBono = 0;
     if (this.keepBlock) {

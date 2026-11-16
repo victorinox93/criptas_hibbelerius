@@ -348,9 +348,11 @@ export class AbismoScene extends Phaser.Scene {
       return o;
     };
     sembrar(`Abismo|dientes|${modo}`); // v0.89 · Reto de la Semilla: los mismos dientes para todos
-    let opciones = nOpc ? sortear() : [];
+    // v0.89.1 · los dientes del trofeo también se guardan: reentrar muestra los mismos (y no regala otro)
+    const ptD = modo === 'premio' ? this.pt() : null;
+    let opciones = ptD?.dientes ?? (nOpc ? sortear() : []);
     if (cartaPremio) { carta!.cobrada = true; saveLocal(); }
-    let tomados = 0;
+    let tomados = ptD?.dientesTomados ?? 0;
     let sel = -1; // hueco marcado para mover
     let pendiente: string | null = modo === 'colocar' ? run?.dientePendiente ?? null : null; // diente elegido que espera hueco (dentadura llena)
     let arrancando = false; // modo «arrancar un parásito» (Sacamuelas)
@@ -500,6 +502,7 @@ export class AbismoScene extends Phaser.Scene {
         ar.setEnabled(arrancando || run.ergios >= ARRANCAR_PARASITO);
         pie.add(ar);
       }
+      if (ptD) { ptD.dientes = pendiente ? [pendiente, ...opciones] : [...opciones]; ptD.dientesTomados = tomados; }
       if (run) { aplicarSarro(run); saveLocal(); }
     };
     pintar();
@@ -581,7 +584,10 @@ export class AbismoScene extends Phaser.Scene {
     const aviso = L(txt(this, W / 2, 84, `Elige ${elige === 1 ? '1 carta' : `${elige} cartas`} para tu mazo (clic para marcar o desmarcar).`, 19, CSS.bone).setOrigin(0.5, 0));
     this.botonGuia();
     sembrar(`Abismo|sobre|${def.id}`); // v0.89 · Reto de la Semilla: el mismo sobre para todos
-    const cartas = abrirSobre(def.id, this.d.clase);
+    // v0.89.1 · las cartas del sobre de premio se guardan al abrirlo: reentrar muestra las mismas
+    const pt = this.premio ? this.pt() : null;
+    const cartas: CartaSobre[] = pt?.cartas?.length ? pt.cartas : abrirSobre(def.id, this.d.clase);
+    if (pt) { pt.cartas = cartas; saveLocal(); }
     const gen = this.gen;
     const elegidas = new Set<number>();
     const K = 0.82, y = 290;
@@ -590,6 +596,7 @@ export class AbismoScene extends Phaser.Scene {
       audio.sfx('coin');
       if (this.premio) {
         for (const i of elegidas) addCard(cartas[i].id, cartas[i].up, cartas[i].ed);
+        if (pt) pt.cartaLista = true; // ya la tomaste: reentrar no da otra
         saveLocal();
         return this.premio.alTerminar();
       }
@@ -691,8 +698,8 @@ export class AbismoScene extends Phaser.Scene {
       L(txt(this, W / 2, 132, `Venciste a ${info.nombre}.${cura ? ` Recuperas ${cura} de vida.` : ''}`, 22, CSS.bone).setOrigin(0.5));
       L(txt(this, W / 2, 168, `Sigue: Tramo ${tramo + 1} · ${nombreTramo(tramo + 1)}${tramo + 1 === TRAMOS ? ' (ahí te espera un Primigenio)' : ''}`, 20, tramo + 1 === TRAMOS ? '#c8a8ff' : CSS.gold).setOrigin(0.5));
       L(txt(this, W / 2, 250, 'Premio: abre un sobre (te quedas con 1 carta) y arráncale un diente al jefe.', 20, CSS.dim).setOrigin(0.5));
-      L(button(this, W / 2, 320, 260, 46, 'Abrir el sobre', () => this.sobrePremio(() => this.trofeo()), { color: UI.gold, size: 22 }));
-      L(button(this, W / 2, 380, 260, 36, 'Seguir sin sobre', () => this.trofeo(), { size: 18 }));
+      L(button(this, W / 2, 320, 260, 46, 'Abrir el sobre', () => this.irAlSobre(), { color: UI.gold, size: 22 }));
+      L(button(this, W / 2, 380, 260, 36, 'Seguir sin sobre', () => this.irAlSobre(true), { size: 18 }));
       return;
     }
     // tramo 4 (Primigenio) o más: victoria y la pregunta
@@ -714,7 +721,7 @@ export class AbismoScene extends Phaser.Scene {
     // el Astrónomo de Providence te escribe una línea
     L(this.add.image(W / 2 - 330, 460, 'fig_lovecraft').setScale(3));
     L(txt(this, W / 2 - 290, 436, `${FRASES_INFINITO[(tramo - TRAMOS) % FRASES_INFINITO.length]}\n— ${ASTRONOMO}`, 16, '#d8c8a0', { wordWrap: { width: 640 } }));
-    L(button(this, W / 2, 340, 340, 46, 'Seguir bajando (sobre y diente)', () => this.sobrePremio(() => this.trofeo()), { color: 0x9a6ad0, size: 21 }));
+    L(button(this, W / 2, 340, 340, 46, 'Seguir bajando (sobre y diente)', () => this.irAlSobre(), { color: 0x9a6ad0, size: 21 }));
     L(button(this, W / 2, 402, 300, 40, 'Retirarte con tu gloria', () => this.retirarse(), { size: 19 }));
   }
 
@@ -916,6 +923,26 @@ export class AbismoScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * v0.89.1 · El premio entre tramos de ESTE tramo (sobre y dientes ya sorteados). Sólo existe en la
+   * pantalla entre tramos; en los demás sobres (inicio, Astros) devuelve null y todo se sortea normal.
+   */
+  private pt() {
+    const run = Game.run;
+    if (!run || this.d.fase !== 'tramo') return null;
+    const tramo = run.tramo ?? 1;
+    if (run.premioTramo?.tramo !== tramo) run.premioTramo = { tramo };
+    return run.premioTramo;
+  }
+
+  /** v0.89.1 · Al sobre de premio… salvo que ya hayas tomado (o dejado) su carta: entonces, directo al trofeo */
+  private irAlSobre(saltar = false) {
+    const pt = this.pt();
+    if (pt && saltar) { pt.cartaLista = true; saveLocal(); }
+    if (pt?.cartaLista) return this.trofeo();
+    this.sobrePremio(() => this.trofeo());
+  }
+
   /** Después del sobre: un diente del jefe y luego el siguiente tramo */
   private trofeo() {
     this.sacamuelas('premio', () => this.siguienteTramo());
@@ -924,7 +951,11 @@ export class AbismoScene extends Phaser.Scene {
   /** Un sobre de premio al azar (te quedas con 1) */
   private sobrePremio(alTerminar: () => void) {
     sembrar('Abismo|premio');
-    this.premio = { def: Phaser.Utils.Array.GetRandom(SOBRES), alTerminar: () => { this.premio = null; alTerminar(); } };
+    // v0.89.1 · el sobre del tramo se sortea UNA vez y se guarda (con sus 5 cartas, en revelar())
+    const pt = this.pt();
+    const def = SOBRES.find((x) => x.id === pt?.sobre) ?? Phaser.Utils.Array.GetRandom(SOBRES);
+    if (pt) { pt.sobre = def.id; pt.veces = (pt.veces ?? 0) + 1; saveLocal(); if (pt.veces > 1) logEvent('premio_reingreso', '', '', { tramo: pt.tramo, veces: pt.veces }); }
+    this.premio = { def, alTerminar: () => { this.premio = null; if (pt) { pt.cartaLista = true; saveLocal(); } alTerminar(); } };
     this.sobre(0);
   }
 
@@ -939,6 +970,7 @@ export class AbismoScene extends Phaser.Scene {
     if (run.aliadoTramo !== undefined) { delete run.aliado; delete run.aliadoTramo; }
     if (!run.debug && run.tramo >= 4) codexFlag('logro_abismo_inf'); // logro «Sin fondo»
     (run.jefesVistos ??= []).push(run.jefe);
+    run.premioTramo = undefined; // v0.89.1 · el premio del tramo anterior ya se cobró
     run.map = generateMap(ACTO_ABISMO);
     run.pos = -1;
     run.visited = [];

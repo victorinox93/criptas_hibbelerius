@@ -2,6 +2,14 @@
 
 Lo más reciente primero. El resumen del juego está en el [README](README.md).
 
+## v0.89.1 · Premios que no se vuelven a tirar
+
+Sin cambios en `Code.gs`.
+
+- **El premio entre tramos se guarda al sortearse** (`run.premioTramo`, igual que `run.combate` en v0.88). Algunos alumnos cerraban la pestaña en la pantalla del sobre para volver a tirarlo hasta sacar la carta que querían. Ahora se guardan el tipo de sobre, sus 5 cartas, los dientes del trofeo y lo que ya tomaste: reentrar muestra lo mismo y no regala otra carta ni otro diente. Cada reingreso al sobre queda en la hoja Eventos como `premio_reingreso`.
+  - Las recompensas después de un combate normal o de élite y el sobre de los Astros no tenían este hueco: si se cierra la pestaña ahí, el nodo ya está cobrado y el premio se pierde.
+- **«Mente en Blanco» sólo en turnos pares.** Antes bloqueaba las Habilidades toda la pelea; los alumnos pidieron suavizarla. El Pergamino avisa al empezar cada turno si se puede o no.
+
 ## v0.89.0 · Fin de semestre
 
 **Necesita actualizar `apps-script/Code.gs`** (pégalo, guarda y publica una nueva versión) **antes de publicar el juego**: sin eso, las partidas del Reto de la Semilla se mezclan con el ranking del Abismo y el ranking «Reto» avisa que falta la versión nueva del servidor.

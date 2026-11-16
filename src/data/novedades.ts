@@ -21,6 +21,14 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    v: '0.89.1',
+    titulo: 'Premios que no se vuelven a tirar',
+    puntos: [
+      '**Mente en Blanco ya no dura toda la pelea.** Me dijeron que estaba muy agresiva: ahora sólo bloquea tus Habilidades en los turnos pares (2.º, 4.º, 6.º…). En los impares las juegas normal, así que hay que planear.',
+      '**El sobre y el diente del jefe se sortean una sola vez.** Si cierras el juego y vuelves a entrar, te salen las mismas cartas y los mismos dientes. Parejo para todos.',
+    ],
+  },
+  {
     v: '0.89.0',
     titulo: 'Fin de semestre',
     puntos: [

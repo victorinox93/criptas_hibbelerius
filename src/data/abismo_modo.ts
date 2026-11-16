@@ -342,7 +342,8 @@ export const CONDICIONES_JEFE: CondicionJefe[] = [
   { id: 'mordida', nombre: 'Mordida', texto: (p) => `Te muerde ${p ? MORDIDAS_PRIMIGENIO : MORDIDAS_JEFE} diente(s) al azar: no funcionan en esta pelea.` },
   { id: 'sinDientes', nombre: 'Boca Cerrada', texto: () => 'NINGÚN diente de tu dentadura funciona en esta pelea.' },
   { id: 'sinDefensa', nombre: 'Sin Defensa', texto: () => 'Tus cartas de Defensa no dan Bloqueo en esta pelea (otros Bloqueos sí).' },
-  { id: 'sinHabilidades', nombre: 'Mente en Blanco', texto: () => 'No puedes jugar cartas de Habilidad en esta pelea.' },
+  // v0.89.1 · antes bloqueaba las Habilidades TODA la pelea; los alumnos pidieron suavizarla: ahora va y viene
+  { id: 'sinHabilidades', nombre: 'Mente en Blanco', texto: () => 'En tus turnos PARES (2.º, 4.º, 6.º…) no puedes jugar cartas de Habilidad. En los impares, sí.' },
   { id: 'sinEdiciones', nombre: 'Opacidad', texto: () => 'Las ediciones de tus cartas (Lámina, Holográfica, Polícroma, Cristal) no hacen nada.' },
   // v0.88 · más condiciones, para que la ruleta del jefe no se repita tanto
   { id: 'sinPociones', nombre: 'Frasco Sellado', texto: () => 'No puedes usar pociones en esta pelea.' },

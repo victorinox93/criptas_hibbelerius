@@ -154,6 +154,11 @@ export interface Run {
   ratonPelea?: boolean; // estás peleando con Roído (si cierras la pestaña, la pelea se retoma)
   hibbelievers?: number; // cultistas de Hibbeler que te siguen (con HIBBELIEVERS_NECESARIOS te dan «La 14.ª Edición»)
   hibInvocado?: { piso: number; kind: string }; // Hibbeler ya fue invocado en ESTA pelea (por si se cierra la pestaña)
+  /**
+   * v0.89.1 · EL PREMIO ENTRE TRAMOS, YA SORTEADO. Igual que `combate`: lo que salió en el sobre y los
+   * dientes del trofeo se guardan al sortearse, así que cerrar la pestaña ya no sirve para volver a tirar.
+   */
+  premioTramo?: { tramo: number; sobre?: string; cartas?: { id: string; up: boolean; ed?: import('./data/cards').Edicion; brillante?: boolean }[]; cartaLista?: boolean; dientes?: string[]; dientesTomados?: number; veces?: number };
   semilla?: number; // Reto de la Semilla: el Abismo se sortea igual para todos (src/semilla.ts)
   reto?: string; // id del reto (src/data/reto.ts); su ranking es aparte
 }
