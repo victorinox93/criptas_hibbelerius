@@ -2,7 +2,7 @@ export { API_URL } from './backend';
 import { T } from './textos';
 
 export const GAME_TITLE = T.titulo;
-export const VERSION = '0.89.0 · Fin de semestre';
+export const VERSION = '0.89.1 · Premios que no se vuelven a tirar';
 /** Sólo el número (lo que ve el alumno); la descripción de cambios queda en el README */
 export const VERSION_NUM = VERSION.split(' · ')[0];
 /**
