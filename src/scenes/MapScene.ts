@@ -21,6 +21,9 @@ import { topBar } from '../ui/hud';
 import { button, embers, engraneGfx, fadeTo, frame, icon, title, Tooltip, txt, vignette } from '../ui/widgets';
 import { CONSEJOS } from '../data/glosario';
 import { ENCARGOS } from '../data/encargos';
+import { HIBBELIEVERS_NECESARIOS } from '../data/relatos';
+import { RETO } from '../data/reto';
+import { sembrar } from '../semilla';
 
 const NODE_STYLE: Record<NodeType, { icon: string; color: number }> = {
   combate: { icon: 'i_combat', color: 0x8a8296 },
@@ -49,6 +52,8 @@ export const RATON_VENTAJA = 3;
 export const RATON_DESDE = 2;
 /** nodos donde te detienes a descansar o a comprar: ahí Roído avanza el doble */
 const RATON_LENTO: NodeType[] = ['fogata', 'santuario', 'mercader', 'boca', 'observatorio', 'gabinete'];
+/** v0.89 · «nodo» de la pelea con Roído (no es un nodo del mapa: sirve para reconocer la misma pelea si se cierra la pestaña) */
+export const NODO_ROIDO = -77;
 
 export const nodeAt = (n: MapNode, maxFloor = FLOORS, izq = 60) => ({
   x: n.type === 'jefe' ? 884 : izq + n.floor * ((850 - izq) / maxFloor),
@@ -167,6 +172,7 @@ export class MapScene extends Phaser.Scene {
       tip.attach(mt.setInteractive(), `Mutador: ${mu.nombre}`, `${mu.texto}\nCambia en cada tramo.`, 20);
       if (run.pos === -1) this.tweens.add({ targets: mt, scale: { from: 1.5, to: 1 }, duration: 600, ease: 'Back.out' });
     }
+    if (act5 && run.semilla !== undefined) txt(this, W / 2, 92, `⚑ ${RETO.nombre} · semilla ${RETO.semilla}`, 15, '#ffd060').setOrigin(0.5).setDepth(5).setStroke('#000', 3);
     title(this, W / 2, 66, act5 ? `${(run.tramo ?? 1) > TRAMOS ? 'Abismo sin fondo' : `Tramo ${run.tramo ?? 1} de ${TRAMOS}`} · ${nombreTramo(run.tramo ?? 1).replace(/^El Abismo sin Fondo · /, '')}` : act4 ? T.mapa.titulo4 : act3 ? T.mapa.titulo3 : act2 ? T.mapa.titulo2 : T.mapa.titulo, 28, act5 ? '#9ad8c8' : act4 ? '#e0a860' : act3 ? '#b89ad0' : act2 ? '#9ab8c8' : undefined);
 
     const byId = new Map(run.map.map((n) => [n.id, n]));
@@ -185,6 +191,8 @@ export class MapScene extends Phaser.Scene {
       if (!(run.seen ?? []).includes(`jefe_${acto}`)) return void fadeTo(this, 'Combat', { kind: 'boss', floor: current.floor });
       if (acto < 4) return void fadeTo(this, 'ActTransition', { to: acto + 1 });
     }
+    // v0.89 · si se cerró el juego a media pelea con Roído, se retoma (no se vale huir cerrando la pestaña)
+    if (act5 && run.ratonPelea && current && !run.done) return void fadeTo(this, 'Combat', { kind: 'elite', floor: current.floor, especial: 'roido', nodo: NODO_ROIDO });
     const available = new Set<number>(current ? current.next : run.map.filter((n) => n.floor === 0).map((n) => n.id));
     const visited = new Set<number>(run.visited ?? []);
     if (current) visited.add(current.id);
@@ -310,6 +318,7 @@ export class MapScene extends Phaser.Scene {
     else void cargarHuellas(() => { if (this.scene.isActive()) lapidas(); });
 
     if (act5) this.ratonPerez(run, current, nodeXY, tip, hayHoja);
+    if (act5) this.procesion(run, tip);
     if (run.modo === 'abismo' || (run.entropia ?? 0) > 0) ditherLocura(this); // v0.67
     // héroe en el mapa
     const hp = current ? nodeXY(current) : { x: act5 ? 84 : 30, y: 280 };
@@ -341,7 +350,7 @@ export class MapScene extends Phaser.Scene {
       if (act5) {
         // en el Abismo, en lugar del tablón: una carta del Astrónomo de Providence por tramo
         // (si hay hoja del diario, la carta sale después, cuando la escena se reinicia al cerrar la hoja)
-        if (hayHoja) { /* nada */ } else if (!run.carta || run.carta.tramo !== (run.tramo ?? 1)) this.time.delayedCall(700, () => this.cartaProvidence(nuevaCarta()));
+        if (hayHoja) { /* nada */ } else if (!run.carta || run.carta.tramo !== (run.tramo ?? 1)) this.time.delayedCall(700, () => { sembrar('Map|carta'); this.cartaProvidence(nuevaCarta()); }); // v0.89 · en el reto, la misma carta para todos
         else this.consejo();
       } else if (!run.encargo || run.encargo.acto !== (run.acto ?? 1)) this.tablon(() => this.consejo());
       else this.consejo();
@@ -536,17 +545,23 @@ export class MapScene extends Phaser.Scene {
     run.raton.piso += (RATON_LENTO.includes(n.type) ? 2 : 1) + (Math.random() < 0.12 ? 1 : 0);
   }
 
-  /** v0.62 · Roído, el Coleccionista de Sonrisas: te persigue por el mapa; si te alcanza, te arranca un diente */
+  /**
+   * v0.62 · Roído, el Coleccionista de Sonrisas: te persigue por el mapa; si te alcanza, te arranca un diente.
+   * v0.89 · Si traes «La Moneda de Roído» (se consigue en su Madriguera, src/data/relatos.ts), cuando te
+   * alcanza puedes pelear con él. Si lo vences (src/scenes/Combat.ts), no vuelve en toda la expedición.
+   */
   private ratonPerez(run: Run, current: MapNode | null, nodeXY: (n: MapNode) => { x: number; y: number }, tip: Tooltip, hayHoja: boolean) {
     const tramo = run.tramo ?? 1;
+    if (run.ratonVencido) return; // v0.89 · ya lo venciste: se acabó la persecución
     if (tramo < RATON_DESDE) return; // v0.63 · en el primer tramo todavía no aparece
     if (!run.raton || run.raton.tramo !== tramo) { run.raton = { piso: -RATON_VENTAJA, tramo }; saveLocal(); }
     const r = run.raton;
     const miPiso = current ? current.floor : -1;
     const clave = `raton:${tramo}:${run.pos}`;
-    let robo = '';
-    if (current && current.type !== 'jefe' && r.piso >= miPiso && !hayHoja && !(run.seen ?? []).includes(clave)) {
-      (run.seen ??= []).push(clave);
+    const moneda = run.relics.includes('monedaRoido');
+    /** Te arranca un diente (o Ergios, si no hay dientes buenos) y vuelve a quedar atrás */
+    const robar = () => {
+      let robo: string;
       const dent = run.dientes ?? [];
       const idx = dent.map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
       if (idx.length) {
@@ -561,6 +576,13 @@ export class MapScene extends Phaser.Scene {
       }
       r.piso = miPiso - RATON_VENTAJA;
       saveLocal();
+      return robo;
+    };
+    let robo = '';
+    let reto = false; // v0.89 · te alcanzó y traes su Moneda: tú decides
+    if (current && current.type !== 'jefe' && r.piso >= miPiso && !hayHoja && !(run.seen ?? []).includes(clave)) {
+      if (moneda) reto = true; // la clave se marca cuando eliges (si cierras la pestaña, te vuelve a preguntar)
+      else { (run.seen ??= []).push(clave); robo = robar(); }
     }
     // en el mapa: Roído va detrás de ti, en tu mismo carril
     const yo = current ? nodeXY(current) : { x: 84, y: 280 };
@@ -568,24 +590,66 @@ export class MapScene extends Phaser.Scene {
     const gap = miPiso - r.piso;
     const raton = this.add.image(px, yo.y + 30, 'fig_perez').setScale(2.2).setFlipX(true).setDepth(6).setInteractive();
     this.tweens.add({ targets: raton, y: raton.y - 3, duration: 260, yoyo: true, repeat: -1 });
-    tip.attach(raton, 'Roído, el Coleccionista de Sonrisas', `Va ${gap} piso(s) detrás de ti y colecciona dientes.\nTú avanzas 1 piso por nodo; él también… pero avanza 2 cuando te detienes a descansar o comprar (Fogata, Eco, Mercader, Sacamuelas, Observatorio, Gabinete): velocidad relativa.\nSi te alcanza, te arranca un diente.`, 20);
-    if (gap <= 1 && !robo) {
+    tip.attach(raton, 'Roído, el Coleccionista de Sonrisas', `Va ${gap} piso(s) detrás de ti y colecciona dientes.\nTú avanzas 1 piso por nodo; él también… pero avanza 2 cuando te detienes a descansar o comprar (Fogata, Eco, Mercader, Sacamuelas, Observatorio, Gabinete): velocidad relativa.\nSi te alcanza, te arranca un diente.${moneda ? '\nTraes su Moneda: cuando te alcance podrás pelear con él.' : '\nDicen que su madriguera está escondida en algún «?».'}`, 20);
+    if (gap <= 1 && !robo && !reto) {
       const av = txt(this, px, yo.y + 58, gap <= 0 ? '¡Te alcanza!' : '¡Roído está a 1 piso!', 14, '#ff8a8a').setOrigin(0.5).setStroke('#000', 3).setDepth(6);
       this.tweens.add({ targets: av, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
     }
-    if (robo) this.time.delayedCall(900, () => {
+    /** Ventana de «te alcanzó»: con botones a la medida */
+    const ventana = (titulo: string, cuerpo: string, botones: [string, () => void, number][]) => {
       const c = this.add.container(0, 0).setDepth(950);
       c.add(this.add.rectangle(0, 0, W, H, 0x000000, 0.6).setOrigin(0).setInteractive());
       const g = this.add.graphics();
       frame(g, W / 2 - 280, 150, 560, 230, 0x140c10, 0xc84a4a, 0.97);
       c.add(g);
       c.add(this.add.image(W / 2 - 190, 262, 'fig_perez').setScale(5));
-      c.add(title(this, W / 2 + 60, 176, '¡Roído te alcanzó!', 30, '#ff9a9a'));
-      c.add(txt(this, W / 2 + 60, 212, `Unas pinzas frías, un tirón… y Roído sale corriendo con su costal de sonrisas.\n${robo}\nVuelve a empezar ${RATON_VENTAJA} pisos detrás de ti.`, 16, CSS.bone, { align: 'center', wordWrap: { width: 300 } }).setOrigin(0.5, 0));
-      c.add(button(this, W / 2 + 60, 346, 160, 36, 'Ay…', () => c.destroy(), { size: 18, color: 0x8a3a3a }));
+      c.add(title(this, W / 2 + 60, 176, titulo, 30, '#ff9a9a'));
+      c.add(txt(this, W / 2 + 60, 212, cuerpo, 16, CSS.bone, { align: 'center', wordWrap: { width: 300 } }).setOrigin(0.5, 0));
+      botones.forEach(([t, fn, color], i) => {
+        const x = W / 2 + 60 + (i - (botones.length - 1) / 2) * 180;
+        c.add(button(this, x, 346, botones.length > 1 ? 170 : 160, 36, t, () => { c.destroy(); fn(); }, { size: botones.length > 1 ? 16 : 18, color }));
+      });
+      return c;
+    };
+    const avisoRobo = (texto: string) => {
+      ventana('¡Roído te alcanzó!', `Unas pinzas frías, un tirón… y Roído sale corriendo con su costal de sonrisas.\n${texto}\nVuelve a empezar ${RATON_VENTAJA} pisos detrás de ti.`, [['Ay…', () => this.scene.restart(), 0x8a3a3a]]);
+      audio.sfx('wrong');
+      this.cameras.main.shake(200, 0.006);
+    };
+    if (robo) this.time.delayedCall(900, () => {
+      ventana('¡Roído te alcanzó!', `Unas pinzas frías, un tirón… y Roído sale corriendo con su costal de sonrisas.\n${robo}\nVuelve a empezar ${RATON_VENTAJA} pisos detrás de ti.`, [['Ay…', () => { /* sólo cierra */ }, 0x8a3a3a]]);
       audio.sfx('wrong');
       this.cameras.main.shake(200, 0.006);
     });
+    if (reto && current) this.time.delayedCall(900, () => {
+      audio.sfx('card');
+      ventana('¡Roído te alcanzó!', 'Abre las pinzas… y ve la moneda de 1931 en tu mano. Se queda helado.\n«Esa es mía. Es de la entrega. ¡Dámela!»\nPuedes pelear por tu sonrisa o dejar que se lleve un diente.', [
+        ['Pelear con Roído', () => {
+          (run.seen ??= []).push(clave);
+          run.ratonPelea = true;
+          saveLocal();
+          fadeTo(this, 'Combat', { kind: 'elite', floor: current.floor, especial: 'roido', nodo: NODO_ROIDO });
+        }, UI.gold],
+        ['Dejar que se lo lleve', () => { (run.seen ??= []).push(clave); avisoRobo(robar()); }, 0x8a3a3a],
+      ]);
+    });
+  }
+
+  /** v0.89 · La procesión de Hibbelievers: cuántos te siguen (src/data/relatos.ts) */
+  private procesion(run: Run, tip: Tooltip) {
+    const n = run.hibbelievers ?? 0;
+    const libro = run.relics.includes('edicion14');
+    if (!n && !libro) return;
+    const x0 = W - 20, y = 96;
+    const t = txt(this, x0, y, libro ? 'Hibbeler espera tu llamado' : `Hibbelievers ${n}/${HIBBELIEVERS_NECESARIOS}`, 15, '#e8c15a').setOrigin(1, 0.5).setDepth(402).setStroke('#000', 3).setInteractive();
+    for (let i = 0; i < (libro ? HIBBELIEVERS_NECESARIOS : n); i++) {
+      const im = this.add.image(x0 - t.width - 16 - i * 20, y, 'acolito').setTint(0xf0d890).setDepth(402);
+      im.setScale(22 / im.height);
+      this.tweens.add({ targets: im, y: y - 2, duration: 500 + i * 90, yoyo: true, repeat: -1 });
+    }
+    tip.attach(t, 'Los Hibbelievers', libro
+      ? 'Ya te entregaron «La 14.ª Edición». En el combate que tú elijas, usa el botón morado «Invocar a Hibbeler» (sobre «Fin de turno»). Sirve una sola vez.'
+      : `Un culto que le reza a Hibbeler. Te siguen ${n} de ${HIBBELIEVERS_NECESARIOS}. Los encuentras en los «?»: responde su pregunta o paga el diezmo.\nCon ${HIBBELIEVERS_NECESARIOS} podrás invocar a Hibbeler en un combate.`, 20);
   }
 
 }

@@ -25,6 +25,7 @@ import { button, Btn, dungeonBackground, fadeTo, frame, title, txt } from '../ui
  */
 const OPTS = {
   alma: 0, // siguiente alma para «Final + alma»
+  fiel: 0, // siguiente Hibbeliever
   clase: 'caballero',
   gravedad: 1,
   mazo: 'inicial' as 'inicial' | 'fuerte',
@@ -35,6 +36,8 @@ const OPTS = {
   jefeAbismo: 0, // jefe del Abismo para probar (ver JEFES en src/data/abismo_modo.ts)
 };
 
+import { HIBBELIEVERS } from '../data/relatos';
+import { RETO } from '../data/reto';
 export class DebugScene extends Phaser.Scene {
   private layer!: Phaser.GameObjects.Container;
   private msg!: Phaser.GameObjects.Text;
@@ -82,6 +85,11 @@ export class DebugScene extends Phaser.Scene {
     btn(720, 148, 180, `Vida: ${OPTS.vida === 'normal' ? 'normal' : '×10'}`, () => { OPTS.vida = OPTS.vida === 'normal' ? 'tanque' : 'normal'; this.draw(); }, OPTS.vida === 'tanque');
     btn(860, 108, 150, `Extras: ${OPTS.extras ? 'sí' : 'no'}`, () => { OPTS.extras = !OPTS.extras; this.draw(); }, OPTS.extras);
 
+    // v0.89 · fin de semestre: la Madriguera, un Hibbeliever (ya traes 2), la pelea con Roído (con su Moneda y el libro) y el Reto
+    btn(330, 108, 112, 'Madriguera', () => { this.go(5, 'Relato', { floor: 3, id: 'madriguera' }); Game.run!.tramo = 2; }, false, 14);
+    btn(448, 108, 112, 'Hibbeliever', () => { this.go(5, 'Relato', { floor: 3, id: HIBBELIEVERS[OPTS.fiel++ % HIBBELIEVERS.length] }); Game.run!.hibbelievers = 2; Game.run!.ergios = Math.max(Game.run!.ergios, 60); }, false, 14);
+    btn(566, 108, 112, 'vs Roído', () => { this.go(5, 'Combat', { kind: 'elite', floor: 3, especial: 'roido', nodo: -77 }); Game.run!.tramo = 2; Game.run!.relics.push('monedaRoido', 'edicion14'); }, false, 14);
+    btn(700, 108, 140, 'Reto de la Semilla', () => fadeTo(this, 'Abismo', { clase: RETO.clase, gravedad: RETO.gravedad, debug: true, reto: true }), false, 14);
     label(50, 180, 'Empezar en');
     [1, 2, 3, 4].forEach((a, i) => btn(150 + i * 170, 222, 160, a === 4 ? 'Acto IV (Núcleo)' : `Acto ${['I', 'II', 'III'][i]}`, () => this.go(a, 'Map'), a === 4));
 

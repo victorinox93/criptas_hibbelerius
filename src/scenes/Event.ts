@@ -9,7 +9,7 @@ import { EVENTS, EventDef, PROFE_CHANCE, PROFE_ENOJADO_CHANCE } from '../data/ev
 import { ALMA_ABISMO_CHANCE, ALMA_CHANCE, ALMA_IDS, ALMA_IDS_ABISMO } from '../data/almas';
 import { AM_CHANCE } from '../data/am';
 import { MYRIAM_CHANCE } from '../data/myriam';
-import { RELATO_CHANCE, RELATOS } from '../data/relatos';
+import { HIBBELIEVER_CHANCE, HIBBELIEVERS, RELATO_CHANCE, RELATOS } from '../data/relatos';
 
 /** Probabilidad de encontrar el Necronomicón en un encuentro (Actos II y III, una vez) */
 const NECRO_CHANCE = 0.15;
@@ -47,6 +47,15 @@ export class EventScene extends Phaser.Scene {
           this.scene.start('Nyarlathotep', { floor: data.floor });
           return;
         }
+        // v0.89 · los Hibbelievers: mientras no tengas «La 14.ª Edición», te van saliendo al paso
+        const fieles = HIBBELIEVERS.filter((id) => !seen.includes(`relato_${id}`));
+        if (fieles.length && !run.relics.includes('edicion14') && Math.random() < HIBBELIEVER_CHANCE) {
+          const id = Phaser.Utils.Array.GetRandom(fieles);
+          seen.push(`relato_${id}`);
+          saveLocal();
+          this.scene.start('Relato', { floor: data.floor, id });
+          return;
+        }
         // v0.84 · altares filosóficos: una historia y una pregunta sobre la locura, el conocimiento o los sueños
         const filos = ALTARES_FILO.filter((a) => !seen.includes(`filo_${a.id}`));
         if (filos.length && Math.random() < ALTAR_FILO_CHANCE) {
@@ -75,7 +84,7 @@ export class EventScene extends Phaser.Scene {
         this.scene.start('Alma', { floor: data.floor, id });
         return;
       }
-      const libres = RELATOS.filter((r) => !r.sueno && !seen.includes(`relato_${r.id}`));
+      const libres = RELATOS.filter((r) => !r.sueno && !r.culto && (!r.si || r.si(run)) && !seen.includes(`relato_${r.id}`)); // v0.89 · los Hibbelievers tienen su propio sorteo
       if (libres.length && Math.random() < RELATO_CHANCE) {
         // v0.61 · los personajes y fenómenos nuevos pesan más (peso 2)
         let x = Math.random() * libres.reduce((a, b) => a + (b.peso ?? 1), 0);

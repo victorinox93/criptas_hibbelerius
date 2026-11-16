@@ -149,6 +149,13 @@ export interface Run {
   mutador?: string; // v0.46 · regla especial del tramo actual (src/data/abismo_modo.ts → MUTADORES)
   dientePendiente?: string; // v0.44 · diente ganado con la dentadura llena: se acomoda al volver al mapa
   dientes?: (string | null)[]; // v0.42 · la Dentadura de Montemayor (8 huecos, el orden importa; src/data/dientes.ts)
+  // ── v0.89 · fin de semestre ──
+  ratonVencido?: boolean; // venciste a Roído con su Moneda: ya no te persigue en esta expedición
+  ratonPelea?: boolean; // estás peleando con Roído (si cierras la pestaña, la pelea se retoma)
+  hibbelievers?: number; // cultistas de Hibbeler que te siguen (con HIBBELIEVERS_NECESARIOS te dan «La 14.ª Edición»)
+  hibInvocado?: { piso: number; kind: string }; // Hibbeler ya fue invocado en ESTA pelea (por si se cierra la pestaña)
+  semilla?: number; // Reto de la Semilla: el Abismo se sortea igual para todos (src/semilla.ts)
+  reto?: string; // id del reto (src/data/reto.ts); su ranking es aparte
 }
 
 export interface ShopItem {

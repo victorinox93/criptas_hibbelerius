@@ -71,7 +71,7 @@ export class EndScene extends Phaser.Scene {
     const run = Game.run!;
     // v0.71 · el Abismo es infinito: resumen de todo lo que llevabas, con captura
     if (run.modo === 'abismo') this.time.delayedCall(700, () => resumenAbismo(this, run, data.victory, data.by));
-    if (run.modo === 'abismo') guardarLegado(run); // v0.73 · para el Legado de la siguiente expedición
+    if (run.modo === 'abismo' && run.semilla === undefined) guardarLegado(run); // v0.89 · el Reto de la Semilla no deja Legado (su mazo no es tuyo)
     codexFlag('primera'); // ya terminó (o perdió) su primera expedición
     this.add.rectangle(0, 0, W, H, 0x07060a).setOrigin(0);
     embers(this);

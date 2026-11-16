@@ -5,7 +5,7 @@ import { api, isOnline, RankRow } from '../api';
 import { CSS, UI } from '../art/palette';
 import { audio } from '../audio';
 import { makeHeroFromAvatar } from '../art/sprites';
-import { H, W } from '../config';
+import { cerrado, CIERRE_ISO, CIERRE_TEXTO, H, W } from '../config';
 import { ARMORS, CAPES, VISORS } from '../art/palette';
 import { CLASSES } from '../data/classes';
 import { ACC } from '../data/tienda';
@@ -14,6 +14,7 @@ import { fmtPuntos } from '../data/puntaje';
 import { Game, TOTAL_PISOS } from '../state';
 import { T } from '../textos';
 import { button, Btn, dungeonBackground, embers, fadeTo, frame, title, txt } from '../ui/widgets';
+import { RETO } from '../data/reto';
 
 const PER_PAGE = 6;
 const ROW_H = 53;
@@ -30,7 +31,8 @@ export class RankingScene extends Phaser.Scene {
   private list: RankRow[] = [];
   private page = 0;
   private scope: 'grupo' | 'todos' = 'grupo';
-  private modo: 'normal' | 'abismo' = 'normal'; // v0.41: ranking propio del Abismo (modo infinito)
+  private modo: 'normal' | 'abismo' | 'semilla' = 'normal'; // v0.41: ranking propio del Abismo · v0.89: y otro del Reto de la Semilla
+  private subT!: Phaser.GameObjects.Text;
   private modoBtn!: Btn;
   private rows!: Phaser.GameObjects.Container;
   private msg!: Phaser.GameObjects.Text;
@@ -49,11 +51,23 @@ export class RankingScene extends Phaser.Scene {
       button(this, W / 2 - 90, 88, 170, 34, T.ranking.grupo, () => this.fetchRank('grupo'), { size: 21 }),
       button(this, W / 2 + 90, 88, 170, 34, T.ranking.todos, () => this.fetchRank('todos'), { size: 21 }),
     ];
-    this.modoBtn = button(this, W - 120, 88, 170, 34, 'Abismo ◈', () => {
-      this.modo = this.modo === 'normal' ? 'abismo' : 'normal';
-      this.modoBtn.label.setText(this.modo === 'abismo' ? 'Expedición' : 'Abismo ◈');
+    // el botón dice a qué ranking pasas: Expedición → Abismo → Reto de la Semilla → Expedición
+    const SIG = { normal: 'abismo', abismo: 'semilla', semilla: 'normal' } as const;
+    const ETIQ = { normal: 'Expedición', abismo: 'Abismo ◈', semilla: 'Reto ⚑' };
+    const NOMBRE = { normal: 'Expedición', abismo: 'El Abismo de los Ejes', semilla: `${RETO.nombre} · semilla ${RETO.semilla}` };
+    this.modo = 'normal';
+    this.subT = txt(this, 120, 88, '', 16, '#9ad8c8').setOrigin(0.5);
+    const pintarModo = () => {
+      this.modoBtn.label.setText(`→ ${ETIQ[SIG[this.modo]]}`);
+      this.subT.setText(`Viendo: ${NOMBRE[this.modo]}`);
+      if (this.subT.width > 210) this.subT.setScale(210 / this.subT.width, 1); else this.subT.setScale(1);
+    };
+    this.modoBtn = button(this, W - 120, 88, 170, 34, '', () => {
+      this.modo = SIG[this.modo];
+      pintarModo();
       this.fetchRank(this.scope);
     }, { size: 19, color: 0x6a3a9a });
+    pintarModo();
     const g = this.add.graphics();
     frame(g, 30, 112, W - 60, 366, 0x0e0b12, UI.border, 0.92);
     const HX = [56, 150, 372, 480, 590, 722, 824];
@@ -63,6 +77,7 @@ export class RankingScene extends Phaser.Scene {
     this.msg = txt(this, W / 2, 290, '', 22, CSS.dim, { align: 'center' }).setOrigin(0.5);
     this.pageT = txt(this, W / 2, 494, '', 19, CSS.dim).setOrigin(0.5);
     txt(this, W - 40, 518, 'Toca a un héroe para ver su ficha', 17, CSS.dim).setOrigin(1, 0.5);
+    if (CIERRE_ISO) txt(this, W / 2, 518, cerrado() ? 'Ranking cerrado: resultado final' : `Cierra ${CIERRE_TEXTO}`, 15, cerrado() ? '#e08a8a' : '#ffd060').setOrigin(0.5);
     button(this, W / 2 - 150, 494, 44, 30, '‹', () => this.turn(-1), { size: 22 });
     button(this, W / 2 + 150, 494, 44, 30, '›', () => this.turn(1), { size: 22 });
     button(this, 110, 518, 160, 34, T.grimorio.volver, () => fadeTo(this, 'Menu'), { size: 21 });
@@ -87,8 +102,10 @@ export class RankingScene extends Phaser.Scene {
     this.rows.removeAll(true);
     this.msg.setText(T.ranking.cargando);
     try {
-      const r = await api.leaderboard(Game.profile!.token, scope, this.modo);
-      if (this.modo === 'abismo' && r.modo !== 'abismo') throw new Error('El ranking del Abismo necesita la versión nueva del servidor:\npega apps-script/Code.gs y publica una nueva versión.');
+      const modo = this.modo;
+      const r = await api.leaderboard(Game.profile!.token, scope, modo, modo === 'semilla' ? RETO.id : '');
+      if (modo !== this.modo) return; // cambió de ranking mientras llegaba la respuesta
+      if (modo !== 'normal' && r.modo !== modo) throw new Error(`El ranking ${modo === 'semilla' ? 'del Reto' : 'del Abismo'} necesita la versión nueva del servidor:\npega apps-script/Code.gs y publica una nueva versión.`);
       if (!this.scene.isActive()) return;
       this.list = r.lista;
       const mine = this.list.findIndex((x) => x.yo);
@@ -151,7 +168,7 @@ export class RankingScene extends Phaser.Scene {
       R(txt(this, COLS[7], y + 2, pctAciertos(p), 24, p.runasTotal ? CSS.green : CSS.dim));
       if (p.runasTotal) R(txt(this, COLS[7], y + 28, `${p.runasOk ?? 0}/${p.runasTotal}`, 15, CSS.dim));
       R(txt(this, COLS[4], y + 8, `✦ ${fmtPuntos(Number(p.puntaje))}`, 24, CSS.gold)); // v0.87 · prefijos del SI: los puntajes del infinito no cabían
-      if (this.modo === 'abismo') {
+      if (this.modo !== 'normal') {
         // profundidad: tramo alcanzado (5+ = modo infinito)
         const tramo = Math.floor(p.piso / (PISOS_TRAMO + 1)) + 1; // v0.54 · tramos de 10 pisos + jefe
         R(txt(this, COLS[5], y + 8, tramo > TRAMOS ? `∞ ${tramo}` : `Tramo ${tramo}`, 24, tramo > TRAMOS ? '#c8a8ff' : CSS.bone));

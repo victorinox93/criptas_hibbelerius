@@ -36,6 +36,8 @@ import { RELICS } from '../data/relics';
 import { bonosFinales, JEFES, PUNTOS, sumar } from '../data/puntaje';
 import { POCIONES } from '../data/pociones';
 import { audio } from '../audio';
+import { sembrar } from '../semilla';
+import { darDiente } from './Relato';
 import { makeHeroFromAvatar } from '../art/sprites';
 import { T } from '../textos';
 import { cardView, CardView, CH, costConfusion, costOverride } from '../ui/card';
@@ -222,6 +224,9 @@ export class CombatScene extends Phaser.Scene {
   private radianes = false; // v0.57 · la Calculadora Primigenia te cambió a RAD: Ataques ×0.6
   private sueno?: string; // v0.51 · clave de ENCOUNTERS_SUENO si es una pesadilla
   private astro?: string; // v0.59 · Astro Ambulante (src/data/astros.ts)
+  private especial?: string; // v0.89 · pelea especial fuera del mapa: 'roido'
+  private hibImg: Phaser.GameObjects.Image | null = null; // v0.89 · Hibbeler invocado por los Hibbelievers
+  private hibBtn: Btn | null = null;
   private perforaGolpe = false; // v0.51 · el golpe enemigo actual atraviesa el Bloqueo (Sabueso de Tíndalos)
   private blockPerTurn = 0; // Resistencia del Material
   private orbit = 0; // Órbita Cerrada (masa del satélite)
@@ -260,8 +265,11 @@ export class CombatScene extends Phaser.Scene {
 
   constructor() { super('Combat'); }
 
-  init(data: { kind: Kind; floor: number; sueno?: string; astro?: string; nodo?: number }) {
+  init(data: { kind: Kind; floor: number; sueno?: string; astro?: string; nodo?: number; especial?: string }) {
     this.astro = data.astro;
+    this.especial = data.especial;
+    this.hibImg = null;
+    this.hibBtn = null;
     this.pausas = 0;
     this.tweens.timeScale = 1; // v0.68 · por si la escena se cerró en plena pausa de impacto
     this.kind = data.kind;
@@ -515,6 +523,7 @@ export class CombatScene extends Phaser.Scene {
       // v0.48: cada jefe impone una condición al azar (la mordida es una de ellas)
       // v0.88 · si ya se había sorteado para esta pelea, se respeta: cerrar la
       // pestaña ya no sirve para cambiar la condición del jefe
+      sembrar('Combat|condJefe'); // v0.89 · Reto de la Semilla: la misma condición del jefe para todos
       this.condJefe = this.guardado?.condJefe ?? Phaser.Utils.Array.GetRandom(CONDICIONES_JEFE).id;
       if (this.condJefe === 'mordida') {
         const libres = (run.dientes ?? []).map((x, i) => (x && !esParasito(x) ? i : -1)).filter((i) => i >= 0);
@@ -747,7 +756,8 @@ export class CombatScene extends Phaser.Scene {
       : run.combate.piso === this.floor && run.combate.kind === this.kind);
     this.guardado = mismaPelea ? run.combate : undefined;
     this.reingreso = (this.guardado?.veces ?? 0) + 1;
-    const enc = this.guardado?.enc ?? (this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb']
+    sembrar('Combat|enc'); // v0.89 · Reto de la Semilla: los mismos enemigos en este nodo para todos
+    const enc = this.guardado?.enc ?? (this.especial === 'roido' ? ['roido'] : this.astro ? ASTROS[this.astro]?.encuentro ?? ['mercurio'] : this.sueno ? ENCOUNTERS_SUENO[this.sueno] ?? ['serIb']
       // v0.88 · algunos jefes llegan acompañados (el Par de Fuerzas, el Centro Instantáneo)
       : this.acto === 5 && this.kind === 'boss' ? (JEFE_GRUPO[run.jefe ?? ''] ?? [run.jefe ?? 'geometra'])
         : pick((this.acto === 5 ? encuentrosAbismo(run.tramo ?? 1) : encounters(this.acto))[this.kind]));
@@ -808,6 +818,7 @@ export class CombatScene extends Phaser.Scene {
     }
 
     // ── Inicio ──
+    sembrar('Combat|mazo'); // v0.89 · Reto de la Semilla: el primer barajeo es el mismo para todos
     this.draw = Phaser.Utils.Array.Shuffle([...run.deck]);
     if (this.has('yunque')) this.masa += 1;
     if (this.has('coraza')) this.block = 6;
@@ -833,6 +844,7 @@ export class CombatScene extends Phaser.Scene {
     this.hpIni = Game.run!.hp;
     this.abismoInicio();
     // ── condición del piso (azar, o la que ya le había tocado a esta pelea) ──
+    sembrar('Combat|cond');
     if (this.guardado) {
       const c = CONDITIONS.find((x) => x.id === this.guardado!.cond);
       if (c) this.applyCondition(c);
@@ -864,9 +876,10 @@ export class CombatScene extends Phaser.Scene {
     this.showFamiliar();
     this.showAliado();
     this.showFantasma();
+    this.hibbelerInicio();
     this.refreshPlayer();
     const jefeA = this.acto === 5 && this.kind === 'boss' ? JEFES_ABISMO[run.jefe ?? 'geometra'] : null;
-    const arrancar = () => this.banner(this.kind === 'boss' ? (jefeA ? jefeA.nombre : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.astro ? ASTROS[this.astro]?.nombre ?? T.combate.bannerElite : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
+    const arrancar = () => this.banner(this.kind === 'boss' ? (jefeA ? jefeA.nombre : T.combate.bannerJefes[Math.min(3, this.acto - 1)]) : this.especial === 'roido' ? '¡Roído!' : this.astro ? ASTROS[this.astro]?.nombre ?? T.combate.bannerElite : this.kind === 'elite' ? T.combate.bannerElite : T.combate.bannerCombate).then(async () => {
       await this.newtonApple();
       if (!(await this.combatStartFx())) return;
       if (!(await this.checkEnd())) this.startTurn();
@@ -4793,6 +4806,11 @@ export class CombatScene extends Phaser.Scene {
       await this.fantasmaActua();
       if (await this.checkEnd()) return;
     }
+    // v0.89 · Hibbeler (invocado por los Hibbelievers): resuelve el problema golpeando a todos
+    if (this.hibImg && this.alive().length) {
+      await this.hibbelerActua();
+      if (await this.checkEnd()) return;
+    }
 
     // v0.62 · el Gemelo de Espejo: una vez por combate te regresa tu último golpe (3ª ley)
     const run0 = Game.run!;
@@ -5073,6 +5091,17 @@ export class CombatScene extends Phaser.Scene {
     run.floor = this.floor + 1;
     this.olvidarPelea(); // v0.88 · ganada: ya no se restaura
     run.mordidos = undefined; // v0.52 · la mordida sólo dura la pelea
+    run.hibInvocado = undefined; // v0.89 · Hibbeler sólo se queda una pelea
+    if (this.especial === 'roido') {
+      // v0.89 · venciste a Roído: suelta el costal y ya no te persigue en esta expedición
+      run.ratonPelea = undefined;
+      run.ratonVencido = true;
+      run.relics = run.relics.filter((x) => x !== 'monedaRoido');
+      const botin = darDiente('raro');
+      this.calc(`Roído suelta el costal y por fin puede subir a entregar su moneda. ${botin}`);
+      this.floatText(W / 2, 200, 'Roído ya no te perseguirá', CSS.gold);
+      logEvent('roido', '', true, { piso: this.floor, turnos: this.turn, vida: run.hp });
+    }
     run.stats.combates++;
     // puntaje: combate perfecto (sin perder vida)
     if (run.hp >= this.hpStart) {
@@ -5592,6 +5621,75 @@ export class CombatScene extends Phaser.Scene {
         addErgios(-cobro);
         this.time.delayedCall(1500, () => { this.floatText(x, 170, `−${cobro} Ergios («comisión»)`, '#c8f070'); this.calc(`Parches cobra su comisión: −${cobro} Ergios`); this.hud.refresh(); });
       }
+    }
+  }
+
+  // ───────────────────────── v0.89 · HIBBELER (invocado por los Hibbelievers) ─────────────────────────
+  /** Daño que hace Hibbeler a cada enemigo al final de tu turno (crece con la profundidad) */
+  private hibDano() {
+    return Math.round(16 * escalaTramo(Game.run!.tramo ?? 1));
+  }
+
+  /** Al empezar el combate: el botón de invocar (si traes el libro) o Hibbeler de vuelta (si cerraste la pestaña) */
+  private hibbelerInicio() {
+    const run = Game.run!;
+    const h = run.hibInvocado;
+    if (h && h.piso === this.floor && h.kind === this.kind) return this.hibbelerAparece(false);
+    run.hibInvocado = undefined;
+    if (!run.relics.includes('edicion14')) return;
+    this.hibBtn = button(this, W - 82, 400, 140, 34, 'Invocar a Hibbeler', () => this.invocarHibbeler(), { size: 15, color: 0x7a4ab0 }).setDepth(520) as Btn;
+    this.hibBtn.on('pointerover', () => this.tip.show(W - 420, 250, 'La 14.ª Edición', `Tus Hibbelievers rezan y Hibbeler aparece para ESTA pelea:\n· ganas 10 de Bloqueo;\n· al final de cada uno de tus turnos golpea a TODOS los enemigos (${this.hibDano()} de daño).\nSirve una sola vez: elige bien la pelea.`));
+    this.hibBtn.on('pointerout', () => this.tip.hide());
+  }
+
+  private invocarHibbeler() {
+    const run = Game.run!;
+    if (this.busy || this.hibImg || !run.relics.includes('edicion14') || this.bannerT.getData('ended') || !this.alive().length) return;
+    run.relics = run.relics.filter((x) => x !== 'edicion14');
+    run.hibInvocado = { piso: this.floor, kind: this.kind };
+    saveLocal();
+    logEvent('hibbeler', '', '', { piso: this.floor, tipo: this.kind, turno: this.turn });
+    this.hibBtn?.destroy();
+    this.hibBtn = null;
+    this.tip.hide();
+    audio.sfx('victory');
+    this.cameras.main.flash(500, 232, 193, 90);
+    this.hibbelerAparece(true);
+    this.gainBlock(10);
+    this.calc('Paso 1: diagrama de cuerpo libre. Ves todas las fuerzas (+10 de Bloqueo)');
+    this.hud.refresh();
+    this.refreshPlayer();
+  }
+
+  /** Dibuja a Hibbeler detrás de ti (dorado: aquí abajo es un santo, no el jefe del Acto III) */
+  private hibbelerAparece(nuevo: boolean) {
+    // a la derecha del héroe: a la izquierda están el semáforo de Cordura, la dentadura y los aliados
+    const x = this.heroX + 125, y = 322;
+    const k = 170 / this.textures.get('hibbelerius').getSourceImage().height;
+    const halo = this.add.image(x, y, 'hibbelerius').setOrigin(0.5, 1).setScale(k * 1.06).setTintFill(0xe8c15a).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
+    const img = this.add.image(x, y, 'hibbelerius').setOrigin(0.5, 1).setScale(k).setAlpha(0).setTint(0xfff0c0);
+    this.tweens.add({ targets: img, alpha: 0.85, duration: 900 });
+    this.tweens.add({ targets: halo, alpha: 0.25, duration: 900 });
+    this.tweens.add({ targets: [img, halo], y: y - 6, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    img.setInteractive();
+    this.tip.attach(img, 'Hibbeler (invocado)', `Los Hibbelievers lo trajeron para esta pelea. Al final de cada uno de tus turnos golpea a TODOS los enemigos (${this.hibDano()} de daño).`);
+    this.hibImg = img;
+    if (nuevo) {
+      this.hablar('Hibbeler', '¿Quién interrumpe la 15.ª edición?… Ah, un alumno. A ver ese problema.', x + 40, 150);
+      this.time.delayedCall(700, () => this.floatText(x, 200, 'Hibbeler responde al rezo', CSS.gold));
+    }
+  }
+
+  private async hibbelerActua() {
+    const img = this.hibImg!;
+    const dmg = this.hibDano();
+    this.tweens.add({ targets: img, x: img.x + 26, duration: 150, yoyo: true, ease: 'Quad.out' });
+    this.calc(`Hibbeler: «Paso 2: ΣF = m·a. Paso 3: se despeja.» ${dmg} de daño a todos`);
+    for (const t of [...this.alive()]) {
+      const g = this.add.graphics().setDepth(650).setBlendMode(Phaser.BlendModes.ADD);
+      g.lineStyle(5, 0xe8c15a, 0.9).lineBetween(img.x + 30, 220, t.baseX, 260);
+      this.tweens.add({ targets: g, alpha: 0, duration: 380, onComplete: () => g.destroy() });
+      await this.hitEnemy(t, dmg, false, 'res');
     }
   }
 

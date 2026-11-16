@@ -832,3 +832,48 @@ Si alguna falla, la columna `validacion` de Partidas queda en `revisar: …` y *
 Esto son sólo **avisos**: un evento se pierde si se cae la red justo entonces (la cola de `api.ts` vive en memoria), pero los contadores de la partida no. Por eso no sacan a nadie del ranking; son para que el profe decida.
 
 **Si cambias la vida de los enemigos o los puntos** (`src/data/puntaje.ts`, `escalaTramo`, `VIDA_ABISMO`), revisa `VALIDA` y `escalaTramo_()`: son copias del cliente. Para recalibrar, corre la revisión y mira que ninguna partida legítima quede en `revisar`.
+
+
+---
+
+## 18. Fin de semestre: el Reto de la Semilla, el cierre y los premios (v0.89)
+
+### Cambiar el Reto de la Semilla
+
+**Archivo:** `src/data/reto.ts`. Todo el reto está en un solo objeto:
+
+```ts
+export const RETO: RetoDef = {
+  id: 'OTO26',          // cámbialo para empezar un ranking nuevo (máx. 5 letras o números)
+  nombre: 'El Reto de la Semilla',
+  semilla: 20261122,    // cualquier número: cada número es otro Abismo
+  clase: 'arcanista',
+  gravedad: 1,
+  pagina: 'tiempo',     // PAGINAS en src/data/abismo_modo.ts
+  pacto: 'volante',     // PACTOS en src/data/abismo_modo.ts (define el mazo base)
+  cartas: ['choque', 'rafaga', 'barrera', 'ab_rodadura', 'momentoInercia', 'visVivaA'],
+  dientes: ['incisivo', 'leche'],
+};
+```
+
+Si cambias el `id`, cámbialo también en `apps-script/Code.gs` → `PREMIOS.reto` (sólo lo usa «Calcular premios»).
+
+**Cómo funciona la semilla** (`src/semilla.ts`). En una partida de reto, `Math.random` se cambia por un generador con semilla y se vuelve a sembrar cada vez que arranca una escena con la clave `semilla | tramo | nodo | escena`. Por eso lo que se reparte en cada nodo es igual para todos sin importar el orden de los clics. Para que algo nuevo que sortees también sea igual para todos, sortéalo dentro de `create()` o llama antes a `sembrar('MiEscena|algo')`. Las escenas que no están en `SEMBRADAS` (las preguntas, los minijuegos) usan el azar normal.
+
+### Cerrar y reabrir el juego
+
+- `apps-script/Code.gs` → `CIERRE`: después de esa fecha el servidor no registra partidas. Es el que cuenta.
+- `src/config.ts` → `CIERRE_ISO` y `CIERRE_TEXTO`: el aviso que ven los alumnos en el menú y en el ranking.
+
+Para reabrir (por ejemplo, el próximo semestre), deja `CIERRE = ''` y `CIERRE_ISO = ''`.
+
+### Premios
+
+`apps-script/Code.gs` → `PREMIOS`. Puedes cambiar los puntos, quitar o agregar premios de la lista, excluir matrículas (`excluir`), limitar a ciertos grupos (`grupos`), el mínimo de preguntas para la precisión (`minPreguntas`) y si el premio «por clase» es por personaje o por grupo (`clasePor`) y de qué ranking sale (`claseModo`). Luego: menú **Criptas → Calcular premios de fin de semestre**.
+
+### Los Hibbelievers y la Madriguera de Roído
+
+- Más cultistas: copia una llamada a `fiel(...)` en `src/data/relatos.ts`. Cuántos hacen falta: `HIBBELIEVERS_NECESARIOS`; qué tan seguido salen: `HIBBELIEVER_CHANCE`.
+- Qué hace Hibbeler: `invocarHibbeler()`, `hibbelerActua()` y `hibDano()` en `src/scenes/Combat.ts`.
+- La pelea con Roído: el enemigo `roido` en `src/data/enemies.ts`; lo que pasa al ganarle, en `checkEnd()` de `Combat.ts` (busca `roido`).
+

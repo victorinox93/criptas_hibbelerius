@@ -54,6 +54,7 @@ import { CrisolScene } from './scenes/Crisol';
 import { TitleScene } from './scenes/Title';
 import { Game } from './state';
 import { mostrarArranque } from './consola/arranque';
+import { alArrancarEscena } from './semilla';
 
 // Relicario-93: la consola ficticia sale encima mientras Phaser carga por debajo.
 // En cuanto la portada está lista, Phaser se pausa para no gastar CPU detrás del arranque.
@@ -83,6 +84,8 @@ const game = new Phaser.Game({
 // Cámara de cada escena: zoom ×RES desde la esquina superior izquierda
 game.events.once(Phaser.Core.Events.READY, () => {
   for (const sc of game.scene.scenes) {
+    // v0.89 · Reto de la Semilla: el azar se siembra antes del init/create de cada escena
+    sc.sys.events.on(Phaser.Scenes.Events.START, () => alArrancarEscena(sc.sys.settings.key));
     sc.sys.events.on(Phaser.Scenes.Events.CREATE, () => {
       sc.cameras.main.setOrigin(0, 0).setZoom(RES);
       sc.input.enabled = true;

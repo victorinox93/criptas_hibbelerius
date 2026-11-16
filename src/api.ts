@@ -91,8 +91,9 @@ export const api = {
   login: (matricula: string, passHash: string) => call<LoginResp>('login', { matricula, passHash }),
   saveProfile: (token: string, alias: string, avatar: string) => call('saveProfile', { token, alias, avatar }),
   startRun: (token: string, clase: string, gravedad = 1) => call<{ ok: true; runId: string }>('startRun', { token, clase, gravedad }),
-  leaderboard: (token: string, alcance: 'grupo' | 'todos', modo: 'normal' | 'abismo' = 'normal') =>
-    call<{ ok: true; grupo: string; total: number; lista: RankRow[]; modo?: string }>('leaderboard', { token, alcance, modo }),
+  // v0.89 · modo 'semilla' = ranking de un Reto de la Semilla (`reto` = su id, src/data/reto.ts)
+  leaderboard: (token: string, alcance: 'grupo' | 'todos', modo: 'normal' | 'abismo' | 'semilla' = 'normal', reto = '') =>
+    call<{ ok: true; grupo: string; total: number; lista: RankRow[]; modo?: string }>('leaderboard', { token, alcance, modo, reto }),
 };
 
 // ── Cola de registro "dispara y olvida": nunca bloquea el juego ──

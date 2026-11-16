@@ -55,6 +55,7 @@ Roguelike de cartas *dark fantasy* para aprender **Dinámica** (Universidad de M
 - **Reiniciar contraseña de un alumno…** — el alumno entra con una contraseña nueva sin perder su progreso.
 - **Borrar datos de un alumno / de un grupo / TODO…** — para limpiar pruebas antes de abrir el juego a la clase. Siempre guarda antes un respaldo en tu Drive. Consejo: usa una clave aparte (p. ej. `BETA`) para probar y bórrala con «Borrar datos de un grupo».
 - **Calcular ganancia de aprendizaje (Hake)** — llena la hoja «Diagnóstico» con el inicial, el final y la ganancia g de cada alumno y grupo.
+- **Calcular premios de fin de semestre** — arma la hoja «Premios» con las reglas de `PREMIOS` (al inicio de `Code.gs`): un premio por alumno; si el primer lugar ya ganó otro mayor, pasa al siguiente. `CIERRE` congela los rankings a la hora que digas.
 - **Generar evidencia** y **Crear formulario de retroalimentación** — reporte del proyecto y encuesta para los alumnos.
 
 ### 3. Modo profesor
